@@ -1,0 +1,24 @@
+{
+  "id": "model-pick",
+  "kind": "pick",
+  "label": "Red de metro",
+  "kicker": "IMPECCABLE’S PICK",
+  "lineage": "Mapas y señalética de metro latinoamericanos",
+  "thesis": "El temario es una red de metro: cada sección una línea de color, cada tema una estación, y sabes siempre dónde estás.",
+  "palette": [
+    "#FFFFFF",
+    "#16181C",
+    "#E4402B",
+    "#0E8A6A",
+    "#F2A900",
+    "#2D5BD3"
+  ],
+  "materials": [
+    "líneas de color de 8px",
+    "estaciones como círculos",
+    "pictogramas por sección"
+  ],
+  "viewport": "Cabecera con la línea de la sección y sus estaciones (estás en «Pila de llamadas», estación 2 de 7); columna de lectura limpia; el visualizador recorre los pasos como estaciones de un tramo.",
+  "risk": "Familiar: el temario-como-mapa-de-metro es un recurso conocido en sitios de aprendizaje (roadmaps); se distingue solo por la ejecución.",
+  "html": ".impeccable/mocks/decision/model-pick.html"
+}

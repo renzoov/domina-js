@@ -1,0 +1,25 @@
+{
+  "id": "r1-exposure",
+  "kind": "challenger",
+  "catalogId": "operate-b-exposure-record-zone-sheets",
+  "label": "Registro de cuarto oscuro",
+  "verdict": "declined",
+  "lineage": "Fichas de exposición de laboratorio fotográfico",
+  "thesis": "Hojas translúcidas sobre una rampa de 11 tonos.",
+  "palette": [
+    "#0C0C0C",
+    "#5A5A5A",
+    "#D8D8D8",
+    "#F7DF1E"
+  ],
+  "materials": [
+    "rampa de zonas",
+    "tramas de densidad"
+  ],
+  "viewport": "Hojas superpuestas con tramas.",
+  "case": "Pierde en ambos ejes: las tramas complican la lectura y el mundo es ajeno. (Boceto agregado a tu pedido para que lo evalúes.)",
+  "kept": "Una sola rampa de 11 tonos como todos los neutros oscuros.",
+  "risk": "Demasiado técnico para leer.",
+  "hero": "https://impeccable.style/worlds/cards/operate-b-exposure-record-zone-sheets-hero.webp",
+  "html": ".impeccable/mocks/decision/r1-exposure.html"
+}

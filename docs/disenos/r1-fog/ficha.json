@@ -1,0 +1,25 @@
+{
+  "id": "r1-fog",
+  "kind": "challenger",
+  "catalogId": "digital-design-canon-console-dashboard-atmosphere",
+  "label": "Menú en la niebla",
+  "verdict": "competitive",
+  "lineage": "Menús de sistema de consolas de videojuego de sexta generación",
+  "thesis": "Un vacío azul-negro con niebla y partículas, donde cada función es un bloque de luz que flota y la seleccionada brilla en amarillo.",
+  "palette": [
+    "#050814",
+    "#F7DF1E",
+    "#C9D6E8",
+    "#6B7A99"
+  ],
+  "materials": [
+    "torres translúcidas",
+    "partículas a la deriva",
+    "brillo cálido en la selección"
+  ],
+  "viewport": "Cabecera flotando en la niebla; columna de lectura nítida; el visualizador apila la pila como torres de luz en profundidad.",
+  "case": "Gana en identificación con quien juega y tiene el vacío oscuro que te gustó del cracktro; pierde en claridad porque la profundidad cuesta leerla.",
+  "risk": "La atmósfera puede tapar el texto; las partículas van solo detrás del marco, nunca detrás de la lectura.",
+  "html": ".impeccable/mocks/decision/r1-fog.html",
+  "hero": "https://impeccable.style/worlds/cards/digital-design-canon-console-dashboard-atmosphere-hero.webp"
+}

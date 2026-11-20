@@ -1,11 +1,125 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import StepVisualizer from '../components/StepVisualizer.astro';
+import Subrayado from '../components/Subrayado.astro';
+import Icono from '../components/Icono.astro';
+import { pilaSaludar } from '../data/visualizaciones';
+import { temario, totalTemas, buscarTema } from '../data/temario';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const orden = temario.flatMap((s) => s.temas.map((t) => `${s.slug}/${t.slug}`));
+const lecciones = (await getCollection('lecciones')).sort(
+  (a, b) => orden.indexOf(`${a.data.seccion}/${a.data.tema}`) - orden.indexOf(`${b.data.seccion}/${b.data.tema}`),
+);
+const primera = lecciones[0];
+const pila = lecciones.find((l) => l.data.tema === 'pila-de-llamadas');
+const primeraUrl = primera ? `/${primera.data.seccion}/${primera.data.tema}` : '/temario';
+const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema) : undefined;
 ---
+<BaseLayout titulo="domina-js · Aprende JavaScript paso a paso">
+  <div class="principal">
+      <section class="portada" aria-labelledby="portada-titulo">
+        <div class="texto">
+          <h1 id="portada-titulo">Aprende JavaScript viendo lo que hace el motor</h1>
+          <Subrayado />
+          <p class="lead">Lecciones cortas en español, un pizarrón que avanza paso a paso y ejercicios que se corrigen solos. Gratis y sin crear cuenta.</p>
+          <div class="acciones">
+            <a class="btn btn--y" href={primeraUrl}>Empieza desde cero<Icono nombre="der" /></a>
+            <a class="btn" href="/temario">Ver el temario</a>
+          </div>
+          <p class="datos">{temario.length} secciones y {totalTemas} temas, de cero a cómo funciona JavaScript por dentro, al día con 2026.</p>
+          <p class="mano" aria-hidden="true">pruébalo aquí al lado<Icono nombre="der" /></p>
+        </div>
+        <div class="demo">
+          <StepVisualizer id="demo" titulo="Dale a «Siguiente»" datos={pilaSaludar} fijarControles={false} />
+        </div>
+      </section>
 
-<Layout>
-	<Welcome />
-</Layout>
+      <section class="como" aria-labelledby="como-titulo">
+        <h2 id="como-titulo">Cómo se aprende aquí</h2>
+        <ol>
+          <li><b>Lees poco.</b> Cada lección explica una sola idea, con ejemplos cortos y en español claro.</li>
+          <li><b>Miras al motor.</b> Lo que no se ve (la pila, los scopes, el event loop) se dibuja en el pizarrón, paso a paso.</li>
+          <li><b>Predices.</b> Antes de ciertos pasos, el pizarrón te pregunta qué va a pasar. Adivinar primero es lo que más fija un concepto.</li>
+          <li><b>Practicas.</b> Haces de motor, ordenas la salida de la consola, cazas errores y escribes código real que se corrige mientras escribes.</li>
+        </ol>
+      </section>
+
+      {primera && primeraTema && (
+        <section class="empieza" aria-labelledby="empieza-titulo">
+          <h2 id="empieza-titulo">Por dónde empezar</h2>
+          <h3><a href={primeraUrl} style={`view-transition-name: vt-${primera.data.seccion}-${primera.data.tema}`}>{primera.data.titulo}</a></h3>
+          <p>{primera.data.resumen}</p>
+          <p class="detalle">Sección {primeraTema.seccion.numero}, {primeraTema.seccion.titulo} · {primera.data.minutos} min · {primera.data.ejercicios.length} ejercicios</p>
+          <a class="btn btn--y" href={primeraUrl}>Abrir la lección<Icono nombre="der" /></a>
+          {pila && <p class="nota">¿Ya programas en otro lenguaje? Salta directo a <a href={`/${pila.data.seccion}/${pila.data.tema}`}>{pila.data.titulo}</a> y mira al motor por dentro.</p>}
+          <p class="nota">Los temas se publican uno a uno: en el menú de la izquierda ves cuáles ya están.</p>
+        </section>
+      )}
+  </div>
+</BaseLayout>
+
+<style>
+
+  .portada {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 48px;
+    align-items: start;
+  }
+  h1 {
+    margin: 0;
+    font: 700 clamp(2.6rem, 4.6vw, 4.5rem) / 1.02 var(--hand);
+    text-shadow: 0 0 3px rgba(236, 234, 226, 0.4), 1px 1px 0 rgba(236, 234, 226, 0.2);
+    text-wrap: balance;
+    max-width: 12ch;
+  }
+  .lead { margin: 22px 0 26px; max-width: 44ch; font-size: 1.2rem; line-height: 1.6; color: var(--chalk-70); }
+  .acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+  .acciones .btn { padding: 13px 18px; font-size: 1rem; }
+  .datos { margin: 22px 0 0; max-width: 44ch; font-size: 0.95rem; line-height: 1.5; color: var(--azul); }
+  .mano { display: flex; align-items: center; gap: 8px; margin: 30px 0 0; font: 700 1.5rem/1 var(--hand); color: var(--pink); transform: rotate(-3deg); width: fit-content; }
+  .mano :global(svg) { width: 34px; height: 34px; filter: url(#tiza); }
+  .mano :global(svg path) { stroke-width: 2.9; }
+
+  .como { padding-top: 120px; max-width: 1080px; }
+  h2 { margin: 0 0 28px; font: 700 clamp(2rem, 3.2vw, 2.75rem) / 1.05 var(--hand); }
+  .como ol {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px 56px;
+    counter-reset: paso;
+  }
+  .como li { position: relative; padding-left: 52px; font-size: 1.05rem; line-height: 1.6; color: var(--chalk-70); max-width: 52ch; counter-increment: paso; }
+  .como li::before {
+    content: counter(paso);
+    position: absolute; left: 0; top: -2px;
+    display: grid; place-items: center;
+    width: 36px; height: 36px;
+    font: 700 1.3rem/1 var(--hand); color: var(--azul);
+    border: 2px solid var(--azul);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  }
+  .como b { color: var(--chalk); }
+
+  .empieza { padding-top: 120px; max-width: 62ch; }
+  .empieza h2 { margin-bottom: 18px; }
+  .empieza h3 { margin: 0 0 10px; font: 700 clamp(1.7rem, 2.6vw, 2.2rem) / 1.1 var(--hand); }
+  .empieza h3 a { view-transition-class: titulo; color: var(--chalk); text-decoration: none; background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); }
+  .empieza h3 a:hover { color: var(--y); }
+  .empieza p { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.6; color: var(--chalk-70); }
+  .empieza .detalle { font-size: 0.95rem; color: var(--azul); margin-bottom: 20px; }
+  .empieza .nota { margin-top: 20px; font-size: 0.95rem; }
+  .empieza .nota + .nota { margin-top: 0; }
+  .empieza .nota a { color: var(--chalk); font-weight: 700; text-decoration-color: var(--y); }
+
+  @media (max-width: 1280px) {
+    .portada { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+    h1 { max-width: 16ch; }
+    .mano { display: none; }
+  }
+  @media (max-width: 720px) {
+    .como ol { grid-template-columns: 1fr; }
+    .como, .empieza { padding-top: 80px; }
+  }
+</style>

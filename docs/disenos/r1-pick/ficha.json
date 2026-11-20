@@ -1,0 +1,23 @@
+{
+  "id": "r1-pick",
+  "kind": "pick",
+  "label": "Pizarrón y tiza amarilla",
+  "kicker": "IMPECCABLE’S PICK",
+  "lineage": "El pizarrón verde-negro del aula y la tiza de color",
+  "thesis": "La clase de siempre en su mejor versión: fondo de pizarrón, explicación en tiza blanca y lo importante subrayado en tiza amarilla.",
+  "palette": [
+    "#1B2A23",
+    "#F7DF1E",
+    "#ECEAE2",
+    "#F2A7B8",
+    "#8FB7A1"
+  ],
+  "materials": [
+    "textura de pizarrón",
+    "trazos de tiza",
+    "borrador a medias"
+  ],
+  "viewport": "Marco de pizarrón con el título escrito como en clase; columna de lectura en tiza blanca nítida; el visualizador dibuja la pila con trazos de tiza y borra lo que sale.",
+  "risk": "Es la dirección más familiar: el pizarrón es un recurso muy usado en sitios educativos.",
+  "html": ".impeccable/mocks/decision/r1-pick.html"
+}

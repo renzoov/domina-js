@@ -1,0 +1,13 @@
+---
+// Subrayado de tiza amarilla trazado a mano.
+interface Props { ancho?: number }
+const { ancho = 560 } = Astro.props;
+---
+<svg class="subrayado" width={ancho} height="20" viewBox="0 0 560 20" preserveAspectRatio="none" aria-hidden="true">
+  <path class="a" d="M4 12c80-5 170-7 262-4 92 2 190 1 290-5" stroke="#F7DF1E" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="120 4 70 3 160 5 90 2 200" opacity=".92"/>
+  <path class="b" d="M40 17c60-2 120-2 180 0" stroke="#F7DF1E" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".55"/>
+</svg>
+
+<style>
+  .subrayado { display: block; max-width: 100%; height: 20px; margin: -4px 0 0 -6px; }
+</style>

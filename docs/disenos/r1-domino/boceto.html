@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>domina-js · La pila de llamadas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0B0B0B;--y:#F7DF1E;--iv:#F7F3E8;--red:#B3122E;--wood:#3A2A1E;
+--n1:#111110;--n2:#161615;--n3:#1D1C1A;--n4:#2A2926;--n5:#3B3935;--n6:#5C5953;--n7:#8A867D;--n8:#B9B4A8;
+--disp:"Bricolage Grotesque",sans-serif;--read:"Source Serif 4",Georgia,serif;--mono:"JetBrains Mono",monospace}
+*{box-sizing:border-box}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+body{background:var(--wood);background-image:repeating-linear-gradient(92deg,rgba(0,0,0,.18) 0 2px,transparent 2px 9px,rgba(255,220,180,.04) 9px 10px,transparent 10px 23px),linear-gradient(180deg,#4a3626,#2b1f16);color:var(--iv);font-family:var(--read)}
+.table{position:absolute;inset:14px;background:var(--ink);border-radius:20px;box-shadow:inset 0 0 0 1px #000,inset 0 18px 40px rgba(0,0,0,.7),0 1px 0 rgba(255,230,200,.12);overflow:hidden}
+header{height:76px;display:flex;align-items:center;padding:0 36px;border-bottom:1px solid var(--n3);gap:40px}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--iv)}
+.logo b{font:800 26px/1 var(--disp);letter-spacing:-.02em}.logo b i{font:500 17px var(--mono);color:var(--y);font-style:normal;margin-left:2px}
+.line{display:flex;align-items:center;gap:6px;margin-left:auto}
+.line .lab{font:500 11px var(--mono);color:var(--n7);letter-spacing:.12em;text-transform:uppercase;margin-right:10px}
+.mini{width:58px;height:30px;border-radius:5px;background:linear-gradient(#1c1c1b,#0d0d0d);border:1px solid var(--n4);display:flex;box-shadow:0 2px 0 #000}
+.mini svg{width:28px;height:28px}.mini .bar{width:1px;background:var(--n5);margin:4px 0}
+.mini.done{opacity:.55;color:var(--iv)}.mini.now{color:var(--y);border-color:var(--y);box-shadow:0 0 0 3px rgba(247,223,30,.12),0 2px 0 #000}
+.mini.back{background:repeating-linear-gradient(45deg,#141413 0 3px,#0e0e0d 3px 6px);border-color:var(--n3)}
+.hmeta{font:500 12px var(--mono);color:var(--n8);letter-spacing:.06em}
+main{display:grid;grid-template-columns:232px 560px 1fr;gap:0 48px;padding:34px 36px 0;height:calc(100% - 76px)}
+nav .k{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--n7)}
+nav h3{font:700 19px/1.2 var(--disp);margin:8px 0 22px;color:var(--iv)}
+nav ol{list-style:none;margin:0;padding:0;border-left:1px solid var(--n4)}
+nav li{display:flex;gap:12px;align-items:baseline;padding:9px 0 9px 16px;font:400 15px/1.35 var(--read);color:var(--n8);position:relative}
+nav li span{font:500 12px var(--mono);color:var(--n6);width:14px}
+nav li.ok{color:var(--n7)}nav li.ok span{color:var(--n7)}
+nav li.cur{color:var(--iv);font-weight:600}nav li.cur span{color:var(--y)}
+nav li.cur:before{content:"";position:absolute;left:-4px;top:12px;width:7px;height:14px;border-radius:2px;background:var(--y)}
+.prog{margin-top:26px;font:500 11px var(--mono);color:var(--n7);letter-spacing:.06em}
+.read .kick{font:500 12px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--n7)}
+.read .kick em{color:var(--y);font-style:normal}
+h1{font:800 66px/.98 var(--disp);letter-spacing:-.035em;margin:18px 0 18px;color:var(--iv)}
+.meta{display:flex;gap:14px;align-items:center;font:500 13px var(--mono);color:var(--n8)}
+.meta i{width:6px;height:6px;border-radius:50%;background:var(--n6)}
+.read p{font-size:17px;line-height:1.62;max-width:66ch;color:#ECE7DA;margin:28px 0 0}
+.read p strong{font-weight:600;color:var(--iv)}
+.rule{margin-top:30px;display:flex;gap:18px;align-items:center;padding:18px 20px;border:1px solid var(--n4);border-radius:12px;background:var(--n1)}
+.rule .t{font:700 15px var(--disp);color:var(--iv)}.rule .d{font-size:15px;line-height:1.5;color:var(--n8);margin-top:3px}
+.next{margin-top:30px;font:700 22px var(--disp);color:var(--n8)}.next small{display:block;font:400 15px/1.55 var(--read);color:var(--n7);margin-top:8px}
+.viz{border-radius:16px;background:var(--n1);border:1px solid var(--n3);padding:18px 20px;align-self:start;box-shadow:0 0 0 6px var(--wood),0 0 0 7px #000,0 20px 40px rgba(0,0,0,.6)}
+.vh{display:flex;justify-content:space-between;align-items:center;font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--n7)}
+.vh b{color:var(--y);font-weight:700}
+.steps{display:flex;gap:5px;margin:12px 0 16px}
+.steps i{flex:1;height:14px;border-radius:3px;background:repeating-linear-gradient(45deg,#181817 0 2px,#101010 2px 4px);border:1px solid var(--n4);position:relative}
+.steps i.d{background:var(--n4);border-color:var(--n5)}.steps i.d:after,.steps i.a:after{content:"";position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;border-radius:50%;background:var(--n8)}
+.steps i.a{background:#1a1a17;border-color:var(--y);box-shadow:0 0 0 2px rgba(247,223,30,.15)}.steps i.a:after{background:var(--y)}
+pre{margin:0;font:400 13px/21px var(--mono);background:var(--ink);border:1px solid var(--n3);border-radius:10px;padding:10px 0;color:var(--n8)}
+pre div{padding:0 14px 0 0;display:flex;white-space:pre}pre div u{text-decoration:none;width:38px;text-align:right;padding-right:14px;color:var(--n5)}
+pre div.hl{background:rgba(247,223,30,.08);box-shadow:inset 3px 0 0 var(--y);color:var(--iv)}pre div.hl u{color:var(--y)}
+.k1{color:var(--n7)}.s1{color:#DCD3BE;font-style:italic}.f1{color:var(--iv);font-weight:500}
+.mid{display:grid;grid-template-columns:1fr 128px;gap:14px;margin-top:16px}
+.lab2{font:500 10px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--n7);margin-bottom:8px}
+.tile{height:50px;border-radius:8px;display:flex;align-items:center;background:linear-gradient(#1f1f1e,#0c0c0c);border:1px solid var(--n4);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 3px 0 #000;margin-bottom:6px;position:relative}
+.tile svg{width:44px;height:44px;margin:0 4px}.tile .bar{width:1px;align-self:stretch;margin:7px 0;background:var(--n5);position:relative}
+.tile .bar:after{content:"";position:absolute;left:-3px;top:50%;margin-top:-3px;width:7px;height:7px;border-radius:50%;background:#6b5a3e;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.tile code{font:500 14px var(--mono);padding-left:16px}
+.tile.top{color:var(--y);border-color:rgba(247,223,30,.7);transform:rotate(-1.2deg) translateX(6px);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 6px 0 #000,0 0 22px rgba(247,223,30,.12)}
+.tile.top code{color:var(--y)}.tile.low{color:var(--n7)}.tile.low code{color:var(--n8)}
+.tile .tag{position:absolute;right:10px;font:700 9px var(--mono);letter-spacing:.12em;color:var(--iv);background:var(--red);padding:3px 6px;border-radius:3px}
+.base{height:6px;border-radius:3px;background:var(--wood);margin-top:4px}
+.con{background:var(--ink);border:1px solid var(--n3);border-radius:8px;height:112px;padding:10px;font:400 12px var(--mono);color:var(--n6)}
+.exp{margin-top:16px;font:400 15px/1.5 var(--read);color:#E6E0D2;padding-left:12px;border-left:2px solid var(--y)}.exp b{color:var(--y);font-weight:600;font-family:var(--mono);font-size:14px}
+.ctl{display:flex;gap:8px;margin-top:16px}
+.ctl span{font:500 12px var(--mono);padding:9px 14px;border-radius:8px;border:1px solid var(--n4);color:var(--n8);background:var(--n2)}
+.ctl span.go{background:var(--y);color:var(--ink);border-color:var(--y);font-weight:700}.ctl span.r{margin-left:auto}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="p1" viewBox="0 0 40 40"><circle cx="20" cy="20" r="4" fill="currentColor"/></symbol>
+<symbol id="p2" viewBox="0 0 40 40"><circle cx="11" cy="11" r="4" fill="currentColor"/><circle cx="29" cy="29" r="4" fill="currentColor"/></symbol>
+<symbol id="p4" viewBox="0 0 40 40"><circle cx="11" cy="11" r="4" fill="currentColor"/><circle cx="29" cy="11" r="4" fill="currentColor"/><circle cx="11" cy="29" r="4" fill="currentColor"/><circle cx="29" cy="29" r="4" fill="currentColor"/></symbol>
+</defs></svg>
+<div class="table">
+<header>
+  <a class="logo" href="#">
+    <svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true">
+      <g transform="rotate(-18 14 40)"><rect x="5" y="4" width="18" height="36" rx="3.5" fill="#0B0B0B" stroke="#5C5953" stroke-width="1.2"/><line x1="8" y1="22" x2="20" y2="22" stroke="#3B3935"/><circle cx="14" cy="13" r="2.6" fill="#8A867D"/><circle cx="14" cy="31" r="2.6" fill="#8A867D"/></g>
+      <rect x="23" y="5" width="18" height="36" rx="3.5" fill="#161615" stroke="#F7DF1E" stroke-width="1.4"/><line x1="26" y1="23" x2="38" y2="23" stroke="#5C5953"/>
+      <circle cx="28" cy="10" r="2.4" fill="#F7DF1E"/><circle cx="36" cy="18" r="2.4" fill="#F7DF1E"/><circle cx="32" cy="32" r="2.6" fill="#F7DF1E"/>
+      <rect x="2" y="42" width="42" height="3" rx="1.5" fill="#3A2A1E"/>
+    </svg>
+    <b>domina<i>.js</i></b>
+  </a>
+  <div class="line">
+    <span class="lab">Sección 4 · jugada</span>
+    <div class="mini done"><svg><use href="#p4"/></svg><i class="bar"></i><svg><use href="#p1"/></svg></div>
+    <div class="mini now"><svg><use href="#p4"/></svg><i class="bar"></i><svg><use href="#p2"/></svg></div>
+    <div class="mini back"></div><div class="mini back"></div><div class="mini back"></div><div class="mini back"></div><div class="mini back"></div>
+  </div>
+  <span class="hmeta">LECCIÓN 2 / 7</span>
+</header>
+<main>
+  <nav>
+    <div class="k">Sección 4</div>
+    <h3>Cómo se ejecuta JS por dentro</h3>
+    <ol>
+      <li class="ok"><span>1</span>Motor y runtime</li>
+      <li class="cur"><span>2</span>La pila de llamadas</li>
+      <li><span>3</span>Contextos de ejecución y hoisting</li>
+      <li><span>4</span>Scope y cadena de scopes</li>
+      <li><span>5</span>Closures</li>
+      <li><span>6</span>Recursión y stack overflow</li>
+      <li><span>7</span>Memoria y recolector de basura</li>
+    </ol>
+    <div class="prog">1 de 7 fichas jugadas</div>
+  </nav>
+  <section class="read">
+    <div class="kick">4 · Cómo se ejecuta JS por dentro &nbsp;/&nbsp; <em>Ficha 2</em></div>
+    <h1>La pila de llamadas</h1>
+    <div class="meta">Lección 2 de 7 <i></i> 9 min <i></i> 4 ejercicios</div>
+    <p>JavaScript ejecuta tu código en un solo hilo: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <strong>pila de llamadas</strong> (call stack). La última función que entra es la primera que sale, como una pila de platos.</p>
+    <div class="rule">
+      <div class="tile" style="width:96px;height:44px;margin:0;color:var(--y);flex:none"><svg style="width:40px;height:40px"><use href="#p1"/></svg><i class="bar"></i><svg style="width:40px;height:40px"><use href="#p1"/></svg></div>
+      <div><div class="t">Última en entrar, primera en salir</div><div class="d">Cada llamada pone una ficha encima. Cuando una función termina, su ficha cae y el motor vuelve a la de abajo.</div></div>
+    </div>
+    <div class="next">Una ficha sobre otra<small>Mira el visualizador: avanza paso a paso y observa qué ficha queda arriba en cada momento.</small></div>
+  </section>
+  <section class="viz" aria-label="Visualizador">
+    <div class="vh"><span>Visualizador · pila de llamadas</span><span>Paso <b>3</b> de 8</span></div>
+    <div class="steps"><i class="d"></i><i class="d"></i><i class="a"></i><i></i><i></i><i></i><i></i><i></i></div>
+<pre><div class="hl"><u>1</u><span><span class="k1">function</span> <span class="f1">saludar</span>(nombre) {</span></div><div><u>2</u>  <span class="k1">return</span> <span class="s1">`Hola, ${nombre}!`</span>;</div><div><u>3</u>}</div><div><u>4</u></div><div><u>5</u><span class="k1">function</span> <span class="f1">mostrar</span>() {</div><div class="hl"><u>6</u>  <span class="k1">const</span> msg = <span class="f1">saludar</span>(<span class="s1">"Mundo"</span>);</div><div><u>7</u>  console.log(msg);</div><div><u>8</u>}</div><div><u>9</u></div><div><u>10</u><span class="f1">mostrar</span>();</div><div><u>11</u></div></pre>
+    <div class="mid">
+      <div>
+        <div class="lab2">Pila · arriba → abajo</div>
+        <div class="tile top"><svg><use href="#p2"/></svg><i class="bar"></i><code>saludar()</code></div>
+        <div class="tile low"><svg><use href="#p1"/></svg><i class="bar"></i><code>mostrar()</code><span class="tag">EN PAUSA</span></div>
+        <div class="base"></div>
+      </div>
+      <div><div class="lab2">Consola</div><div class="con">— vacía —</div></div>
+    </div>
+    <div class="exp"><b>saludar()</b> se apila encima de <b>mostrar()</b>. El motor suspende mostrar() y ejecuta saludar().</div>
+    <div class="ctl"><span>← Anterior</span><span class="go">Siguiente →</span><span class="r">↺ Reiniciar</span></div>
+  </section>
+</main>
+</div>
+</body>
+</html>

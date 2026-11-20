@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>domina-js · Partitura de ejecución</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;1,6..96,400&family=Literata:opsz,wght@7..72,400;7..72,500;7..72,600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--urtext:#1E3A8A;--urtext-deep:#16296A;--page:#F5F7FA;--sheet:#FFFFFF;--ink:#14161B;--ink-2:#4A5060;--rule:#C9D0DC;--play:#F2B705;--hl:#FDF1C7}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden;background:var(--page);color:var(--ink);font-family:"Literata",Georgia,serif}
+.mast{height:112px;background:var(--urtext);color:#fff;position:relative;display:flex;align-items:center;padding:0 48px;gap:48px}
+.mast svg{position:absolute;left:0;top:28px;width:100%;height:56px;opacity:.22}
+.brand{position:relative;font-family:"Bodoni Moda",serif;font-size:34px;font-weight:600;letter-spacing:.01em}
+.brand i{font-weight:400;opacity:.8}
+.opus{position:relative;border-left:1px solid rgba(255,255,255,.35);padding-left:32px}
+.opus small{display:block;font-variant:small-caps;letter-spacing:.14em;font-size:13px;opacity:.75}
+.opus b{font-family:"Bodoni Moda",serif;font-weight:400;font-style:italic;font-size:22px}
+.mast nav{position:relative;margin-left:auto;display:flex;gap:28px;font-size:14px;font-variant:small-caps;letter-spacing:.12em}
+.mast nav a{color:#fff;text-decoration:none;opacity:.8}
+.mast nav a.on{opacity:1;border-bottom:1px solid var(--play);padding-bottom:4px}
+.wrap{display:grid;grid-template-columns:272px 1fr;height:788px}
+aside{border-right:1px solid var(--rule);padding:32px 28px 0 48px;background:var(--page)}
+aside h4{font-variant:small-caps;letter-spacing:.14em;font-size:13px;color:var(--urtext);font-weight:600;margin-bottom:6px}
+aside p.sec{font-family:"Bodoni Moda",serif;font-size:19px;line-height:1.25;margin-bottom:20px}
+aside ol{list-style:none;border-top:1px solid var(--rule)}
+aside li{display:grid;grid-template-columns:34px 1fr;padding:9px 0;border-bottom:1px solid var(--rule);font-size:14.5px;line-height:1.35;color:var(--ink-2)}
+aside li span{font-family:"JetBrains Mono",monospace;font-size:12px;padding-top:2px;color:#8A93A6}
+aside li.on{color:var(--ink);font-weight:600}
+aside li.on span{color:var(--urtext)}
+aside li.on::before{content:"";position:absolute}
+main{padding:30px 56px 0 56px;overflow:hidden}
+.crumb{font-variant:small-caps;letter-spacing:.14em;font-size:13px;color:var(--ink-2)}
+.crumb b{color:var(--urtext);font-weight:600}
+h1{font-family:"Bodoni Moda",serif;font-weight:400;font-size:58px;line-height:1.02;letter-spacing:-.01em;margin:6px 0 10px}
+h1 i{color:var(--urtext)}
+.lead{max-width:68ch;font-size:17px;line-height:1.62;color:#22252D}
+.lead code{font-family:"JetBrains Mono",monospace;font-size:14.5px;background:#E8ECF3;padding:1px 5px;border-radius:3px}
+.meta{display:flex;gap:22px;margin:12px 0 18px;font-size:13px;color:var(--ink-2);font-variant:small-caps;letter-spacing:.1em}
+.viz{background:var(--sheet);border:1px solid var(--rule);display:grid;grid-template-columns:420px 1fr;height:452px}
+.code{border-right:1px solid var(--rule);padding:18px 0;font-family:"JetBrains Mono",monospace;font-size:13.5px;line-height:25px}
+.code .ln{display:grid;grid-template-columns:52px 1fr;padding-right:16px}
+.code .ln em{font-style:normal;font-family:"Bodoni Moda",serif;font-style:italic;font-size:13px;color:#9AA3B5;text-align:right;padding-right:16px;border-right:1px solid var(--rule);margin-right:16px}
+.code .hl{background:var(--hl);box-shadow:inset 3px 0 0 var(--play)}
+.code .hl em{color:var(--ink)}
+.k{color:var(--urtext);font-weight:600}.s{color:#9A4B12}.f{color:#14161B;font-weight:600}
+.code .cap{font-family:"Literata",serif;font-size:12px;font-variant:small-caps;letter-spacing:.14em;color:var(--ink-2);padding:0 0 8px 68px}
+.staff{display:grid;grid-template-rows:auto 1fr auto;padding:16px 24px 18px 24px}
+.staff header{display:flex;justify-content:space-between;align-items:baseline}
+.staff header h5{font-variant:small-caps;letter-spacing:.14em;font-size:13px;color:var(--urtext);font-weight:600}
+.staff header span{font-family:"Bodoni Moda",serif;font-style:italic;font-size:17px}
+.staff svg{width:100%;height:230px;margin-top:6px}
+.say{border-top:1px solid var(--rule);padding-top:12px;display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end}
+.say p{font-size:16px;line-height:1.55;max-width:56ch}
+.say code{font-family:"JetBrains Mono",monospace;font-size:13.5px;font-weight:600}
+.ctl{display:flex;gap:8px}
+.ctl a{font-family:"Literata",serif;font-size:14px;padding:9px 14px;border:1px solid var(--ink);color:var(--ink);text-decoration:none;font-weight:500}
+.ctl a.go{background:var(--urtext);border-color:var(--urtext);color:#fff}
+.ctl a.re{border-color:var(--rule);color:var(--ink-2)}
+</style>
+</head>
+<body>
+<header class="mast">
+  <svg viewBox="0 0 1440 56" preserveAspectRatio="none" aria-hidden="true">
+    <g stroke="#fff" stroke-width="1" shape-rendering="crispEdges"><line x1="0" y1="4" x2="1440" y2="4"/><line x1="0" y1="16" x2="1440" y2="16"/><line x1="0" y1="28" x2="1440" y2="28"/><line x1="0" y1="40" x2="1440" y2="40"/><line x1="0" y1="52" x2="1440" y2="52"/></g>
+  </svg>
+  <div class="brand">domina<i>-js</i></div>
+  <div class="opus"><small>Sección 4 · tema 2 de 7</small><b>Cómo se ejecuta JS por dentro</b></div>
+  <nav><a href="#">Temario</a><a class="on" href="#">Lecciones</a><a href="#">Novedades ES2026</a><a href="#">Glosario</a></nav>
+</header>
+<div class="wrap">
+  <aside>
+    <h4>Sección 4</h4>
+    <p class="sec">Cómo se ejecuta JS por dentro</p>
+    <ol>
+      <li><span>4.1</span>Motor y runtime</li>
+      <li class="on"><span>4.2</span>La pila de llamadas</li>
+      <li><span>4.3</span>Contextos de ejecución y hoisting</li>
+      <li><span>4.4</span>Scope y cadena de scopes</li>
+      <li><span>4.5</span>Closures</li>
+      <li><span>4.6</span>Recursión y stack overflow</li>
+      <li><span>4.7</span>Memoria y recolector de basura</li>
+    </ol>
+  </aside>
+  <main>
+    <div class="crumb"><b>Tema 4.2</b> · Lectura de 12 min · 2 visualizadores · 4 ejercicios</div>
+    <h1>La pila de <i>llamadas</i></h1>
+    <p class="lead">JavaScript tiene un solo hilo: hace una cosa a la vez. Para saber qué función se está ejecutando y a dónde volver cuando termina, el motor usa una <b>pila de llamadas</b> (<code>call stack</code>). Cada llamada se apila encima de la anterior; al terminar, sale, y el motor continúa con la que quedó debajo.</p>
+    <div class="meta"><span>Visualizador 1 de 2</span><span>Desliza la partitura o usa ← →</span></div>
+    <section class="viz">
+      <div class="code">
+        <div class="cap">Ejemplo · saludar.js</div>
+        <div class="ln hl"><em>1</em><span><span class="k">function</span> <span class="f">saludar</span>(nombre) {</span></div>
+        <div class="ln"><em>2</em><span>  <span class="k">return</span> <span class="s">`Hola, ${nombre}!`</span>;</span></div>
+        <div class="ln"><em>3</em><span>}</span></div>
+        <div class="ln"><em>4</em><span></span></div>
+        <div class="ln"><em>5</em><span><span class="k">function</span> <span class="f">mostrar</span>() {</span></div>
+        <div class="ln hl"><em>6</em><span>  <span class="k">const</span> msg = <span class="f">saludar</span>(<span class="s">"Mundo"</span>);</span></div>
+        <div class="ln"><em>7</em><span>  console.<span class="f">log</span>(msg);</span></div>
+        <div class="ln"><em>8</em><span>}</span></div>
+        <div class="ln"><em>9</em><span></span></div>
+        <div class="ln"><em>10</em><span><span class="f">mostrar</span>();</span></div>
+      </div>
+      <div class="staff">
+        <header><h5>Pila de llamadas · en el tiempo</h5><span>Paso 3 de 8</span></header>
+        <svg viewBox="0 0 640 230" aria-label="Pentagrama de la pila: mostrar() en el nivel 1 durante los pasos 1 a 8, saludar() en el nivel 2 en los pasos 3 a 5">
+          <g stroke="#C9D0DC" stroke-width="1" shape-rendering="crispEdges">
+            <line x1="40" y1="30" x2="630" y2="30"/><line x1="40" y1="70" x2="630" y2="70"/><line x1="40" y1="110" x2="630" y2="110"/><line x1="40" y1="150" x2="630" y2="150"/><line x1="40" y1="190" x2="630" y2="190"/>
+          </g>
+          <g font-family="Bodoni Moda" font-style="italic" font-size="12" fill="#9AA3B5" text-anchor="end"><text x="30" y="194">1</text><text x="30" y="154">2</text><text x="30" y="114">3</text><text x="30" y="74">4</text><text x="30" y="34">5</text></g>
+          <g font-family="Bodoni Moda" font-style="italic" font-size="12" fill="#9AA3B5" text-anchor="middle"><text x="75" y="218">1</text><text x="148" y="218">2</text><text x="221" y="218">3</text><text x="294" y="218">4</text><text x="367" y="218">5</text><text x="440" y="218">6</text><text x="513" y="218">7</text><text x="586" y="218">8</text></g>
+          <rect x="44" y="178" width="572" height="24" fill="none" stroke="#1E3A8A" stroke-dasharray="3 4" opacity=".35"/>
+          <rect x="44" y="178" width="214" height="24" fill="#1E3A8A"/>
+          <text x="56" y="195" font-family="JetBrains Mono" font-size="13" fill="#fff" font-weight="600">mostrar()</text>
+          <rect x="190" y="138" width="214" height="24" fill="none" stroke="#1E3A8A" stroke-dasharray="3 4" opacity=".35"/>
+          <rect x="190" y="138" width="68" height="24" fill="#2F6B3F"/>
+          <text x="198" y="155" font-family="JetBrains Mono" font-size="12" fill="#fff" font-weight="600">saludar()</text>
+          <rect x="410" y="138" width="140" height="24" fill="none" stroke="#1E3A8A" stroke-dasharray="3 4" opacity=".35"/>
+          <text x="420" y="155" font-family="JetBrains Mono" font-size="12" fill="#8A93A6">console.log()</text>
+          <rect x="256" y="12" width="4" height="196" fill="#F2B705"/>
+          <circle cx="258" cy="12" r="6" fill="#F2B705"/>
+        </svg>
+        <div class="say">
+          <p><code>saludar()</code> se apila encima de <code>mostrar()</code>. El motor suspende <code>mostrar()</code> en la línea 6 y salta a la línea 1 para ejecutar <code>saludar()</code>.</p>
+          <div class="ctl"><a href="#">← Anterior</a><a class="go" href="#">Siguiente →</a><a class="re" href="#">↺ Reiniciar</a></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

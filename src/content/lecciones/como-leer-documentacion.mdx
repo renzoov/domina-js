@@ -1,0 +1,102 @@
+---
+titulo: Cómo leer documentación
+seccion: antes-de-empezar
+tema: como-leer-documentacion
+minutos: 9
+resumen: Cómo usar MDN, la referencia de JavaScript que vas a abrir todos los días, cómo leer sus páginas, qué significa la etiqueta Baseline y dónde está la especificación oficial.
+intro: 'Nadie se sabe JavaScript de memoria. Quien programa todos los días tiene la <u>documentación</u> abierta en otra pestaña y la consulta sin vergüenza. Saber leerla rápido es una habilidad tan importante como escribir código.'
+nota: 'La versión en inglés de MDN es la más completa y actualizada. Muchas páginas están traducidas al español; si una traducción te parece rara o vieja, cambia el idioma con el selector de la página.'
+ejercicios: [docs-auto, docs-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { docsAuto, docsLab } from '../../data/ejercicios/antes-de-empezar';
+
+## MDN, tu referencia diaria
+
+**MDN Web Docs** (developer.mozilla.org) es la referencia más usada de JavaScript, HTML y CSS. La mantienen Mozilla y la comunidad, y es gratuita. Tiene dos tipos de páginas:
+
+- **Guías**: explican un tema de principio a fin, como un tutorial.
+- **Referencia**: una página por cada pieza del lenguaje, por ejemplo una para el método `at()` de los arrays y otra para `console.log()`. Son las que vas a consultar más.
+
+## Las partes de una página de referencia
+
+Todas las páginas de referencia siguen el mismo orden. Cuando lo conoces, encuentras lo que buscas en segundos:
+
+1. **Resumen y ejemplo interactivo**: qué hace, en una o dos frases, y un ejemplo que puedes editar ahí mismo.
+2. **Sintaxis**: cómo se escribe la llamada.
+3. **Parámetros**: qué le puedes pasar y qué significa cada cosa.
+4. **Valor devuelto**: qué obtienes al usarlo.
+5. **Descripción**: los detalles y los casos especiales.
+6. **Ejemplos**: usos reales, del más simple al más complejo.
+7. **Especificaciones** y **compatibilidad con navegadores**: de dónde viene y dónde funciona.
+
+Por ejemplo, en la página de `at()` de los arrays, la sintaxis dice:
+
+```js
+at(index)
+```
+
+Y en *Parámetros* explica que `index` es un número entero y que, **si es negativo, cuenta desde el final**. Ese detalle es justo lo que vas a necesitar en el laboratorio de abajo.
+
+Cuando un método tiene parámetros opcionales, MDN muestra todas las formas posibles una debajo de otra:
+
+```js
+slice()
+slice(start)
+slice(start, end)
+```
+
+<Nota tipo="consejo">
+  El mejor hábito: lee el resumen, salta a los **Ejemplos** y pruébalos en la consola. Vuelve a *Parámetros* y *Descripción* solo cuando algo no se comporte como esperabas.
+</Nota>
+
+## Baseline: ¿lo puedo usar ya?
+
+JavaScript suma novedades cada año, y los navegadores tardan un tiempo en implementarlas. Arriba de cada página, MDN muestra una etiqueta **Baseline**:
+
+| Etiqueta | Qué significa |
+|---|---|
+| Ampliamente disponible | Funciona en todos los navegadores principales desde hace al menos 30 meses. Úsalo sin dudar. |
+| Disponible recientemente | Ya funciona en todos los navegadores principales, pero desde hace poco. Puede que alguien con un navegador viejo no lo tenga. |
+| Disponibilidad limitada | Todavía falta en al menos un navegador principal. Revisa la tabla de compatibilidad antes de usarlo. |
+
+Al final de la página, la tabla de **compatibilidad** detalla desde qué versión de cada navegador funciona. Para Node.js, la tabla también indica la versión. El sitio **caniuse.com** ofrece la misma información, con búsqueda rápida.
+
+## La especificación oficial
+
+Detrás de MDN está la **especificación ECMA-262**, el documento oficial de ECMAScript que mantiene el comité TC39. Puedes leerla en **tc39.es/ecma262**. Es muy precisa, pero está escrita para quienes construyen motores, no para aprender.
+
+Para curiosear lo que viene, en **github.com/tc39/proposals** está la lista de propuestas con su etapa actual.
+
+## Cómo buscar
+
+- Agrega **mdn** a tu búsqueda: `mdn array at`, `mdn string replaceall`. Llegas directo a la referencia.
+- Busca por **lo que quieres hacer** cuando no sabes el nombre: `mdn javascript ordenar array` te lleva a `sort()` y `toSorted()`.
+- **Desconfía de lo viejo**: si un tutorial usa `var` en todo el código, probablemente es anterior a 2015. Contrasta con MDN.
+- **Prueba antes de dar algo por cierto**: la consola está a un atajo de distancia.
+
+## Resumen
+
+- **MDN** es tu referencia diaria: guías para aprender, referencia para consultar.
+- Las páginas de referencia siempre siguen el mismo orden: resumen, sintaxis, parámetros, valor devuelto, descripción, ejemplos y compatibilidad.
+- **Baseline** te dice si ya puedes usar algo en todos los navegadores.
+- La fuente oficial es **ECMA-262**, y las novedades en camino están en las propuestas de TC39.
+
+<Practica>
+
+<Autoevaluacion id={docsAuto.id} numero={1} titulo={docsAuto.titulo} preguntas={docsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<Laboratorio id={docsLab.id} numero={2} titulo={docsLab.titulo} inicial={docsLab.inicial} verificaciones={docsLab.verificaciones} pistas={docsLab.pistas} solucion={docsLab.solucion} explicacion={docsLab.explicacion}>
+  <div slot="enunciado">
+    <p>Usa el método <code>at()</code> para mostrar el último lenguaje de la lista. Todavía no viste los arrays, y está bien: el ejercicio es leer la documentación y aplicarla. Si te trabas, busca «mdn array at» o pide una pista.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

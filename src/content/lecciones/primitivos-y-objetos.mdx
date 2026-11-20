@@ -1,0 +1,175 @@
+---
+titulo: Valores primitivos y objetos
+seccion: fundamentos
+tema: primitivos-y-objetos
+minutos: 13
+resumen: Las dos familias de valores de JavaScript, qué devuelve typeof, por qué un primitivo se copia por valor y un objeto por referencia, cómo compara === y cómo hacer una copia de verdad.
+intro: 'En JavaScript todos los valores pertenecen a una de dos familias: los <u>primitivos</u>, como números y textos, y los <u>objetos</u>, como arrays, funciones y fechas. Parece un detalle técnico, pero explica uno de los errores más comunes de quien empieza: <u>cambiar una cosa y que cambie otra</u>.'
+pizarron: valorReferencia
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Las tarjetas sólidas son <b>variables</b>; el recuadro punteado lila es un <b>objeto en memoria</b>. Fíjate en la diferencia: copiar <code>a</code> crea otro 10, pero copiar <code>persona</code> solo crea otra flecha hacia el mismo objeto.'
+ejercicios: [primitivos-auto, primitivos-orden, primitivos-detective, primitivos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { primitivosAuto, primitivosOrden, primitivosDetective, primitivosLab } from '../../data/ejercicios/fundamentos';
+
+## Dos familias de valores
+
+Los **primitivos** son los valores más simples. Hay siete tipos:
+
+| Tipo | Ejemplos | Para qué |
+|---|---|---|
+| `string` | `"hola"`, `'JS'` | Texto |
+| `number` | `42`, `3.14`, `-7` | Números, enteros o con decimales |
+| `bigint` | `9007199254740993n` | Enteros enormes |
+| `boolean` | `true`, `false` | Sí o no |
+| `undefined` | `undefined` | "Todavía no tiene valor" |
+| `null` | `null` | "Vacío a propósito" |
+| `symbol` | `Symbol("id")` | Identificadores únicos |
+
+Todo lo demás es un **objeto**: los objetos literales `{ }`, los arrays `[ ]`, las funciones, las fechas, los mapas… Un objeto agrupa varios valores bajo un mismo nombre y puede cambiar por dentro.
+
+Para saber qué tipo tiene un valor, usa `typeof`:
+
+```js
+console.log(typeof "hola");     // string
+console.log(typeof 42);         // number
+console.log(typeof true);       // boolean
+console.log(typeof undefined);  // undefined
+console.log(typeof { a: 1 });   // object
+console.log(typeof [1, 2]);     // object (los arrays son objetos)
+console.log(typeof null);       // object (¡un error histórico!)
+console.log(typeof console.log); // function
+```
+
+<Nota>
+  `typeof null` devuelve `"object"` por un error de la primera versión de JavaScript, de 1995. Nunca se corrigió para no romper los sitios que ya dependían de ese comportamiento. `null` es un primitivo. Para saber si algo es `null`, compáralo directamente: `valor === null`.
+</Nota>
+
+## Los primitivos no cambian
+
+Un primitivo es **inmutable**: no se puede modificar por dentro. Las operaciones sobre un texto o un número siempre crean un valor **nuevo**:
+
+```js
+const saludo = "hola";
+const grito = saludo.toUpperCase();
+
+console.log(grito);   // HOLA (un texto nuevo)
+console.log(saludo);  // hola (el original no cambió)
+```
+
+Lo que sí puedes hacer, si la declaraste con `let`, es que la variable pase a guardar otro valor. Pero eso es reasignar el nombre, no modificar el valor.
+
+## Copiar: por valor o por referencia
+
+El pizarrón de arriba muestra la diferencia clave:
+
+- Al copiar un **primitivo**, se copia **el valor**. Las dos variables quedan independientes.
+- Al "copiar" un **objeto**, se copia **la referencia**: la flecha que apunta a él. Las dos variables apuntan al **mismo** objeto, y un cambio hecho desde una se ve desde la otra.
+
+Con los arrays pasa lo mismo, porque son objetos:
+
+```js
+const compras = ["pan", "leche"];
+const lista = compras;   // misma referencia
+
+lista.push("huevos");
+
+console.log(compras);    // [ 'pan', 'leche', 'huevos' ]
+```
+
+Y también al pasar un objeto a una función: la función recibe la referencia, así que puede modificar el original.
+
+```js
+function subirNivel(jugador) {
+  jugador.nivel = jugador.nivel + 1;
+}
+
+const ana = { nombre: "Ana", nivel: 1 };
+subirNivel(ana);
+console.log(ana.nivel);  // 2: la función cambió el objeto original
+```
+
+## Comparar con ===
+
+`===` compara distinto según la familia:
+
+- Con **primitivos** compara **valores**: `5 === 5` y `"a" === "a"` dan `true`.
+- Con **objetos** compara **referencias**: solo da `true` si las dos son la misma flecha hacia el mismo objeto.
+
+```js
+const a = { x: 1 };
+const b = { x: 1 };
+const c = a;
+
+console.log(a === b);  // false: dos objetos distintos con el mismo contenido
+console.log(a === c);  // true: el mismo objeto
+```
+
+## Hacer una copia de verdad
+
+Si necesitas un objeto **nuevo** con el mismo contenido, tienes que copiarlo explícitamente. Las dos formas más usadas:
+
+- **Spread** (`...`): crea un objeto o array nuevo y copia dentro el primer nivel de contenido. Es una **copia superficial**.
+- **`structuredClone()`**: copia todo, incluidos los objetos que haya dentro de otros objetos. Es una **copia profunda**.
+
+```js
+const original = { nombre: "Ana", gustos: ["cine"] };
+
+const superficial = { ...original };
+const profunda = structuredClone(original);
+
+superficial.nombre = "Luis";         // no afecta al original
+profunda.gustos.push("música");      // tampoco
+
+console.log(original.nombre);        // Ana
+console.log(original.gustos);        // [ 'cine' ]
+```
+
+<Nota tipo="consejo">
+  La diferencia entre copia superficial y profunda importa cuando hay objetos dentro de objetos. La vas a ver con un pizarrón propio en el tema *Copias superficiales y profundas*, de la sección de Objetos.
+</Nota>
+
+## Resumen
+
+- Hay **7 primitivos** (string, number, bigint, boolean, undefined, null, symbol). Todo lo demás es un **objeto**, incluidos arrays y funciones.
+- `typeof` dice el tipo; ojo con `typeof null`, que devuelve `"object"`.
+- Los primitivos son **inmutables** y se copian **por valor**.
+- Los objetos se copian **por referencia**: dos nombres pueden apuntar al mismo objeto.
+- `===` compara valores en los primitivos y referencias en los objetos.
+- Para un objeto nuevo usa `{ ...obj }` (superficial) o `structuredClone(obj)` (profunda).
+
+<Practica>
+
+<Autoevaluacion id={primitivosAuto.id} numero={1} titulo={primitivosAuto.titulo} preguntas={primitivosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={primitivosOrden.id} numero={2} titulo={primitivosOrden.titulo} codigo={primitivosOrden.codigo} salida={primitivosOrden.salida} inicio={primitivosOrden.inicio} explicacion={primitivosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena las líneas tal como aparecerían en la consola. Antes de comprobar, piensa qué valor tiene cada una.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={primitivosDetective.id} numero={3} titulo={primitivosDetective.titulo} codigo={primitivosDetective.codigo} error={primitivosDetective.error} culpable={primitivosDetective.culpable} arreglos={primitivosDetective.arreglos} hallazgo={primitivosDetective.hallazgo} pista={primitivosDetective.pista}>
+  <div slot="enunciado">
+    <p>Este programa busca un usuario que no existe y se rompe. Encuentra la línea que falla y elige el arreglo correcto. Cuidado: uno de los arreglos parece correcto pero no lo es.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={primitivosLab.id} numero={4} titulo={primitivosLab.titulo} inicial={primitivosLab.inicial} verificaciones={primitivosLab.verificaciones} pistas={primitivosLab.pistas} solucion={primitivosLab.solucion} explicacion={primitivosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Al cambiar <code>copia.puntos</code>, también cambia <code>original.puntos</code>. Arregla la línea 2 para que <code>copia</code> sea un objeto nuevo y el original se quede en 10.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

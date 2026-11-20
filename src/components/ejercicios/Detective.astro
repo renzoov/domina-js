@@ -1,0 +1,84 @@
+---
+import Ejercicio from './Ejercicio.astro';
+import { resaltar } from '../../lib/resaltar';
+
+interface Arreglo { texto: string; correcta: boolean; porque: string }
+interface Props {
+  id: string;
+  numero: number;
+  titulo: string;
+  codigo: string;
+  error: string;
+  /** Línea culpable (1-based) */
+  culpable: number;
+  arreglos: Arreglo[];
+  /** Qué se explica al encontrar la línea */
+  hallazgo: string;
+  /** Pista si toca una línea equivocada */
+  pista: string;
+}
+const { id, numero, titulo, codigo, error, culpable, arreglos, hallazgo, pista } = Astro.props;
+const lineas = resaltar(codigo);
+---
+<Ejercicio id={id} numero={numero} formato="Detective" titulo={titulo}>
+  <slot name="enunciado" slot="enunciado" />
+  <div class="detective" data-detective data-id={id} data-culpable={culpable} data-hallazgo={hallazgo} data-pista={pista}>
+    <div class="traza caja" role="group" aria-label="Error en la consola">
+      <p class="rotulo">Consola</p>
+      <pre>{error}</pre>
+    </div>
+    <p class="fase" data-fase1>Paso 1: toca la línea de código que causa el error.</p>
+    <div class="codigo caja" role="group" aria-label="Código: elige la línea culpable">
+      {lineas.map((html, i) => (
+        <button type="button" class="l" data-l={i + 1} aria-label={`Línea ${i + 1}: ${codigo.split('\n')[i]?.trim() || 'vacía'}`}><i aria-hidden="true">{i + 1}</i><code set:html={html || ' '} /></button>
+      ))}
+    </div>
+    <p class="feedback" data-feedback aria-live="polite"></p>
+    <div class="arreglos" data-arreglos hidden>
+      <p class="fase">Paso 2: ¿cómo lo arreglas?</p>
+      <div class="opciones">
+        {arreglos.map((a, k) => (
+          <button type="button" class="btn opcion" data-arreglo={k} data-correcta={a.correcta ? '1' : '0'} data-porque={a.porque}><Fragment set:html={a.texto} /></button>
+        ))}
+      </div>
+      <p class="feedback" data-feedback2 aria-live="polite"></p>
+    </div>
+  </div>
+</Ejercicio>
+
+<script>
+  import { iniciarDetectives } from '../../scripts/ejercicios';
+  iniciarDetectives();
+</script>
+
+<style>
+  .detective { display: flex; flex-direction: column; gap: 14px; }
+  .traza { padding: 10px 14px; border-color: var(--red); background: rgba(240, 138, 126, 0.06); }
+  .traza pre { margin: 6px 0 0; font: 400 0.8rem/1.6 var(--mono); color: var(--red); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .fase { margin: 0; font-weight: 700; color: var(--chalk); }
+  .codigo { display: flex; flex-direction: column; padding: 8px 0; background: rgba(0, 0, 0, 0.14); overflow-x: auto; }
+  .l {
+    display: flex; align-items: baseline;
+    width: 100%;
+    padding: 0 12px 0 0;
+    background: none; border: 0; text-align: left;
+    font: 400 0.82rem/1.5rem var(--mono); color: var(--chalk);
+    cursor: pointer;
+    white-space: pre;
+  }
+  .l:hover { background: var(--chalk-08); }
+  .l i { flex: none; width: 34px; padding-right: 12px; text-align: right; font-style: normal; color: var(--azul); opacity: 0.75; }
+  .l code { font: inherit; border: 0; padding: 0; }
+  .l.mal { background: rgba(240, 138, 126, 0.12); }
+  .l.bien { background: linear-gradient(transparent 80%, var(--y-90) 80% 92%, transparent 92%); }
+  .l.bien i { color: var(--y); opacity: 1; }
+  .opciones { display: grid; gap: 8px; margin-top: 10px; }
+  .opcion { justify-content: flex-start; text-align: left; font-weight: 400; line-height: 1.4; }
+  .opcion :global(code) { font-family: var(--mono); color: var(--chalk); }
+  .opcion.bien { border-color: var(--ok); }
+  .opcion.mal { border-color: var(--red); }
+  .feedback { margin: 0; min-height: 1.5em; font-size: 0.95rem; color: var(--chalk-70); }
+  .feedback:empty { min-height: 0; }
+  .feedback :global(.no) { color: var(--red); font-weight: 700; }
+  .feedback :global(.ok) { color: var(--ok); font-weight: 700; }
+</style>

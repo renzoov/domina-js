@@ -1,0 +1,183 @@
+---
+titulo: Sintaxis básica
+seccion: fundamentos
+tema: sintaxis-basica
+minutos: 11
+resumen: Las reglas de escritura de JavaScript, como expresiones y sentencias, bloques, el punto y coma y su inserción automática, mayúsculas, nombres válidos, palabras reservadas, comentarios y Unicode.
+intro: 'Todo lenguaje tiene una <u>gramática</u>: reglas sobre cómo se escriben las cosas para que el motor las entienda. En JavaScript son pocas, pero conviene conocerlas bien, porque cuando se rompen el error puede ser ruidoso o, peor, <u>silencioso</u>.'
+pizarron: asiReturn
+mostrarPila: false
+guia:
+  titulo: Un punto y coma invisible
+  texto: 'El pizarrón muestra la trampa más famosa de la sintaxis de JavaScript. Pulsa <b>Siguiente</b> y fíjate en la línea 2: el motor agrega un punto y coma que no está escrito, y la función devuelve algo inesperado.'
+ejercicios: [sintaxis-auto, sintaxis-orden, sintaxis-detective, sintaxis-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { sintaxisAuto, sintaxisOrden, sintaxisDetective, sintaxisLab } from '../../data/ejercicios/fundamentos';
+
+## Expresiones y sentencias
+
+Un programa en JavaScript está hecho de dos tipos de piezas:
+
+- Una **expresión** es cualquier trozo de código que **produce un valor**: `2 + 3` vale `5`, `"hola"` vale el texto hola, `edad > 18` vale `true` o `false`.
+- Una **sentencia** es una **instrucción completa**: declara algo, decide algo o repite algo. Casi siempre contiene expresiones.
+
+```js
+const precio = 100;             // sentencia (con la expresión 100)
+const total = precio * 1.25;    // sentencia (con la expresión precio * 1.25)
+console.log(total);             // sentencia (una llamada a función)
+```
+
+Vas a leer estas dos palabras en todos lados. Una forma rápida de distinguirlas: si puedes ponerlo dentro de `console.log(…)` y ver un valor, es una expresión.
+
+## Bloques
+
+Las llaves `{ }` agrupan varias sentencias en un **bloque**. Vas a verlas en funciones, condicionales y bucles:
+
+```js
+if (true) {
+  console.log("Dentro del bloque");
+  console.log("Sigo dentro");
+}
+console.log("Fuera del bloque");
+```
+
+La sangría (los espacios al principio de la línea) no la necesita el motor, pero es imprescindible para las personas: muestra de un vistazo qué está dentro de qué. Usa siempre dos espacios por nivel, que es lo más común en JavaScript.
+
+## El punto y coma y la inserción automática
+
+Cada sentencia termina con `;`. Si lo olvidas, el motor muchas veces lo agrega por ti. Este mecanismo se llama **inserción automática de punto y coma** (en inglés, ASI). La regla general es simple: si una línea termina y la siguiente no puede continuar la misma sentencia, el motor corta ahí.
+
+El problema es que a veces la siguiente línea **sí** puede continuar, y el motor junta dos líneas que tú pensabas separadas:
+
+```js
+const saludo = "hola"
+[1, 2, 3].forEach((n) => console.log(n))
+```
+
+Ejecuta este ejemplo: no imprime los números. El motor lee las dos líneas como una sola, `"hola"[1, 2, 3].forEach(…)`, y se rompe.
+
+Y al revés: después de `return`, `break`, `continue` y `throw`, el salto de línea **siempre** corta, aunque tú quisieras seguir. Es la trampa del pizarrón de arriba.
+
+<Nota>
+  Pon siempre el punto y coma al final de cada sentencia, y abre las llaves en la misma línea: `return {`, `if (x) {`, `function f() {`. Con esas dos costumbres, la inserción automática deja de darte sorpresas.
+</Nota>
+
+## Mayúsculas y espacios
+
+JavaScript **distingue mayúsculas de minúsculas**. `nombre`, `Nombre` y `NOMBRE` son tres cosas distintas, y `Console.log` no existe:
+
+```js
+const nombre = "Ana";
+console.log(nombre);   // Ana
+console.log(Nombre);   // ReferenceError: Nombre is not defined
+```
+
+Los espacios y los saltos de línea, en cambio, casi nunca importan. `const x=1+2;` y `const x = 1 + 2;` son exactamente lo mismo para el motor. Escribe pensando en quien lo va a leer.
+
+## Nombres: los identificadores
+
+Los nombres que inventas para variables, funciones y clases se llaman **identificadores**. Sus reglas:
+
+- Pueden tener letras, números, `_` y `$`.
+- **No pueden empezar con un número**.
+- No pueden llevar espacios ni guiones: `mi-nombre` se lee como `mi - nombre`, una resta.
+- No pueden ser **palabras reservadas** del lenguaje.
+- Pueden llevar letras de cualquier idioma, incluidas tildes y la ñ: `año` es un nombre válido.
+
+| Nombre | ¿Válido? | Por qué |
+|---|---|---|
+| `edad` | Sí | Letras |
+| `_privado`, `$elemento` | Sí | Pueden empezar con `_` o `$` |
+| `año2026` | Sí | La ñ es una letra; el número no está al principio |
+| `2doLugar` | No | Empieza con un número |
+| `mi-nombre` | No | El guion se lee como una resta |
+| `class` | No | Es una palabra reservada |
+
+Además de las reglas hay **convenciones** que sigue casi todo el mundo:
+
+- **camelCase** para variables y funciones: `precioTotal`, `calcularEdad`.
+- **PascalCase** para clases: `Usuario`, `CarritoDeCompras`.
+- **MAYÚSCULAS_CON_GUION_BAJO** para constantes fijas de configuración: `MAX_INTENTOS`.
+
+<Nota tipo="consejo">
+  Los nombres en español con tilde funcionan, pero en proyectos compartidos casi todo el mundo escribe los nombres sin tildes, o directamente en inglés. Elige un criterio y mantenlo en todo el proyecto.
+</Nota>
+
+## Palabras reservadas
+
+Algunas palabras tienen un significado especial y no puedes usarlas como nombres: `break`, `case`, `catch`, `class`, `const`, `continue`, `debugger`, `default`, `delete`, `do`, `else`, `export`, `extends`, `false`, `finally`, `for`, `function`, `if`, `import`, `in`, `instanceof`, `new`, `null`, `return`, `super`, `switch`, `this`, `throw`, `true`, `try`, `typeof`, `var`, `void`, `while`, `with` y `yield`.
+
+Otras, como `let`, `static`, `await` o `async`, están reservadas solo en ciertos contextos. No hace falta que las memorices: el editor las colorea distinto y, si usas una por error, el motor te avisa.
+
+## Comentarios
+
+Ya los conoces: `//` comenta hasta el final de la línea y `/* … */` comenta un bloque. Hay una tercera forma que vas a ver mucho en código profesional: los comentarios **JSDoc**, que empiezan con `/**` y documentan funciones:
+
+```js
+/**
+ * Calcula el precio con un 25 % de impuestos.
+ * @param {number} precio - El precio sin impuestos.
+ * @returns {number} El precio final.
+ */
+function conImpuestos(precio) {
+  return precio * 1.25;
+}
+
+console.log(conImpuestos(100));
+```
+
+Los editores leen esos comentarios y te muestran la ayuda al usar la función. Comenta el **por qué**, no el **qué**: el código ya dice qué hace.
+
+## Unicode: más allá del inglés
+
+El código JavaScript se escribe en **Unicode**, el estándar que incluye los caracteres de todos los idiomas. Por eso los textos pueden llevar tildes, eñes y emojis sin problema:
+
+```js
+console.log("¡Hola, España! 👋");
+console.log("日本語も大丈夫");
+```
+
+Los emojis sirven en los textos, pero no en los nombres: `const 🍕 = 1;` es un error. Vas a ver más detalles de Unicode, como por qué algunos emojis "miden" 2, en el tema de Texto.
+
+## Resumen
+
+- Una **expresión** produce un valor; una **sentencia** es una instrucción completa.
+- Las llaves `{ }` forman **bloques**; la sangría es para las personas.
+- Termina cada sentencia con `;` y abre las llaves en la misma línea, así la **inserción automática** no te sorprende.
+- JavaScript **distingue mayúsculas**: `total` y `Total` son distintos.
+- Los **identificadores** no empiezan con número, no llevan guiones y no son palabras reservadas. Usa camelCase.
+- Comenta el **por qué**. Los textos admiten cualquier carácter **Unicode**.
+
+<Practica>
+
+<Autoevaluacion id={sintaxisAuto.id} numero={1} titulo={sintaxisAuto.titulo} preguntas={sintaxisAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={sintaxisOrden.id} numero={2} titulo={sintaxisOrden.titulo} codigo={sintaxisOrden.codigo} salida={sintaxisOrden.salida} inicio={sintaxisOrden.inicio} explicacion={sintaxisOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena las líneas tal como aparecerían en la consola. Fíjate en las mayúsculas y en los comentarios.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={sintaxisDetective.id} numero={3} titulo={sintaxisDetective.titulo} codigo={sintaxisDetective.codigo} error={sintaxisDetective.error} culpable={sintaxisDetective.culpable} arreglos={sintaxisDetective.arreglos} hallazgo={sintaxisDetective.hallazgo} pista={sintaxisDetective.pista}>
+  <div slot="enunciado">
+    <p>Este programa no imprime nada y la consola muestra un error de sintaxis. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={sintaxisLab.id} numero={4} titulo={sintaxisLab.titulo} inicial={sintaxisLab.inicial} verificaciones={sintaxisLab.verificaciones} pistas={sintaxisLab.pistas} solucion={sintaxisLab.solucion} explicacion={sintaxisLab.explicacion}>
+  <div slot="enunciado">
+    <p>Este código tiene dos nombres inválidos y no se ejecuta. Arréglalos usando camelCase para que imprima <code>Ana 30</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>domina-js — Cartel de lucha libre</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* una sola rampa de 11 tonos para todos los neutros */
+  --n0:#0E0B12;--n1:#16121B;--n2:#1E1924;--n3:#28222F;--n4:#342D3C;--n5:#433B4C;--n6:#5A5163;--n7:#766D80;--n8:#9C94A4;--n9:#C9C2CC;--n10:#F4EFE6;
+  --y:#F7DF1E;--m:#E5157A;--c:#19B5C9;
+  --post:'Anton',Impact,sans-serif;--read:'Literata',Georgia,serif;--mono:'JetBrains Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+body{background:var(--n0);color:var(--n10);font-family:var(--read)}
+/* ---------- marco: el cartel ---------- */
+.poster{height:286px;position:relative;padding:22px 40px 0;background:var(--n1) radial-gradient(var(--n3) 1.1px,transparent 1.7px) 0 0/7px 7px;box-shadow:0 5px 0 var(--m),0 9px 0 var(--c)}
+.bill{display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:14px;text-decoration:none}
+.logo b{font:400 34px/0.9 var(--post);color:var(--n10);letter-spacing:.02em;text-shadow:2px 2px 0 var(--m)}
+.logo b span{color:var(--n0);background:var(--n10);padding:0 5px;margin-left:3px;text-shadow:none;box-shadow:3px 3px 0 var(--c)}
+.logo small{display:block;font:500 9.5px/1 var(--mono);letter-spacing:.22em;color:var(--n8);margin-top:7px}
+.marquee{font:400 11px/1 var(--mono);letter-spacing:.2em;color:var(--n8);text-transform:uppercase}
+.marquee i{font-style:normal;color:var(--m);margin:0 10px}
+.estelar{display:inline-block;margin-top:22px;background:var(--m);color:var(--n10);font:400 30px/1 var(--post);letter-spacing:.06em;padding:6px 16px 5px;transform:rotate(-2deg);box-shadow:5px 4px 0 var(--c)}
+h1{margin:12px 0 0 -4px;font:400 134px/.92 var(--post);text-transform:uppercase;letter-spacing:.005em;color:var(--y);text-shadow:6px 4px 0 var(--m),-3px -2px 0 rgba(25,181,201,.9)}
+.seal{position:absolute;right:52px;top:96px;width:168px;height:168px;border-radius:50%;border:3px solid var(--c);outline:2px solid var(--c);outline-offset:5px;display:grid;place-content:center;text-align:center;transform:rotate(9deg);background:var(--n0)}
+.seal b{display:block;font:400 54px/.9 var(--post);color:var(--n10);text-shadow:3px 2px 0 var(--m)}
+.seal span{font:400 15px/1.1 var(--post);letter-spacing:.08em;color:var(--c);text-transform:uppercase}
+/* ---------- arena ---------- */
+.ring{display:grid;grid-template-columns:214px 548px 1fr;gap:42px;padding:34px 40px 0;height:614px}
+.lbl{font:700 10.5px/1 var(--mono);letter-spacing:.22em;color:var(--n7);text-transform:uppercase;display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.lbl::after{content:"";flex:1;height:1px;background:var(--n4)}
+nav ol{list-style:none;margin:0;padding:0}
+nav li{display:flex;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--n3);font:400 17px/1.15 var(--post);letter-spacing:.03em;text-transform:uppercase;color:var(--n8)}
+nav li em{font-style:normal;color:var(--n6);width:18px;flex:none}
+nav li.done{color:var(--n6)} nav li.done em::after{content:"✓";margin-left:2px;color:var(--c)}
+nav li.now{color:var(--n10);border-bottom-color:var(--m);position:relative}
+nav li.now em{color:var(--m)}
+nav li.now::after{content:"ESTELAR";position:absolute;right:0;top:9px;font:700 8.5px/1 var(--mono);letter-spacing:.14em;background:var(--m);color:var(--n10);padding:3px 5px}
+.prog{margin-top:20px;font:400 11px/1.4 var(--mono);color:var(--n7);letter-spacing:.06em}
+.prog i{display:block;height:6px;background:var(--n3);margin-top:8px;position:relative}
+.prog i::before{content:"";position:absolute;inset:0 71% 0 0;background:var(--n8)}
+/* columna de lectura: calma */
+.read .meta{font:400 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--n8);margin:0 0 22px}
+.read .meta i{font-style:normal;color:var(--m);margin:0 8px}
+.read p{font-size:17px;line-height:1.62;margin:0 0 18px;max-width:64ch;color:var(--n10)}
+.read p.lead{font-size:19px;line-height:1.58}
+.read p.dim{color:var(--n9)}
+.read h2{font:600 22px/1.3 var(--read);margin:30px 0 10px;color:var(--n10)}
+.read code{font:400 14.5px var(--mono);color:var(--n10);background:var(--n3);padding:1px 5px}
+.rule{border-left:4px solid var(--c);background:var(--n2);padding:12px 18px;margin-top:22px;font-size:16px;line-height:1.55;color:var(--n9)}
+.rule b{display:block;font:700 10px/1 var(--mono);letter-spacing:.2em;color:var(--c);margin-bottom:8px}
+/* el combate (visualizador) */
+.bout{background:var(--n2);border:2px solid var(--n4);height:548px;display:flex;flex-direction:column}
+.bout header{display:flex;align-items:center;justify-content:space-between;background:var(--n0);padding:9px 16px 8px;border-bottom:2px solid var(--n4)}
+.bout header h3{margin:0;font:400 22px/1 var(--post);letter-spacing:.05em;text-transform:uppercase}
+.bout header h3 i{font-style:normal;color:var(--m);font-size:15px;margin:0 8px;vertical-align:2px}
+.bout header span{font:700 11px/1 var(--mono);letter-spacing:.16em;color:var(--n8)}
+.bout header span b{color:var(--y)}
+.g2{display:grid;grid-template-columns:1fr 178px;gap:14px;padding:14px 16px 0}
+pre{margin:0;background:var(--n1);border:1px solid var(--n4);padding:9px 0;font:400 12.5px/18.5px var(--mono);color:var(--n10)}
+pre .l{display:block;padding-right:10px;white-space:pre}
+pre .l i{display:inline-block;width:32px;padding-right:12px;text-align:right;font-style:normal;color:var(--n6)}
+.k{color:var(--c)}.s{color:var(--m)}.p{color:var(--n7)}.f{font-weight:700}
+pre .l.on{background:var(--y);color:var(--n0)} pre .l.on *{color:var(--n0)!important}
+pre .l.call{background:var(--n3);box-shadow:inset 3px 0 0 var(--y)} pre .l.call i{color:var(--y)}
+.stack{display:flex;flex-direction:column;isolation:isolate}
+.hist{font:400 10px/1.5 var(--mono);color:var(--n7);margin-bottom:auto}
+.hist div{border:1px dashed var(--n5);padding:4px 7px;margin-bottom:5px}
+.hist .h1{opacity:.4}.hist .h2{opacity:.65}
+.fr{position:relative;padding:8px 10px 7px;font:700 13.5px/1.2 var(--mono);margin-top:9px}
+.fr small{display:block;font:400 10px/1.35 var(--mono);margin-top:3px}
+.fr.new{background:var(--y);color:var(--n0)} .fr.new small{color:var(--n4)}
+.fr.new::after{content:"";position:absolute;inset:0;transform:translate(5px,4px);background:var(--m);z-index:-1}
+.fr.old{background:var(--n3);color:var(--n10);border:1px solid var(--n5)} .fr.old small{color:var(--n8)}
+.fr.old::after{content:"";position:absolute;inset:-1px;transform:translate(-6px,-6px);border:1px solid var(--n6);opacity:.55;z-index:-1}
+.base{margin-top:9px;border-top:3px double var(--n6);padding-top:5px;font:400 9.5px/1 var(--mono);letter-spacing:.18em;color:var(--n7);text-align:center}
+.cons{margin:12px 16px 0;background:var(--n0);border:1px solid var(--n4);padding:9px 12px;font:400 12.5px/1.4 var(--mono);color:var(--n6);display:flex;gap:14px;align-items:center}
+.cons b{font-weight:700;font-size:10px;letter-spacing:.2em;color:var(--n7)}
+.cons u{text-decoration:none;display:inline-block;width:8px;height:14px;background:var(--n5);vertical-align:-2px;margin-left:4px}
+.exp{margin:12px 16px 0;font-size:15.5px;line-height:1.5;color:var(--n9)}
+.exp b{font:700 14px var(--mono);color:var(--n0);background:var(--y);padding:0 4px}
+.exp code{font:400 14px var(--mono);color:var(--n10)}
+.tl{display:flex;gap:5px;margin:auto 16px 10px}
+.tl span{flex:1;height:26px;display:grid;place-items:center;font:400 14px/1 var(--post);border:1px solid var(--n4);color:var(--n6)}
+.tl span.done{background:var(--n4);color:var(--n9);border-color:var(--n5);opacity:.75}
+.tl span.now{background:var(--y);color:var(--n0);border-color:var(--y);box-shadow:3px 3px 0 var(--m)}
+.ctl{display:flex;gap:8px;margin:0 16px}
+.ctl a{font:400 16px/1 var(--post);letter-spacing:.06em;text-transform:uppercase;padding:9px 16px 8px;border:2px solid var(--n5);color:var(--n10);text-decoration:none}
+.ctl a.go{background:var(--n10);color:var(--n0);border-color:var(--n10);box-shadow:4px 3px 0 var(--c)}
+.ctl a.re{margin-left:auto;border-color:transparent;color:var(--n8)}
+</style></head>
+<body>
+<header class="poster">
+  <div class="bill">
+    <a class="logo" href="#" aria-label="domina-js">
+      <svg width="54" height="62" viewBox="0 0 56 64" aria-hidden="true">
+        <path d="M30 4C14 4 6 16 6 32c0 16 10 29 24 30 14-1 24-14 24-30C54 16 46 4 30 4Z" fill="#E5157A"/>
+        <path d="M28 2C12 2 4 14 4 30c0 16 10 29 24 30 14-1 24-14 24-30C52 14 44 2 28 2Z" fill="#F7DF1E"/>
+        <path d="M28 3v22" stroke="#19B5C9" stroke-width="5" opacity=".9"/>
+        <path d="M9 27c5-7 12-6 16 1-6 4-12 4-16-1Z" fill="#0E0B12"/><path d="M47 27c-5-7-12-6-16 1 6 4 12 4 16-1Z" fill="#0E0B12"/>
+        <path d="M20 44l-5 4 5 4M36 44l5 4-5 4" stroke="#0E0B12" stroke-width="3" fill="none" stroke-linecap="square"/>
+        <path d="M30 42l-4 12" stroke="#0E0B12" stroke-width="3"/>
+      </svg>
+      <div><b>DOMINA<span>JS</span></b><small>FUNCIONES DE JAVASCRIPT · EN ESPAÑOL</small></div>
+    </a>
+    <div class="marquee">Arena domina-js<i>✦</i>Sección 4 · Cómo se ejecuta JS por dentro<i>✦</i>Entrada libre</div>
+  </div>
+  <div class="estelar">¡FUNCIÓN ESTELAR!</div>
+  <h1>La pila de llamadas</h1>
+  <div class="seal"><span>A una caída</span><b>8 PASOS</b><span>sin límite de tiempo</span></div>
+</header>
+<main class="ring">
+  <nav>
+    <p class="lbl">Cartelera · Sección 4</p>
+    <ol>
+      <li class="done"><em>1</em>Motor y runtime</li>
+      <li class="now"><em>2</em>La pila de llamadas</li>
+      <li><em>3</em>Contextos de ejecución y hoisting</li>
+      <li><em>4</em>Scope y cadena de scopes</li>
+      <li><em>5</em>Closures</li>
+      <li><em>6</em>Recursión y stack overflow</li>
+      <li><em>7</em>Memoria y recolector de basura</li>
+    </ol>
+    <div class="prog">Sección 4 · 2 de 7 funciones<i></i></div>
+  </nav>
+  <article class="read">
+    <p class="meta">Lección 2 de 7<i>/</i>9 min<i>/</i>4 ejercicios</p>
+    <p class="lead">JavaScript ejecuta tu código en un solo hilo: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <em>pila de llamadas</em> (call stack). La última función que entra es la primera que sale, como una pila de platos.</p>
+    <h2>Una función sube, la otra espera</h2>
+    <p class="dim">Mira el combate de la derecha. Cuando <code>mostrar()</code> llama a <code>saludar()</code>, el motor no las corre a la vez: deja a <code>mostrar()</code> en pausa, sube a <code>saludar()</code> encima y solo vuelve cuando esta termina.</p>
+    <div class="rule"><b>REGLA DE LA ARENA</b>Última en entrar, primera en salir. En inglés lo verás como LIFO: <em>last in, first out</em>.</div>
+  </article>
+  <section class="bout" aria-label="Visualizador de la pila">
+    <header><h3>mostrar()<i>vs</i>saludar()</h3><span>PASO <b>3</b> DE 8</span></header>
+    <div class="g2">
+<pre><span class="l on"><i>1</i><span class="k">function</span> <span class="f">saludar</span>(nombre) {</span><span class="l"><i>2</i>  <span class="k">return</span> <span class="s">`Hola, ${nombre}!`</span>;</span><span class="l"><i>3</i><span class="p">}</span></span><span class="l"><i>4</i></span><span class="l"><i>5</i><span class="k">function</span> <span class="f">mostrar</span>() {</span><span class="l call"><i>6</i>  <span class="k">const</span> msg = saludar(<span class="s">"Mundo"</span>);</span><span class="l"><i>7</i>  console.log(msg);</span><span class="l"><i>8</i><span class="p">}</span></span><span class="l"><i>9</i></span><span class="l"><i>10</i>mostrar();</span><span class="l"><i>11</i></span></pre>
+      <div class="stack" aria-label="Pila, de arriba abajo">
+        <div class="hist"><div class="h1">P1 · pila vacía → llama mostrar()</div><div class="h2">P2 · entra mostrar()</div></div>
+        <div class="fr new">saludar()<small>P3 · nuevo · nombre = "Mundo"</small></div>
+        <div class="fr old">mostrar()<small>P2 · en pausa · línea 6</small></div>
+        <div class="base">FONDO DE LA PILA</div>
+      </div>
+    </div>
+    <div class="cons"><b>CONSOLA</b><span>vacía — todavía no se imprime nada<u></u></span></div>
+    <p class="exp"><b>saludar()</b> se apila encima de <code>mostrar()</code>. El motor suspende mostrar() y ejecuta saludar().</p>
+    <div class="tl" aria-label="Pasos"><span class="done">1</span><span class="done">2</span><span class="now">3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span></div>
+    <div class="ctl"><a href="#">← Anterior</a><a class="go" href="#">Siguiente →</a><a class="re" href="#">↺ Reiniciar</a></div>
+  </section>
+</main>
+</body></html>

@@ -1,0 +1,22 @@
+{
+  "id": "r1-demoscene",
+  "kind": "grounded",
+  "label": "Pantalla de título",
+  "lineage": "Intros de la demoscene (la referencia cracktro que te gustó)",
+  "thesis": "Texto nítido y quieto sobre un vacío negro, con campos de puntos que derivan detrás a distintas velocidades y un cursor amarillo que parpadea.",
+  "palette": [
+    "#000000",
+    "#F7DF1E",
+    "#EDE6D6",
+    "#6B6B6B",
+    "#2E2E2E"
+  ],
+  "materials": [
+    "fuente pixel solo en marco y etiquetas",
+    "campos de estrellas por capas",
+    "cursor parpadeante"
+  ],
+  "viewport": "Logo y título en pixel sobre el vacío con estrellas detrás; la columna de lectura usa una sans clara (no pixel); el visualizador apila marcos por profundidad: más profundo, más brillante.",
+  "risk": "La fuente pixel no sirve para leer: va solo en el marco, títulos y etiquetas.",
+  "html": ".impeccable/mocks/decision/r1-demoscene.html"
+}

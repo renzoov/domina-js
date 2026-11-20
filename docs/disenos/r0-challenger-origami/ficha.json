@@ -1,0 +1,25 @@
+{
+  "id": "challenger-origami",
+  "kind": "challenger",
+  "catalogId": "paper-folds-pleats-deployable-orizuru-crane-sequence",
+  "label": "Hoja de plegado",
+  "verdict": "competitive",
+  "lineage": "Instrucciones de origami paso a paso",
+  "thesis": "Aprender JS como seguir una hoja de plegado: pasos numerados en el margen, un punto dorado en el paso actual, una sola hoja que se transforma.",
+  "palette": [
+    "#C8372D",
+    "#FBFAF7",
+    "#1C1A19",
+    "#C9A227"
+  ],
+  "materials": [
+    "papel con fibra",
+    "pliegues de valle y monte como líneas",
+    "numeración en columna de margen"
+  ],
+  "viewport": "Marco bermellón con la hoja blanca al centro; los pasos de la lección numerados en una columna de margen; el visualizador muestra cada paso como un diagrama de plegado.",
+  "case": "Gana en claridad (el diagrama numerado es el formato natural del paso a paso); pierde en identificación por ser un mundo ajeno a JS.",
+  "risk": "Material japonés en un sitio en español puede sentirse prestado; bermellón + papel blanco roza lo editorial genérico.",
+  "html": ".impeccable/mocks/decision/challenger-origami.html",
+  "hero": "https://impeccable.style/worlds/cards/paper-folds-pleats-deployable-orizuru-crane-sequence-hero.webp"
+}

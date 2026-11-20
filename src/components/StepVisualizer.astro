@@ -1,0 +1,291 @@
+---
+import Icono from './Icono.astro';
+import { resaltar } from '../lib/resaltar';
+import type { DatosVisualizador } from '../lib/visualizador';
+
+interface Props {
+  id: string;
+  titulo?: string;
+  datos: DatosVisualizador;
+  /** En el teléfono, fijar los controles al pie mientras el pizarrón está a la vista */
+  fijarControles?: boolean;
+  /** false oculta la pila y la gráfica de profundidad (lecciones que todavía no la explican) */
+  mostrarPila?: boolean;
+  /** 'variables' reutiliza la columna para mostrar variables y sus valores */
+  modo?: 'pila' | 'variables';
+}
+const { id, titulo = 'En el pizarrón', datos, fijarControles = true, mostrarPila = true, modo = 'pila' } = Astro.props;
+// Marco resaltado: el que pide «destacar», o el de arriba
+const resaltado = (pila: { destacar?: boolean }[]) => { const k = pila.findIndex((m) => m.destacar); return k >= 0 ? k : pila.length - 1; };
+const lineas = resaltar(datos.codigo);
+const pasos = datos.pasos;
+const total = pasos.length;
+const inicial = pasos[0];
+
+// Gráfica de profundidad: un punto por paso.
+const maxProf = Math.max(1, ...pasos.map((p) => p.pila.length));
+const W = 1000;
+const H = 70;
+const x = (i: number) => (total === 1 ? W / 2 : (i * W) / (total - 1));
+const y = (d: number) => H - 6 - (d / maxProf) * (H - 18);
+const puntos = pasos.map((p, i) => `${x(i).toFixed(1)},${y(p.pila.length).toFixed(1)}`).join(' ');
+const nombresEvento: Record<string, string> = {
+  inicio: 'inicio', entra: 'entra a la pila', sale: 'sale de la pila', ejecuta: 'ejecuta',
+  imprime: 'imprime', error: 'error', fin: 'fin',
+};
+const limpiar = (html: string) => html.replace(/<[^>]+>/g, '');
+const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e === 'fin' ? 'sale' : undefined);
+---
+<section class:list={['viz', `modo-${modo}`, { fijos: fijarControles, 'sin-pila': !mostrarPila }]} id={id} aria-label={titulo} data-visualizador>
+  <header class="vhead">
+    <h3>{titulo}</h3>
+    <span class="contador" aria-hidden="true">Paso <b data-n>1</b> de {total}</span>
+  </header>
+
+  <div class="fila">
+    <pre class="codigo caja" aria-label="Código del ejemplo"><code>{lineas.map((html, i) => (
+      <span class:list={['l', { on: inicial.lineas.includes(i + 1), espera: inicial.espera?.includes(i + 1) }]} data-l={i + 1}><i aria-hidden="true">{i + 1}</i><Fragment set:html={html || ' '} /></span>
+    ))}</code></pre>
+
+    <div class="pila">
+      <div class="pila-cab">
+        {modo === 'pila'
+          ? <p class="rotulo cima">Pila<Icono nombre="subir" />cima</p>
+          : <p class="rotulo">Variables</p>}
+        <span class="anotacion" data-anotacion data-flecha={flechaDe(inicial.evento)} aria-hidden="true">{inicial.anotacion}</span>
+      </div>
+      <ol class="marcos" data-pila aria-label={modo === 'pila' ? 'Pila de llamadas, de abajo hacia arriba' : 'Variables y sus valores'}>
+        {inicial.pila.map((m, k) => (
+          <li class:list={['marco', 'caja', { cima: resaltado(inicial.pila) === k, objeto: m.tipo === 'objeto' }]}>{m.nombre}{m.nota && <small>{m.nota}</small>}</li>
+        ))}
+      </ol>
+      <div class="suelo" aria-hidden="true"></div>
+      <p class="vacia" data-vacia hidden={inicial.pila.length > 0}>{modo === 'pila' ? 'La pila está vacía.' : 'Todavía no hay variables.'}</p>
+    </div>
+  </div>
+
+  <div class="consola caja">
+    <span class="rotulo">Consola</span>
+    <output data-consola aria-label="Salida de la consola">{inicial.consola.length ? inicial.consola.join('\n') : '(vacía)'}</output>
+  </div>
+
+  <div class="mensaje">
+    <p class="explicacion" data-texto aria-live="polite"><Fragment set:html={inicial.texto} /></p>
+    <div class="prediccion caja" data-prediccion hidden>
+      <p class="pregunta"><span class="mano">Predice</span> <span data-pregunta></span></p>
+      <div class="opciones" data-opciones></div>
+      <p class="resultado" data-resultado aria-live="polite"></p>
+    </div>
+  </div>
+
+  <div class="tiempo">
+    <p class="rotulo leyenda" aria-hidden="true">Profundidad de la pila</p>
+    <svg class="profundidad" viewBox={`-12 0 ${W + 24} ${H}`} preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <clipPath id={`${id}-clip`}><rect data-clip x="-12" y="0" width={12 + 12} height={H} /></clipPath>
+      </defs>
+      <polyline class="sombra" points={puntos} />
+      <polyline class="trazo" points={puntos} clip-path={`url(#${id}-clip)`} />
+      <circle data-marca cx={x(0)} cy={y(inicial.pila.length)} r="7" />
+    </svg>
+    <ol class="linea" aria-label="Pasos">
+      {pasos.map((p, i) => (
+        <li>
+          <button type="button" class:list={['punto', p.evento ?? 'ejecuta']} data-ir={i} aria-label={`Paso ${i + 1}: ${nombresEvento[p.evento ?? 'ejecuta']}`} aria-current={i === 0 ? 'step' : undefined}>{i + 1}</button>
+        </li>
+      ))}
+    </ol>
+  </div>
+
+  <div class="ctl">
+    <button type="button" class="btn" data-anterior disabled><Icono nombre="izq" />Anterior</button>
+    <button type="button" class="btn btn--y" data-siguiente>Siguiente<Icono nombre="der" /></button>
+    <button type="button" class="btn btn--quiet reiniciar" data-reiniciar><Icono nombre="reiniciar" /><span class="rein-txt">Reiniciar</span></button>
+  </div>
+  <p class="atajo">Con el foco aquí también puedes avanzar y retroceder con las flechas del teclado.</p>
+
+  <details class="alt">
+    <summary>Ver todos los pasos en texto</summary>
+    <ol>
+      {pasos.map((p, i) => (
+        <li id={`${id}-paso-${i + 1}-texto`}>
+          <a href={`#${id}-paso-${i + 1}`}>Paso {i + 1}</a>: {limpiar(p.texto)} <span class="pila-txt">{modo === 'pila' ? `Pila: ${p.pila.length ? p.pila.map((m) => m.nombre).join(' → ') : 'vacía'}.` : `Variables: ${p.pila.length ? p.pila.map((m) => `${m.nombre} ${m.nota ?? ''}`.trim()).join(', ') : 'ninguna'}.`}</span>
+        </li>
+      ))}
+    </ol>
+  </details>
+
+  <script type="application/json" data-datos set:html={JSON.stringify(datos).replace(/</g, '\\u003c')} />
+</section>
+
+<script>
+  import { iniciarVisualizadores } from '../scripts/visualizador';
+  iniciarVisualizadores();
+</script>
+
+<style>
+  .viz { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .sin-pila .fila { grid-template-columns: minmax(0, 1fr); }
+  .sin-pila .pila, .sin-pila .leyenda, .sin-pila .profundidad, .sin-pila .pila-txt { display: none; }
+  /* Modo variables: tarjetas de arriba hacia abajo, sin suelo ni gráfica de profundidad */
+  .modo-variables .marcos { flex-direction: column; }
+  .modo-variables .suelo, .modo-variables .leyenda, .modo-variables .profundidad { display: none; }
+  .modo-variables .pila-cab { margin-bottom: 10px; }
+  .vhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .vhead h3 { margin: 0; font: 700 1.65rem/1 var(--hand); color: var(--chalk); }
+  .contador { font: 400 0.78rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--azul); white-space: nowrap; }
+  .contador b { color: var(--y); font-weight: 600; }
+
+  .fila { display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, 210px); gap: 16px; }
+
+  .codigo {
+    margin: 0;
+    padding: 10px 0;
+    font: 400 0.8rem/1.45rem var(--mono);
+    color: var(--chalk);
+    background: rgba(0, 0, 0, 0.14);
+    overflow-x: auto;
+    border-color: var(--chalk-70);
+  }
+  .codigo code { display: block; min-width: max-content; }
+  .l { display: block; white-space: pre; padding-right: 12px; transition: background-color var(--t-write) var(--ease-out); }
+  .l i { display: inline-block; width: 34px; padding-right: 12px; text-align: right; font-style: normal; color: var(--azul); opacity: 0.75; user-select: none; }
+  .l.on { background: linear-gradient(transparent 80%, var(--y-90) 80% 92%, transparent 92%); }
+  .l.on i, .l.espera i { color: var(--y); opacity: 1; }
+  .l.espera { background-color: var(--y-06); }
+
+  .pila { position: relative; display: flex; flex-direction: column; min-height: 220px; }
+  .pila-cab { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: auto; padding-bottom: 12px; min-height: 2.2rem; }
+  .cima { display: inline-flex; align-items: center; gap: 4px; }
+  .cima :global(svg) { width: 14px; height: 14px; filter: url(#tiza); }
+  .cima :global(svg path) { stroke-width: 2.8; }
+  .anotacion {
+    font: 700 1.25rem/1 var(--hand); color: var(--pink);
+    transform: rotate(-6deg);
+    white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .anotacion[data-flecha]::before { content: ''; width: 28px; height: 20px; filter: url(#tiza); background: currentColor; -webkit-mask: var(--flecha) no-repeat center / contain; mask: var(--flecha) no-repeat center / contain; }
+  .anotacion[data-flecha='entra'] { --flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12.4c-4.6-.3-9.4-.2-14 .2M10.6 6.5c-2 2-4 3.9-5.8 6 1.9 1.8 3.8 3.7 5.6 5.7'/%3E%3C/svg%3E"); }
+  .anotacion[data-flecha='sale'] { --flecha: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 18.2c3.8-4 8-8.4 12-12.2M10 5.8c2.7-.1 5.4-.1 8.2.2.2 2.7.3 5.4.1 8.1'/%3E%3C/svg%3E"); }
+  .marcos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column-reverse; gap: 8px; }
+  .marcos :global(.marco) {
+    padding: 8px 12px;
+    font: 600 0.88rem/1.25 var(--mono);
+    border-color: var(--chalk-70);
+    background: rgba(0, 0, 0, 0.08);
+    overflow-wrap: anywhere;
+  }
+  .marcos :global(.marco small) { display: block; font: 400 0.68rem/1.45 var(--mono); color: var(--azul); margin-top: 2px; }
+  /* Un objeto en memoria: tiza lila y borde punteado, para distinguirlo de las variables */
+  .marcos :global(.marco.objeto) { border-style: dashed; border-color: color-mix(in srgb, var(--lila) 70%, transparent); color: var(--lila); background: color-mix(in srgb, var(--lila) 6%, transparent); margin-left: 18px; }
+  .marcos :global(.marco.objeto small) { color: var(--chalk); }
+  .marcos :global(.marco.cima) { border-color: var(--y); color: var(--y); background: var(--y-06); box-shadow: 0 0 5px rgba(247, 223, 30, 0.25); }
+  .marcos :global(.marco.cima small) { color: var(--chalk-70); }
+  .marcos :global(.marco.escribe) { animation: escribir var(--t-write) var(--ease-out) both; }
+  .marcos :global(.marco.borra) { animation: borrar var(--t-erase) ease-in both; pointer-events: none; }
+  @keyframes escribir {
+    from { clip-path: inset(0 100% 0 0); opacity: 0.4; }
+    to { clip-path: inset(0 0 0 0); opacity: 1; }
+  }
+  @keyframes borrar {
+    from { filter: blur(0); opacity: 1; transform: translateX(0); }
+    to { filter: blur(6px); opacity: 0; transform: translateX(14px); }
+  }
+  .suelo { margin-top: 8px; height: 3px; background: repeating-linear-gradient(90deg, var(--chalk-70) 0 18px, transparent 18px 21px); border-radius: 2px; }
+  .vacia { margin: 8px 0 0; font: 400 0.9rem var(--read); color: var(--chalk-70); }
+
+  .consola { display: flex; gap: 16px; align-items: baseline; padding: 10px 14px; background: radial-gradient(ellipse 60% 120% at 60% 50%, var(--chalk-04), transparent 70%); }
+  .consola output { font: 400 0.82rem/1.5 var(--mono); color: var(--chalk); white-space: pre-wrap; }
+  .consola output.vacia-c { color: var(--chalk-70); }
+
+  .mensaje { min-height: 4.8em; }
+  .explicacion { margin: 0; font-size: 1rem; line-height: 1.55; color: var(--chalk-70); }
+  .explicacion :global(b), .explicacion :global(code) { color: var(--chalk); font-family: var(--mono); font-size: 0.92em; }
+  .explicacion :global(b) { background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); font-weight: 600; }
+  .explicacion :global(.ok) { color: var(--ok); font-weight: 700; font-family: var(--read); }
+  .explicacion :global(.no) { color: var(--red); font-weight: 700; font-family: var(--read); }
+
+  .prediccion { padding: 12px 14px; border-color: var(--chalk-70); }
+  .pregunta { margin: 0 0 10px; font-weight: 700; color: var(--chalk); }
+  .mano { font: 700 1.3rem/1 var(--hand); color: var(--chalk); margin-right: 6px; }
+  .opciones { display: flex; flex-wrap: wrap; gap: 8px; }
+  .opciones :global(button) { font: 700 0.92rem/1.3 var(--read); padding: 8px 12px; text-align: left; }
+  .resultado { margin: 10px 0 0; font-size: 0.95rem; color: var(--chalk-70); }
+  .resultado:empty { display: none; }
+
+  .tiempo { position: relative; }
+  .profundidad { display: block; width: 100%; height: 56px; overflow: visible; padding: 0 15px; }
+  .profundidad polyline { fill: none; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .profundidad .sombra { stroke: var(--chalk-15); stroke-width: 2; stroke-dasharray: 5 5; }
+  .profundidad .trazo { stroke: var(--chalk); stroke-width: 2.5; }
+  .profundidad circle { fill: var(--y); transition: cx var(--t-write) var(--ease-out), cy var(--t-write) var(--ease-out); }
+  .profundidad rect { transition: width var(--t-write) var(--ease-out); }
+  .leyenda { margin: 0 0 4px; font-size: 0.62rem; color: var(--chalk-70); }
+
+  .linea { list-style: none; margin: 6px 0 0; padding: 0; display: flex; justify-content: space-between; gap: 4px; position: relative; }
+  .linea::before { content: ''; position: absolute; left: 15px; right: 15px; top: 50%; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-15) 0 6px, transparent 6px 10px); }
+  .punto {
+    position: relative;
+    width: 30px; height: 30px;
+    display: grid; place-items: center;
+    font: 400 0.75rem var(--mono);
+    color: var(--chalk-70);
+    background: var(--board);
+    border: 2px solid var(--chalk-15);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out);
+  }
+  .punto:hover { border-color: var(--chalk-70); color: var(--chalk); }
+  .punto.visto { color: var(--azul); border-color: var(--azul); }
+  .punto[aria-current='step'] { color: var(--board-lo); background: var(--y); border-color: var(--y); font-weight: 600; box-shadow: 0 0 6px rgba(247, 223, 30, 0.4); }
+  /* marca del tipo de evento sobre cada punto */
+  .punto::after { content: ''; position: absolute; top: -9px; left: 50%; translate: -50% 0; }
+  .punto.entra::after { width: 8px; height: 5px; background: var(--ok); clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .punto.sale::after { width: 8px; height: 5px; background: var(--pink); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+  .punto.imprime::after { width: 5px; height: 5px; border-radius: 50%; background: var(--chalk-70); }
+  .punto.error::after { width: 7px; height: 2px; background: var(--red); }
+
+  .ctl { display: flex; flex-wrap: wrap; gap: 10px; }
+  .reiniciar { margin-left: auto; }
+  .atajo { margin: -4px 0 0; font: 400 0.82rem/1.4 var(--read); color: var(--chalk-70); }
+
+  .alt { font-size: 0.92rem; color: var(--chalk-70); }
+  .alt summary { cursor: pointer; font-weight: 700; color: var(--chalk-70); width: fit-content; }
+  .alt summary:hover { color: var(--chalk); }
+  .alt ol { margin: 10px 0 0; padding-left: 1.3em; display: grid; gap: 6px; }
+  .alt a { color: var(--y); }
+  .pila-txt { color: var(--azul); }
+
+  @media (max-width: 720px) {
+    /* En el teléfono los controles acompañan mientras el pizarrón está a la vista */
+    .fijos .ctl {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      flex-wrap: nowrap;
+      gap: 8px;
+      margin: 0 -16px;
+      padding: 6px 16px calc(6px + env(safe-area-inset-bottom));
+      background: var(--board);
+      box-shadow: 0 -8px 16px rgba(0, 0, 0, 0.35);
+      border-top: 2px solid var(--chalk-08);
+    }
+    .ctl { flex-wrap: nowrap; gap: 8px; }
+    .ctl .btn { padding: 9px 12px; }
+    .ctl [data-siguiente] { flex: 1; justify-content: center; }
+    .rein-txt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .reiniciar { margin-left: 0; padding-inline: 10px; }
+    .atajo { display: none; }
+  }
+  @media (max-width: 560px) {
+    .fila { grid-template-columns: 1fr; }
+    .pila { min-height: 0; }
+    .linea { gap: 2px; }
+    .punto { width: 26px; height: 26px; font-size: 0.68rem; }
+    .reiniciar { margin-left: 0; }
+    .atajo { display: none; }
+  }
+</style>

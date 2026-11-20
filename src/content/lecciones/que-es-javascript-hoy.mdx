@@ -1,0 +1,98 @@
+---
+titulo: Qué es JavaScript hoy
+seccion: antes-de-empezar
+tema: que-es-javascript-hoy
+minutos: 8
+resumen: De dónde viene JavaScript, quién decide cómo cambia, dónde se ejecuta en 2026 y en qué se diferencia de Java y de TypeScript.
+intro: 'JavaScript nació en 1995 para darle un poco de vida a las páginas web. Hoy es el lenguaje que corre en <u>todos los navegadores</u> y también en servidores, apps de escritorio y móviles. Antes de escribir código conviene saber qué es exactamente, quién lo define y dónde se ejecuta.'
+nota: 'JavaScript y Java no tienen nada que ver. El parecido del nombre fue una decisión de marketing de 1995, cuando Java estaba de moda.'
+ejercicios: [js-hoy-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import { queEsAuto } from '../../data/ejercicios/antes-de-empezar';
+
+## Un lenguaje, muchos lugares
+
+Cuando abres una página web, tu navegador descarga su código JavaScript y lo ejecuta en tu computadora. Ese código es el que despliega un menú, valida un formulario o carga más resultados sin recargar la página.
+
+Pero JavaScript ya no vive solo en el navegador. En 2026 lo encuentras en:
+
+- **Páginas y aplicaciones web**: todo lo que ves y tocas en el navegador.
+- **Servidores**: con Node.js, Deno o Bun, el mismo lenguaje responde peticiones, lee archivos y habla con bases de datos.
+- **Apps de escritorio y móviles**: editores como VS Code están hechos con JavaScript, y existen herramientas para crear apps móviles con él.
+- **El *edge***: pequeñas funciones que se ejecutan en servidores repartidos por el mundo, cerca de quien visita la página.
+
+Aprender JavaScript te sirve, sin cambiar de lenguaje, para casi cualquier parte de una aplicación.
+
+## De 1995 a hoy
+
+Brendan Eich creó la primera versión en Netscape en 1995, en unos diez días. Se llamó Mocha, luego LiveScript y finalmente JavaScript.
+
+Para que todos los navegadores lo implementaran igual, en 1997 se estandarizó con el nombre de **ECMAScript**, a cargo de la organización Ecma International. Desde entonces hay dos nombres para lo mismo:
+
+- **ECMAScript** es la especificación: el documento oficial (llamado ECMA-262) que dice qué hace cada parte del lenguaje.
+- **JavaScript** es el lenguaje que usamos, la implementación de esa especificación.
+
+El gran salto llegó con **ES2015** (también llamado ES6): `let` y `const`, clases, módulos, promesas, funciones flecha… Desde ese año sale **una edición nueva cada año**: ES2016, ES2017 y así hasta **ES2026**, aprobada en junio de 2026. Cada edición suma pocas cosas, así que el lenguaje cambia sin romper el código que ya existe.
+
+<Nota tipo="consejo">
+  En este curso, los temas con novedades recientes llevan una etiqueta con su edición, como **ES2023**. Así sabes qué es moderno y desde cuándo está.
+</Nota>
+
+## Quién decide cómo cambia
+
+Las novedades las decide **TC39**, un comité formado por representantes de empresas de navegadores, de tecnología y miembros de la comunidad. Cada idea nueva es una **propuesta** que avanza por etapas:
+
+1. **Etapa 0 y 1**: alguien presenta la idea y el problema que resuelve.
+2. **Etapa 2 y 2.7**: se diseña el detalle y se escribe en el lenguaje de la especificación.
+3. **Etapa 3**: el diseño está cerrado y los navegadores empiezan a implementarla.
+4. **Etapa 4**: está terminada y entra en la siguiente edición.
+
+Por ejemplo, **Temporal**, una API nueva para trabajar con fechas, llegó a la etapa 4 y forma parte de ES2027. Cuando un tema del curso trate algo que todavía es una propuesta, lo vas a ver marcado como tal.
+
+## Motor y runtime
+
+Dos palabras que vas a leer mucho:
+
+- El **motor** es el programa que entiende y ejecuta JavaScript.
+- El **runtime** es el entorno completo donde corre tu código: el motor más las herramientas extra que ese lugar ofrece.
+
+| Motor | Lo usan |
+|---|---|
+| V8 | Chrome, Edge, Node.js, Deno |
+| SpiderMonkey | Firefox |
+| JavaScriptCore | Safari, Bun |
+
+El lenguaje es el mismo en todos los runtimes, pero las herramientas cambian. En el navegador tienes la página (el DOM) y `fetch` para pedir datos. En Node.js tienes acceso a archivos y a la red para crear servidores. Por eso el curso separa lo que es del lenguaje (secciones 1 a 12) de lo que es del navegador (13) y del servidor (14).
+
+## JavaScript y TypeScript
+
+**TypeScript** es JavaScript con *tipos*: le agregas anotaciones como `edad: number` y una herramienta te avisa de errores antes de ejecutar. Al final, el código TypeScript se convierte en JavaScript normal, y las versiones recientes de Node.js pueden ejecutar archivos `.ts` quitándoles los tipos.
+
+Todo lo que aprendas aquí te sirve para TypeScript. Primero JavaScript; TypeScript tiene su propio tema en la sección de Herramientas.
+
+## Cómo aprovechar este curso
+
+- **Lee poco y prueba mucho**: cada lección explica una idea. Copia los ejemplos en la consola de tu navegador y cámbialos.
+- **Usa los pizarrones**: en los temas difíciles, el pizarrón te muestra paso a paso lo que hace el motor. Antes de algunos pasos te pide que predigas qué viene.
+- **Haz los ejercicios**: se corrigen solos y tu progreso queda guardado en este navegador.
+
+## Resumen
+
+- JavaScript corre en el navegador, en servidores y en muchos otros lugares.
+- **ECMAScript** es el estándar; **JavaScript** es el lenguaje que lo implementa. Sale una edición nueva cada año.
+- **TC39** decide los cambios, que avanzan por etapas hasta la 4.
+- El **motor** ejecuta el lenguaje; el **runtime** le suma herramientas.
+- TypeScript es JavaScript con tipos.
+
+<Practica>
+
+<Autoevaluacion id={queEsAuto.id} numero={1} titulo={queEsAuto.titulo} preguntas={queEsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta. Si fallas, puedes volver a intentarlo.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>domina-js — Consola grafito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--g0:#15171C;--g1:#1F2228;--g2:#262A31;--seam:#2E323A;--ink:#E6E8EB;--mut:#9AA0AA;--dim:#6B717C;--blue:#7AA2F7;--green:#9ECE6A;--amber:#E0AF68}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden;background:var(--g0);color:var(--ink);font-family:"Source Sans 3",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.mono{font-family:"JetBrains Mono",monospace;font-variant-numeric:tabular-nums}
+.top{height:44px;display:flex;align-items:center;gap:24px;padding:0 20px;border-bottom:1px solid var(--seam);background:var(--g0)}
+.brand{font-family:"JetBrains Mono",monospace;font-weight:600;font-size:15px;letter-spacing:-.01em}
+.brand b{color:var(--amber);font-weight:600}
+.crumbs{font-size:13px;color:var(--mut)}
+.crumbs span{color:var(--dim);margin:0 8px}
+.crumbs em{font-style:normal;color:var(--ink)}
+.top .right{margin-left:auto;display:flex;gap:16px;align-items:center;font-size:13px;color:var(--mut)}
+.kbd{font-family:"JetBrains Mono",monospace;font-size:11px;border:1px solid var(--seam);border-radius:4px;padding:2px 6px;color:var(--mut)}
+.grid{display:grid;grid-template-columns:264px 1fr 512px;height:856px}
+.panel{border-right:1px solid var(--seam);overflow:hidden;display:flex;flex-direction:column}
+.panel:last-child{border-right:0;background:var(--g1)}
+.ph{height:36px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--seam);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.ph .mono{letter-spacing:0;text-transform:none;font-weight:500;color:var(--dim)}
+/* temario */
+.toc{padding:12px 8px;font-size:14px}
+.sec{padding:8px 10px 4px;color:var(--dim);font-size:12px;display:flex;gap:10px}
+.sec .mono{width:18px;color:var(--dim)}
+.sec.open{color:var(--ink);font-weight:600}
+.item{display:flex;gap:10px;align-items:center;padding:6px 10px 6px 38px;border-radius:5px;color:var(--mut);font-size:14px}
+.item i{width:6px;height:6px;border-radius:50%;border:1px solid var(--dim);flex:none}
+.item.on{background:var(--g2);color:var(--ink)}
+.item.on i{background:var(--blue);border-color:var(--blue)}
+.item.soon{color:var(--dim)}
+.item.soon small{margin-left:auto;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+/* lectura */
+.read{padding:44px 56px 0 64px;overflow:hidden}
+.kick{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:600}
+h1{font-size:40px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:12px 0 10px}
+.meta{display:flex;gap:18px;font-size:13px;color:var(--dim);padding-bottom:26px;border-bottom:1px solid var(--seam);margin-bottom:28px}
+.col{max-width:66ch}
+.col p{font-size:17px;line-height:1.7;color:#D3D6DB;margin-bottom:18px}
+.col p strong{color:var(--ink);font-weight:600}
+code{font-family:"JetBrains Mono",monospace;font-size:.86em;background:var(--g2);border:1px solid var(--seam);padding:1px 5px;border-radius:4px;color:var(--ink)}
+h2{font-size:22px;font-weight:600;margin:30px 0 12px;letter-spacing:-.01em}
+.note{border-left:2px solid var(--amber);padding:10px 16px;background:var(--g1);font-size:15px;line-height:1.6;color:#C9CDD3}
+.note b{color:var(--amber);font-weight:600}
+/* visualizador */
+.code{margin:16px;border:1px solid var(--seam);border-radius:6px;background:var(--g0);padding:12px 0;font-size:13.5px;line-height:26px}
+.ln{display:flex;padding:0 14px}
+.ln span:first-child{width:28px;color:var(--dim);text-align:right;margin-right:16px}
+.ln.hl{background:rgba(224,175,104,.12);box-shadow:inset 2px 0 var(--amber)}
+.k{color:var(--blue)}.s{color:var(--green)}.f{color:var(--ink);font-weight:500}.c{color:var(--dim)}
+.split{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--seam);border-bottom:1px solid var(--seam)}
+.split>div{min-height:208px}
+.split>div:first-child{border-right:1px solid var(--seam)}
+.stack{padding:16px;display:flex;flex-direction:column-reverse;gap:8px;height:172px}
+.frame{font-family:"JetBrains Mono",monospace;font-size:13px;padding:10px 12px;border-radius:5px;border:1px solid var(--seam);background:var(--g2);display:flex;justify-content:space-between}
+.frame small{color:var(--dim);font-size:11px}
+.frame.top{border-color:var(--green);box-shadow:inset 3px 0 var(--green)}
+.frame.top small{color:var(--green)}
+.cons{padding:16px;font-size:13px;color:var(--dim)}
+.cons .p{color:var(--dim)}
+.step{padding:18px 20px 0}
+.step .n{font-size:12px;color:var(--mut)}
+.bar{display:flex;gap:4px;margin:10px 0 14px}
+.bar i{flex:1;height:3px;border-radius:2px;background:var(--seam)}
+.bar i.d{background:var(--blue)}
+.step p{font-size:15px;line-height:1.6;color:#D3D6DB}
+.ctr{display:flex;gap:8px;padding:18px 20px}
+.btn{font-size:14px;font-weight:500;padding:8px 14px;border-radius:5px;border:1px solid var(--seam);color:var(--ink);background:transparent}
+.btn.pri{background:var(--blue);border-color:var(--blue);color:#0E1117;font-weight:600}
+.btn.rst{margin-left:auto;color:var(--mut)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">domina<b>.</b>js</div>
+  <nav class="crumbs">Temario<span>/</span>4 · Cómo se ejecuta JS por dentro<span>/</span><em>La pila de llamadas</em></nav>
+  <div class="right"><span>Buscar</span><span class="kbd">Ctrl K</span><span>Progreso <span class="mono">1/105</span></span></div>
+</header>
+<main class="grid">
+  <aside class="panel">
+    <div class="ph">Temario <span class="mono">17 secciones</span></div>
+    <div class="toc">
+      <div class="sec"><span class="mono">01</span>Fundamentos del lenguaje</div>
+      <div class="sec"><span class="mono">02</span>Control de flujo y errores</div>
+      <div class="sec"><span class="mono">03</span>Funciones</div>
+      <div class="sec open"><span class="mono">04</span>Cómo se ejecuta JS por dentro</div>
+      <div class="item soon"><i></i>Motor y runtime<small>pronto</small></div>
+      <div class="item on"><i></i>La pila de llamadas</div>
+      <div class="item soon"><i></i>Contextos y hoisting<small>pronto</small></div>
+      <div class="item soon"><i></i>Scope y cadena de scopes<small>pronto</small></div>
+      <div class="item soon"><i></i>Closures<small>pronto</small></div>
+      <div class="item soon"><i></i>Recursión y stack overflow<small>pronto</small></div>
+      <div class="item soon"><i></i>Memoria y recolector<small>pronto</small></div>
+      <div class="sec"><span class="mono">05</span>Objetos</div>
+      <div class="sec"><span class="mono">06</span>Clases</div>
+      <div class="sec"><span class="mono">07</span>Colecciones y datos</div>
+      <div class="sec"><span class="mono">08</span>Iteradores y generadores</div>
+      <div class="sec"><span class="mono">09</span>Asincronía</div>
+      <div class="sec"><span class="mono">10</span>Módulos</div>
+    </div>
+  </aside>
+  <section class="panel">
+    <div class="ph">Lección <span class="mono">4.2 · 9 min</span></div>
+    <div class="read">
+      <div class="kick">Sección 4 · Lección 2 de 7</div>
+      <h1>La pila de llamadas</h1>
+      <div class="meta"><span>9 min de lectura</span><span>2 visualizadores</span><span>4 ejercicios</span></div>
+      <div class="col">
+        <p>JavaScript tiene <strong>un solo hilo</strong>: hace una cosa a la vez. Para saber qué está haciendo y a dónde volver cuando termina, el motor usa una estructura muy simple llamada <strong>pila de llamadas</strong> (<em>call stack</em>).</p>
+        <p>Cada vez que llamas a una función, el motor la pone encima de la pila. Cuando la función termina con <code>return</code>, la saca y continúa con la que quedó debajo. El último en entrar es el primero en salir.</p>
+        <h2>Míralo paso a paso</h2>
+        <p>En el panel de la derecha, <code>mostrar()</code> llama a <code>saludar("Mundo")</code>. Avanza con las flechas y observa cómo crece y se vacía la pila.</p>
+        <div class="note"><b>Cuidado:</b> la pila tiene un tamaño máximo. Una recursión sin caso base la llena y el motor lanza <code>RangeError</code>.</div>
+      </div>
+    </div>
+  </section>
+  <aside class="panel">
+    <div class="ph">Visualizador <span class="mono">pila-de-llamadas.js</span></div>
+    <div class="code mono">
+      <div class="ln hl"><span>1</span><span><span class="k">function</span> <span class="f">saludar</span>(nombre) {</span></div>
+      <div class="ln"><span>2</span><span>&nbsp;&nbsp;<span class="k">return</span> <span class="s">`Hola, ${nombre}!`</span>;</span></div>
+      <div class="ln"><span>3</span><span>}</span></div>
+      <div class="ln"><span>4</span><span></span></div>
+      <div class="ln"><span>5</span><span><span class="k">function</span> <span class="f">mostrar</span>() {</span></div>
+      <div class="ln hl"><span>6</span><span>&nbsp;&nbsp;<span class="k">const</span> msg = <span class="f">saludar</span>(<span class="s">"Mundo"</span>);</span></div>
+      <div class="ln"><span>7</span><span>&nbsp;&nbsp;console.<span class="f">log</span>(msg);</span></div>
+      <div class="ln"><span>8</span><span>}</span></div>
+      <div class="ln"><span>9</span><span></span></div>
+      <div class="ln"><span>10</span><span><span class="f">mostrar</span>();</span></div>
+    </div>
+    <div class="split">
+      <div><div class="ph">Call stack <span class="mono">2</span></div>
+        <div class="stack"><div class="frame">mostrar()<small>línea 6</small></div><div class="frame top">saludar()<small>ejecutando</small></div></div></div>
+      <div><div class="ph">Consola <span class="mono">0</span></div>
+        <div class="cons mono"><span class="p">›</span> sin salida todavía</div></div>
+    </div>
+    <div class="step">
+      <div class="n mono">Paso 3 de 8</div>
+      <div class="bar"><i class="d"></i><i class="d"></i><i class="d"></i><i></i><i></i><i></i><i></i><i></i></div>
+      <p><code>saludar()</code> se apila encima de <code>mostrar()</code>. El motor suspende <code>mostrar()</code> en la línea 6 y ejecuta <code>saludar()</code>.</p>
+    </div>
+    <div class="ctr"><span class="btn">← Anterior</span><span class="btn pri">Siguiente →</span><span class="btn rst">↺ Reiniciar</span></div>
+  </aside>
+</main>
+</body>
+</html>

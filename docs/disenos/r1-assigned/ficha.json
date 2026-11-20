@@ -1,0 +1,37 @@
+{
+  "id": "r1-assigned",
+  "kind": "assigned",
+  "label": "Cartel de lucha libre",
+  "kicker": "THE ROLL",
+  "lineage": "Carteles de función de lucha libre impresos en serigrafía",
+  "thesis": "Cada lección se anuncia como una función estelar: tipografía condensada gigante en el marco y una columna de lectura tranquila adentro.",
+  "palette": [
+    "#0E0B12",
+    "#F7DF1E",
+    "#E5157A",
+    "#19B5C9",
+    "#F4EFE6"
+  ],
+  "materials": [
+    "serigrafía de tres tintas",
+    "tipo condensado de cartel",
+    "registro corrido de color"
+  ],
+  "viewport": "Cabecera tipo cartel: «Función estelar: La pila de llamadas» en condensada amarilla sobre negro, con la sección como cartelera; debajo, columna de lectura calma y el visualizador presentado como el «combate» paso a paso.",
+  "risk": "Si el cartel invade la columna, la lección se vuelve póster; el humor tiene que quedarse en el marco.",
+  "raised": [
+    {
+      "from": "r1-exposure",
+      "raise": "Los neutros oscuros salen de una sola rampa de 11 tonos; nada de grises sueltos."
+    },
+    {
+      "from": "r1-storm",
+      "raise": "El amarillo marca solo lo que cambia en este paso; todo lo demás queda en tinta."
+    },
+    {
+      "from": "r1-stickers",
+      "raise": "Los pasos anteriores siguen visibles como capas desvanecidas: el historial de la ejecución se lee en la pila."
+    }
+  ],
+  "html": ".impeccable/mocks/decision/r1-assigned.html"
+}

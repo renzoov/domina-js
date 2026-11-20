@@ -1,0 +1,125 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-canon/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:20.260Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-stickers/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:20.436Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-storm/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:20.608Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-exposure/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:20.786Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-domino/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:20.946Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-atlas/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:21.099Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-flap/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:21.248Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-road/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:21.418Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-demoscene/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:21.565Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-fog/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:21.721Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-industrial/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:21.873Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-zine/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:22.041Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "*",
+        "value": "*",
+        "files": [
+          "docs/disenos/r1-pick/boceto.html"
+        ],
+        "createdAt": "2026-11-20T19:09:22.214Z",
+        "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      }
+    ]
+  }
+}

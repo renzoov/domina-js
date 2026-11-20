@@ -1,0 +1,25 @@
+{
+  "id": "r1-industrial",
+  "kind": "challenger",
+  "catalogId": "textiles-weave-drape-fashion-industrial-quote-grammar",
+  "label": "Cinta de obra",
+  "verdict": "competitive",
+  "lineage": "Gramática industrial: rayas de peligro, etiquetas y comillas",
+  "thesis": "Cada cosa se llama por su nombre entre comillas: «FUNCIÓN», «PILA»; las rayas amarillas a 45° marcan lo que importa.",
+  "palette": [
+    "#0A0A0A",
+    "#F7DF1E",
+    "#FF6A13",
+    "#EDEDED"
+  ],
+  "materials": [
+    "rayas de peligro a 45°",
+    "placas de etiqueta",
+    "precinto naranja en lo activo"
+  ],
+  "viewport": "Placas de etiqueta como navegación, título entre comillas en mayúsculas industriales, raya amarilla bajo la línea que se ejecuta.",
+  "case": "Encaja natural con el amarillo de JS y es clara; pierde en identificación porque es un mundo de moda, no de aprendizaje.",
+  "risk": "Las rayas de peligro cansan si se repiten; deben aparecer solo donde algo importa.",
+  "html": ".impeccable/mocks/decision/r1-industrial.html",
+  "hero": "https://impeccable.style/worlds/cards/textiles-weave-drape-fashion-industrial-quote-grammar-hero.webp"
+}

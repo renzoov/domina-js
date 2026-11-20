@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>domina-js · Pantalla de título</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--k:#000;--y:#F7DF1E;--iv:#EDE6D6;--g:#6B6B6B;--d:#2E2E2E}
+*{box-sizing:border-box}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+body{background:var(--k);color:var(--iv);font-family:"Atkinson Hyperlegible",sans-serif;position:relative}
+.px{font-family:Silkscreen,monospace;text-transform:uppercase;-webkit-font-smoothing:none;font-smooth:never}
+/* three star planes: far / mid / near, each its own density and brightness */
+.sky{position:absolute;inset:0;pointer-events:none}
+.s1{background-image:radial-gradient(1px 1px at 10% 20%,#2E2E2E 99%,transparent),radial-gradient(1px 1px at 55% 65%,#2E2E2E 99%,transparent),radial-gradient(1px 1px at 80% 35%,#6B6B6B 99%,transparent),radial-gradient(1px 1px at 30% 85%,#2E2E2E 99%,transparent);background-size:61px 53px}
+.s2{background-image:radial-gradient(1.5px 1.5px at 20% 40%,#6B6B6B 99%,transparent),radial-gradient(1.5px 1.5px at 70% 15%,#6B6B6B 99%,transparent),radial-gradient(1.5px 1.5px at 45% 90%,#6B6B6B 99%,transparent);background-size:149px 127px}
+.s3{background-image:radial-gradient(2px 2px at 30% 30%,#EDE6D6 99%,transparent),radial-gradient(2px 2px at 85% 75%,#EDE6D6 99%,transparent),radial-gradient(2px 2px at 60% 50%,#F7DF1E 99%,transparent);background-size:331px 289px;opacity:.85}
+/* the reading column sits on a pane of pure void: stars stop at its edge */
+.void{position:absolute;left:300px;top:150px;width:640px;height:750px;background:var(--k);box-shadow:0 0 60px 30px var(--k)}
+.wrap{position:relative;display:grid;grid-template-columns:300px 640px 500px;grid-template-rows:150px 1fr;height:900px}
+header{grid-column:1/-1;display:flex;align-items:flex-start;padding:34px 40px 0;gap:40px}
+.logo{display:flex;align-items:center;gap:16px}
+.logo b{font:700 28px/1 Silkscreen;letter-spacing:.02em;color:var(--iv)}
+.logo b i{font-style:normal;color:var(--y)}
+.logo .car{display:inline-block;width:14px;height:24px;background:var(--y);margin-left:6px;vertical-align:-3px;box-shadow:0 0 14px rgba(247,223,30,.5)}
+.scroller{margin-left:auto;margin-top:10px;font:400 12px/1 Silkscreen;letter-spacing:.14em;color:var(--g);white-space:nowrap}
+.scroller em{font-style:normal;color:var(--iv)}
+.scroller span{color:var(--y)}
+.bar{grid-column:1/-1;position:absolute;left:40px;right:40px;top:100px;height:2px;background:repeating-linear-gradient(90deg,var(--d) 0 6px,transparent 6px 10px)}
+nav{padding:6px 24px 0 40px}
+nav .h{font:400 11px/1 Silkscreen;letter-spacing:.14em;color:var(--g)}
+nav .t{font:700 15px/1.4 Silkscreen;color:var(--iv);margin:12px 0 26px}
+nav ol{list-style:none;margin:0;padding:0}
+nav li{display:grid;grid-template-columns:28px 1fr;padding:9px 0;font:400 15px/1.35 "Atkinson Hyperlegible";color:var(--g)}
+nav li span{font:400 11px/1.9 Silkscreen;color:var(--d)}
+nav li.done{color:var(--iv);opacity:.7}
+nav li.done span{color:var(--g)}
+nav li.on{color:var(--y)}
+nav li.on span{color:var(--y)}
+nav li.on span::before{content:"▸"}
+nav li.on span i{display:none}
+.stat{margin-top:30px;font:400 11px/1.8 Silkscreen;letter-spacing:.08em;color:var(--g)}
+.stat b{color:var(--iv);font-weight:400}
+main{padding:6px 40px 0 36px}
+.kick{font:400 12px/1 Silkscreen;letter-spacing:.16em;color:var(--g)}
+.kick b{color:var(--y);font-weight:400}
+h1{font:700 46px/1.08 Silkscreen;color:var(--iv);margin:18px 0 0;letter-spacing:-.01em}
+h1 .c{display:inline-block;width:22px;height:40px;background:var(--y);vertical-align:-4px;margin-left:10px}
+.meta{margin:20px 0 32px;font:400 12.5px/1 "JetBrains Mono";color:var(--g)}
+.meta b{color:var(--iv);font-weight:500}
+p{font:400 17.5px/1.62 "Atkinson Hyperlegible";color:var(--iv);max-width:62ch;margin:0 0 20px}
+p strong{color:var(--y);font-weight:700}
+p code{font:400 14.5px/1 "JetBrains Mono";color:var(--iv);border-bottom:1px dashed var(--g)}
+p.dim{color:var(--g)}
+aside{padding:6px 40px 0 0}
+.panel{border:2px solid var(--d);background:var(--k)}
+.ph{display:flex;justify-content:space-between;padding:10px 12px;border-bottom:2px solid var(--d);font:400 11px/1 Silkscreen;letter-spacing:.12em;color:var(--g)}
+.ph b{color:var(--y);font-weight:400}
+.code{padding:10px 0;font:400 12.5px/20px "JetBrains Mono";color:var(--g)}
+.ln{display:grid;grid-template-columns:36px 1fr;white-space:pre}
+.ln i{font-style:normal;text-align:right;padding-right:12px;color:var(--d)}
+.ln.dec{color:var(--iv)}
+.ln.dec i{color:var(--g)}
+.ln.ex{color:var(--k);background:var(--y)}
+.ln.ex i{color:var(--k)}
+.ln.ex .k,.ln.ex .s{color:var(--k)}
+.k{color:var(--iv)}.s{color:#C9B98A}
+.two{display:grid;grid-template-columns:1fr 150px;border-top:2px solid var(--d)}
+.stk{padding:12px;border-right:2px solid var(--d)}
+.lab{font:400 10px/1 Silkscreen;letter-spacing:.14em;color:var(--g);display:flex;justify-content:space-between}
+.fr{height:38px;margin-top:8px;display:flex;align-items:center;padding:0 12px;font:500 13.5px/1 "JetBrains Mono";position:relative}
+.fr small{margin-left:auto;font:400 10px/1 Silkscreen;letter-spacing:.1em}
+/* depth = brightness: the frame further down the stack shines brighter */
+.fr.f2{color:var(--y);border:2px solid var(--y);background:var(--k)}
+.fr.f2::before{content:"";position:absolute;left:-12px;top:10px;width:6px;height:14px;background:var(--y)}
+.fr.f2 small{color:var(--y)}
+.fr.f1{color:var(--k);background:var(--iv)}
+.fr.f1 small{color:var(--d)}
+.fr.f0{height:24px;color:var(--g);background:var(--d);font-size:11px}
+.con{padding:12px;font:400 12px/1.5 "JetBrains Mono";color:var(--g)}
+.con .cur{display:inline-block;width:8px;height:14px;background:var(--g);vertical-align:-2px;margin-top:10px}
+.expl{padding:12px 14px;border-top:2px solid var(--d);font:400 14.5px/1.55 "Atkinson Hyperlegible";color:var(--iv)}
+.expl b{font:500 13px/1 "JetBrains Mono";color:var(--y)}
+.ctl{display:flex;gap:8px;margin-top:14px;font:400 11px/1 Silkscreen;letter-spacing:.08em}
+.ctl span{padding:11px 12px;border:2px solid var(--d);color:var(--g)}
+.ctl span.go{border-color:var(--y);color:var(--k);background:var(--y)}
+.ctl span.rs{margin-left:auto}
+.tl{display:flex;gap:6px;margin-top:14px;align-items:center}
+.tl b{flex:1;height:8px;background:var(--d)}
+.tl b.d{background:var(--g)}
+.tl b.on{background:var(--y);height:14px}
+.tl em{font:400 10px/1 Silkscreen;color:var(--g);font-style:normal;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="sky s1"></div><div class="sky s2"></div><div class="sky s3"></div>
+<div class="void"></div>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <svg width="48" height="48" viewBox="0 0 12 12" shape-rendering="crispEdges" aria-hidden="true">
+        <path fill="#EDE6D6" d="M6 1h2v8H6zM3 4h3v1H3zM2 5h1v3H2zM3 8h3v1H3z"/>
+        <path fill="#6B6B6B" d="M8 9h1v1H8zM6 9h2v1H6z" opacity=".6"/>
+        <rect x="9" y="6" width="2" height="3" fill="#F7DF1E"/>
+        <rect x="1" y="10" width="10" height="1" fill="#2E2E2E"/>
+        <rect x="10" y="1" width="1" height="1" fill="#F7DF1E"/>
+      </svg>
+      <b>DOMINA<i>.</i>JS<span class="car"></span></b>
+    </div>
+    <div class="scroller">&gt;&gt; <em>SECCIÓN 4</em> · CÓMO SE EJECUTA JS POR DENTRO · <span>LECCIÓN 2/7</span> · APRENDE PASO A PASO · GRATIS · EN ESPAÑOL &lt;&lt;</div>
+  </header>
+  <div class="bar"></div>
+  <nav>
+    <div class="h px">Sección 04</div>
+    <div class="t">Cómo se ejecuta JS por dentro</div>
+    <ol>
+      <li class="done"><span>01</span>Motor y runtime</li>
+      <li class="on"><span><i>02</i></span>La pila de llamadas</li>
+      <li><span>03</span>Contextos de ejecución y hoisting</li>
+      <li><span>04</span>Scope y cadena de scopes</li>
+      <li><span>05</span>Closures</li>
+      <li><span>06</span>Recursión y stack overflow</li>
+      <li><span>07</span>Memoria y recolector de basura</li>
+    </ol>
+    <div class="stat">PROGRESO <b>1/7</b><br>EJERCICIOS <b>0/4</b></div>
+  </nav>
+  <main>
+    <div class="kick">LECCIÓN <b>02</b> DE 07</div>
+    <h1>LA PILA DE LLAMADAS<span class="c"></span></h1>
+    <div class="meta"><b>Lección 2 de 7</b> · 9 min · 4 ejercicios</div>
+    <p>JavaScript ejecuta tu código en un solo hilo: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <strong>pila de llamadas</strong> (<code>call stack</code>). La última función que entra es la primera que sale, como una pila de platos.</p>
+    <p class="dim">Avanza con «Siguiente» y mira cómo cada llamada se apila sobre la anterior.</p>
+  </main>
+  <aside>
+    <div class="panel">
+      <div class="ph"><span>VISUALIZADOR // PILA</span><b>PASO 3 DE 8</b></div>
+      <div class="code">
+        <div class="ln dec"><i>1</i><span><span class="k">function</span> saludar(nombre) {</span></div>
+        <div class="ln"><i>2</i><span>  return <span class="s">`Hola, ${nombre}!`</span>;</span></div>
+        <div class="ln"><i>3</i><span>}</span></div>
+        <div class="ln"><i>4</i><span></span></div>
+        <div class="ln"><i>5</i><span>function mostrar() {</span></div>
+        <div class="ln ex"><i>6</i><span>  <span class="k">const</span> msg = saludar(<span class="s">"Mundo"</span>);</span></div>
+        <div class="ln"><i>7</i><span>  console.log(msg);</span></div>
+        <div class="ln"><i>8</i><span>}</span></div>
+        <div class="ln"><i>9</i><span></span></div>
+        <div class="ln"><i>10</i><span>mostrar();</span></div>
+        <div class="ln"><i>11</i><span></span></div>
+      </div>
+      <div class="two">
+        <div class="stk">
+          <div class="lab"><span>PILA</span><span>CIMA ▲</span></div>
+          <div class="fr f2">saludar()<small>PROF 2</small></div>
+          <div class="fr f1">mostrar()<small>PROF 1</small></div>
+        </div>
+        <div class="con"><div class="lab"><span>CONSOLA</span></div>(vacía)<br><span class="cur"></span></div>
+      </div>
+      <div class="expl"><b>saludar()</b> se apila encima de <b>mostrar()</b>. El motor suspende mostrar() y ejecuta saludar().</div>
+    </div>
+    <div class="ctl"><span>← ANTERIOR</span><span class="go">SIGUIENTE →</span><span class="rs">↺ REINICIAR</span></div>
+    <div class="tl"><b class="d"></b><b class="d"></b><b class="on"></b><b></b><b></b><b></b><b></b><b></b><em>3/8</em></div>
+  </aside>
+</div>
+</body>
+</html>

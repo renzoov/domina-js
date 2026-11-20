@@ -1,0 +1,76 @@
+---
+import Icono from '../Icono.astro';
+type Formato = 'Sé el motor' | 'Ordena la salida' | 'Detective' | 'Laboratorio' | 'Autoevaluación';
+interface Props {
+  id: string;
+  numero: number;
+  formato: Formato;
+  titulo: string;
+}
+const { id, formato, titulo } = Astro.props;
+// Cada formato tiene su tiza
+const colores: Record<Formato, string> = {
+  'Sé el motor': 'naranja',
+  'Ordena la salida': 'azul',
+  Detective: 'rosa',
+  Laboratorio: 'lila',
+  Autoevaluación: 'lima',
+};
+const color = colores[formato];
+---
+<section class:list={['ejercicio', `f-${color}`]} id={id} data-ejercicio-id={id} data-formato={formato} data-titulo={titulo} data-color={color} aria-labelledby={`${id}-titulo`}>
+  <header>
+    <h3 id={`${id}-titulo`}><span class="formato">{formato}</span><span class="sr-only">: </span><span class="tit">{titulo}</span></h3>
+    <p class="estado" data-estado hidden><Icono nombre="ok" />Resuelto</p>
+  </header>
+  <div class="enunciado"><slot name="enunciado" /></div>
+  <slot />
+</section>
+
+<script>
+  import { ejercicioResuelto } from '../../scripts/progreso';
+  function pintar() {
+    document.querySelectorAll<HTMLElement>('[data-ejercicio-id]').forEach((el) => {
+      const estado = el.querySelector<HTMLElement>('[data-estado]');
+      if (estado) estado.hidden = !ejercicioResuelto(el.dataset.ejercicioId!);
+    });
+  }
+  pintar();
+  document.addEventListener('domina:progreso', pintar);
+</script>
+
+<style>
+  .ejercicio { --c: var(--chalk); position: relative; margin: 0 0 48px; scroll-margin-top: 16px; }
+  .f-naranja { --c: var(--naranja); }
+  .f-azul { --c: var(--azul); }
+  .f-rosa { --c: var(--pink); }
+  .f-lila { --c: var(--lila); }
+  .f-lima { --c: var(--lima); }
+  header { display: grid; grid-template-columns: 1fr auto; align-items: start; gap: 6px 16px; margin-bottom: 14px; }
+  h3 { grid-column: 1; margin: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .formato {
+    display: inline-block;
+    font: 700 1.1rem/1 var(--hand);
+    color: var(--c);
+    padding: 6px 12px 7px;
+    border: 2px solid var(--c);
+    border-radius: var(--r-chalk-2);
+    background: color-mix(in srgb, var(--c) 10%, transparent);
+    transform: rotate(-1.5deg);
+  }
+  .tit { font: 700 clamp(1.25rem, 2vw, 1.5rem) / 1.3 var(--read); color: var(--chalk); text-wrap: balance; }
+  .estado {
+    grid-column: 2; grid-row: 1;
+    display: inline-flex; align-items: center; gap: 6px;
+    margin: 0;
+    font: 700 0.85rem/1 var(--read);
+    color: var(--board-lo);
+    background: var(--ok);
+    padding: 7px 12px 7px 9px;
+    border-radius: var(--r-chalk-2);
+  }
+  .estado :global(svg) { width: 16px; height: 16px; }
+  .enunciado { max-width: var(--measure); color: var(--chalk); margin-bottom: 20px; }
+  .enunciado :global(p) { margin: 0 0 0.6em; font-size: 1.05rem; line-height: 1.6; }
+  .enunciado :global(code) { font: 400 0.9em var(--mono); color: var(--c); padding: 1px 6px; border-radius: 5px; background: color-mix(in srgb, var(--c) 12%, transparent); }
+</style>

@@ -1,0 +1,26 @@
+{
+  "id": "r1-zine",
+  "kind": "challenger",
+  "catalogId": "hand-drawn-zine-explainer",
+  "label": "Fanzine nocturno",
+  "verdict": "wins",
+  "lineage": "Fanzines técnicos dibujados a mano",
+  "thesis": "Te explican JS como un amigo que dibuja en una servilleta: flechas a mano, resaltador amarillo y viñetas paso a paso, sobre papel negro.",
+  "palette": [
+    "#121212",
+    "#F7DF1E",
+    "#FF5FA2",
+    "#3DDBD9",
+    "#F2F2F2"
+  ],
+  "materials": [
+    "marcador blanco sobre papel negro",
+    "resaltador fluorescente",
+    "flechas dibujadas"
+  ],
+  "viewport": "Título rotulado a mano, columna de lectura en una sans limpia, y el visualizador como viñetas numeradas con flechas que se dibujan al avanzar.",
+  "case": "Gana en los dos ejes: es el formato con el que más gente aprende conceptos difíciles y explica la pila mejor que el cartel. Traducido a fondo oscuro.",
+  "risk": "Si se abusa de los garabatos parece infantil; la letra a mano va solo en títulos y anotaciones.",
+  "html": ".impeccable/mocks/decision/r1-zine.html",
+  "hero": "https://impeccable.style/worlds/cards/hand-drawn-zine-explainer-hero.webp"
+}

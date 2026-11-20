@@ -1,0 +1,24 @@
+{
+  "id": "r1-storm",
+  "kind": "challenger",
+  "catalogId": "dream-surreal-impossible-worlds-alphabet-storm",
+  "label": "Tormenta de letras",
+  "verdict": "declined",
+  "lineage": "Mundos surreales tipográficos",
+  "thesis": "Letras que se vuelven clima.",
+  "palette": [
+    "#0B0B0B",
+    "#F7DF1E",
+    "#9AA0A6"
+  ],
+  "materials": [
+    "grotesca monumental",
+    "partículas"
+  ],
+  "viewport": "Palabras que se deshacen en lluvia.",
+  "case": "Pierde en ambos ejes: el texto en movimiento impide leer. (Boceto agregado a tu pedido para que lo evalúes.)",
+  "kept": "Un solo color marca lo que está cambiando ahora.",
+  "risk": "Ilegible.",
+  "hero": "https://impeccable.style/worlds/cards/dream-surreal-impossible-worlds-alphabet-storm-hero.webp",
+  "html": ".impeccable/mocks/decision/r1-storm.html"
+}

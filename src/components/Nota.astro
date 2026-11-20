@@ -1,0 +1,32 @@
+---
+// Nota escrita a mano en el pizarrón.
+interface Props { tipo?: 'ojo' | 'consejo' | 'error' }
+const { tipo = 'ojo' } = Astro.props;
+const etiqueta = { ojo: '¡ojo!', consejo: 'tip', error: '¡cuidado!' }[tipo];
+---
+<aside class:list={['nota', tipo]}>
+  <b aria-hidden="true">{etiqueta}</b>
+  <div><span class="sr-only">{etiqueta}: </span><slot /></div>
+</aside>
+
+<style>
+  .nota {
+    --c: var(--pink);
+    display: flex; gap: 16px; align-items: flex-start;
+    max-width: var(--measure);
+    margin: 0 0 1.4em;
+    padding: 14px 18px;
+    border: 2px solid color-mix(in srgb, var(--c) 45%, transparent);
+    border-radius: 6px 10px 5px 9px / 9px 5px 10px 6px;
+    background: color-mix(in srgb, var(--c) 7%, transparent);
+    color: var(--chalk);
+  }
+  .consejo { --c: var(--azul); }
+  .error { --c: var(--red); }
+  b { flex: none; font: 700 1.5rem/1 var(--hand); color: var(--c); transform: rotate(-4deg); padding-top: 2px; }
+  .nota :global(p) { margin: 0 0 0.5em; font-size: 1rem; line-height: 1.6; }
+  .nota :global(p:last-child) { margin: 0; }
+  .nota :global(code) { font: 400 0.9em var(--mono); color: var(--naranja); }
+  .nota :global(strong) { color: var(--c); }
+  .nota :global(em) { font-style: italic; }
+</style>

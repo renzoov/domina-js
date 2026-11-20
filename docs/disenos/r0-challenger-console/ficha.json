@@ -1,0 +1,26 @@
+{
+  "id": "challenger-console",
+  "kind": "challenger",
+  "catalogId": "digital-design-canon-dark-first-developer-console",
+  "label": "Consola grafito",
+  "verdict": "competitive",
+  "lineage": "Consolas oscuras de desarrollo con paneles fijos",
+  "thesis": "Una superficie de trabajo oscura: los paneles no se mueven y lo que cambia es su contenido.",
+  "palette": [
+    "#15171C",
+    "#1F2228",
+    "#E6E8EB",
+    "#7AA2F7",
+    "#9ECE6A",
+    "#E0AF68"
+  ],
+  "materials": [
+    "costuras de un píxel",
+    "acentos tomados del resaltado de sintaxis"
+  ],
+  "viewport": "Tres paneles fijos: temario a la izquierda, lección al centro y el visualizador acoplado a la derecha, siempre visible.",
+  "case": "Gana en identificación (el lector reconoce su editor); pierde en claridad porque los paneles fijos compiten con la lectura larga.",
+  "risk": "Se parece a casi toda la documentación técnica oscura; leer mucha prosa sobre grafito cansa.",
+  "html": ".impeccable/mocks/decision/challenger-console.html",
+  "hero": "https://impeccable.style/worlds/cards/digital-design-canon-dark-first-developer-console-hero.webp"
+}

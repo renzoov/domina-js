@@ -1,0 +1,102 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Subrayado from '../components/Subrayado.astro';
+import Icono from '../components/Icono.astro';
+import { temario, totalTemas } from '../data/temario';
+
+const lecciones = await getCollection('lecciones');
+const disponibles = new Set(lecciones.map((l) => `${l.data.seccion}/${l.data.tema}`));
+---
+<BaseLayout titulo="Temario · domina-js" descripcion={`${temario.length} secciones y ${totalTemas} temas para aprender JavaScript en español, de cero a cómo funciona por dentro.`}>
+  <div class="temario">
+    <header class="cab">
+      <h1>El temario</h1>
+      <Subrayado ancho={360} />
+      <p class="lead">{temario.length} secciones y {totalTemas} temas, de cero a cómo funciona JavaScript por dentro, puestos al día con 2026. Se publican de a uno: lo que ya puedes leer está subrayado en amarillo.</p>
+      <ul class="leyenda" aria-label="Leyenda">
+        <li><span class="ojo"><Icono nombre="ojo" /></span>lleva visualizador paso a paso</li>
+        <li><span class="ed">ES2025</span>trae novedades de esa edición</li>
+        <li><span class="ed prop">propuesta</span>todavía no es estándar</li>
+      </ul>
+    </header>
+
+    {temario.map((s) => (
+      <section class="seccion" id={s.slug} aria-labelledby={`${s.slug}-t`}>
+        <div class="s-cab">
+          <span class="num" aria-hidden="true">{s.numero}</span>
+          <div>
+            <h2 id={`${s.slug}-t`}><span class="sr-only">Sección {s.numero}: </span>{s.titulo}</h2>
+            <p>{s.descripcion}</p>
+          </div>
+        </div>
+        <ol class="temas">
+          {s.temas.map((t) => {
+            const hay = disponibles.has(`${s.slug}/${t.slug}`);
+            return (
+              <li class:list={{ hay }}>
+                {hay ? <a href={`/${s.slug}/${t.slug}`} style={`view-transition-name: vt-${s.slug}-${t.slug}`}>{t.titulo}</a> : <span class="titulo">{t.titulo}</span>}
+                <span class="marcas">
+                  {t.visualizador && <span class="ojo" title="Lleva visualizador"><Icono nombre="ojo" titulo="Lleva visualizador" /></span>}
+                  {t.ediciones.map((e) => <span class="ed">{e}</span>)}
+                  {t.propuesta && <span class="ed prop">propuesta</span>}
+                  {!hay && <span class="sr-only">(próximamente)</span>}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .temario { max-width: 1100px; }
+  h1 { margin: 0; font: 700 clamp(2.6rem, 5vw, 4.5rem) / 1 var(--hand); text-shadow: 0 0 3px rgba(236, 234, 226, 0.4); }
+  .lead { margin: 18px 0 18px; max-width: 64ch; font-size: 1.12rem; line-height: 1.6; color: var(--chalk-70); }
+  .leyenda { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 26px; font-size: 0.9rem; color: var(--chalk-70); }
+  .leyenda li { display: flex; align-items: center; gap: 8px; }
+
+  .ojo { display: inline-grid; place-items: center; color: var(--azul); }
+  .ojo :global(svg) { width: 20px; height: 20px; }
+  .ed { font: 600 0.66rem/1 var(--mono); letter-spacing: 0.06em; color: var(--azul); border: 1.5px solid rgba(143, 208, 247, 0.5); padding: 4px 6px; border-radius: var(--r-chalk-2); white-space: nowrap; }
+  .ed.prop { font-family: var(--read); font-weight: 700; color: var(--chalk-70); border-style: dashed; border-color: var(--chalk-45); }
+
+  .seccion { padding-top: 64px; scroll-margin-top: 16px; }
+  .s-cab { display: grid; grid-template-columns: 48px 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+  .num {
+    display: grid; place-items: center;
+    width: 44px; height: 44px;
+    font: 700 1.4rem/1 var(--hand); color: var(--chalk);
+    border: 2px solid var(--chalk-45);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  }
+  h2 { margin: 2px 0 4px; font: 700 clamp(1.6rem, 2.6vw, 2.1rem) / 1.1 var(--hand); }
+  .s-cab p { margin: 0; color: var(--chalk-70); max-width: 64ch; }
+  .seccion:target h2 { background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); width: fit-content; }
+
+  .temas {
+    list-style: none; margin: 0 0 0 64px; padding: 0;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 0 40px;
+    counter-reset: t;
+  }
+  .temas li {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--chalk-15);
+    counter-increment: t;
+  }
+  .temas li::before { content: counter(t); font: 400 0.75rem var(--mono); color: var(--azul); min-width: 1.6em; }
+  .titulo { flex: 1; color: var(--chalk-70); }
+  .temas a { view-transition-class: titulo; flex: 1; font-weight: 700; color: var(--chalk); text-decoration: none; background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); width: fit-content; }
+  .temas a:hover { color: var(--y); }
+  .marcas { display: flex; align-items: center; gap: 6px; flex: none; }
+  .pronto { font: 400 0.64rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--chalk-45); }
+
+  @media (max-width: 720px) {
+    .temas { margin-left: 0; grid-template-columns: 1fr; }
+    .pronto { display: none; }
+  }
+</style>

@@ -1,0 +1,22 @@
+{
+  "id": "r1-flap",
+  "kind": "grounded",
+  "label": "Panel de salidas",
+  "lineage": "Tableros split-flap de aeropuertos y estaciones",
+  "thesis": "La ejecución es un tablero de salidas: cada llamada aparece en su fila con paletas que giran, en orden de llegada y salida.",
+  "palette": [
+    "#111111",
+    "#F7DF1E",
+    "#2A2A2A",
+    "#F5F5F5",
+    "#3ECF8E"
+  ],
+  "materials": [
+    "paletas con bisagra",
+    "letras amarillas sobre negro",
+    "estado «a tiempo» en verde"
+  ],
+  "viewport": "Cabecera tipo tablero con «SECCIÓN 4 · TEMA 2»; columna de lectura limpia; el visualizador muestra la pila y la consola como filas de tablero que giran al cambiar.",
+  "risk": "Muy literal si cada elemento es una paleta; el giro solo en lo que cambia.",
+  "html": ".impeccable/mocks/decision/r1-flap.html"
+}

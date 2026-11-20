@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>domina-js · Tormenta de letras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--void:#0B0B0B;--flash:#F7DF1E;--silver:#9AA0A6;--ink:#ECEDEE;--spent:#3A3D40;--rule:#202224;
+  --g:'Archivo',sans-serif;--mono:'Fira Code',monospace}
+*{box-sizing:border-box}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+body{background:var(--void);color:var(--ink);font-family:var(--g);position:relative}
+.lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--silver)}
+/* header weather */
+header{position:absolute;inset:0 0 auto 0;height:300px;overflow:hidden;border-bottom:1px solid var(--rule)}
+.logo{position:absolute;left:40px;top:28px;display:flex;align-items:center;gap:12px}
+.logo b{font-weight:900;font-stretch:75%;font-size:26px;letter-spacing:-.01em;text-transform:lowercase}
+.logo b span{color:var(--silver)}
+.sec{position:absolute;right:40px;top:34px;text-align:right}
+.sec b{display:block;font-weight:800;font-stretch:80%;font-size:18px;margin-top:4px;color:var(--ink)}
+.title{position:absolute;left:34px;top:100px;font-weight:900;font-stretch:72%;font-size:132px;line-height:1;letter-spacing:-.02em;white-space:nowrap;color:var(--ink)}
+.title span{display:inline-block}
+.drift span{color:var(--ink)}
+.f{position:absolute;font-weight:900;font-stretch:72%;color:var(--spent);line-height:1}
+.f.s{color:var(--silver);opacity:.55}
+.meta{position:absolute;left:40px;top:258px;display:flex;gap:26px}
+.meta span{font-family:var(--mono);font-size:13px;color:var(--silver)}
+/* frame below */
+nav{position:absolute;left:40px;top:332px;width:230px}
+nav ol{list-style:none;margin:14px 0 0;padding:0;counter-reset:t}
+nav li{font-size:14.5px;line-height:1.3;color:var(--silver);padding:9px 0;border-top:1px solid var(--rule);display:grid;grid-template-columns:24px 1fr;font-weight:450}
+nav li i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--spent);padding-top:2px}
+nav li.cur{color:var(--ink);font-weight:700}
+nav li.cur i{color:var(--ink)}
+main{position:absolute;left:330px;top:332px;width:540px}
+main p{font-size:17.5px;line-height:1.64;font-weight:400;font-stretch:100%;margin:14px 0 0;max-width:64ch;color:var(--ink)}
+main p strong{font-weight:700}
+main p code{font-family:var(--mono);font-size:15px;color:var(--ink);border-bottom:1px solid var(--spent)}
+main .aside{margin-top:22px;padding-top:14px;border-top:1px solid var(--rule);font-size:15px;line-height:1.55;color:var(--silver)}
+/* visualizer */
+.viz{position:absolute;left:910px;top:322px;width:492px;height:560px;border-left:1px solid var(--rule);padding:10px 0 0 28px}
+.vh{display:flex;justify-content:space-between;align-items:baseline}
+.vh b{font-weight:900;font-stretch:72%;font-size:30px;letter-spacing:-.01em}
+.vh b span{color:var(--silver)}
+pre{margin:10px 0 0;font-family:var(--mono);font-size:12.5px;line-height:18px;color:var(--silver)}
+pre .l{display:block}
+pre .l b{display:inline-block;width:26px;color:var(--spent);font-weight:400}
+pre .l.hi{color:var(--ink);background:#16181A;box-shadow:inset 2px 0 0 var(--ink)}
+pre .k{color:var(--ink)}
+.row{display:grid;grid-template-columns:1fr 150px;gap:18px;margin-top:14px}
+.stack{position:relative;height:118px}
+.fr{position:absolute;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-weight:900;font-stretch:75%;font-size:28px;letter-spacing:-.01em}
+.fr small{font-family:var(--mono);font-size:10.5px;font-weight:400;letter-spacing:.06em;text-transform:uppercase}
+.fr.new{top:0;background:var(--flash);color:var(--void)}
+.fr.new::after{content:"";position:absolute;left:18px;top:-12px;width:60px;height:3px;background:var(--flash);opacity:.5;box-shadow:24px -6px 0 -1px rgba(247,223,30,.3),-10px -10px 0 -1px rgba(247,223,30,.2)}
+.fr.old{top:58px;border:1px solid var(--spent);color:var(--silver)}
+.con{border:1px solid var(--rule);height:108px;padding:8px 10px;font-family:var(--mono);font-size:12px;color:var(--spent)}
+.expl{font-size:15px;line-height:1.55;margin:14px 0 0;color:var(--ink)}
+.expl b{font-weight:800}
+.ctl{display:flex;gap:8px;margin-top:14px}
+.ctl span{font-weight:700;font-stretch:85%;font-size:14px;padding:8px 14px;border:1px solid var(--spent);color:var(--silver)}
+.ctl span.go{color:var(--void);background:var(--ink);border-color:var(--ink)}
+.tl{display:flex;gap:6px;margin-top:16px;align-items:flex-end}
+.tl i{flex:1;height:4px;background:var(--spent)}
+.tl i.p{background:var(--silver)}
+.tl i.c{height:12px;background:var(--flash)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <svg width="54" height="44" viewBox="0 0 54 44" aria-label="domina-js">
+      <path d="M2 6h14c11 0 18 6 18 16s-7 16-18 16H2z M11 14v16h5c5 0 8-3 8-8s-3-8-8-8z" fill="#ECEDEE" fill-rule="evenodd"/>
+      <path d="M40 9h6v15c0 5-2 8-7 8" fill="none" stroke="#9AA0A6" stroke-width="4" transform="rotate(14 43 20)"/>
+      <text x="44" y="43" font-family="Archivo" font-weight="900" font-size="15" fill="#3A3D40" transform="rotate(-18 47 38)">s</text>
+      <rect x="40" y="2" width="5" height="5" fill="#F7DF1E" transform="rotate(20 42 4)"/>
+    </svg>
+    <b>domina<span>-js</span></b>
+  </div>
+  <div class="sec"><span class="lbl">Sección 4</span><b>Cómo se ejecuta JS por dentro</b></div>
+
+  <!-- spent letters drifting off the title -->
+  <span class="f" style="left:640px;top:40px;font-size:56px;transform:rotate(-14deg)">l</span>
+  <span class="f s" style="left:760px;top:26px;font-size:38px;transform:rotate(22deg)">a</span>
+  <span class="f" style="left:905px;top:60px;font-size:30px;transform:rotate(-34deg)">p</span>
+  <span class="f s" style="left:1010px;top:18px;font-size:46px;transform:rotate(9deg)">m</span>
+  <span class="f" style="left:1105px;top:84px;font-size:24px;transform:rotate(41deg)">d</span>
+  <span class="f s" style="left:1180px;top:110px;font-size:62px;transform:rotate(-8deg);opacity:.35">s</span>
+  <span class="f" style="left:1270px;top:96px;font-size:20px;transform:rotate(60deg)">a</span>
+  <span class="f s" style="left:1330px;top:160px;font-size:34px;transform:rotate(-25deg);opacity:.4">l</span>
+  <span class="f" style="left:1250px;top:206px;font-size:16px;transform:rotate(12deg)">i</span>
+  <span class="f" style="left:1380px;top:232px;font-size:28px;transform:rotate(-48deg)">a</span>
+  <span class="f s" style="left:1300px;top:258px;font-size:14px;opacity:.5">d</span>
+  <span class="f" style="left:860px;top:244px;font-size:18px;transform:rotate(30deg)">e</span>
+
+  <div class="title" aria-label="La pila de llamadas">
+    <span>La</span> <span>pila</span> <span>de</span>
+    <span class="drift"><span>l</span><span style="transform:translateY(4px) rotate(2deg)">l</span><span style="transform:translateY(-6px) rotate(-3deg)">a</span><span style="transform:translateY(10px) rotate(4deg)">m</span><span style="transform:translateY(-14px) rotate(-7deg)">a</span><span style="transform:translateY(18px) rotate(9deg)">d</span><span style="transform:translate(6px,-22px) rotate(-14deg)">a</span><span style="transform:translate(16px,30px) rotate(19deg);color:#9AA0A6">s</span></span>
+  </div>
+  <div class="meta"><span>Lección 2 de 7</span><span>9 min</span><span>4 ejercicios</span></div>
+</header>
+
+<nav>
+  <span class="lbl">Temas</span>
+  <ol>
+    <li><i>1</i>Motor y runtime</li>
+    <li class="cur"><i>2</i>La pila de llamadas</li>
+    <li><i>3</i>Contextos de ejecución y hoisting</li>
+    <li><i>4</i>Scope y cadena de scopes</li>
+    <li><i>5</i>Closures</li>
+    <li><i>6</i>Recursión y stack overflow</li>
+    <li><i>7</i>Memoria y recolector de basura</li>
+  </ol>
+</nav>
+
+<main>
+  <span class="lbl">Introducción</span>
+  <p>JavaScript ejecuta tu código en un solo hilo: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <strong>pila de llamadas</strong> (<code>call stack</code>). La última función que entra es la primera que sale, como una pila de platos.</p>
+  <p class="aside">En el visualizador, solo se enciende lo que acaba de cambiar. Lo demás ya pasó: queda en plata, quieto, para que puedas seguir el rastro.</p>
+</main>
+
+<section class="viz">
+  <div class="vh"><b>Ejecución <span>paso a paso</span></b><span class="lbl">Paso 3 de 8</span></div>
+  <pre><span class="l hi"><b>1</b><span class="k">function</span> saludar(nombre) {</span><span class="l"><b>2</b>  <span class="k">return</span> `Hola, ${nombre}!`;</span><span class="l"><b>3</b>}</span><span class="l"><b>4</b></span><span class="l"><b>5</b><span class="k">function</span> mostrar() {</span><span class="l hi"><b>6</b>  <span class="k">const</span> msg = saludar("Mundo");</span><span class="l"><b>7</b>  console.log(msg);</span><span class="l"><b>8</b>}</span><span class="l"><b>9</b></span><span class="l"><b>10</b>mostrar();</span><span class="l"><b>11</b></span></pre>
+  <div class="row">
+    <div>
+      <div class="lbl" style="margin-bottom:8px">Pila de llamadas</div>
+      <div class="stack">
+        <div class="fr new">saludar()<small>acaba de entrar</small></div>
+        <div class="fr old">mostrar()<small>suspendida</small></div>
+      </div>
+    </div>
+    <div>
+      <div class="lbl" style="margin-bottom:8px">Consola</div>
+      <div class="con">vacía</div>
+    </div>
+  </div>
+  <p class="expl"><b>saludar()</b> se apila encima de <b>mostrar()</b>. El motor suspende mostrar() y ejecuta saludar().</p>
+  <div class="ctl"><span>← Anterior</span><span class="go">Siguiente →</span><span>↺ Reiniciar</span></div>
+  <div class="tl"><i class="p"></i><i class="p"></i><i class="c"></i><i></i><i></i><i></i><i></i><i></i></div>
+</section>
+</body>
+</html>

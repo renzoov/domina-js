@@ -1,0 +1,168 @@
+---
+import '../styles/global.css';
+import Logo from '../components/Logo.astro';
+import MenuTemario from '../components/MenuTemario.astro';
+
+interface Props {
+  titulo: string;
+  descripcion?: string;
+  /** Tema que se está viendo, para marcarlo en el menú */
+  actual?: { seccion: string; tema: string };
+  /** Apartados de la lección actual, se muestran bajo el tema en el menú */
+  indice?: { slug: string; texto: string }[];
+}
+const { titulo, descripcion = 'Aprende JavaScript en español, paso a paso, viendo lo que hace el motor por dentro.', actual, indice } = Astro.props;
+const ruta = Astro.url.pathname.replace(/\/$/, '');
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={descripcion} />
+    <meta name="theme-color" content="#1b2a23" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{titulo}</title>
+  </head>
+  <body>
+    <a class="saltar" href="#contenido">Saltar al contenido</a>
+    <svg class="filtros" width="0" height="0" aria-hidden="true" focusable="false">
+      <filter id="tiza" x="-15%" y="-15%" width="130%" height="130%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" result="ruido" />
+        <feDisplacementMap in="SourceGraphic" in2="ruido" scale="1.8" xChannelSelector="R" yChannelSelector="G" result="desplazado" />
+        <feTurbulence type="fractalNoise" baseFrequency="1.7" numOctaves="1" seed="9" result="grano" />
+        <feColorMatrix in="grano" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -2.2 1.55" result="huecos" />
+        <feComposite in="desplazado" in2="huecos" operator="in" />
+      </filter>
+    </svg>
+    <div class="pizarron">
+      <!-- Barra lateral fija: logo y temario, con su propio scroll -->
+      <aside class="lado">
+        <div class="lado-fijo">
+          <Logo />
+          <MenuTemario actual={actual} indice={indice} />
+        </div>
+      </aside>
+
+      <div class="area">
+        <header class="cabecera">
+          <slot name="esquina" />
+          <nav aria-label="Principal" class="principal">
+            <a href="/temario" aria-current={ruta === '/temario' ? 'page' : undefined}>Temario</a>
+            <a href="/antes-de-empezar/que-es-javascript-hoy" aria-current={ruta === '/antes-de-empezar/que-es-javascript-hoy' ? 'page' : undefined}>Empezar</a>
+          </nav>
+        </header>
+        <main id="contenido" class="contenido" tabindex="-1">
+          <slot />
+        </main>
+        <footer class="pie">
+          <p>domina-js · JavaScript en español, gratis y paso a paso.</p>
+          <span class="fantasma" aria-hidden="true">x = 3 + 4</span>
+        </footer>
+      </div>
+
+      <div class="bandeja" aria-hidden="true">
+        <i style="left:30%;width:58px"></i><i class="y" style="left:35%;width:34px"></i><i class="p" style="left:39%;width:22px"></i><i style="left:84%;width:46px"></i>
+      </div>
+    </div>
+  </body>
+</html>
+
+<style>
+  :root { --ancho-lado: 300px; }
+
+  .pizarron { display: grid; grid-template-columns: var(--ancho-lado) minmax(0, 1fr); }
+
+  /* El hueco de la columna queda en la rejilla; el contenido real va fijo a la pantalla */
+  .lado { position: relative; }
+  .lado-fijo {
+    position: fixed;
+    top: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: var(--ancho-lado);
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+    padding: 24px 22px 28px 30px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--chalk-15) transparent;
+    background:
+      repeating-linear-gradient(97deg, rgba(236, 234, 226, 0.012) 0 2px, transparent 2px 7px),
+      var(--board);
+    border-right: 2px dashed var(--chalk-08);
+    border-radius: 6px 0 0 6px;
+    z-index: 5;
+    view-transition-name: barra-lateral;
+  }
+
+  .area { min-width: 0; display: flex; flex-direction: column; min-height: calc(100vh - 24px); }
+  .cabecera {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px 28px;
+    padding: 30px var(--gutter) 0;
+    min-height: 72px;
+  }
+  .principal { display: flex; gap: 22px; margin-left: auto; }
+  .principal a {
+    font: 700 0.95rem/1 var(--read);
+    color: var(--chalk-70);
+    text-decoration: none;
+    padding: 6px 0;
+  }
+  .principal a:hover { color: var(--chalk); }
+  .principal a[aria-current='page'] {
+    color: var(--chalk);
+    background: linear-gradient(transparent 80%, var(--y-90) 80% 92%, transparent 92%);
+  }
+  .contenido { flex: 1; min-width: 0; padding: 28px var(--gutter) 0; outline: none; }
+
+  .fantasma {
+    position: absolute;
+    font: 400 46px var(--hand);
+    color: var(--chalk);
+    opacity: 0.045;
+    pointer-events: none;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .filtros { position: absolute; width: 0; height: 0; overflow: hidden; }
+  .pie { position: relative; padding: 64px var(--gutter) 0; min-height: 120px; }
+  .pie p { margin: 0; font: 400 0.9rem/1.5 var(--read); color: var(--chalk-70); }
+  .pie .fantasma { right: 8%; bottom: -6px; transform: rotate(-4deg); }
+  .bandeja {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 24px;
+    background: var(--tray);
+    border-top: 2px solid rgba(236, 234, 226, 0.08);
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+  }
+  .bandeja i { position: absolute; bottom: 7px; height: 9px; border-radius: 3px; background: var(--chalk); }
+  .bandeja i.y { background: var(--y); }
+  .bandeja i.p { background: var(--pink); }
+
+  /* Tableta y teléfono: la barra lateral pasa arriba y el temario se abre con un botón */
+  @media (max-width: 960px) {
+    .pizarron { display: block; }
+    .lado-fijo {
+      position: static;
+      width: auto;
+      padding: 20px var(--gutter) 0;
+      gap: 16px;
+      overflow: visible;
+      background: none;
+      border: 0;
+    }
+    .cabecera { padding-top: 12px; min-height: 0; }
+    .contenido { padding-top: 16px; }
+  }
+  @media (max-width: 640px) {
+    .fantasma { display: none; }
+  }
+</style>

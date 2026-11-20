@@ -1,0 +1,36 @@
+{
+  "id": "assigned",
+  "kind": "assigned",
+  "label": "Partitura de ejecución",
+  "kicker": "THE ROLL",
+  "lineage": "Ediciones urtext de partituras y su grabado musical",
+  "thesis": "Cada lección se lee como una partitura: el tiempo corre a la derecha y la pila sube como notas en el pentagrama.",
+  "palette": [
+    "#1E3A8A",
+    "#F5F7FA",
+    "#14161B",
+    "#F2B705"
+  ],
+  "materials": [
+    "pentagrama grabado a un píxel",
+    "tapa azul de edición urtext",
+    "numeración de compases"
+  ],
+  "viewport": "Barra azul tipo tapa de partitura con la sección como «obra»; columna de lectura blanca; el visualizador es un pentagrama donde cada llamada es una nota y un cabezal amarillo marca el paso.",
+  "risk": "Si la notación musical se mete en la columna de lectura, quien no lee música se pierde; debe quedarse en el marco y el visualizador.",
+  "raised": [
+    {
+      "from": "challenger-centre-rail",
+      "raise": "Toda línea, regla y pentagrama la dibuja una capa SVG a un píxel exacto; el marco usa solo tres valores de tinta."
+    },
+    {
+      "from": "challenger-cracktro",
+      "raise": "La profundidad es una sola variable en todo el sitio: más profundo en la pila = más alto en el pentagrama, siempre."
+    },
+    {
+      "from": "challenger-cyclorama",
+      "raise": "Cada paso es una «indicación» con nombre, enlazable (#paso-5) y con su equivalente en texto."
+    }
+  ],
+  "html": ".impeccable/mocks/decision/assigned.html"
+}

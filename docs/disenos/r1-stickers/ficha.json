@@ -1,0 +1,25 @@
+{
+  "id": "r1-stickers",
+  "kind": "challenger",
+  "catalogId": "vernacular-ephemera-layered-sticker-accretion",
+  "label": "Calcomanías acumuladas",
+  "verdict": "declined",
+  "lineage": "Estuches de gira cubiertos de stickers",
+  "thesis": "Capas de calcomanías que tapan las anteriores.",
+  "palette": [
+    "#141414",
+    "#F7DF1E",
+    "#E63946",
+    "#457B9D"
+  ],
+  "materials": [
+    "vinilo troquelado",
+    "bordes rotos"
+  ],
+  "viewport": "Superficie de stickers superpuestos.",
+  "case": "Pierde en ambos ejes: nada es legible por diseño. (Boceto agregado a tu pedido para que lo evalúes.)",
+  "kept": "El historial en capas: lo anterior sigue visible, desvanecido.",
+  "risk": "Ilegible.",
+  "hero": "https://impeccable.style/worlds/cards/vernacular-ephemera-layered-sticker-accretion-hero.webp",
+  "html": ".impeccable/mocks/decision/r1-stickers.html"
+}

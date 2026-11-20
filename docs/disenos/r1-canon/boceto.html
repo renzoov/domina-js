@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>domina-js · La pila de llamadas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1115;--fg:#E6E8EB;--y:#F7DF1E;
+--s1:#14171C;--s2:#191C22;--s3:#22262D;--s4:#2E333B;--s5:#454B55;--s6:#6B717C;--s7:#9AA0A9;--s8:#C4C8CE;
+--sans:"Geist",system-ui,sans-serif;--mono:"Geist Mono",ui-monospace,monospace}
+*{box-sizing:border-box}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+.top{height:60px;display:flex;align-items:center;gap:28px;padding:0 24px;border-bottom:1px solid var(--s3)}
+.logo{display:flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;width:240px}
+.logo b{font:600 17px var(--sans);letter-spacing:-.01em}.logo b span{color:var(--s6);font-weight:500}
+.search{width:340px;height:36px;border:1px solid var(--s3);background:var(--s1);border-radius:8px;display:flex;align-items:center;padding:0 12px;gap:10px;font-size:14px;color:var(--s6)}
+.search kbd{margin-left:auto;font:500 11px var(--mono);border:1px solid var(--s4);border-radius:4px;padding:2px 6px;color:var(--s7)}
+.links{margin-left:auto;display:flex;gap:26px;font-size:14px;color:var(--s7)}.links .on{color:var(--fg)}
+.wrap{display:grid;grid-template-columns:264px 1fr 232px;height:840px}
+aside.nav{border-right:1px solid var(--s3);padding:26px 16px 0 24px}
+.grp{font:500 11px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--s6);margin:0 0 10px 10px}
+.prev{font-size:14px;color:var(--s6);padding:6px 10px;margin-bottom:2px}
+.sec{font-size:14px;font-weight:600;color:var(--fg);padding:8px 10px;margin-top:10px;display:flex;justify-content:space-between}
+.sec span{color:var(--s6);font:500 12px var(--mono)}
+.nav ol{list-style:none;margin:2px 0 10px 10px;padding:0 0 0 0;border-left:1px solid var(--s3)}
+.nav li{font-size:14px;line-height:1.35;color:var(--s7);padding:7px 10px 7px 14px;margin-left:-1px;border-left:1px solid transparent}
+.nav li.done{color:var(--s8)}.nav li.cur{color:var(--y);border-left-color:var(--y);background:rgba(247,223,30,.06);font-weight:500}
+.nav li em{font:500 11px var(--mono);font-style:normal;color:var(--s6);margin-right:8px}.nav li.cur em{color:var(--y)}
+article{padding:30px 0 0;overflow:hidden}
+.col{width:760px;margin:0 auto}
+.crumb{font-size:13px;color:var(--s6);display:flex;gap:8px}.crumb b{color:var(--s7);font-weight:500}
+h1{font:700 40px/1.1 var(--sans);letter-spacing:-.025em;margin:12px 0 12px}
+.meta{display:flex;gap:16px;font:500 13px var(--mono);color:var(--s7)}.meta span:before{content:"";display:inline-block;width:3px;height:3px;border-radius:50%;background:var(--s5);vertical-align:middle;margin-right:16px}.meta span:first-child:before{display:none}
+.col p{font-size:17px;line-height:1.62;color:var(--s8);margin:20px 0 22px;max-width:70ch}.col p strong{color:var(--fg);font-weight:600}
+.viz{border:1px solid var(--s3);border-radius:12px;background:var(--s1);overflow:hidden}
+.vh{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--s3);background:var(--s2)}
+.vh .t{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}.vh .t i{width:7px;height:7px;border-radius:50%;background:var(--y)}
+.vh .p{font:500 12px var(--mono);color:var(--s7)}.vh .p b{color:var(--fg);font-weight:600}
+.vb{display:grid;grid-template-columns:1fr 250px}
+pre{margin:0;padding:12px 0;font:400 13px/21px var(--mono);color:var(--s8);border-right:1px solid var(--s3);background:var(--bg)}
+pre div{display:flex;white-space:pre;padding-right:16px}pre u{text-decoration:none;width:44px;padding-right:16px;text-align:right;color:var(--s5)}
+pre div.hl{background:rgba(247,223,30,.07);box-shadow:inset 2px 0 0 var(--y)}pre div.hl u{color:var(--y)}
+.kw{color:var(--s6)}.fn{color:var(--fg);font-weight:500}.st{color:#E9DC86}.cm{color:var(--s5)}
+.side{padding:12px 14px;display:flex;flex-direction:column;gap:12px}
+.lbl{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--s6);margin-bottom:7px;display:flex;justify-content:space-between}
+.frame{font:500 13px var(--mono);border:1px solid var(--s4);border-radius:6px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;color:var(--s8);background:var(--s2)}
+.frame.top{border-color:var(--y);color:var(--y);background:rgba(247,223,30,.06)}.frame small{font-size:11px;color:var(--s6)}.frame.top small{color:var(--y);opacity:.75}
+.cons{font:400 12px var(--mono);color:var(--s5);border:1px solid var(--s3);border-radius:6px;padding:8px 10px;background:var(--bg);height:54px}
+.exp{padding:11px 16px;border-top:1px solid var(--s3);font-size:15px;line-height:1.5;color:var(--s8)}.exp b{color:var(--fg);font-family:var(--mono);font-size:14px;font-weight:600}
+.vf{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid var(--s3);background:var(--s2)}
+.btn{font:500 13px var(--sans);padding:7px 12px;border-radius:7px;border:1px solid var(--s4);color:var(--s8);background:var(--s1)}
+.btn.pri{background:var(--y);border-color:var(--y);color:var(--bg);font-weight:600}
+.tl{display:flex;gap:4px;margin-left:auto;margin-right:14px;align-items:center}
+.tl i{width:22px;height:4px;border-radius:2px;background:var(--s4)}.tl i.d{background:var(--s6)}.tl i.a{background:var(--y);height:6px}
+aside.toc{padding:34px 24px 0 8px}
+.toc ul{list-style:none;margin:0;padding:0;border-left:1px solid var(--s3)}
+.toc li{font-size:13px;line-height:1.4;color:var(--s7);padding:6px 0 6px 14px;margin-left:-1px;border-left:1px solid transparent}
+.toc li.on{color:var(--fg);border-left-color:var(--y)}.toc li.sub{padding-left:26px;color:var(--s6)}
+.toc .card{margin-top:28px;border:1px solid var(--s3);border-radius:10px;padding:14px;background:var(--s1)}
+.toc .card b{display:block;font-size:13px;font-weight:600}.toc .card span{display:block;font-size:12px;color:var(--s7);margin:4px 0 10px;line-height:1.45}
+.bar{height:4px;border-radius:2px;background:var(--s3)}.bar i{display:block;width:14%;height:100%;border-radius:2px;background:var(--y)}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="#">
+    <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true">
+      <rect x="0.5" y="0.5" width="27" height="27" rx="7" fill="#191C22" stroke="#2E333B"/>
+      <path d="M7 19h5v-5h5V9h4" fill="none" stroke="#F7DF1E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="7" cy="19" r="1.9" fill="#E6E8EB"/>
+    </svg>
+    <b>domina<span>-js</span></b>
+  </a>
+  <div class="search"><svg width="14" height="14" viewBox="0 0 14 14"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#6B717C" stroke-width="1.5"/><path d="M9.5 9.5L13 13" stroke="#6B717C" stroke-width="1.5" stroke-linecap="round"/></svg>Buscar lecciones…<kbd>Ctrl K</kbd></div>
+  <nav class="links"><span class="on">Curso</span><span>Ejercicios</span><span>Glosario</span><span>GitHub</span></nav>
+</header>
+<div class="wrap">
+  <aside class="nav">
+    <div class="grp">Curso</div>
+    <div class="prev">1 · Fundamentos</div>
+    <div class="prev">2 · Funciones y objetos</div>
+    <div class="prev">3 · Arrays e iteración</div>
+    <div class="sec">4 · Cómo se ejecuta JS por dentro <span>1/7</span></div>
+    <ol>
+      <li class="done"><em>01</em>Motor y runtime</li>
+      <li class="cur"><em>02</em>La pila de llamadas</li>
+      <li><em>03</em>Contextos de ejecución y hoisting</li>
+      <li><em>04</em>Scope y cadena de scopes</li>
+      <li><em>05</em>Closures</li>
+      <li><em>06</em>Recursión y stack overflow</li>
+      <li><em>07</em>Memoria y recolector de basura</li>
+    </ol>
+    <div class="prev">5 · Asincronía</div>
+  </aside>
+  <article>
+    <div class="col">
+      <div class="crumb">Curso <span>/</span> <b>4 · Cómo se ejecuta JS por dentro</b></div>
+      <h1>La pila de llamadas</h1>
+      <div class="meta"><span>Lección 2 de 7</span><span>9 min</span><span>4 ejercicios</span></div>
+      <p>JavaScript ejecuta tu código en un solo hilo: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <strong>pila de llamadas</strong> (call stack). La última función que entra es la primera que sale, como una pila de platos.</p>
+      <section class="viz" aria-label="Visualizador">
+        <div class="vh"><span class="t"><i></i>Visualizador · pila de llamadas</span><span class="p">Paso <b>3</b> de 8</span></div>
+        <div class="vb">
+<pre><div class="hl"><u>1</u><span><span class="kw">function</span> <span class="fn">saludar</span>(nombre) {</span></div><div><u>2</u>  <span class="kw">return</span> <span class="st">`Hola, ${nombre}!`</span>;</div><div><u>3</u>}</div><div><u>4</u></div><div><u>5</u><span class="kw">function</span> <span class="fn">mostrar</span>() {</div><div class="hl"><u>6</u>  <span class="kw">const</span> msg = <span class="fn">saludar</span>(<span class="st">"Mundo"</span>);</div><div><u>7</u>  console.<span class="fn">log</span>(msg);</div><div><u>8</u>}</div><div><u>9</u></div><div><u>10</u><span class="fn">mostrar</span>();</div><div><u>11</u></div></pre>
+          <div class="side">
+            <div><div class="lbl"><span>Pila de llamadas</span><span>2</span></div>
+              <div class="frame top">saludar()<small>línea 1</small></div>
+              <div class="frame">mostrar()<small>línea 6</small></div></div>
+            <div><div class="lbl"><span>Consola</span></div><div class="cons">Sin salida todavía</div></div>
+          </div>
+        </div>
+        <div class="exp"><b>saludar()</b> se apila encima de <b>mostrar()</b>. El motor suspende mostrar() y ejecuta saludar().</div>
+        <div class="vf"><span class="btn">← Anterior</span><span class="btn pri">Siguiente →</span><span class="tl"><i class="d"></i><i class="d"></i><i class="a"></i><i></i><i></i><i></i><i></i><i></i></span><span class="btn">↺ Reiniciar</span></div>
+      </section>
+    </div>
+  </article>
+  <aside class="toc">
+    <div class="grp" style="margin-left:0">En esta lección</div>
+    <ul>
+      <li class="on">Un solo hilo</li>
+      <li>Visualizador paso a paso</li>
+      <li>Apilar y desapilar</li>
+      <li class="sub">Qué pasa al hacer return</li>
+      <li>Leer un stack trace</li>
+      <li>Ejercicios</li>
+    </ul>
+    <div class="card"><b>Tu progreso</b><span>Sección 4 · 1 de 7 lecciones completadas</span><div class="bar"><i></i></div></div>
+  </aside>
+</div>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>domina-js · Atlas nocturno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,500;1,400;1,500&family=Spectral:ital,wght@0,400;0,600;1,400&family=Martian+Mono:wght@300;400&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{--sky:#070B1A;--y:#F7DF1E;--blue:#7FA7FF;--parch:#C9C3B4;--org:#FF8C42;--sky2:#0C1226;--grid:rgba(127,167,255,.09);--txt:#E9E5DA}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+*{box-sizing:border-box}
+body{background:var(--sky);color:var(--txt);font-family:Spectral,serif;position:relative;
+background-image:radial-gradient(1px 1px at 120px 180px,#fff8,transparent),radial-gradient(1.5px 1.5px at 210px 520px,#fff9,transparent),radial-gradient(1px 1px at 60px 760px,#fff6,transparent),radial-gradient(1px 1px at 1390px 90px,#fff7,transparent),radial-gradient(1.2px 1.2px at 1010px 60px,#fff8,transparent),radial-gradient(1px 1px at 700px 40px,#fff5,transparent),linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:auto,auto,auto,auto,auto,auto,120px 120px,120px 120px}
+.lbl{font:300 10.5px "Martian Mono",monospace;letter-spacing:.12em;text-transform:uppercase;color:#8B93B0}
+header{height:100px;display:flex;align-items:center;padding:0 40px;gap:40px;border-bottom:1px solid rgba(201,195,180,.22);position:relative}
+header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:5px;background:repeating-linear-gradient(90deg,rgba(201,195,180,.35) 0 1px,transparent 1px 12px),repeating-linear-gradient(90deg,rgba(201,195,180,.5) 0 1px,transparent 1px 120px);}
+.logo{display:flex;align-items:center;gap:14px;color:var(--txt);text-decoration:none}
+.logo b{font:italic 500 30px/1 "EB Garamond";letter-spacing:.005em}.logo b span{color:var(--y);font-style:normal;font-size:24px}
+.plate{display:flex;flex-direction:column;gap:6px;border-left:1px solid rgba(201,195,180,.25);padding-left:28px}
+.plate .t{font:italic 400 22px/1 "EB Garamond";color:var(--parch)}
+.coords{margin-left:auto;text-align:right;display:flex;gap:30px}
+.coords div{display:flex;flex-direction:column;gap:5px}.coords strong{font:400 14px "Martian Mono";color:var(--txt);letter-spacing:.04em}
+aside{position:absolute;left:0;top:106px;bottom:0;width:290px;padding:30px 24px 0 40px}
+aside .lbl{margin-bottom:16px;display:block}
+.obj{display:grid;grid-template-columns:26px 1fr;align-items:center;padding:9px 0;font:400 16px/1.3 Spectral;color:#A9AEC2;text-decoration:none;border-bottom:1px solid rgba(127,167,255,.08)}
+.obj small{grid-column:2;font:300 9.5px "Martian Mono";letter-spacing:.1em;color:#5E6788;margin-top:2px}
+.mag{width:var(--m);height:var(--m);border-radius:50%;background:var(--parch);justify-self:center;box-shadow:0 0 6px rgba(201,195,180,.35)}
+.obj.done{color:var(--parch)}.obj.done .mag{background:var(--blue);box-shadow:0 0 8px rgba(127,167,255,.6)}
+.obj.on{color:var(--txt)}.obj.on .mag{background:var(--y);box-shadow:0 0 0 4px rgba(247,223,30,.15),0 0 14px rgba(247,223,30,.8)}
+.obj.on{font-weight:600}
+main{position:absolute;left:290px;top:106px;width:650px;bottom:0;padding:42px 56px 0 52px;background:var(--sky);border-left:1px solid rgba(201,195,180,.12);border-right:1px solid rgba(201,195,180,.12)}
+.cat{display:flex;gap:16px;align-items:baseline}.cat .lbl{color:var(--blue)}
+h1{font:italic 500 62px/1 "EB Garamond";margin:12px 0 14px;color:#F3EFE4;letter-spacing:-.01em}
+.meta{display:flex;gap:0;margin-bottom:26px}.meta span{font:300 11.5px "Martian Mono";letter-spacing:.06em;color:var(--parch);padding:0 14px;border-left:1px solid rgba(201,195,180,.3)}.meta span:first-child{padding-left:0;border:0}
+p{font-size:17.5px;line-height:1.62;max-width:64ch;margin:0 0 18px;color:var(--txt)}p strong{font-weight:600;color:#fff}p code{font:400 14.5px "JetBrains Mono";color:var(--y)}
+.legend{margin-top:24px;padding:14px 18px;border:1px solid rgba(201,195,180,.2);display:grid;grid-template-columns:repeat(3,auto);gap:10px 26px;justify-content:start}
+.legend span{display:flex;align-items:center;gap:10px;font:400 14px Spectral;color:var(--parch)}
+.legend i{display:inline-block;border-radius:50%}
+section.viz{position:absolute;right:40px;top:132px;width:450px;bottom:28px;border:1px solid rgba(201,195,180,.25);background:rgba(7,11,26,.92);overflow:hidden}
+.vh{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(201,195,180,.15)}.vh .lbl b{color:var(--y);font-weight:400}
+.chart{height:206px;position:relative;border-bottom:1px solid rgba(201,195,180,.15);background:linear-gradient(rgba(127,167,255,.07) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,rgba(127,167,255,.07) 1px,transparent 1px) 0 0/40px 40px}
+pre{margin:0;padding:10px 0;font:400 13px/1.56 "JetBrains Mono";color:#B8BED3;border-bottom:1px solid rgba(201,195,180,.15)}
+pre span{display:block;padding:0 16px}pre span:before{content:attr(data-n);display:inline-block;width:24px;color:#454D6B}
+pre span.hl{background:rgba(247,223,30,.08);box-shadow:inset 2px 0 0 var(--y);color:#F3EFE4}
+pre b{font-weight:400}.k{color:var(--blue)}.s{color:var(--org)}.f{color:var(--y)}
+.row2{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid rgba(201,195,180,.15)}
+.row2>div{padding:10px 16px}.row2>div+div{border-left:1px solid rgba(201,195,180,.15)}
+.cons{font:400 12.5px "JetBrains Mono";color:#454D6B;margin-top:8px}
+.exp{padding:10px 16px;font-size:15px;line-height:1.5;border-bottom:1px solid rgba(201,195,180,.15)}.exp b{color:var(--y);font:400 13.5px "JetBrains Mono"}
+.ctl{padding:12px 16px}
+.tl{display:flex;justify-content:space-between;align-items:center;margin:2px 4px 12px;height:16px;background:linear-gradient(rgba(201,195,180,.25),rgba(201,195,180,.25)) center/100% 1px no-repeat}
+.tl i{width:6px;height:6px;border-radius:50%;background:#3A4260;outline:4px solid var(--sky)}
+.tl i.past{background:var(--blue)}.tl i.on{width:12px;height:12px;background:var(--y);box-shadow:0 0 12px var(--y)}
+.btns{display:flex;gap:8px}.btn{font:300 11.5px "Martian Mono";letter-spacing:.04em;padding:9px 12px;border:1px solid rgba(201,195,180,.35);color:var(--txt)}
+.btn.go{background:var(--y);color:var(--sky);border-color:var(--y);font-weight:400}.btn.rs{margin-left:auto;color:#8B93B0}
+</style></head><body>
+<header>
+ <a class="logo" href="#"><svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="#C9C3B4" stroke-opacity=".45"/><circle cx="24" cy="24" r="16" fill="none" stroke="#7FA7FF" stroke-opacity=".25" stroke-dasharray="1 3"/><path d="M30 9 L30 36 L17 36 L13 27 L19 20 L30 22" fill="none" stroke="#C9C3B4" stroke-width="1"/><circle cx="30" cy="9" r="2" fill="#E9E5DA"/><circle cx="17" cy="36" r="1.6" fill="#7FA7FF"/><circle cx="13" cy="27" r="1.3" fill="#E9E5DA"/><circle cx="19" cy="20" r="1.6" fill="#7FA7FF"/><circle cx="30" cy="22" r="1.4" fill="#E9E5DA"/><circle cx="30" cy="36" r="3.4" fill="#F7DF1E"/><circle cx="30" cy="36" r="6" fill="none" stroke="#F7DF1E" stroke-opacity=".35"/></svg><b>domina <span>·js</span></b></a>
+ <div class="plate"><span class="lbl">Carta IV · Constelación del motor</span><span class="t">Cómo se ejecuta JS por dentro</span></div>
+ <div class="coords"><div><span class="lbl">Ascensión</span><strong>04h 02m</strong></div><div><span class="lbl">Declinación</span><strong>+2° / 7°</strong></div><div><span class="lbl">Magnitud</span><strong>9 min</strong></div></div>
+</header>
+<aside><span class="lbl">Objetos de la carta IV</span>
+ <a class="obj done" href="#"><i class="mag" style="--m:7px"></i>Motor y runtime<small>IV·1 · observado</small></a>
+ <a class="obj on" href="#"><i class="mag" style="--m:10px"></i>La pila de llamadas<small style="color:#B8A84A">IV·2 · en observación</small></a>
+ <a class="obj" href="#"><i class="mag" style="--m:6px"></i>Contextos de ejecución y hoisting<small>IV·3</small></a>
+ <a class="obj" href="#"><i class="mag" style="--m:5px"></i>Scope y cadena de scopes<small>IV·4</small></a>
+ <a class="obj" href="#"><i class="mag" style="--m:6px"></i>Closures<small>IV·5</small></a>
+ <a class="obj" href="#"><i class="mag" style="--m:4px"></i>Recursión y stack overflow<small>IV·6</small></a>
+ <a class="obj" href="#"><i class="mag" style="--m:5px"></i>Memoria y recolector de basura<small>IV·7</small></a>
+</aside>
+<main>
+ <div class="cat"><span class="lbl">Objeto IV·2</span><span class="lbl" style="color:#5E6788">Sección 4</span></div>
+ <h1>La pila de llamadas</h1>
+ <div class="meta"><span>Lección 2 de 7</span><span>9 min</span><span>4 ejercicios</span></div>
+ <p>JavaScript ejecuta tu código en un solo hilo: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <strong>pila de llamadas</strong> (<code>call stack</code>). La última función que entra es la primera que sale, como una pila de platos.</p>
+ <p>En la carta de la derecha, cada función llamada es una estrella y cada llamada, una línea que la une a quien la llamó. La constelación crece hacia arriba mientras la pila se llena.</p>
+ <div class="legend"><span><i style="width:10px;height:10px;background:#F7DF1E;box-shadow:0 0 8px #F7DF1E"></i>se ejecuta</span><span><i style="width:7px;height:7px;background:#7FA7FF"></i>en espera</span><span><i style="width:18px;height:1px;border-radius:0;background:#C9C3B4"></i>llamada</span></div>
+</main>
+<section class="viz">
+ <div class="vh"><span class="lbl">Carta de ejecución</span><span class="lbl">Paso <b>3</b> de 8</span></div>
+ <div class="chart"><svg width="450" height="206" viewBox="0 0 450 206" aria-hidden="true">
+  <circle cx="160" cy="176" r="1.3" fill="#C9C3B4" opacity=".5"/><circle cx="300" cy="190" r="1" fill="#C9C3B4" opacity=".4"/><circle cx="380" cy="40" r="1" fill="#C9C3B4" opacity=".5"/><circle cx="70" cy="60" r="1.2" fill="#C9C3B4" opacity=".4"/>
+  <line x1="200" y1="150" x2="248" y2="66" stroke="#C9C3B4" stroke-width="1"/>
+  <line x1="200" y1="150" x2="170" y2="200" stroke="#C9C3B4" stroke-width="1" stroke-dasharray="2 4" opacity=".5"/>
+  <circle cx="200" cy="150" r="5" fill="#7FA7FF"/><circle cx="200" cy="150" r="10" fill="none" stroke="#7FA7FF" stroke-opacity=".3"/>
+  <circle cx="248" cy="66" r="7" fill="#F7DF1E"/><circle cx="248" cy="66" r="15" fill="#F7DF1E" opacity=".12"/><circle cx="248" cy="66" r="22" fill="none" stroke="#F7DF1E" stroke-opacity=".35" stroke-dasharray="2 3"/>
+  <path d="M244 52 L248 38 M248 80 L248 94 M234 66 L222 66 M262 66 L274 66" stroke="#F7DF1E" stroke-width="1" opacity=".7"/>
+  <text x="282" y="62" font-family="JetBrains Mono" font-size="13" fill="#F7DF1E">saludar()</text><text x="282" y="78" font-family="Martian Mono" font-size="9" fill="#8B93B0" letter-spacing="1">CIMA · LÍNEA 1</text>
+  <text x="216" y="148" font-family="JetBrains Mono" font-size="13" fill="#B8BED3">mostrar()</text><text x="216" y="164" font-family="Martian Mono" font-size="9" fill="#5E6788" letter-spacing="1">ESPERA · LÍNEA 6</text>
+  <text x="16" y="22" font-family="Martian Mono" font-size="9" fill="#5E6788" letter-spacing="1">↑ LA PILA CRECE HACIA ARRIBA</text>
+ </svg></div>
+<pre><span data-n="1" class="hl"><b class="k">function</b> <b class="f">saludar</b>(nombre) {</span><span data-n="2">  <b class="k">return</b> <b class="s">`Hola, ${nombre}!`</b>;</span><span data-n="3">}</span><span data-n="4"> </span><span data-n="5"><b class="k">function</b> mostrar() {</span><span data-n="6" class="hl">  <b class="k">const</b> msg = <b class="f">saludar</b>(<b class="s">"Mundo"</b>);</span><span data-n="7">  console.log(msg);</span><span data-n="8">}</span><span data-n="9"> </span><span data-n="10">mostrar();</span></pre>
+ <div class="row2"><div><span class="lbl">Pila · de cima a base</span><div class="cons" style="color:#F7DF1E">saludar()</div><div class="cons" style="color:#B8BED3;margin-top:4px">mostrar()</div></div><div><span class="lbl">Consola</span><div class="cons">— sin registros</div></div></div>
+ <div class="exp"><b>saludar()</b> se apila encima de <b>mostrar()</b>. El motor suspende mostrar() y ejecuta saludar().</div>
+ <div class="ctl"><div class="tl"><i class="past"></i><i class="past"></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i></div>
+ <div class="btns"><span class="btn">← Anterior</span><span class="btn go">Siguiente →</span><span class="btn rs">↺ Reiniciar</span></div></div>
+</section>
+</body></html>

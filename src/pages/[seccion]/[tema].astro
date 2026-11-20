@@ -1,0 +1,40 @@
+---
+import { getCollection, render } from 'astro:content';
+import LessonLayout from '../../layouts/LessonLayout.astro';
+import { buscarTema } from '../../data/temario';
+import * as visualizaciones from '../../data/visualizaciones';
+import type { DatosVisualizador } from '../../lib/visualizador';
+
+export async function getStaticPaths() {
+  const lecciones = await getCollection('lecciones');
+  return lecciones.map((leccion) => ({
+    params: { seccion: leccion.data.seccion, tema: leccion.data.tema },
+    props: { leccion, disponiblesLista: lecciones.map((l) => `${l.data.seccion}/${l.data.tema}`) },
+  }));
+}
+
+const { leccion, disponiblesLista } = Astro.props;
+const encontrado = buscarTema(leccion.data.seccion, leccion.data.tema);
+if (!encontrado) throw new Error(`El tema ${leccion.data.seccion}/${leccion.data.tema} no existe en src/data/temario.ts`);
+const { Content, headings } = await render(leccion);
+const datos = leccion.data.pizarron
+  ? (visualizaciones as Record<string, DatosVisualizador>)[leccion.data.pizarron]
+  : undefined;
+if (leccion.data.pizarron && !datos) throw new Error(`No existe la visualización «${leccion.data.pizarron}»`);
+---
+<LessonLayout
+  titulo={leccion.data.titulo}
+  resumen={leccion.data.resumen}
+  minutos={leccion.data.minutos}
+  intro={leccion.data.intro}
+  guia={leccion.data.guia}
+  nota={leccion.data.nota}
+  seccion={encontrado.seccion}
+  indice={encontrado.indice}
+  disponibles={new Set(disponiblesLista)}
+  pizarron={datos && { id: 'pizarron', datos, mostrarPila: leccion.data.mostrarPila, modo: leccion.data.modoPizarron }}
+  ejercicios={leccion.data.ejercicios}
+  encabezados={headings}
+>
+  <Content />
+</LessonLayout>

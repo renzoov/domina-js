@@ -1,0 +1,22 @@
+{
+  "id": "r1-domino",
+  "kind": "grounded",
+  "label": "Fichas de dominó",
+  "lineage": "El dominó de mesa (juego con el nombre «domina»)",
+  "thesis": "Una pila de fichas negras con puntos amarillos: cada llamada es una ficha que se apoya sobre la anterior y cae al terminar.",
+  "palette": [
+    "#0B0B0B",
+    "#F7DF1E",
+    "#F7F3E8",
+    "#B3122E",
+    "#3A2A1E"
+  ],
+  "materials": [
+    "fichas de baquelita negra",
+    "puntos amarillos en relieve",
+    "mesa de madera oscura"
+  ],
+  "viewport": "Logo hecho con una ficha; la columna de lectura sobre negro; el visualizador apila fichas y el efecto dominó explica cómo se desapila.",
+  "risk": "Es la lectura literal del nombre del sitio; puede quedar como un juego de palabras.",
+  "html": ".impeccable/mocks/decision/r1-domino.html"
+}

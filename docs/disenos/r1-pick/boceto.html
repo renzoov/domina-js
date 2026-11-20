@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>domina-js — Pizarrón y tiza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cabin+Sketch:wght@400;700&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --board:#1B2A23;--y:#F7DF1E;--chalk:#ECEAE2;--pink:#F2A7B8;--sage:#8FB7A1;
+  --edge:color-mix(in srgb,#1B2A23 45%,#000);--deep:color-mix(in srgb,#1B2A23 80%,#000);
+  --c70:rgba(236,234,226,.72);--c45:rgba(236,234,226,.45);--c15:rgba(236,234,226,.15);--c06:rgba(236,234,226,.06);
+  --hand:'Cabin Sketch',cursive;--read:'Atkinson Hyperlegible',system-ui,sans-serif;--mono:'Fira Code',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+body{background:var(--edge);color:var(--chalk);font-family:var(--read)}
+.board{position:absolute;inset:12px;border-radius:6px;overflow:hidden;
+  background:
+    radial-gradient(ellipse 520px 160px at 78% 9%,var(--c06),transparent 70%),
+    radial-gradient(ellipse 380px 220px at 12% 70%,rgba(236,234,226,.035),transparent 70%),
+    radial-gradient(ellipse 700px 260px at 55% 95%,rgba(236,234,226,.04),transparent 70%),
+    repeating-linear-gradient(97deg,rgba(236,234,226,.012) 0 2px,transparent 2px 7px),
+    repeating-linear-gradient(8deg,rgba(0,0,0,.05) 0 1px,transparent 1px 5px),
+    var(--board);
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.4),inset 0 0 90px rgba(0,0,0,.45)}
+.ghost{position:absolute;font:400 46px var(--hand);color:var(--chalk);opacity:.045;transform:rotate(-4deg);pointer-events:none}
+.wrap{position:relative;display:grid;grid-template-columns:220px 540px 1fr;grid-template-rows:56px auto 1fr;column-gap:44px;padding:24px 36px 0;height:836px}
+.top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--chalk)}
+.logo b{font:700 30px/1 var(--hand);letter-spacing:.01em;text-shadow:0 0 2px var(--c45)}
+.logo b span{color:var(--y)}
+.logo small{display:block;font:400 10px/1 var(--mono);color:var(--sage);letter-spacing:.14em;margin-top:4px}
+.corner{text-align:right;font:400 11px/1.6 var(--mono);color:var(--sage);letter-spacing:.12em;text-transform:uppercase}
+.corner b{display:block;font:400 22px/1 var(--hand);letter-spacing:.01em;text-transform:none;color:var(--chalk);opacity:.85}
+.title{grid-column:2/-1;padding:14px 0 18px}
+h1{margin:0;font:700 72px/1 var(--hand);color:var(--chalk);text-shadow:0 0 3px var(--c45),1px 1px 0 rgba(236,234,226,.2)}
+.title svg{display:block;margin:-6px 0 0 -6px}
+.meta{font:400 12px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-top:10px}
+.meta i{font-style:normal;margin:0 9px;color:var(--c45)}
+nav{grid-row:2/4;padding-top:24px}
+.lbl{font:600 10.5px/1 var(--mono);letter-spacing:.2em;color:var(--sage);text-transform:uppercase;margin:0 0 14px}
+nav ol{list-style:none;margin:0;padding:0;border-left:2px solid var(--c15)}
+nav li{position:relative;padding:9px 0 9px 16px;font:400 15px/1.3 var(--read);color:var(--c70)}
+nav li em{font:400 12px var(--mono);font-style:normal;color:var(--sage);margin-right:8px}
+nav li.done{color:var(--sage)} nav li.done::after{content:"✓";margin-left:6px;color:var(--sage)}
+nav li.now{color:var(--chalk);font-weight:700}
+nav li.now::before{content:"";position:absolute;left:-2px;top:6px;bottom:6px;width:3px;background:var(--y);border-radius:2px}
+nav li.now span{background:linear-gradient(transparent 82%,rgba(247,223,30,.85) 82% 94%,transparent 94%)}
+.eraser{margin-top:34px;width:150px;height:44px;border-radius:5px;background:var(--deep);box-shadow:0 3px 0 rgba(0,0,0,.4);position:relative;transform:rotate(-3deg)}
+.eraser::before{content:"";position:absolute;inset:auto 0 0 0;height:12px;background:repeating-linear-gradient(90deg,var(--c45) 0 2px,var(--c15) 2px 5px);border-radius:0 0 5px 5px}
+.eraser::after{content:"borrador";position:absolute;left:14px;top:10px;font:400 11px var(--mono);color:var(--sage);letter-spacing:.1em}
+/* lectura: tiza nítida, no fuente de tiza */
+.read p{font-size:17px;line-height:1.62;margin:0 0 18px;max-width:66ch;color:var(--chalk)}
+.read p.lead{font-size:18.5px;line-height:1.6}
+.read p.dim{color:var(--c70)}
+.read u{text-decoration:none;background:linear-gradient(transparent 84%,rgba(247,223,30,.9) 84% 95%,transparent 95%)}
+.read h2{font:700 21px/1.3 var(--read);margin:28px 0 10px}
+.read code{font:400 14.5px var(--mono);color:var(--chalk);border-bottom:1px dashed var(--c45)}
+.note{margin-top:20px;display:flex;gap:14px;align-items:flex-start;padding:14px 16px;border:2px solid var(--c15);border-radius:6px 10px 5px 9px/9px 5px 10px 6px;font-size:15.5px;line-height:1.55;color:var(--c70)}
+.note b{font:700 24px/1 var(--hand);color:var(--pink);flex:none;transform:rotate(-4deg)}
+/* visualizador dibujado en tiza */
+.viz{display:flex;flex-direction:column;gap:12px}
+.vhead{display:flex;justify-content:space-between;align-items:baseline}
+.vhead h3{margin:0;font:700 26px/1 var(--hand);color:var(--chalk)}
+.vhead span{font:400 12px/1 var(--mono);letter-spacing:.12em;color:var(--sage)}
+.vhead span b{color:var(--y);font-weight:600}
+.box{border:2px solid var(--c70);border-radius:5px 9px 4px 8px/8px 4px 9px 5px;box-shadow:0 0 3px rgba(236,234,226,.18)}
+.row{display:grid;grid-template-columns:1fr 196px;gap:16px}
+pre{margin:0;padding:10px 0;font:400 12.5px/18.5px var(--mono);color:var(--chalk);background:rgba(0,0,0,.14)}
+pre .l{display:block;white-space:pre;padding-right:8px}
+pre .l i{display:inline-block;width:30px;padding-right:10px;text-align:right;font-style:normal;color:var(--sage);opacity:.75}
+pre .k{color:var(--sage)} pre .s{color:var(--pink)}
+pre .l.on{background:linear-gradient(transparent 80%,rgba(247,223,30,.9) 80% 92%,transparent 92%)} pre .l.on i{color:var(--y);opacity:1}
+pre .l.call{background:rgba(247,223,30,.08)} pre .l.call i{color:var(--y);opacity:1}
+.stack{position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 0 0}
+.stack .lbl{margin:0 0 auto;font-size:10px}
+.ann{position:absolute;right:-4px;top:26px;font:700 20px/1 var(--hand);color:var(--pink);transform:rotate(-6deg)}
+.fr{padding:8px 12px;margin-top:8px;font:600 14px/1.2 var(--mono)}
+.fr small{display:block;font:400 10.5px/1.4 var(--mono);color:var(--sage);margin-top:2px}
+.fr.new{border-color:var(--y);color:var(--y);background:rgba(247,223,30,.07);box-shadow:0 0 4px rgba(247,223,30,.3)}
+.fr.new small{color:var(--chalk);opacity:.8}
+.floor{margin-top:8px;height:3px;background:repeating-linear-gradient(90deg,var(--c70) 0 18px,transparent 18px 21px);border-radius:2px}
+.cons{display:flex;gap:16px;align-items:center;padding:10px 14px;font:400 12.5px/1.4 var(--mono);color:var(--c45);background:radial-gradient(ellipse 60% 120% at 60% 50%,var(--c06),transparent 70%)}
+.cons b{font-weight:600;font-size:10px;letter-spacing:.2em;color:var(--sage)}
+.exp{margin:0;font-size:15.5px;line-height:1.55;color:var(--c70)}
+.exp b{color:var(--chalk);font-family:var(--mono);font-size:14px;background:linear-gradient(transparent 82%,rgba(247,223,30,.9) 82% 94%,transparent 94%)}
+.tl{display:flex;gap:10px;align-items:center}
+.tl span{width:30px;height:30px;display:grid;place-items:center;font:400 12px var(--mono);color:var(--c45);border:2px solid var(--c15);border-radius:48% 52% 45% 55%/55% 45% 52% 48%}
+.tl span.done{color:var(--sage);border-color:var(--sage);opacity:.8}
+.tl span.now{color:var(--board);background:var(--y);border-color:var(--y);font-weight:600;box-shadow:0 0 5px rgba(247,223,30,.4)}
+.tl i{flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--c15) 0 6px,transparent 6px 10px)}
+.ctl{display:flex;gap:10px}
+.ctl a{font:600 15px/1 var(--read);color:var(--chalk);text-decoration:none;padding:10px 16px;border:2px solid var(--c45);border-radius:4px 8px 5px 7px/7px 5px 8px 4px}
+.ctl a.go{border-color:var(--y);color:var(--y)}
+.ctl a.re{margin-left:auto;border-color:transparent;color:var(--sage)}
+.tray{position:absolute;left:0;right:0;bottom:0;height:24px;background:var(--deep);border-top:2px solid rgba(236,234,226,.08);box-shadow:0 -4px 10px rgba(0,0,0,.35)}
+.tray i{position:absolute;bottom:7px;height:9px;border-radius:3px;background:var(--chalk)}
+</style></head>
+<body>
+<div class="board">
+  <div class="ghost" style="left:960px;top:40px">x = 3 + 4 → 7</div>
+  <div class="ghost" style="left:90px;top:610px;transform:rotate(3deg)">for (let i…</div>
+  <div class="wrap">
+    <div class="top">
+      <a class="logo" href="#" aria-label="domina-js">
+        <svg width="50" height="46" viewBox="0 0 50 46" aria-hidden="true" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 4c-5 0-7 2-6.6 7.5.3 5-.4 8.6-4.9 11 4.6 2.6 5.3 6 4.9 11.2C7 39.7 9 42 14 42" stroke="#ECEAE2" stroke-width="3.2" opacity=".92"/>
+          <path d="M36 4c5 0 7 2 6.6 7.5-.3 5 .4 8.6 4.9 11-4.6 2.6-5.3 6-4.9 11.2.4 6-1.6 8.3-6.6 8.3" stroke="#ECEAE2" stroke-width="3.2" opacity=".92"/>
+          <path d="M17 31.5c5-.8 11-1 16.5-.2" stroke="#F7DF1E" stroke-width="4.2" stroke-dasharray="9 1.6 12 1.4"/>
+          <path d="M19 16.5h12M20.5 22.5h9" stroke="#8FB7A1" stroke-width="2.4" opacity=".85"/>
+        </svg>
+        <div><b>domina<span>.js</span></b><small>JAVASCRIPT PASO A PASO</small></div>
+      </a>
+      <div class="corner">Sección 4 · Lección 2 de 7<b>Cómo se ejecuta JS por dentro</b></div>
+    </div>
+    <nav>
+      <p class="lbl">Temas de hoy</p>
+      <ol>
+        <li class="done"><em>1</em>Motor y runtime</li>
+        <li class="now"><em>2</em><span>La pila de llamadas</span></li>
+        <li><em>3</em>Contextos de ejecución y hoisting</li>
+        <li><em>4</em>Scope y cadena de scopes</li>
+        <li><em>5</em>Closures</li>
+        <li><em>6</em>Recursión y stack overflow</li>
+        <li><em>7</em>Memoria y recolector de basura</li>
+      </ol>
+      <div class="eraser"></div>
+    </nav>
+    <div class="title">
+      <h1>La pila de llamadas</h1>
+      <svg width="560" height="20" viewBox="0 0 560 20" aria-hidden="true"><path d="M4 12c80-5 170-7 262-4 92 2 190 1 290-5" stroke="#F7DF1E" stroke-width="5" fill="none" stroke-linecap="round" stroke-dasharray="120 4 70 3 160 5 90 2 200" opacity=".92"/><path d="M40 17c60-2 120-2 180 0" stroke="#F7DF1E" stroke-width="2.4" fill="none" stroke-linecap="round" opacity=".55"/></svg>
+      <p class="meta">Lección 2 de 7<i>·</i>9 min<i>·</i>4 ejercicios</p>
+    </div>
+    <article class="read">
+      <p class="lead">JavaScript ejecuta tu código en un <u>solo hilo</u>: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <u>pila de llamadas</u> (call stack). La última función que entra es la primera que sale, como una pila de platos.</p>
+      <h2>Una encima de la otra</h2>
+      <p class="dim">En el pizarrón de la derecha, <code>mostrar()</code> llama a <code>saludar()</code>. El motor deja a <code>mostrar()</code> esperando, escribe <code>saludar()</code> encima y, cuando termina, la borra y vuelve a donde estaba.</p>
+      <div class="note"><b>¡ojo!</b><span>Última en entrar, primera en salir. En inglés se dice LIFO: <em>last in, first out</em>. Lo vas a escuchar mucho.</span></div>
+    </article>
+    <section class="viz" aria-label="Visualizador de la pila">
+      <div class="vhead"><h3>En el pizarrón</h3><span>PASO <b>3</b> DE 8</span></div>
+      <div class="row">
+<pre class="box"><span class="l on"><i>1</i><span class="k">function</span> saludar(nombre) {</span><span class="l"><i>2</i>  <span class="k">return</span> <span class="s">`Hola, ${nombre}!`</span>;</span><span class="l"><i>3</i>}</span><span class="l"><i>4</i></span><span class="l"><i>5</i><span class="k">function</span> mostrar() {</span><span class="l call"><i>6</i>  <span class="k">const</span> msg = saludar(<span class="s">"Mundo"</span>);</span><span class="l"><i>7</i>  console.log(msg);</span><span class="l"><i>8</i>}</span><span class="l"><i>9</i></span><span class="l"><i>10</i>mostrar();</span><span class="l"><i>11</i></span></pre>
+        <div class="stack" aria-label="Pila, de arriba abajo">
+          <p class="lbl">Pila ↑ cima</p>
+          <span class="ann">← entra</span>
+          <div class="fr box new">saludar()<small>nombre = "Mundo"</small></div>
+          <div class="fr box">mostrar()<small>esperando en la línea 6</small></div>
+          <div class="floor"></div>
+        </div>
+      </div>
+      <div class="cons box"><b>CONSOLA</b><span>(vacía — todavía no se imprime nada)</span></div>
+      <p class="exp"><b>saludar()</b> se apila encima de <b style="background:none">mostrar()</b>. El motor suspende mostrar() y ejecuta saludar().</p>
+      <div class="tl" aria-label="Pasos"><span class="done">1</span><i></i><span class="done">2</span><i></i><span class="now">3</span><i></i><span>4</span><i></i><span>5</span><i></i><span>6</span><i></i><span>7</span><i></i><span>8</span></div>
+      <div class="ctl"><a href="#">← Anterior</a><a class="go" href="#">Siguiente →</a><a class="re" href="#">↺ Reiniciar</a></div>
+    </section>
+  </div>
+  <div class="tray"><i style="left:180px;width:58px"></i><i style="left:252px;width:34px;background:#F7DF1E"></i><i style="left:300px;width:22px;background:#F2A7B8"></i><i style="left:1180px;width:46px"></i></div>
+</div>
+</body></html>

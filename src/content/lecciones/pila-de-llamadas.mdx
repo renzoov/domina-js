@@ -1,0 +1,120 @@
+---
+titulo: La pila de llamadas
+seccion: como-se-ejecuta-js
+tema: pila-de-llamadas
+minutos: 12
+resumen: Cómo hace JavaScript una cosa a la vez y cómo lleva la cuenta de qué función está ejecutando, explicado paso a paso con un visualizador.
+intro: 'JavaScript ejecuta tu código en un <u>solo hilo</u>: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <u>pila de llamadas</u> (<em>call stack</em>). La última función que entra es la primera que sale, como una pila de platos.'
+pizarron: pilaSaludar
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Pulsa <b>Siguiente</b> y sigue dos cosas a la vez: la línea subrayada en amarillo es la que se ejecuta, y la columna <b>Pila</b> muestra qué funciones están esperando su turno. En algunos pasos el pizarrón te pedirá que predigas qué viene.'
+nota: 'Última en entrar, primera en salir. En inglés se dice LIFO: <em>last in, first out</em>. Lo vas a escuchar mucho.'
+ejercicios: [pila-motor, pila-orden, pila-detective, pila-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import StepVisualizer from '../../components/StepVisualizer.astro';
+import Nota from '../../components/Nota.astro';
+import SeElMotor from '../../components/ejercicios/SeElMotor.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import { pilaDesborde } from '../../data/visualizaciones';
+import { motor, orden, detective, laboratorio } from '../../data/ejercicios/pila-de-llamadas';
+
+## Un solo hilo
+
+Un *hilo* es una línea de trabajo: una secuencia de instrucciones que se ejecutan una detrás de otra. JavaScript tiene uno solo para tu código. Mientras ejecuta una línea, no puede estar ejecutando otra al mismo tiempo.
+
+Eso lo hace predecible: si lees el código de arriba hacia abajo, sabes en qué orden va a pasar todo. Pero aparece un problema en cuanto una función llama a otra. Si `mostrar()` llama a `saludar()`, el motor tiene que dejar `mostrar()` a medias, ejecutar `saludar()` completa y después **volver exactamente a donde estaba**. Para recordar a dónde volver, usa la pila.
+
+## Qué es una pila
+
+Una pila es una estructura en la que solo se puede tocar lo que está arriba:
+
+- **Apilar** (*push*): poner algo encima.
+- **Desapilar** (*pop*): sacar lo que está encima.
+
+Como en una pila de platos, el último que pusiste es el primero que sacas. A esto se le llama **LIFO**, de *last in, first out*: último en entrar, primero en salir.
+
+En la pila de llamadas, cada plato es un **marco** (*stack frame*): una función que está en ejecución, con sus variables y la línea en la que va. Cada vez que llamas a una función, se apila un marco nuevo. Cada vez que una función termina (con `return` o al llegar a su `}`), su marco se desapila y el motor sigue con el de abajo.
+
+<Nota>
+  La función que se está ejecutando **siempre** es la de la cima. Las de abajo no están quietas por error: están esperando que la de arriba termine.
+</Nota>
+
+## Lo que pasó en el pizarrón
+
+Si recorriste los 8 pasos de arriba, viste el ciclo completo:
+
+1. `mostrar()` entra a la pila porque el código principal la llama.
+2. Al llegar a `saludar("Mundo")`, se apila `saludar()` y `mostrar()` queda esperando en la línea 6.
+3. `saludar()` hace `return` y sale. `mostrar()` vuelve a la cima y continúa justo donde estaba, ya con el valor en `msg`.
+4. `console.log()` también es una función: entra, imprime y sale.
+5. `mostrar()` termina y la pila queda vacía.
+
+Puedes ver esta misma pila en tu navegador. Abre las DevTools (<kbd>F12</kbd>), pestaña **Sources**, pon un *breakpoint* dentro de `saludar()` y mira el panel **Call Stack**: aparecen `saludar` arriba y `mostrar` debajo, igual que en el pizarrón.
+
+## Cuando la pila se desborda
+
+La pila no es infinita. Si una función se llama a sí misma sin una condición que la detenga, cada llamada apila un marco nuevo y ninguno sale nunca. Mira qué pasa con esta función, y fíjate en la gráfica de profundidad: la pila solo sube.
+
+<StepVisualizer id="desborde" titulo="Una pila que no para" datos={pilaDesborde} />
+
+Una función que se llama a sí misma se llama **recursiva**, y no tiene nada de malo. Lo que falló aquí es que no tiene un **caso base**: una condición en la que la función termina sin volver a llamarse.
+
+```js
+function cuenta(n) {
+  if (n > 3) return; // caso base: aquí se corta
+  console.log(n);
+  cuenta(n + 1);
+}
+
+cuenta(1); // imprime 1, 2, 3 y la pila se vacía
+```
+
+<Nota tipo="error">
+  `RangeError: Maximum call stack size exceeded` casi siempre significa una recursión sin caso base, o con un caso base al que nunca se llega. El *stack trace* que acompaña al error repite la misma línea muchas veces: esa es la pista.
+</Nota>
+
+## Si es de un solo hilo, ¿cómo espera?
+
+Si JavaScript hace una cosa a la vez, ¿qué pasa con `setTimeout(fn, 1000)`? ¿Se queda el motor un segundo sin hacer nada, con la función en la pila?
+
+No. `setTimeout` entra a la pila, le pide al navegador que lleve la cuenta del tiempo y sale enseguida. La función `fn` **no está en la pila** mientras espera. Cuando pasa el segundo, la pone en una cola, y solo entra a la pila cuando esta queda vacía. Quien mueve las cosas de la cola a la pila es el **event loop**, el tema de la sección de Asincronía.
+
+## Resumen
+
+- JavaScript ejecuta tu código en un solo hilo: una cosa a la vez.
+- La pila de llamadas registra qué funciones están en ejecución. La de la cima es la que corre ahora.
+- Llamar a una función la **apila**. Terminar (con `return` o al llegar a su `}`) la **desapila**.
+- Es LIFO: la última en entrar es la primera en salir.
+- Una recursión sin caso base llena la pila y produce un *stack overflow*.
+
+<Practica>
+
+<SeElMotor id={motor.id} numero={1} titulo={motor.titulo} codigo={motor.codigo} funciones={motor.funciones} movimientos={motor.movimientos}>
+  <div slot="enunciado">
+    <p>Tú eres el motor. Sigue el código desde la última línea y usa los botones para apilar y desapilar cada función en el orden correcto. No hace falta apilar <code>console.log()</code>.</p>
+  </div>
+</SeElMotor>
+
+<OrdenaSalida id={orden.id} numero={2} titulo={orden.titulo} codigo={orden.codigo} salida={orden.salida} inicio={orden.inicio} explicacion={orden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena las líneas tal como aparecerían en la consola. Puedes arrastrarlas o usar las flechas.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={detective.id} numero={3} titulo={detective.titulo} codigo={detective.codigo} error={detective.error} culpable={detective.culpable} arreglos={detective.arreglos} hallazgo={detective.hallazgo} pista={detective.pista}>
+  <div slot="enunciado">
+    <p>Alguien quiso calcular <code>factorial(5)</code> y la consola mostró este error. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={laboratorio.id} numero={4} titulo={laboratorio.titulo} inicial={laboratorio.inicial} verificaciones={laboratorio.verificaciones} pistas={laboratorio.pistas} solucion={laboratorio.solucion} explicacion={laboratorio.explicacion}>
+  <div slot="enunciado">
+    <p>Completa <code>cuentaAtras(n)</code> para que imprima los números desde <code>n</code> hasta 1 y luego <code>¡Despegue!</code>, usando recursión. Las verificaciones se ponen en verde mientras escribes.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

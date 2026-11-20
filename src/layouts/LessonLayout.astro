@@ -1,0 +1,251 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Subrayado from '../components/Subrayado.astro';
+import StepVisualizer from '../components/StepVisualizer.astro';
+import Icono from '../components/Icono.astro';
+import Nota from '../components/Nota.astro';
+import { temario, type Seccion } from '../data/temario';
+import type { DatosVisualizador } from '../lib/visualizador';
+
+interface Props {
+  titulo: string;
+  resumen: string;
+  minutos: number;
+  intro: string;
+  guia?: { titulo: string; texto: string };
+  nota?: string;
+  seccion: Seccion;
+  indice: number;
+  disponibles: Set<string>;
+  pizarron?: { id: string; datos: DatosVisualizador; mostrarPila?: boolean; modo?: 'pila' | 'variables' };
+  ejercicios: string[];
+  encabezados: { depth: number; slug: string; text: string }[];
+}
+const { titulo, resumen, minutos, intro, guia, nota, seccion, indice, disponibles, pizarron, ejercicios, encabezados } = Astro.props;
+const total = seccion.temas.length;
+// Recorrido de todo el temario, para pasar de una sección a la siguiente
+const recorrido = temario.flatMap((s) => s.temas.map((t) => ({ clave: `${s.slug}/${t.slug}`, titulo: t.titulo, seccion: s })));
+const posicion = recorrido.findIndex((r) => r.clave === `${seccion.slug}/${seccion.temas[indice].slug}`);
+const anterior = recorrido[posicion - 1];
+const siguiente = recorrido[posicion + 1];
+const hay = (r?: { clave: string }) => !!r && disponibles.has(r.clave);
+const h2 = encabezados.filter((h) => h.depth === 2);
+---
+<BaseLayout titulo={`${titulo} · domina-js`} descripcion={resumen} actual={{ seccion: seccion.slug, tema: seccion.temas[indice].slug }} indice={[...(pizarron ? [{ slug: pizarron.id, texto: 'En el pizarrón' }] : []), ...h2.map((h) => ({ slug: h.slug, texto: h.text })), ...(ejercicios.length ? [{ slug: 'practica', texto: '¡A practicar!' }] : [])]}>
+  <a class="esquina" slot="esquina" href={`/temario#${seccion.slug}`}>{seccion.titulo}</a>
+
+  <div class:list={['leccion', { 'con-tablero': pizarron, 'sin-tablero': !pizarron }]}>
+      <div class:list={['apertura', { 'sin-tablero': !pizarron }]}>
+        <div class="titulo">
+          <h1 style={`view-transition-name: vt-${seccion.slug}-${seccion.temas[indice].slug}`}>{titulo}</h1>
+          <Subrayado />
+          <p class="meta">Lección {indice + 1} de {total}<i aria-hidden="true">·</i>{minutos} min<i aria-hidden="true">·</i><span data-hechos data-ids={ejercicios.join(',')}>{ejercicios.length} {ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}</span></p>
+        </div>
+        <div class="intro prosa">
+          <p class="lead" set:html={intro} />
+        </div>
+        <div class="apoyo prosa">
+          {guia && (
+            <>
+              <h2 class="guia">{guia.titulo}</h2>
+              <p class="dim" set:html={guia.texto} />
+            </>
+          )}
+          {nota && <Nota><p set:html={nota} /></Nota>}
+        </div>
+        {pizarron && (
+          <div class="tablero">
+            <StepVisualizer id={pizarron.id} datos={pizarron.datos} mostrarPila={pizarron.mostrarPila ?? true} modo={pizarron.modo ?? 'pila'} />
+          </div>
+        )}
+      </div>
+
+      <div class="texto">
+      <article class="prosa articulo">
+        <slot />
+      </article>
+
+      <nav class="pasar" aria-label="Lecciones vecinas">
+        {siguiente && (hay(siguiente) ? (
+          <a class="sigue" href={`/${siguiente.clave}`}>
+            <span class="sigue-txt">
+              <span class="sigue-pre">Continúa con</span>
+              <span class="sigue-tit" style={`view-transition-name: vt-${siguiente.clave.replace('/', '-')}`}>{siguiente.titulo}</span>
+              {siguiente.seccion.slug !== seccion.slug && <span class="sigue-sec">Sección {siguiente.seccion.numero} · {siguiente.seccion.titulo}</span>}
+            </span>
+            <span class="sigue-flecha" aria-hidden="true"><Icono nombre="der" /></span>
+          </a>
+        ) : (
+          <p class="sigue pronto">
+            <span class="sigue-txt">
+              <span class="sigue-pre">Lo que sigue</span>
+              <span class="sigue-tit">{siguiente.titulo}</span>
+              <span class="sigue-sec">Próximamente{siguiente.seccion.slug !== seccion.slug ? ` · Sección ${siguiente.seccion.numero}, ${siguiente.seccion.titulo}` : ''}</span>
+            </span>
+          </p>
+        ))}
+        {anterior && hay(anterior) && (
+          <a class="volver" href={`/${anterior.clave}`}><Icono nombre="izq" />Volver a «{anterior.titulo}»</a>
+        )}
+      </nav>
+      </div>
+
+      {ejercicios.length > 0 && <aside class="lado-practica" aria-label="Ejercicios de la lección" data-lado-practica></aside>}
+  </div>
+</BaseLayout>
+
+<script>
+  import { resumen } from '../scripts/progreso';
+  function pintar() {
+    const el = document.querySelector<HTMLElement>('[data-hechos]');
+    if (!el) return;
+    const ids = (el.dataset.ids || '').split(',').filter(Boolean);
+    const hechos = ids.filter((id) => resumen().ejercicios[id]).length;
+    const n = ids.length;
+    if (!hechos) el.textContent = `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}`;
+    else if (hechos === n) el.textContent = n === 1 ? 'Ejercicio resuelto' : `${n} de ${n} ejercicios resueltos`;
+    else el.textContent = `${hechos} de ${n} ejercicios resueltos`;
+  }
+  pintar();
+  document.addEventListener('domina:progreso', pintar);
+
+  import { iniciarCodigoVivo } from '../scripts/codigo-vivo';
+  iniciarCodigoVivo();
+
+  // Con pantalla ancha, los ejercicios van en la columna derecha, fijos y con su propio scroll.
+  // Con pantalla angosta vuelven al final de la lección, donde están en el HTML.
+  const practica = document.getElementById('practica');
+  const lado = document.querySelector<HTMLElement>('[data-lado-practica]');
+  if (practica && lado) {
+    const origen = document.createComment('practica');
+    practica.before(origen);
+    const ancho = matchMedia('(min-width: 1400px)');
+    const ubicar = () => {
+      if (ancho.matches && practica.parentElement !== lado) lado.append(practica);
+      else if (!ancho.matches && practica.parentElement === lado) origen.after(practica);
+      document.documentElement.classList.toggle('practica-al-lado', ancho.matches);
+    };
+    ubicar();
+    ancho.addEventListener('change', ubicar);
+  }
+</script>
+
+<style>
+  .esquina { margin-right: auto; font: 400 1.35rem/1.1 var(--hand); color: var(--chalk-70); text-decoration: none; }
+  .esquina:hover { color: var(--y); }
+
+
+
+  /* Texto a la izquierda, mesa de trabajo a la derecha */
+  .leccion {
+    display: grid;
+    grid-template-columns: minmax(0, 720px) minmax(420px, 1fr);
+    column-gap: 40px;
+    align-items: start;
+  }
+  .leccion.con-tablero { grid-template-areas: 'apertura apertura' 'texto practica'; }
+  .leccion.sin-tablero { grid-template-areas: 'apertura practica' 'texto practica'; }
+  .leccion > .apertura { grid-area: apertura; }
+  .texto { grid-area: texto; min-width: 0; }
+  /* El pizarrón de práctica empieza un poco más adentro: deja aire entre el texto y los ejercicios */
+  .lado-practica { grid-area: practica; align-self: stretch; min-width: 0; padding-left: 8%; }
+  .leccion.con-tablero .lado-practica { margin-top: 24px; }
+  /* La columna de ejercicios queda fija y se desplaza por su cuenta */
+  .lado-practica :global(.practica) {
+    position: sticky;
+    z-index: 2;
+    top: 16px;
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--chalk-15) transparent;
+  }
+  @media (max-width: 1399px) {
+    .leccion, .leccion.con-tablero, .leccion.sin-tablero { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'apertura' 'texto'; }
+    .lado-practica { display: none; }
+  }
+
+  .apertura {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-areas: 'titulo titulo' 'intro tablero' 'apoyo tablero';
+    grid-template-rows: auto auto 1fr;
+    column-gap: 44px;
+    align-items: start;
+  }
+  .titulo { grid-area: titulo; padding: 0 0 22px; }
+  /* Sin pizarrón: una sola columna de lectura */
+  .apertura.sin-tablero { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'titulo' 'intro' 'apoyo'; grid-template-rows: none; max-width: var(--measure); }
+  h1 {
+    view-transition-class: titulo;
+    margin: 0;
+    font: 700 clamp(2.6rem, 5.2vw, 4.5rem) / 1 var(--hand);
+    color: var(--chalk);
+    text-shadow: 0 0 3px rgba(236, 234, 226, 0.4), 1px 1px 0 rgba(236, 234, 226, 0.2);
+    text-wrap: balance;
+  }
+  .meta { margin: 12px 0 0; font: 700 0.78rem/1.4 var(--read); letter-spacing: 0.12em; text-transform: uppercase; color: var(--azul); }
+  .meta i { font-style: normal; margin: 0 9px; color: var(--chalk-45); }
+  .intro { grid-area: intro; }
+  .lead { font-size: 1.15rem !important; line-height: 1.62 !important; }
+  .apoyo { grid-area: apoyo; }
+  .intro :global(p:last-child) { margin-bottom: 0; }
+  .apoyo .guia { font: 700 1.6rem/1.15 var(--hand); margin: 1.6em 0 0.4em; }
+  .apoyo .dim { color: var(--chalk-70); }
+  .apoyo .dim :global(b) { color: var(--chalk); }
+  .apoyo :global(.nota) { margin-top: 1.4em; }
+  .apoyo .guia + .dim { margin-bottom: 0; }
+  .tablero { grid-area: tablero; }
+
+  .articulo { margin-top: 24px; }
+  .articulo > :global(h2:first-child) { margin-top: 1.6em; }
+  .articulo > :global(:is(p, ul, ol, h2, h3, pre, .astro-code)) { max-width: var(--measure); }
+  .articulo > :global(.viz) { margin: 8px 0 2.4em; max-width: 900px; }
+  .articulo :global(kbd) { font: 600 0.85em var(--mono); padding: 1px 6px; border: 1.5px solid var(--chalk-45); border-radius: 4px; }
+
+  /* Paso a la lección siguiente: tarjeta de tiza alineada con el texto */
+  .pasar { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; margin-top: 72px; max-width: var(--measure); }
+  .sigue {
+    display: flex; align-items: center; gap: 22px;
+    width: 100%;
+    margin: 0;
+    padding: 20px 22px 20px 26px;
+    text-decoration: none;
+    color: var(--chalk);
+    border: 2.5px solid var(--y);
+    border-radius: var(--r-chalk);
+    background: var(--y-06);
+    transition: background-color 180ms var(--ease-out), transform 180ms var(--ease-out);
+  }
+  a.sigue:hover { background: var(--y-12); transform: translateX(4px); }
+  .sigue-txt { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+  .sigue-pre { font: 700 1.1rem/1 var(--hand); color: var(--y); }
+  .sigue-tit { view-transition-class: titulo; width: fit-content; font: 700 clamp(1.6rem, 2.4vw, 2rem) / 1.1 var(--hand); color: var(--chalk); text-wrap: balance; }
+  .sigue-sec { font-size: 0.9rem; color: var(--azul); font-weight: 700; }
+  .sigue-flecha {
+    flex: none;
+    display: grid; place-items: center;
+    width: 52px; height: 52px;
+    color: var(--board-lo);
+    background: var(--y);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  }
+  .sigue-flecha :global(svg) { width: 26px; height: 26px; }
+  .sigue.pronto { border-style: dashed; border-color: var(--chalk-45); background: none; }
+  .sigue.pronto .sigue-pre { color: var(--chalk-70); }
+  .volver { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--chalk-70); text-decoration: none; }
+  .volver:hover { color: var(--chalk); }
+  .volver :global(svg) { width: 18px; height: 18px; }
+
+  @media (max-width: 1280px) {
+    .apertura { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'titulo' 'intro' 'tablero' 'apoyo'; grid-template-rows: none; }
+    .intro, .apoyo { max-width: var(--measure); }
+    .apoyo { margin-top: 12px; }
+    .tablero { margin-top: 32px; }
+  }
+  @media (max-width: 900px) {
+    .esquina { order: 4; flex-basis: 100%; margin-left: 0; text-align: left; font-size: 1.1rem; color: var(--chalk-70); }
+  }
+</style>

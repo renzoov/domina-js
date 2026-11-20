@@ -1,0 +1,120 @@
+---
+titulo: Tu primer programa
+seccion: antes-de-empezar
+tema: tu-primer-programa
+minutos: 10
+resumen: Escribe y ejecuta tu primer programa, entiende el orden en que corre el código, la diferencia entre texto y números, los comentarios y los dos tipos de error que vas a ver.
+intro: 'Un programa es una lista de <u>instrucciones</u> que el motor ejecuta <u>en orden, de arriba hacia abajo</u>. Tu primera instrucción va a ser la más usada de JavaScript: <code>console.log</code>, que muestra un mensaje en la consola.'
+pizarron: primerPrograma
+mostrarPila: false
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Pulsa <b>Siguiente</b>: la línea subrayada en amarillo es la que se ejecuta, y abajo la <b>consola</b> muestra lo que el programa va imprimiendo. En dos pasos te toca predecir qué aparece.'
+ejercicios: [primer-orden, primer-detective, primer-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { primerOrden, primerDetective, primerLab } from '../../data/ejercicios/antes-de-empezar';
+
+## Instrucciones, una detrás de otra
+
+Cada línea del pizarrón es una **sentencia**: una instrucción completa. El motor las ejecuta una por una, en el orden en que están escritas, y no pasa a la siguiente hasta terminar la actual.
+
+Al final de cada sentencia va un punto y coma `;`. JavaScript puede agregarlo solo en muchos casos, pero no en todos. Mientras aprendes, ponlo siempre: te ahorras sorpresas.
+
+```js
+console.log("Primero");
+console.log("Segundo");
+console.log("Tercero");
+```
+
+Esto imprime las tres palabras en ese orden, siempre. Más adelante verás instrucciones que cambian el orden, como las condiciones o los bucles, pero la regla de base es esta.
+
+## console.log, tu ventana al programa
+
+`console.log` muestra en la consola lo que le pongas entre paréntesis. También puede recibir varias cosas separadas por comas, y las imprime en la misma línea, separadas por un espacio:
+
+```js
+console.log("Tengo", 30, "años");
+// Tengo 30 años
+```
+
+Vas a usarla todo el tiempo: para ver resultados, para entender qué hace tu código y para encontrar errores.
+
+## Texto y números
+
+En el pizarrón viste la diferencia entre `2 + 3` y `"2 + 3"`:
+
+- **Entre comillas** es **texto** (en programación se le dice *string*). El motor lo deja tal cual.
+- **Sin comillas**, un número es un **número**, y puedes operar con él: `+` suma, `-` resta, `*` multiplica y `/` divide.
+
+```js
+console.log(10 * 3);    // 30
+console.log("10 * 3");  // 10 * 3
+```
+
+Para el texto puedes usar comillas dobles `"…"` o simples `'…'`: funcionan igual. Hay un tercer tipo, las comillas invertidas `` `…` ``, con superpoderes que verás en la sección de Fundamentos.
+
+## Comentarios
+
+Todo lo que va después de `//` hasta el final de la línea es un **comentario**: una nota para quien lee el código, y el motor la ignora. Para comentarios de varias líneas se usa `/* … */`:
+
+```js
+// Calcula los minutos de un día
+console.log(24 * 60);
+
+/*
+  Esto no se ejecuta.
+  Sirve para explicar algo más largo.
+*/
+```
+
+<Nota tipo="consejo">
+  Comentar una línea es también una forma rápida de "apagarla" sin borrarla. En VS Code, <kbd>Ctrl</kbd> + <kbd>/</kbd> comenta o descomenta la línea donde estás.
+</Nota>
+
+## Cuando algo sale mal
+
+Vas a encontrarte con dos grandes tipos de error, y conviene distinguirlos desde ya:
+
+- **Error de sintaxis** (`SyntaxError`): el código está mal escrito, por ejemplo falta una comilla o un paréntesis. El motor lo detecta **antes de ejecutar**, así que no se ejecuta ninguna línea, ni siquiera las que estaban bien.
+- **Error en ejecución**, como `ReferenceError` o `TypeError`: el código está bien escrito, pero algo falla al ejecutarlo. Las líneas anteriores sí se ejecutan; el programa se detiene justo en la línea del error.
+
+```js
+console.log("Esto sí se imprime");
+console.log(precio);  // ReferenceError: precio is not defined
+console.log("Esto ya no");
+```
+
+## Resumen
+
+- Un programa es una lista de sentencias que se ejecutan **en orden, de arriba hacia abajo**.
+- `console.log(…)` muestra valores en la consola; con comas, varios en la misma línea.
+- Entre comillas es **texto**; sin comillas, los números se pueden **calcular**.
+- `//` y `/* … */` son **comentarios**: el motor los ignora.
+- Un **error de sintaxis** impide ejecutar todo el programa; un **error en ejecución** lo detiene en esa línea.
+
+<Practica>
+
+<OrdenaSalida id={primerOrden.id} numero={1} titulo={primerOrden.titulo} codigo={primerOrden.codigo} salida={primerOrden.salida} inicio={primerOrden.inicio} explicacion={primerOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena las líneas tal como aparecerían en la consola. Ojo: no todas las líneas del código imprimen algo.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={primerDetective.id} numero={2} titulo={primerDetective.titulo} codigo={primerDetective.codigo} error={primerDetective.error} culpable={primerDetective.culpable} arreglos={primerDetective.arreglos} hallazgo={primerDetective.hallazgo} pista={primerDetective.pista}>
+  <div slot="enunciado">
+    <p>Este programa debería imprimir tres líneas, pero no imprime ninguna. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={primerLab.id} numero={3} titulo={primerLab.titulo} inicial={primerLab.inicial} verificaciones={primerLab.verificaciones} pistas={primerLab.pistas} solucion={primerLab.solucion} explicacion={primerLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe un programa que se presente en la consola: un saludo con tu nombre, cuántas horas tiene un año (calculado por JavaScript) y una frase final. Las verificaciones se ponen en verde mientras escribes.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

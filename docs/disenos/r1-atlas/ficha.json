@@ -1,0 +1,22 @@
+{
+  "id": "r1-atlas",
+  "kind": "grounded",
+  "label": "Atlas nocturno",
+  "lineage": "Cartas estelares y atlas del cielo",
+  "thesis": "Cada concepto es una constelación: las funciones son estrellas, las llamadas son las líneas que las unen y la que brilla en amarillo es la que se ejecuta.",
+  "palette": [
+    "#070B1A",
+    "#F7DF1E",
+    "#7FA7FF",
+    "#C9C3B4",
+    "#FF8C42"
+  ],
+  "materials": [
+    "retícula de coordenadas",
+    "estrellas por magnitud",
+    "líneas de constelación finas"
+  ],
+  "viewport": "Cabecera con retícula y coordenadas de la lección; columna calma; el visualizador traza la pila como una constelación que crece hacia arriba.",
+  "risk": "Lo poético puede quitar precisión; las líneas siempre deben corresponder a llamadas reales.",
+  "html": ".impeccable/mocks/decision/r1-atlas.html"
+}

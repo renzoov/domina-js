@@ -1,0 +1,26 @@
+{
+  "id": "challenger-bench",
+  "kind": "challenger",
+  "catalogId": "operate-a-cutting-bench-select-rail",
+  "label": "Mesa de montaje",
+  "verdict": "competitive",
+  "lineage": "Mesa de edición de cine: película perforada, pines y cinta",
+  "thesis": "Cada paso de la ejecución es un fotograma en una tira perforada; una bandera de cinta marca dónde te quedaste.",
+  "palette": [
+    "#0B0B0B",
+    "#F26B1D",
+    "#FFFFFF",
+    "#8C8C8C"
+  ],
+  "materials": [
+    "grano de película",
+    "perforaciones",
+    "bandera de cinta doblada",
+    "cruces de grasa = hecho"
+  ],
+  "viewport": "Una tira perforada cruza la cabecera con los temas como fotogramas; la lectura vive en ventanas blancas recortadas; el visualizador se desliza y encaja fotograma a fotograma.",
+  "case": "Gana en claridad (paso = fotograma, y el progreso queda marcado); empata o pierde en identificación con quien aprende JS.",
+  "risk": "El naranja ocupa un tercio de la pantalla: en lecturas largas puede cansar si invade la columna.",
+  "html": ".impeccable/mocks/decision/challenger-bench.html",
+  "hero": "https://impeccable.style/worlds/cards/operate-a-cutting-bench-select-rail-hero.webp"
+}

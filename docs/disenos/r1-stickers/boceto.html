@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>domina-js · Calcomanías acumuladas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Red+Hat+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--case:#141414;--plate:#0E0E0E;--y:#F7DF1E;--r:#E63946;--b:#457B9D;--vinyl:#F1ECDD;--aged:#D9CFA8;--edge:#2A2A2A;--mute:#A9A49A;
+  --d:'Bowlby One SC',sans-serif;--t:'Atkinson Hyperlegible',sans-serif;--m:'Red Hat Mono',monospace}
+*{box-sizing:border-box}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+body{background:var(--case);color:var(--vinyl);font-family:var(--t);position:relative;
+  background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1.2px),radial-gradient(rgba(0,0,0,.5) 1px,transparent 1.2px);
+  background-size:5px 5px,7px 7px;background-position:0 0,2px 3px}
+/* aluminium edge + rivets */
+.rail{position:absolute;left:0;right:0;top:236px;height:10px;background:linear-gradient(#5b5b5b,#2b2b2b 60%,#1a1a1a)}
+.rv{position:absolute;width:12px;height:12px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#8a8a8a,#2b2b2b 70%)}
+/* stickers */
+.st{position:absolute;font-family:var(--d);line-height:1;box-shadow:0 2px 0 rgba(0,0,0,.6),0 6px 14px rgba(0,0,0,.45)}
+.die{border:5px solid var(--vinyl)}
+.old{filter:sepia(.55) saturate(.6) brightness(.72);opacity:.82}
+.torn{clip-path:polygon(0 0,100% 0,100% 62%,93% 70%,96% 78%,86% 86%,84% 100%,0 100%)}
+.peel{position:absolute;width:26px;height:26px;background:linear-gradient(135deg,#bcb6a4,#efeadc);clip-path:polygon(0 0,100% 100%,0 100%)}
+.pill{border-radius:999px}
+/* nav as topic stickers */
+nav{position:absolute;left:28px;top:276px;width:250px}
+nav .hd{font-family:var(--m);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-bottom:12px}
+nav a{display:flex;gap:10px;align-items:center;margin-bottom:11px;padding:8px 12px;background:var(--vinyl);color:var(--case);font-size:14.5px;font-weight:700;border-radius:8px;width:max-content;max-width:248px;box-shadow:0 2px 0 rgba(0,0,0,.6)}
+nav a b{font-family:var(--d);font-weight:400;font-size:13px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--case);color:var(--vinyl);flex:none}
+nav a.done{filter:sepia(.6) saturate(.6) brightness(.7)}
+nav a.cur{background:var(--y);transform:rotate(-2deg);outline:4px solid var(--vinyl)}
+nav a.next{background:transparent;color:var(--mute);box-shadow:none;border:1.5px dashed #4a4a4a;font-weight:400}
+nav a.next b{background:#2a2a2a;color:var(--mute)}
+/* clean plate for reading */
+.plate{position:absolute;background:var(--plate);border:1px solid var(--edge);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+.plate>.sc{position:absolute;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#666,#222 70%)}
+main.plate{left:300px;top:268px;width:610px;height:600px;padding:34px 44px}
+.kick{font-family:var(--m);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+h1{font-family:var(--d);font-weight:400;font-size:52px;line-height:1;margin:12px 0 16px;color:var(--vinyl)}
+.meta{display:flex;gap:10px;font-family:var(--m);font-size:13px;color:var(--mute)}
+.meta span{border:1px solid #333;padding:3px 9px;border-radius:999px}
+main p{font-size:17.5px;line-height:1.64;margin:26px 0 0;max-width:62ch;color:#F3EFE4}
+main p strong{font-weight:700}
+main p code{font-family:var(--m);font-size:15px;background:#1d1d1d;padding:1px 6px;border-radius:3px}
+main .tip{margin-top:26px;padding-top:16px;border-top:1px solid #262626;font-size:15px;line-height:1.55;color:var(--mute)}
+/* visualizer */
+.viz.plate{left:940px;top:268px;width:470px;height:612px;padding:20px 24px}
+.vh{display:flex;justify-content:space-between;align-items:center}
+.vh .lbl{font-family:var(--d);font-size:16px;color:var(--vinyl)}
+.step{font-family:var(--m);font-size:13px;background:var(--y);color:var(--case);padding:4px 10px;border-radius:4px;font-weight:600;transform:rotate(2deg)}
+pre{margin:12px 0 0;font-family:var(--m);font-size:12.5px;line-height:18px;color:#cfc9ba}
+pre .l{display:block}
+pre .l b{display:inline-block;width:26px;color:#555;font-weight:400}
+pre .l.hi{background:rgba(247,223,30,.12);box-shadow:inset 3px 0 0 var(--y);color:#fff}
+pre .k{color:#8fb6d0}pre .s{color:#f08a93}
+.row{display:grid;grid-template-columns:1fr 140px;gap:16px;margin-top:14px}
+.sl{font-family:var(--m);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:8px}
+.pile{position:relative;height:120px}
+.pile .st{font-size:22px;padding:14px 18px;border-radius:10px}
+.con{border:1px dashed #3a3a3a;border-radius:6px;height:104px;padding:8px;font-family:var(--m);font-size:12px;color:#5a5a5a}
+.expl{font-size:15px;line-height:1.55;margin:14px 0 0;color:#EDE8DA}
+.ctl{display:flex;gap:8px;margin-top:14px}
+.ctl span{font-weight:700;font-size:14px;padding:8px 13px;border-radius:999px;border:1.5px solid #444;color:var(--vinyl)}
+.ctl span.go{background:var(--y);border-color:var(--y);color:var(--case)}
+.tl{display:flex;gap:9px;margin-top:16px;align-items:center}
+.tl i{width:18px;height:18px;border-radius:50%;border:1.5px dashed #444}
+.tl i.p{border:3px solid var(--vinyl);background:var(--aged);filter:sepia(.5) brightness(.7)}
+.tl i.c{width:26px;height:26px;border:3px solid var(--vinyl);background:var(--y)}
+</style>
+</head>
+<body>
+<!-- header collage: oldest first -->
+<div class="st die old torn" style="left:410px;top:30px;padding:16px 22px;background:var(--b);color:var(--vinyl);font-size:30px;transform:rotate(-6deg)">SCOPE</div>
+<div class="st die old pill" style="left:1150px;top:126px;padding:12px 24px;background:var(--r);color:var(--vinyl);font-size:22px;transform:rotate(8deg)">MOTOR · RUNTIME</div>
+<div class="st old" style="left:880px;top:20px;padding:10px 16px;background:var(--aged);color:#3a3326;font-size:16px;transform:rotate(3deg);border-radius:4px">1 ✓ MOTOR Y RUNTIME</div>
+<div class="st die old" style="left:1290px;top:18px;width:110px;height:110px;border-radius:50%;background:var(--case);color:var(--y);display:grid;place-items:center;font-size:44px;transform:rotate(-12deg)">JS</div>
+<div class="st die torn" style="left:600px;top:96px;padding:14px 20px;background:var(--r);color:var(--vinyl);font-size:24px;transform:rotate(4deg)">CLOSURES</div>
+<div class="st die" style="left:760px;top:46px;padding:16px 26px;background:var(--vinyl);color:var(--case);font-size:36px;transform:rotate(-3deg);border-color:var(--case);outline:4px solid var(--vinyl)">SECCIÓN 4<span style="display:block;font-family:var(--t);font-weight:700;font-size:15px;margin-top:6px">Cómo se ejecuta JS por dentro</span></div>
+<div class="st die pill" style="left:1060px;top:52px;padding:10px 20px;background:var(--b);color:var(--vinyl);font-size:18px;transform:rotate(-9deg)">LECCIÓN 2 / 7</div>
+<span class="peel" style="left:1004px;top:140px;transform:rotate(-3deg)"></span>
+<!-- logo sticker, newest, on top -->
+<div class="st die" style="left:34px;top:34px;padding:14px 22px 14px 16px;background:var(--y);color:var(--case);border-radius:18px;transform:rotate(-2deg);display:flex;align-items:center;gap:12px">
+  <svg width="58" height="58" viewBox="0 0 58 58" aria-label="domina-js">
+    <path d="M6 10 C6 6 9 4 13 4 H29 C44 4 53 15 53 29 C53 44 44 54 29 54 H13 C9 54 6 52 6 48 Z" fill="#141414"/>
+    <path d="M18 16 H28 C37 16 41 22 41 29 C41 37 37 42 28 42 H18 Z" fill="#F7DF1E"/>
+    <path d="M24 22 V35 C24 38 22 39 20 39" fill="none" stroke="#141414" stroke-width="3.4" stroke-linecap="round"/>
+    <circle cx="24" cy="18" r="2" fill="#141414"/>
+    <path d="M37 23 C33 21 29 22 29.5 25.5 C30 29 37 28 36.5 32.5 C36 36 31 36.5 28.5 34.5" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round"/>
+  </svg>
+  <span><span style="display:block;font-size:30px">domina-js</span><span style="display:block;font-family:var(--m);font-size:12px;font-weight:600;margin-top:4px;letter-spacing:.06em">APRENDE JS PASO A PASO</span></span>
+</div>
+<div class="st die old torn" style="left:300px;top:150px;padding:10px 16px;background:var(--y);color:var(--case);font-size:16px;transform:rotate(-7deg)">HOISTING</div>
+<div class="st die" style="left:440px;top:150px;padding:10px 18px;background:var(--case);color:var(--y);font-size:18px;transform:rotate(5deg);border-radius:6px">CALL STACK ↑</div>
+<div class="rail"></div>
+<i class="rv" style="left:18px;top:235px"></i><i class="rv" style="left:700px;top:235px"></i><i class="rv" style="left:1410px;top:235px"></i>
+
+<nav>
+  <div class="hd">Temas de la sección</div>
+  <a class="done"><b>1</b>Motor y runtime</a>
+  <a class="cur"><b>2</b>La pila de llamadas</a>
+  <a class="next"><b>3</b>Contextos de ejecución y hoisting</a>
+  <a class="next"><b>4</b>Scope y cadena de scopes</a>
+  <a class="next"><b>5</b>Closures</a>
+  <a class="next"><b>6</b>Recursión y stack overflow</a>
+  <a class="next"><b>7</b>Memoria y recolector de basura</a>
+</nav>
+
+<main class="plate">
+  <i class="sc" style="left:10px;top:10px"></i><i class="sc" style="right:10px;top:10px"></i><i class="sc" style="left:10px;bottom:10px"></i><i class="sc" style="right:10px;bottom:10px"></i>
+  <div class="kick">Sección 4 · Tema 2</div>
+  <h1>La pila de llamadas</h1>
+  <div class="meta"><span>Lección 2 de 7</span><span>9 min</span><span>4 ejercicios</span></div>
+  <p>JavaScript ejecuta tu código en un solo hilo: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <strong>pila de llamadas</strong> (<code>call stack</code>). La última función que entra es la primera que sale, como una pila de platos.</p>
+  <p class="tip">Mira el visualizador: cada llamada es una calcomanía nueva pegada encima de la anterior. La de arriba es la que se está ejecutando; las de abajo esperan su turno.</p>
+</main>
+
+<section class="viz plate">
+  <i class="sc" style="left:8px;top:8px"></i><i class="sc" style="right:8px;top:8px"></i>
+  <div class="vh"><span class="lbl">Visualizador</span><span class="step">Paso 3 de 8</span></div>
+  <pre><span class="l hi"><b>1</b><span class="k">function</span> saludar(nombre) {</span><span class="l"><b>2</b>  <span class="k">return</span> <span class="s">`Hola, ${nombre}!`</span>;</span><span class="l"><b>3</b>}</span><span class="l"><b>4</b></span><span class="l"><b>5</b><span class="k">function</span> mostrar() {</span><span class="l hi"><b>6</b>  <span class="k">const</span> msg = saludar(<span class="s">"Mundo"</span>);</span><span class="l"><b>7</b>  console.log(msg);</span><span class="l"><b>8</b>}</span><span class="l"><b>9</b></span><span class="l"><b>10</b>mostrar();</span><span class="l"><b>11</b></span></pre>
+  <div class="row">
+    <div>
+      <div class="sl">Pila de llamadas</div>
+      <div class="pile">
+        <div class="st die old" style="left:4px;top:52px;background:var(--b);color:var(--vinyl);transform:rotate(-3deg)">mostrar()</div>
+        <div class="st die" style="left:96px;top:12px;background:var(--y);color:var(--case);transform:rotate(5deg)">saludar()</div>
+      </div>
+    </div>
+    <div>
+      <div class="sl">Consola</div>
+      <div class="con">(vacía)</div>
+    </div>
+  </div>
+  <p class="expl"><b>saludar()</b> se apila encima de <b>mostrar()</b>. El motor suspende mostrar() y ejecuta saludar().</p>
+  <div class="ctl"><span>← Anterior</span><span class="go">Siguiente →</span><span>↺ Reiniciar</span></div>
+  <div class="tl"><i class="p"></i><i class="p"></i><i class="c"></i><i></i><i></i><i></i><i></i><i></i></div>
+</section>
+</body>
+</html>

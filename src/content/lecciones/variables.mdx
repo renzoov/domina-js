@@ -1,0 +1,173 @@
+---
+titulo: 'Variables: let, const y por qué ya no var'
+seccion: fundamentos
+tema: variables
+minutos: 12
+resumen: Qué es una variable, cómo se declara con let y const, qué significa que const no se reasigne, el alcance de bloque, y por qué var quedó en el pasado.
+intro: 'Una <u>variable</u> es un nombre que le pones a un valor para usarlo después: <code>puntos</code>, <code>nombre</code>, <code>precioTotal</code>. En JavaScript moderno las declaras con dos palabras: <u>let</u> si el valor va a cambiar y <u>const</u> si no.'
+pizarron: variablesLetConst
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'La columna <b>Variables</b> muestra cada nombre con su tipo de declaración y su valor actual. Pulsa <b>Siguiente</b> y fíjate qué pasa cuando cambia <code>puntos</code>, que es <code>let</code>, y cuando se intenta cambiar <code>VIDAS</code>, que es <code>const</code>.'
+ejercicios: [variables-auto, variables-orden, variables-detective, variables-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { variablesAuto, variablesOrden, variablesDetective, variablesLab } from '../../data/ejercicios/fundamentos';
+
+## Declarar y asignar
+
+Crear una variable se llama **declararla**. Darle un valor se llama **asignar**. Casi siempre haces las dos cosas en la misma línea:
+
+```js
+let edad = 30;
+```
+
+Se lee de izquierda a derecha: `let` (la palabra que declara), `edad` (el nombre), `=` (asignar) y `30` (el valor). El `=` no significa "es igual a" como en matemáticas: significa **"guarda el valor de la derecha en el nombre de la izquierda"**. El motor siempre calcula primero lo de la derecha.
+
+Si declaras con `let` sin dar un valor, la variable existe pero vale `undefined`:
+
+```js
+let apodo;
+console.log(apodo); // undefined
+apodo = "Pepe";
+console.log(apodo); // Pepe
+```
+
+## let: un valor que cambia
+
+Con `let` puedes **reasignar** la variable las veces que quieras. Para los cambios más comunes hay atajos:
+
+```js
+let puntos = 10;
+puntos = puntos + 5;  // 15
+puntos += 5;          // lo mismo, abreviado: 20
+puntos -= 3;          // 17
+puntos *= 2;          // 34
+puntos++;             // suma 1: 35
+console.log(puntos);
+```
+
+Lo que **no** puedes hacer es declararla dos veces en el mismo bloque. El motor lo detecta antes de ejecutar:
+
+```js
+let color = "rojo";
+let color = "azul"; // SyntaxError: Identifier 'color' has already been declared
+console.log(color);
+```
+
+Si quieres cambiar el valor, quita el segundo `let` y asígnale el nuevo valor sin más.
+
+## const: un nombre que no se reasigna
+
+`const` declara una **constante**: un nombre que, una vez asignado, no se puede reasignar. Por eso tiene que recibir su valor en la misma línea; `const total;` sola es un `SyntaxError`.
+
+Como viste en el pizarrón, reasignarla lanza un `TypeError`. Eso es bueno: si un valor no debería cambiar y por error lo cambias, te enteras enseguida.
+
+Ojo con una confusión muy común: `const` impide **reasignar el nombre**, pero no congela el valor. Si el valor es un array o un objeto, puedes modificar su contenido:
+
+```js
+const lista = ["pan", "leche"];
+lista.push("huevos");      // modifica el mismo array: permitido
+console.log(lista);
+
+lista = ["otra", "lista"]; // reasigna el nombre: TypeError
+```
+
+Vas a ver por qué pasa esto, y cómo congelar un objeto de verdad, en la sección de Objetos.
+
+<Nota>
+  La regla que usan casi todos los equipos: **declara todo con `const`** y cámbialo a `let` solo cuando necesites reasignar. Tu código queda más fácil de leer, porque cada `let` avisa "esto va a cambiar".
+</Nota>
+
+## Alcance de bloque
+
+Una variable declarada con `let` o `const` existe solo **dentro del bloque `{ }` donde la declaraste**. A eso se le llama su **alcance** (*scope*):
+
+```js
+const mensaje = "afuera";
+
+if (true) {
+  const secreto = "solo aquí dentro";
+  console.log(secreto);  // funciona
+  console.log(mensaje);  // también: desde dentro se ve lo de afuera
+}
+
+console.log(secreto);    // ReferenceError: secreto is not defined
+```
+
+Desde adentro se ve lo de afuera, pero no al revés. Esto evita que las variables de una parte del programa interfieran con las de otra. Vas a profundizar en el tema *Scope y cadena de scopes*.
+
+## ¿Y var?
+
+Antes de 2015, la única forma de declarar variables era `var`. Todavía funciona, y la vas a ver en código viejo y en tutoriales, pero tiene tres comportamientos que causan errores difíciles de encontrar.
+
+**1. Ignora los bloques.** Una `var` declarada dentro de un `if` o un `for` se "escapa" del bloque:
+
+```js
+if (true) {
+  var fuga = "me escapé";
+  let dentro = "me quedo";
+}
+console.log(fuga);           // me escapé
+console.log(typeof dentro);  // undefined: no existe aquí afuera
+```
+
+**2. Se puede declarar dos veces** sin ningún aviso. Si en un archivo largo dos partes usan `var total`, una pisa a la otra en silencio.
+
+**3. Se puede usar antes de su declaración.** En lugar de un error, vale `undefined`, y el fallo pasa desapercibido. Con `let` el motor te avisa:
+
+```js
+console.log(a); // undefined, sin error
+var a = 1;
+
+console.log(b); // ReferenceError: Cannot access 'b' before initialization
+let b = 2;
+```
+
+Por qué pasa esto tiene nombre, *hoisting*, y lo vas a ver con un pizarrón en la sección *Cómo se ejecuta JS por dentro*. Por ahora, la conclusión: **no uses `var` en código nuevo**.
+
+<Nota tipo="consejo">
+  Si heredas código con `var`, puedes modernizarlo con cuidado: cambia cada `var` por `const`, y donde el motor se queje porque se reasigna, por `let`. Es justo lo que vas a hacer en el laboratorio.
+</Nota>
+
+## Resumen
+
+- Una variable es un **nombre para un valor**. `=` significa "guarda lo de la derecha".
+- **`const`** para lo que no se reasigna (la mayoría) y **`let`** para lo que cambia.
+- `const` impide reasignar el nombre, **no** modificar un array u objeto.
+- `let` y `const` tienen **alcance de bloque**: solo existen dentro de sus `{ }`.
+- **`var`** ignora los bloques, permite declarar dos veces y se puede usar antes de declararla. No la uses en código nuevo.
+
+<Practica>
+
+<Autoevaluacion id={variablesAuto.id} numero={1} titulo={variablesAuto.titulo} preguntas={variablesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={variablesOrden.id} numero={2} titulo={variablesOrden.titulo} codigo={variablesOrden.codigo} salida={variablesOrden.salida} inicio={variablesOrden.inicio} explicacion={variablesOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Hay dos variables llamadas <code>nivel</code>, una dentro del bloque y otra afuera. Ordena las líneas tal como aparecerían en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={variablesDetective.id} numero={3} titulo={variablesDetective.titulo} codigo={variablesDetective.codigo} error={variablesDetective.error} culpable={variablesDetective.culpable} arreglos={variablesDetective.arreglos} hallazgo={variablesDetective.hallazgo} pista={variablesDetective.pista}>
+  <div slot="enunciado">
+    <p>En este juego, los intentos deberían bajar de 3 a 2, pero el programa se detiene a la mitad. Encuentra la línea donde falla y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={variablesLab.id} numero={4} titulo={variablesLab.titulo} inicial={variablesLab.inicial} verificaciones={variablesLab.verificaciones} pistas={variablesLab.pistas} solucion={variablesLab.solucion} explicacion={variablesLab.explicacion}>
+  <div slot="enunciado">
+    <p>Este código funciona, pero usa <code>var</code>. Cámbialo a <code>let</code> y <code>const</code> según corresponda, sin que cambie lo que imprime.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

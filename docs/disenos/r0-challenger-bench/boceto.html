@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mesa de montaje</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Literata:opsz,wght@7..72,400;7..72,600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0B0B0B;--flag:#F26B1D;--win:#FFFFFF;--dust:#8C8C8C;--cap:'Barlow Condensed',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden;background:var(--ink);color:var(--ink)}
+.cap{font-family:var(--cap);font-weight:600;font-size:15px;letter-spacing:.12em;text-transform:uppercase}
+.grain{position:absolute;background-color:var(--flag);
+ background-image:radial-gradient(rgba(0,0,0,.22) 1px,transparent 1.4px),radial-gradient(rgba(255,255,255,.14) 1px,transparent 1.6px),radial-gradient(rgba(0,0,0,.12) 1.5px,transparent 2px);
+ background-size:5px 5px,7px 7px,11px 11px;background-position:0 0,2px 3px,5px 1px}
+/* rail */
+.rail{left:0;top:0;width:1440px;height:156px}
+.perf{position:absolute;left:0;right:0;height:14px;background:radial-gradient(circle at 50% 50%,transparent 0,transparent 0) ;
+ background-image:linear-gradient(var(--ink),var(--ink));background-size:12px 9px;background-repeat:repeat-x;background-position:6px 2px}
+.perf.t{top:8px}.perf.b{bottom:8px}
+.brand{position:absolute;left:28px;top:40px;width:250px;color:var(--ink)}
+.brand b{display:block;font-size:30px;letter-spacing:.06em}
+.frames{position:absolute;left:300px;top:32px;display:flex;gap:10px}
+.fr{position:relative;width:148px;height:92px;background:var(--ink);color:var(--win);padding:12px 12px;border-radius:2px}
+.fr .n{color:var(--flag)}
+.fr .t{display:block;margin-top:6px;font-size:15px;line-height:1.15}
+.fr.done::before,.fr.done::after{content:"";position:absolute;left:50%;top:50%;width:120px;height:4px;background:rgba(255,255,255,.85);border-radius:3px}
+.fr.done::before{transform:translate(-50%,-50%) rotate(31deg)}.fr.done::after{transform:translate(-50%,-50%) rotate(-31deg)}
+.fr.done .t,.fr.done .n{opacity:.45}
+.fr.now{background:var(--win);color:var(--ink);outline:3px solid var(--ink);outline-offset:3px}
+.fr.now .n{color:var(--ink)}
+.flag{position:absolute;right:-8px;top:-30px;width:34px;height:58px;background:var(--flag);border:2px solid var(--ink);
+ clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%)}
+/* side */
+.side{left:0;top:156px;width:288px;height:744px;padding:34px 28px}
+.side h2{font-family:var(--cap);font-weight:600;font-size:15px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:14px}
+.side ol{list-style:none}
+.side li{padding:9px 0;border-top:1px solid rgba(11,11,11,.55)}
+.side li.on{background:var(--ink);color:var(--flag);margin:0 -12px;padding:9px 12px}
+.side .meta{position:absolute;left:28px;bottom:34px;right:28px}
+.pin{display:block;margin-top:8px;padding:8px 10px;border:1px dashed var(--ink)}
+/* reading window */
+.win{position:absolute;background:var(--win);border-radius:3px}
+.read{left:312px;top:180px;width:600px;height:696px;padding:40px 46px}
+.read .cap{color:#5a5a5a}
+h1{font-family:'Literata',serif;font-weight:600;font-size:46px;line-height:1.05;margin:14px 0 22px;letter-spacing:-.01em}
+.read p{font-family:'Literata',serif;font-size:17px;line-height:1.62;max-width:64ch;color:#1b1b1b;margin-bottom:16px}
+.read code{font-family:'JetBrains Mono',monospace;font-size:14.5px;background:#f1efeb;padding:1px 5px;border-radius:2px}
+.read h3{font-family:'Literata',serif;font-weight:600;font-size:22px;margin:26px 0 10px}
+.toc{display:flex;gap:18px;margin-top:18px;padding-top:14px;border-top:1px solid #ddd}
+.toc span{color:#5a5a5a}
+/* visualizer */
+.viz{position:absolute;left:936px;top:180px;width:480px;height:696px}
+.strip{display:flex;gap:6px;padding:10px 8px;background:#161616;border-top:3px dotted var(--dust);border-bottom:3px dotted var(--dust)}
+.strip i{flex:1;height:34px;border:1px solid #3a3a3a;font-style:normal;color:var(--dust);display:grid;place-items:center}
+.strip i.past{background:#262626}
+.strip i.cur{background:var(--flag);color:var(--ink);border-color:var(--flag)}
+.vlabel{display:flex;justify-content:space-between;color:var(--dust);margin:14px 2px 10px}
+.vlabel b{color:var(--win)}
+.stage{display:flex;gap:12px;height:316px}
+.stack{width:150px;padding:14px;display:flex;flex-direction:column;justify-content:flex-end;gap:8px}
+.stack .cap{color:#5a5a5a;margin-bottom:auto}
+.fm{font-family:'JetBrains Mono',monospace;font-size:14px;padding:10px;border:2px solid var(--ink)}
+.fm.top{background:var(--flag);border-color:var(--ink);font-weight:600}
+.code{flex:1;padding:14px 0;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.75;white-space:pre}
+.code div{padding:0 14px}
+.code .hl{background:#FDE3D2;box-shadow:inset 4px 0 0 var(--flag)}
+.code .ln{display:inline-block;width:18px;color:#a0a0a0}
+.expl{position:relative;margin-top:12px;padding:18px 20px;height:120px}
+.expl p{font-family:'Literata',serif;font-size:16px;line-height:1.55}
+.expl code{font-family:'JetBrains Mono',monospace;font-size:13.5px}
+.ctl{display:flex;gap:10px;margin-top:14px}
+.btn{font-family:var(--cap);font-weight:600;font-size:15px;letter-spacing:.12em;text-transform:uppercase;padding:13px 18px;border:2px solid var(--win);color:var(--win);background:transparent}
+.btn.go{background:var(--flag);border-color:var(--flag);color:var(--ink)}
+.btn.r{margin-left:auto;border-color:#444;color:var(--dust)}
+</style>
+</head>
+<body>
+<div class="grain rail">
+  <div class="perf t"></div><div class="perf b"></div>
+  <div class="brand cap"><b>DOMINA-JS</b>Sección 4 · Cómo se ejecuta JS por dentro</div>
+  <div class="frames cap">
+    <div class="fr done"><span class="n">4.1</span><span class="t">Motor y runtime</span></div>
+    <div class="fr now"><span class="n">4.2</span><span class="t">Pila de llamadas</span><span class="flag"></span></div>
+    <div class="fr"><span class="n">4.3</span><span class="t">Contextos y hoisting</span></div>
+    <div class="fr"><span class="n">4.4</span><span class="t">Scope</span></div>
+    <div class="fr"><span class="n">4.5</span><span class="t">Closures</span></div>
+    <div class="fr"><span class="n">4.6</span><span class="t">Recursión</span></div>
+    <div class="fr"><span class="n">4.7</span><span class="t">Memoria</span></div>
+  </div>
+</div>
+<aside class="grain side cap">
+  <h2>Temario</h2>
+  <ol>
+    <li>0 · Antes de empezar</li><li>1 · Fundamentos</li><li>2 · Control de flujo</li><li>3 · Funciones</li>
+    <li class="on">4 · Cómo se ejecuta JS</li><li>5 · Objetos</li><li>6 · Clases</li><li>7 · Colecciones</li><li>8 · Iteradores</li><li>9 · Asincronía</li>
+  </ol>
+  <div class="meta">Lección 2 de 7 · 9 min<span class="pin">En el pin · 4 ejercicios pendientes</span></div>
+</aside>
+<main class="win read">
+  <span class="cap">4.2 · Lección</span>
+  <h1>La pila de llamadas</h1>
+  <p>JavaScript ejecuta una sola cosa a la vez. Tiene un único hilo, y para saber en qué función está y adónde debe volver cuando termine, el motor usa una estructura muy simple: la <strong>pila de llamadas</strong> (<em>call stack</em>).</p>
+  <p>Cada vez que llamas a una función, el motor pone un marco encima de la pila. Cuando la función termina con <code>return</code>, ese marco sale y la ejecución continúa justo donde se había quedado. El último en entrar es siempre el primero en salir.</p>
+  <h3>Un solo hilo, una sola pila</h3>
+  <p>Mira el ejemplo de la derecha: <code>mostrar()</code> llama a <code>saludar()</code>, y mientras <code>saludar()</code> trabaja, <code>mostrar()</code> queda en pausa, esperando debajo.</p>
+  <div class="toc cap"><span>Un solo hilo</span><span>Qué es una pila</span><span>Paso a paso</span><span>Stack overflow</span></div>
+</main>
+<section class="viz">
+  <div class="strip cap"><i class="past">1</i><i class="past">2</i><i class="cur">3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i></div>
+  <div class="vlabel cap"><span>Visualizador · ejemplo 1</span><b>Paso 3 de 8</b></div>
+  <div class="stage">
+    <div class="win stack"><span class="cap">Call stack</span><div class="fm top">saludar()</div><div class="fm">mostrar()</div></div>
+    <div class="win code"><div class="hl"><span class="ln">1</span>function saludar(nombre) {</div><div><span class="ln">2</span>  return `Hola, ${nombre}!`;</div><div><span class="ln">3</span>}</div><div><span class="ln">4</span></div><div><span class="ln">5</span>function mostrar() {</div><div class="hl"><span class="ln">6</span>  const msg = saludar("Mundo");</div><div><span class="ln">7</span>  console.log(msg);</div><div><span class="ln">8</span>}</div><div><span class="ln">9</span></div><div><span class="ln">10</span>mostrar();</div></div>
+  </div>
+  <div class="win expl"><p><strong>saludar()</strong> se apila encima de <code>mostrar()</code>. El motor suspende <code>mostrar()</code> y ejecuta <code>saludar()</code>.</p></div>
+  <div class="ctl"><span class="btn">← Anterior</span><span class="btn go">Siguiente →</span><span class="btn r">↺ Reiniciar</span></div>
+</section>
+</body>
+</html>

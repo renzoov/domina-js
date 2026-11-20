@@ -1,0 +1,18 @@
+{
+  "kind": "canon",
+  "label": "El estándar de la categoría (oscuro)",
+  "thesis": "Documentación técnica clásica en modo oscuro, con el amarillo de JS como acento.",
+  "palette": [
+    "#0F1115",
+    "#E6E8EB",
+    "#F7DF1E"
+  ],
+  "materials": [
+    "rejilla limpia",
+    "tema de código estándar"
+  ],
+  "viewport": "Barra lateral, lección al centro, índice a la derecha y el visualizador como un bloque más.",
+  "risk": "Indistinguible de cualquier documentación oscura por diseño.",
+  "html": ".impeccable/mocks/decision/r1-canon.html",
+  "id": "r1-canon"
+}

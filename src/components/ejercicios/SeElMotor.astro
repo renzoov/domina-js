@@ -1,0 +1,69 @@
+---
+import Ejercicio from './Ejercicio.astro';
+import Icono from '../Icono.astro';
+import { resaltar } from '../../lib/resaltar';
+
+interface Movimiento { accion: 'apilar' | 'desapilar'; funcion?: string; linea: number }
+interface Props {
+  id: string;
+  numero: number;
+  titulo: string;
+  codigo: string;
+  funciones: string[];
+  movimientos: Movimiento[];
+}
+const { id, numero, titulo, codigo, funciones, movimientos } = Astro.props;
+const lineas = resaltar(codigo);
+---
+<Ejercicio id={id} numero={numero} formato="Sé el motor" titulo={titulo}>
+  <slot name="enunciado" slot="enunciado" />
+  <div class="motor" data-motor data-id={id}>
+    <pre class="codigo caja"><code>{lineas.map((html, i) => (<span class="l" data-l={i + 1}><i aria-hidden="true">{i + 1}</i><Fragment set:html={html || ' '} /></span>))}</code></pre>
+    <div class="lado">
+      <p class="rotulo cima">Tu pila<Icono nombre="subir" />cima</p>
+      <ol class="marcos" data-pila aria-label="Tu pila, de abajo hacia arriba"></ol>
+      <div class="suelo" aria-hidden="true"></div>
+      <div class="acciones" role="group" aria-label="Movimientos">
+        {funciones.map((f) => (<button type="button" class="btn" data-apilar={f}>Apilar <code>{f}</code></button>))}
+        <button type="button" class="btn btn--y" data-desapilar>Desapilar la cima</button>
+      </div>
+      <p class="avance" data-avance>Movimiento 1 de {movimientos.length}</p>
+      <p class="feedback" data-feedback aria-live="polite"></p>
+      <button type="button" class="btn btn--quiet" data-reiniciar><Icono nombre="reiniciar" />Empezar de nuevo</button>
+    </div>
+    <script type="application/json" data-movs set:html={JSON.stringify(movimientos)} />
+  </div>
+</Ejercicio>
+
+<script>
+  import { iniciarMotores } from '../../scripts/ejercicios';
+  iniciarMotores();
+</script>
+
+<style>
+  .motor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 20px; align-items: start; }
+  .codigo { margin: 0; padding: 10px 0; font: 400 0.82rem/1.5rem var(--mono); background: rgba(0, 0, 0, 0.14); overflow-x: auto; }
+  .codigo code { display: block; min-width: max-content; }
+  .l { display: block; white-space: pre; padding-right: 12px; }
+  .l i { display: inline-block; width: 34px; padding-right: 12px; text-align: right; font-style: normal; color: var(--azul); opacity: 0.75; }
+  .l.on { background: linear-gradient(transparent 80%, var(--y-90) 80% 92%, transparent 92%); }
+  .l.on i { color: var(--y); opacity: 1; }
+  .lado { display: flex; flex-direction: column; gap: 10px; }
+  .marcos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column-reverse; gap: 8px; min-height: 120px; justify-content: flex-start; }
+  .marcos :global(li) { padding: 8px 12px; font: 600 0.88rem/1.25 var(--mono); border: 2px solid var(--chalk-70); border-radius: var(--r-chalk); animation: escribir var(--t-write) var(--ease-out) both; }
+  .marcos :global(li:last-child) { border-color: var(--y); color: var(--y); background: var(--y-06); }
+  @keyframes escribir { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+  .suelo { height: 3px; background: repeating-linear-gradient(90deg, var(--chalk-70) 0 18px, transparent 18px 21px); }
+  .acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+  .acciones code { font: 600 0.85em var(--mono); }
+  .avance { margin: 0; font: 700 0.85rem var(--read); color: var(--azul); }
+  .cima { display: inline-flex; align-items: center; gap: 4px; }
+  .cima :global(svg) { width: 14px; height: 14px; filter: url(#tiza); }
+  .cima :global(svg path) { stroke-width: 2.8; }
+  .feedback { margin: 0; min-height: 1.5em; font-size: 0.95rem; color: var(--chalk-70); }
+  .feedback :global(.no) { color: var(--red); font-weight: 700; }
+  .feedback :global(.ok) { color: var(--ok); font-weight: 700; }
+  [data-reiniciar] { align-self: flex-start; padding-left: 0; }
+  @container (max-width: 620px) { .motor { grid-template-columns: 1fr; } }
+  @media (max-width: 720px) { .motor { grid-template-columns: 1fr; } }
+</style>

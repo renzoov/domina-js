@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>domina-js · Carretera de noche</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@500;700;800;900&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--asphalt:#1A1B1D;--y:#F7DF1E;--w:#F5F5F0;--red:#D7263D;--green:#0B6E4F;--a2:#232427;--a3:#2D2F33;--mute:#9C9C96}
+html,body{width:1440px;height:900px;overflow:hidden;margin:0}
+body{background:var(--asphalt);color:var(--w);font-family:"Atkinson Hyperlegible",sans-serif;position:relative;
+background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1.2px),radial-gradient(rgba(0,0,0,.35) 1px,transparent 1.4px);background-size:5px 5px,7px 7px;background-position:0 0,2px 3px}
+*{box-sizing:border-box}
+header{height:96px;display:flex;align-items:center;gap:28px;padding:0 40px;border-bottom:2px solid #000;background:rgba(0,0,0,.18)}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--w)}
+.logo b{font:800 24px/1 Overpass,sans-serif;letter-spacing:-.01em}.logo b span{color:var(--y)}
+.route{margin-left:16px;background:var(--green);border:3px solid var(--w);border-radius:8px;box-shadow:0 0 0 3px var(--green),0 6px 18px rgba(0,0,0,.5);padding:8px 18px 7px;display:flex;align-items:center;gap:18px}
+.shield{width:42px;height:46px;background:var(--w);color:var(--green);font:900 22px/46px Overpass;text-align:center;clip-path:polygon(0 0,100% 0,100% 62%,50% 100%,0 62%);padding-right:0}
+.route .t{font:800 21px/1.05 Overpass;letter-spacing:.01em}.route .t small{display:block;font:600 13px/1.3 Overpass;opacity:.85;letter-spacing:.06em}
+.route .km{font:900 26px/1 Overpass;border-left:2px solid rgba(245,245,240,.6);padding-left:18px}.route .km small{display:block;font:700 11px Overpass;letter-spacing:.12em;opacity:.8}
+.hnav{margin-left:auto;display:flex;gap:26px;font:700 14px Overpass;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}.hnav a{color:inherit;text-decoration:none}.hnav a.on{color:var(--w)}
+aside{position:absolute;left:0;top:96px;bottom:0;width:280px;padding:30px 28px 0 40px;border-right:1px solid #000}
+aside h4{margin:0 0 18px;font:700 12px Overpass;letter-spacing:.14em;color:var(--mute);text-transform:uppercase}
+.exit{display:flex;align-items:center;gap:12px;padding:9px 0;color:#C9C9C2;font:600 15px/1.25 Overpass;text-decoration:none;border-bottom:1px dashed #34363A}
+.exit i{font-style:normal;flex:none;width:30px;height:22px;border:2px solid #5A5C60;border-radius:4px;font:800 12px/18px Overpass;text-align:center;color:var(--mute)}
+.exit.done i{border-color:var(--green);background:var(--green);color:var(--w)}
+.exit.on{color:var(--w);border-bottom-color:transparent;background:var(--green);margin:4px -12px;padding:11px 12px;border-radius:6px;box-shadow:inset 0 0 0 2px var(--w)}
+.exit.on i{border-color:var(--w);background:var(--w);color:var(--green)}
+.exit.on em{margin-left:auto;font:800 11px Overpass;letter-spacing:.1em;font-style:normal}
+main{position:absolute;left:280px;top:96px;width:640px;bottom:0;padding:44px 52px 0 64px}
+main:before{content:"";position:absolute;left:28px;top:0;bottom:0;width:6px;background:repeating-linear-gradient(to bottom,var(--y) 0 46px,transparent 46px 82px);box-shadow:0 0 10px rgba(247,223,30,.18)}
+.kicker{font:700 13px Overpass;letter-spacing:.14em;color:var(--y);text-transform:uppercase}
+h1{font:900 58px/1 Overpass;letter-spacing:-.02em;margin:12px 0 14px}
+.meta{display:flex;gap:10px;margin-bottom:28px}.meta span{font:600 13px "JetBrains Mono";color:var(--asphalt);background:var(--w);padding:5px 9px;border-radius:3px}.meta span.y{background:var(--y)}
+p{font-size:17px;line-height:1.62;max-width:64ch;margin:0 0 18px;color:#ECECE6}p strong{color:var(--w)}p code{font:500 15px "JetBrains Mono";color:var(--y)}
+.warn{display:flex;gap:20px;align-items:center;margin-top:26px;padding:16px 18px;border:1px solid #34363A;border-radius:6px;background:rgba(0,0,0,.2)}
+.dia{flex:none;width:58px;height:58px;background:var(--y);transform:rotate(45deg);border-radius:6px;border:3px solid var(--asphalt);box-shadow:0 0 0 2px var(--y);display:grid;place-items:center}
+.dia b{transform:rotate(-45deg);font:900 15px Overpass;color:var(--asphalt);text-align:center;line-height:.95}
+.warn p{margin:0;font-size:15.5px;line-height:1.5}
+section.viz{position:absolute;right:40px;top:126px;width:470px;bottom:30px;background:#141517;border:2px solid #000;border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,.45);overflow:hidden}
+.vh{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #2A2C30;font:800 13px Overpass;letter-spacing:.12em;text-transform:uppercase}.vh em{font-style:normal;color:var(--y)}
+pre{margin:0;padding:12px 0;font:400 13.5px/1.6 "JetBrains Mono";color:#CFCFC8;border-bottom:1px solid #2A2C30}
+pre span{display:block;padding:0 18px}pre span:before{content:attr(data-n);display:inline-block;width:24px;color:#5A5C60}
+pre b{font-weight:400}
+pre span.hl{background:rgba(247,223,30,.10);box-shadow:inset 4px 0 0 var(--y);color:var(--w)}
+.k{color:#E9A0AA}.s{color:#A8D5B9}.f{color:var(--y)}
+.lanes{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #2A2C30}
+.lane{padding:12px 18px 14px}.lane+.lane{border-left:1px solid #2A2C30}
+.lane h5{margin:0 0 10px;font:700 11px Overpass;letter-spacing:.14em;color:var(--mute);text-transform:uppercase}
+.frame{font:600 14px "JetBrains Mono";padding:8px 12px;border-radius:4px;margin-bottom:6px;border:2px solid #45474C;color:#C9C9C2}
+.frame.top{background:var(--y);border-color:var(--y);color:var(--asphalt);box-shadow:0 0 14px rgba(247,223,30,.3)}
+.console{font:400 13px "JetBrains Mono";color:#5A5C60;border:1px dashed #3A3C40;border-radius:4px;padding:10px;height:78px}
+.exp{padding:12px 18px;font-size:15px;line-height:1.5;color:#E3E3DC;border-bottom:1px solid #2A2C30}.exp b{color:var(--y);font-family:"JetBrains Mono";font-size:14px}
+.ctl{padding:12px 18px}
+.eyes{display:flex;align-items:center;gap:0;margin-bottom:12px;height:20px;background:linear-gradient(var(--a3),var(--a3)) center/100% 2px no-repeat}
+.eye{flex:1;display:flex;justify-content:center}.eye i{width:16px;height:10px;border-radius:5px;background:#4A4C50;border:1px solid #000}
+.eye.past i{background:#8C7E1C}.eye.on i{background:var(--y);box-shadow:0 0 0 3px rgba(247,223,30,.2),0 0 16px 4px rgba(247,223,30,.55)}
+.btns{display:flex;gap:8px}.btn{font:800 13px Overpass;letter-spacing:.06em;text-transform:uppercase;padding:9px 14px;border-radius:5px;border:2px solid var(--w);color:var(--w);background:transparent}
+.btn.go{background:var(--w);color:var(--asphalt)}.btn.rs{margin-left:auto;border-color:#45474C;color:var(--mute)}
+</style></head><body>
+<header>
+ <a class="logo" href="#"><svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><rect x="4" y="4" width="36" height="36" rx="5" transform="rotate(45 22 22)" fill="#F7DF1E"/><rect x="7.5" y="7.5" width="29" height="29" rx="3" transform="rotate(45 22 22)" fill="none" stroke="#1A1B1D" stroke-width="2"/><path d="M15 27 L22 13 L29 27" fill="none" stroke="#1A1B1D" stroke-width="3" stroke-linejoin="round"/><path d="M22 18 v10" stroke="#1A1B1D" stroke-width="2" stroke-dasharray="3 2.4"/></svg><b>domina<span>-js</span></b></a>
+ <div class="route"><div class="shield">4</div><div class="t">Cómo se ejecuta JS por dentro<small>RUTA 4 · SALIDA 2 · LA PILA DE LLAMADAS</small></div><div class="km"><small>KM</small>2 / 7</div></div>
+ <nav class="hnav"><a href="#" class="on">Ruta</a><a href="#">Ejercicios</a><a href="#">Mi progreso</a></nav>
+</header>
+<aside><h4>Salidas de la ruta 4</h4>
+ <a class="exit done" href="#"><i>1</i>Motor y runtime</a>
+ <a class="exit on" href="#"><i>2</i>La pila de llamadas<em>AQUÍ</em></a>
+ <a class="exit" href="#"><i>3</i>Contextos de ejecución y hoisting</a>
+ <a class="exit" href="#"><i>4</i>Scope y cadena de scopes</a>
+ <a class="exit" href="#"><i>5</i>Closures</a>
+ <a class="exit" href="#"><i>6</i>Recursión y stack overflow</a>
+ <a class="exit" href="#"><i>7</i>Memoria y recolector de basura</a>
+</aside>
+<main>
+ <div class="kicker">Ruta 4 · Km 2</div>
+ <h1>La pila de llamadas</h1>
+ <div class="meta"><span class="y">Lección 2 de 7</span><span>9 min</span><span>4 ejercicios</span></div>
+ <p>JavaScript ejecuta tu código en un solo hilo: hace una cosa a la vez, en orden. Para no perderse cuando una función llama a otra, el motor lleva una lista de pendientes llamada <strong>pila de llamadas</strong> (<code>call stack</code>). La última función que entra es la primera que sale, como una pila de platos.</p>
+ <p>A la derecha puedes avanzar paso a paso: cada ojo de gato que se enciende es un momento de la ejecución.</p>
+ <div class="warn"><div class="dia"><b>UN<br>CARRIL</b></div><p><strong>Un solo hilo.</strong> Mientras una función está arriba de la pila, nada más se ejecuta: las de abajo esperan su turno.</p></div>
+</main>
+<section class="viz">
+ <div class="vh"><span>Visualizador · pila</span><em>Paso 3 de 8</em></div>
+<pre><span data-n="1" class="hl"><b class="k">function</b> <b class="f">saludar</b>(nombre) {</span><span data-n="2">  <b class="k">return</b> <b class="s">`Hola, ${nombre}!`</b>;</span><span data-n="3">}</span><span data-n="4"> </span><span data-n="5"><b class="k">function</b> mostrar() {</span><span data-n="6" class="hl">  <b class="k">const</b> msg = <b class="f">saludar</b>(<b class="s">"Mundo"</b>);</span><span data-n="7">  console.log(msg);</span><span data-n="8">}</span><span data-n="9"> </span><span data-n="10">mostrar();</span></pre>
+ <div class="lanes"><div class="lane"><h5>Pila de llamadas</h5><div class="frame top">saludar()</div><div class="frame">mostrar()</div></div><div class="lane"><h5>Consola</h5><div class="console">// vacía</div></div></div>
+ <div class="exp"><b>saludar()</b> se apila encima de <b>mostrar()</b>. El motor suspende mostrar() y ejecuta saludar().</div>
+ <div class="ctl"><div class="eyes"><div class="eye past"><i></i></div><div class="eye past"><i></i></div><div class="eye on"><i></i></div><div class="eye"><i></i></div><div class="eye"><i></i></div><div class="eye"><i></i></div><div class="eye"><i></i></div><div class="eye"><i></i></div></div>
+ <div class="btns"><span class="btn">← Anterior</span><span class="btn go">Siguiente →</span><span class="btn rs">↺ Reiniciar</span></div></div>
+</section>
+</body></html>

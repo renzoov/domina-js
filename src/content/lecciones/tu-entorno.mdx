@@ -1,0 +1,142 @@
+---
+titulo: Tu entorno
+seccion: antes-de-empezar
+tema: tu-entorno
+minutos: 10
+resumen: Las tres herramientas para escribir y ejecutar JavaScript, la consola del navegador, un editor de código y Node.js, y cómo usar cada una.
+intro: 'Para programar en JavaScript no hace falta instalar casi nada: ya tienes un <u>navegador</u>, y trae una consola donde puedes escribir código ahora mismo. Para programas más largos vas a sumar un <u>editor de código</u> y <u>Node.js</u>. Las tres son gratis.'
+nota: 'Nunca pegues en la consola código que te mandó alguien que no conoces. Desde la consola se puede leer lo que hay en la página, incluidas tus sesiones abiertas.'
+ejercicios: [entorno-auto, entorno-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { entornoAuto, entornoDetective } from '../../data/ejercicios/antes-de-empezar';
+
+## La consola del navegador
+
+Todos los navegadores traen herramientas para desarrolladores, las **DevTools**, y una de ellas es la **consola**: un lugar donde escribes JavaScript y ves el resultado al instante.
+
+Para abrirla en Chrome o Edge:
+
+- En Windows y Linux: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd>
+- En Mac: <kbd>Cmd</kbd> + <kbd>Option</kbd> + <kbd>J</kbd>
+- En cualquier navegador: <kbd>F12</kbd> y luego la pestaña **Console**. En Firefox, el atajo directo es <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>K</kbd>.
+
+Prueba ahora, en esta misma página. Escribe esto y pulsa <kbd>Enter</kbd>:
+
+```js
+2 + 2
+```
+
+La consola responde `4`. Ahora prueba con:
+
+```js
+console.log("Hola desde la consola")
+```
+
+Se imprime el texto y, debajo, aparece `undefined`. No es un error: la consola siempre muestra el **valor** de lo que escribiste. `console.log` imprime, pero no devuelve ningún valor, y "ningún valor" en JavaScript se escribe `undefined`. Lo vas a entender del todo en la sección de Funciones.
+
+<Nota tipo="consejo">
+  Para escribir varias líneas en la consola sin ejecutarlas, usa <kbd>Shift</kbd> + <kbd>Enter</kbd>. La primera vez que pegues código, Chrome te pide escribir `allow pasting`. Es una protección contra estafas.
+</Nota>
+
+## Un editor de código
+
+La consola es ideal para probar algo rápido, pero los programas se escriben en archivos. Para eso usa un **editor de código**. El más usado es **Visual Studio Code**, gratis y disponible para Windows, Mac y Linux.
+
+1. Crea una carpeta para practicar, por ejemplo `aprendiendo-js`.
+2. Ábrela en el editor y crea un archivo llamado `hola.js`.
+3. Escribe dentro:
+
+```js
+console.log("¡Hola desde un archivo!");
+```
+
+El editor colorea el código y te avisa de algunos errores mientras escribes. Para ejecutar el archivo necesitas la tercera herramienta.
+
+## Node.js: JavaScript fuera del navegador
+
+**Node.js** es un runtime que ejecuta JavaScript en tu computadora, sin navegador. Descárgalo de **nodejs.org** y elige la versión **LTS**, la recomendada para la mayoría.
+
+Para comprobar que quedó instalado, abre una terminal (en VS Code: menú **Terminal → Nueva terminal**) y escribe:
+
+```bash
+node -v
+```
+
+Si ves un número de versión, está listo. Ahora, desde la carpeta de tu archivo:
+
+```bash
+node hola.js
+```
+
+En la terminal aparece `¡Hola desde un archivo!`. Mientras practicas, este otro comando es muy cómodo:
+
+```bash
+node --watch hola.js
+```
+
+Node vuelve a ejecutar el archivo cada vez que lo guardas, así ves el resultado sin escribir el comando de nuevo. Para detenerlo, pulsa <kbd>Ctrl</kbd> + <kbd>C</kbd>.
+
+## Y dentro de una página web
+
+También puedes conectar tu archivo a una página. Crea `index.html` en la misma carpeta:
+
+```html
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <title>Mi página</title>
+  </head>
+  <body>
+    <h1>Hola</h1>
+    <script src="hola.js"></script>
+  </body>
+</html>
+```
+
+Ábrelo con doble clic en el navegador y abre la consola: ahí aparece el mensaje de `hola.js`. En la sección del navegador verás cómo hace JavaScript para cambiar lo que muestra la página.
+
+## Leer un error
+
+Tarde o temprano vas a ver un error en rojo. No te asustes: el error es una pista, y casi siempre te dice qué pasó y dónde.
+
+```
+hola.js:2
+consol.log("¡Hola!");
+^
+
+ReferenceError: consol is not defined
+```
+
+- `hola.js:2` es el **archivo** y el **número de línea**.
+- `ReferenceError` es el **tipo** de error: usaste un nombre que no existe.
+- `consol is not defined` es el **mensaje**: `consol` no está definido.
+
+Con esas tres pistas puedes encontrar casi cualquier error. En el ejercicio de abajo lo vas a practicar.
+
+## Resumen
+
+- La **consola** del navegador (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>J</kbd>) sirve para probar código al instante.
+- Los programas se escriben en archivos `.js` con un **editor** como VS Code.
+- **Node.js** ejecuta esos archivos en tu computadora: `node archivo.js`, o `node --watch archivo.js` mientras practicas.
+- Un error trae el archivo, la línea, el tipo y un mensaje: léelos antes de buscar ayuda.
+
+<Practica>
+
+<Autoevaluacion id={entornoAuto.id} numero={1} titulo={entornoAuto.titulo} preguntas={entornoAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<Detective id={entornoDetective.id} numero={2} titulo={entornoDetective.titulo} codigo={entornoDetective.codigo} error={entornoDetective.error} culpable={entornoDetective.culpable} arreglos={entornoDetective.arreglos} hallazgo={entornoDetective.hallazgo} pista={entornoDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien ejecutó <code>node hola.js</code> y la terminal mostró este error. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

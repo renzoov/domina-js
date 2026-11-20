@@ -1,0 +1,76 @@
+---
+import Ejercicio from './Ejercicio.astro';
+import Icono from '../Icono.astro';
+
+interface Pregunta {
+  pregunta: string;
+  opciones: string[];
+  correcta: number;
+  /** Por qué es esa; se muestra al responder */
+  explicacion: string;
+}
+interface Props {
+  id: string;
+  numero: number;
+  titulo: string;
+  preguntas: Pregunta[];
+}
+const { id, numero, titulo, preguntas } = Astro.props;
+---
+<Ejercicio id={id} numero={numero} formato="Autoevaluación" titulo={titulo}>
+  <slot name="enunciado" slot="enunciado" />
+  <div class="auto" data-auto data-id={id}>
+    <ol class="preguntas">
+      {preguntas.map((p, i) => (
+        <li class="pregunta" data-pregunta data-correcta={p.correcta} data-explicacion={p.explicacion}>
+          <p class="enunciado-p" id={`${id}-p${i}`} set:html={p.pregunta} />
+          <div class="opciones" role="group" aria-labelledby={`${id}-p${i}`}>
+            {p.opciones.map((o, k) => (
+              <button type="button" class="btn opcion" data-opcion={k}><Fragment set:html={o} /></button>
+            ))}
+          </div>
+          <p class="feedback" data-feedback aria-live="polite"></p>
+        </li>
+      ))}
+    </ol>
+    <div class="avance" data-avance hidden>
+      <p class="cual" data-cual></p>
+      <div class="puntos" data-puntos aria-hidden="true">
+        {preguntas.map(() => <span class="punto"></span>)}
+      </div>
+      <button type="button" class="btn btn--y" data-sig-pregunta disabled>Siguiente pregunta<Icono nombre="der" /></button>
+    </div>
+    <p class="total" data-total aria-live="polite"></p>
+  </div>
+</Ejercicio>
+
+<script>
+  import { iniciarAutoevaluaciones } from '../../scripts/ejercicios';
+  iniciarAutoevaluaciones();
+</script>
+
+<style>
+  .preguntas { list-style: none; margin: 0; padding: 0; display: grid; gap: 28px; counter-reset: q; max-width: 760px; }
+  .pregunta { counter-increment: q; }
+  .enunciado-p { margin: 0 0 10px; font-weight: 700; font-size: 1.05rem; line-height: 1.5; color: var(--chalk); }
+  .enunciado-p { font-size: 1.15rem; }
+  .enunciado-p :global(code), .opcion :global(code) { font: 400 0.9em var(--mono); color: var(--chalk); }
+  .opciones { display: grid; gap: 8px; }
+  .opcion { justify-content: flex-start; text-align: left; font-weight: 400; line-height: 1.45; }
+  .opcion.bien { border-color: var(--ok); }
+  .opcion.mal { border-color: var(--red); }
+  .feedback { margin: 10px 0 0; font-size: 0.95rem; line-height: 1.55; color: var(--chalk-70); }
+  .feedback:empty { display: none; }
+  .feedback :global(.ok) { color: var(--ok); font-weight: 700; }
+  .feedback :global(.no) { color: var(--red); font-weight: 700; }
+  .feedback :global(code) { font-family: var(--mono); color: var(--chalk); }
+  .avance { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 16px; margin-top: 22px; }
+  .cual { margin: 0; font-weight: 700; font-size: 0.92rem; color: var(--azul); }
+  .puntos { display: flex; gap: 6px; flex: 1; }
+  .punto { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--chalk-45); }
+  .punto.hecha { background: var(--ok); border-color: var(--ok); }
+  .punto.actual { border-color: var(--lima); box-shadow: 0 0 0 3px color-mix(in srgb, var(--lima) 25%, transparent); }
+  .avance [data-sig-pregunta] { margin-left: auto; }
+  .total { margin: 20px 0 0; font-weight: 700; color: var(--ok); font-size: 1.05rem; }
+  .total:empty { display: none; }
+</style>

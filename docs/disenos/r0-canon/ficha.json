@@ -1,0 +1,18 @@
+{
+  "kind": "canon",
+  "label": "El estándar de la categoría",
+  "thesis": "Documentación técnica clásica, hecha impecable: barra lateral, columna central, índice a la derecha.",
+  "palette": [
+    "#FFFFFF",
+    "#111827",
+    "#2563EB"
+  ],
+  "materials": [
+    "rejilla limpia",
+    "bloques de código con tema estándar"
+  ],
+  "viewport": "Barra lateral con el temario, lección al centro, índice «En esta lección» a la derecha y el visualizador como un bloque más.",
+  "risk": "Indistinguible de MDN, Docusaurus y la propia aprenderust por diseño.",
+  "html": ".impeccable/mocks/decision/canon.html",
+  "id": "canon"
+}
