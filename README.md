@@ -2,6 +2,8 @@
 
 **Aprende JavaScript viendo lo que hace el motor.** Un curso gratis, en español y sin cuentas: lecciones cortas, un pizarrón que avanza paso a paso y ejercicios que se corrigen solos. Va de cero a cómo funciona JavaScript por dentro, al día con 2026.
 
+**👉 [domina-js.pages.dev](https://domina-js.pages.dev)**
+
 ![Portada de domina-js: el título «Aprende JavaScript viendo lo que hace el motor» junto a un pizarrón con código y la pila de llamadas](docs/capturas/portada.webp)
 
 | | |
@@ -92,6 +94,8 @@ npm run dev       # servidor de desarrollo en http://localhost:4321
 npm run build     # sitio estático en ./dist
 npm run preview   # sirve ./dist para revisarlo antes de publicar
 ```
+
+El sitio se publica en Cloudflare Pages con cada `git push` a `main`. `public/_headers` deja en caché por un año los archivos de `/_astro/`, que llevan un hash en el nombre, y las páginas se generan como archivos (`build.format: 'file'`) para que se sirvan sin redirección.
 
 ## Estructura
 
