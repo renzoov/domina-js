@@ -10,4 +10,10 @@ export default defineConfig({
   markdown: {
     shikiConfig: { theme: temaTiza },
   },
+  // Cada página se genera como archivo (fundamentos/texto.html), así Cloudflare Pages sirve
+  // /fundamentos/texto sin redirigir antes a /fundamentos/texto/
+  build: { format: 'file' },
+  trailingSlash: 'never',
+  // Al pasar el mouse (o el foco) sobre un enlace, el navegador ya descarga la página
+  prefetch: { prefetchAll: true, defaultStrategy: 'hover' },
 });
