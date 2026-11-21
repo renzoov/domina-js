@@ -1,0 +1,116 @@
+---
+titulo: Lint y formato
+seccion: herramientas
+tema: lint-y-formato
+minutos: 9
+resumen: Qué hace un linter (ESLint) y qué hace un formateador (Prettier), la configuración flat config de ESLint, cómo integrarlos en el editor y en la integración continua, y Biome como alternativa todo en uno.
+intro: 'Muchos errores se pueden encontrar sin ejecutar el código: una variable que nunca se usa, un <code>=</code> donde iba <code>===</code>, una línea que nunca se alcanza. Un <u>linter</u> los marca mientras escribes. Y un <u>formateador</u> se encarga de que todo el código tenga el mismo estilo, sin que nadie tenga que discutirlo.'
+ejercicios: [lint-auto, lint-orden, lint-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { lintAuto, lintOrden, lintDetective } from '../../data/ejercicios/herramientas';
+
+## ESLint
+
+```bash
+npm init @eslint/config@latest      # asistente que crea la configuración
+npx eslint .                        # revisa el proyecto
+npx eslint . --fix                  # corrige lo que se puede corregir solo
+```
+
+La configuración es un archivo `eslint.config.js` (la *flat config*) que exporta un array de objetos. Cada objeto se aplica en orden, y los de después pueden cambiar a los de antes:
+
+```js
+// eslint.config.js
+import js from "@eslint/js";
+import globals from "globals";
+import { defineConfig } from "eslint/config";
+
+export default defineConfig([
+  js.configs.recommended,                      // las reglas recomendadas
+  {
+    files: ["src/**/*.js"],
+    languageOptions: { globals: globals.browser },   // variables del navegador
+    rules: {
+      "no-unused-vars": "warn",                // aviso en lugar de error
+      eqeqeq: "error",                         // obliga a usar === y !==
+    },
+  },
+  { ignores: ["dist/"] },
+]);
+```
+
+Cada regla puede estar en `"off"`, `"warn"` o `"error"`. Las reglas recomendadas atrapan errores de verdad: variables sin declarar, código inalcanzable, condiciones que siempre dan lo mismo, claves repetidas en un objeto. Para TypeScript está **typescript-eslint**, y cada framework tiene su plugin.
+
+## Prettier
+
+Prettier no busca errores: **reescribe** el código con un estilo fijo (sangría, comillas, punto y coma, largo de las líneas). Tiene muy pocas opciones a propósito: la idea es dejar de discutir el estilo.
+
+```bash
+npm install -D prettier
+npx prettier . --write              # formatea todo
+npx prettier . --check              # solo comprueba (para integración continua)
+```
+
+```json
+// .prettierrc
+{ "printWidth": 100, "singleQuote": false }
+```
+
+Si usas los dos, desactiva en ESLint las reglas de estilo (lo hace `eslint-config-prettier`): cada herramienta a lo suyo.
+
+## Biome
+
+**Biome** es un linter y formateador en un solo programa, escrito en Rust y mucho más rápido. Una configuración, un comando:
+
+```bash
+npm install -D @biomejs/biome
+npx biome init
+npx biome check --write .           # lint + formato, y corrige lo que puede
+```
+
+Tiene la mayoría de las reglas de ESLint y es compatible con el estilo de Prettier. Es una buena opción para proyectos nuevos; ESLint sigue siendo el estándar por su enorme cantidad de plugins.
+
+## Dónde ejecutarlos
+
+- **En el editor**: con la extensión de ESLint (o de Biome) ves los errores mientras escribes, y con "formatear al guardar" no piensas más en el estilo.
+- **Antes de cada commit**: herramientas como **lint-staged** con **husky** o **lefthook** revisan solo los archivos que cambiaron.
+- **En la integración continua**: `eslint .` y `prettier --check .` en cada pull request, para que nada se cuele.
+
+<Nota tipo="consejo">
+  Agrega los scripts al `package.json` (`"lint": "eslint ."`, `"format": "prettier . --write"`): así cualquiera que llegue al proyecto sabe cómo ejecutarlos, sin leer documentación.
+</Nota>
+
+## Resumen
+
+- Un **linter** (ESLint) encuentra errores y malas prácticas sin ejecutar el código.
+- Un **formateador** (Prettier) unifica el estilo; no discutas más de comillas.
+- ESLint usa la *flat config*: un array de objetos en `eslint.config.js`.
+- **Biome** hace las dos cosas, muy rápido.
+- Ejecútalos en el editor, antes de cada commit y en la integración continua.
+
+<Practica>
+
+<Autoevaluacion id={lintAuto.id} numero={1} titulo={lintAuto.titulo} preguntas={lintAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={lintOrden.id} numero={2} titulo={lintOrden.titulo} codigo={lintOrden.codigo} salida={lintOrden.salida} inicio={lintOrden.inicio} explicacion={lintOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una función con tres problemas que no son errores de sintaxis. Ordena los avisos que mostraría ESLint.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={lintDetective.id} numero={3} titulo={lintDetective.titulo} codigo={lintDetective.codigo} error={lintDetective.error} culpable={lintDetective.culpable} arreglos={lintDetective.arreglos} hallazgo={lintDetective.hallazgo} pista={lintDetective.pista}>
+  <div slot="enunciado">
+    <p>Una configuración copiada de un tutorial antiguo hace fallar a ESLint. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

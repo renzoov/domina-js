@@ -1,0 +1,132 @@
+---
+titulo: Estilos y animación
+seccion: navegador
+tema: estilos-y-animacion
+minutos: 11
+resumen: Cómo cambiar el aspecto de los elementos desde JavaScript (classList, style, propiedades personalizadas de CSS, getComputedStyle), animar con la Web Animations API y hacer transiciones entre estados con la View Transitions API.
+intro: 'JavaScript decide <u>cuándo</u> cambia el aspecto de algo; CSS decide <u>cómo</u> se ve. Mantener esa separación hace el código más simple: casi siempre basta con poner o quitar una clase. Y cuando hace falta más control, el navegador trae dos APIs modernas para animar sin librerías.'
+ejercicios: [estilos-auto, estilos-orden, estilos-detective, estilos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { estilosAuto, estilosOrden, estilosDetective, estilosLab } from '../../data/ejercicios/navegador';
+
+## Clases, primero
+
+El CSS define los estados; JavaScript solo los activa:
+
+```js
+document.body.innerHTML = `
+  <style>
+    .menu { color: #8fd0f7; }
+    .menu.abierto { color: #f7df1e; font-weight: bold; }
+  </style>
+  <nav class="menu">Menú</nav>`;
+const menu = document.querySelector(".menu");
+
+menu.classList.add("abierto");
+console.log(menu.className);
+console.log(menu.classList.toggle("abierto"));   // devuelve si quedó puesta
+menu.classList.replace("menu", "menu-lateral");
+console.log(menu.className);
+```
+
+Así las transiciones de CSS (`transition: color 200ms`) funcionan solas, y el diseño se cambia sin tocar el código.
+
+## style y propiedades personalizadas
+
+`elemento.style` lee y escribe los estilos **en línea** (el atributo `style`). Úsalo para valores que se calculan en el momento, como una posición o un porcentaje. Las propiedades de CSS con guiones van en camelCase:
+
+```js
+document.body.innerHTML = `<div id="barra" style="height: 12px; background: #f7df1e"></div>`;
+const barra = document.querySelector("#barra");
+
+barra.style.width = "60%";
+barra.style.borderRadius = "6px";               // border-radius
+barra.style.setProperty("--progreso", "0.6");   // propiedad personalizada de CSS
+
+console.log(barra.style.width, barra.style.getPropertyValue("--progreso"));
+console.log(getComputedStyle(barra).height);    // el valor que se aplica de verdad
+```
+
+Las **propiedades personalizadas** (variables de CSS) son la mejor forma de pasar datos de JavaScript al CSS: cambias un número y el CSS decide qué hacer con él.
+
+## Web Animations API
+
+`elemento.animate(fotogramas, opciones)` crea una animación, como un `@keyframes` de CSS, pero controlada desde el código:
+
+```js
+document.body.innerHTML = `<div id="punto" style="width: 40px; height: 40px; border-radius: 50%; background: #f2a7b8"></div>`;
+const punto = document.querySelector("#punto");
+
+const animacion = punto.animate(
+  [
+    { transform: "translateX(0)" },
+    { transform: "translateX(200px)", background: "#8fd0f7" },
+  ],
+  { duration: 400, easing: "ease-out", fill: "forwards" }
+);
+
+console.log(animacion.playState);
+await animacion.finished;          // una promesa que se cumple al terminar
+console.log(animacion.playState);
+```
+
+Una animación se puede pausar (`pause()`), invertir (`reverse()`), cancelar (`cancel()`) o cambiar de velocidad (`playbackRate`). `document.getAnimations()` las lista todas, incluidas las de CSS.
+
+## View Transitions
+
+La View Transitions API anima el paso de un estado de la página a otro, sin calcular nada a mano:
+
+```js
+function mostrarDetalle(producto) {
+  if (!document.startViewTransition) return actualizar(producto);   // navegadores sin soporte
+  document.startViewTransition(() => actualizar(producto));
+}
+```
+
+El navegador toma una foto del estado viejo, ejecuta tu función, toma otra del nuevo y anima entre las dos (por defecto, un fundido). Con `view-transition-name` en CSS, un elemento que está en los dos estados se anima de una posición a la otra. Entre páginas distintas del mismo sitio funciona incluso sin JavaScript, con `@view-transition { navigation: auto; }` en el CSS. Este sitio lo usa así.
+
+<Nota tipo="consejo">
+  Respeta a quien pidió menos movimiento: `matchMedia("(prefers-reduced-motion: reduce)").matches` te dice si el usuario lo activó en su sistema. Con CSS, usa la media query del mismo nombre.
+</Nota>
+
+## Resumen
+
+- Cambia el aspecto con **clases** (`classList`); los estilos viven en el CSS.
+- `style` para valores calculados, en camelCase; `setProperty` para propiedades personalizadas.
+- `getComputedStyle` da el valor que se aplica de verdad.
+- `element.animate` crea animaciones controlables; `animacion.finished` es una promesa.
+- `document.startViewTransition` anima el cambio entre dos estados de la página.
+
+<Practica>
+
+<Autoevaluacion id={estilosAuto.id} numero={1} titulo={estilosAuto.titulo} preguntas={estilosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={estilosOrden.id} numero={2} titulo={estilosOrden.titulo} codigo={estilosOrden.codigo} salida={estilosOrden.salida} inicio={estilosOrden.inicio} explicacion={estilosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Estilos en línea, una propiedad personalizada y un valor calculado. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={estilosDetective.id} numero={3} titulo={estilosDetective.titulo} codigo={estilosDetective.codigo} error={estilosDetective.error} culpable={estilosDetective.culpable} arreglos={estilosDetective.arreglos} hallazgo={estilosDetective.hallazgo} pista={estilosDetective.pista}>
+  <div slot="enunciado">
+    <p>El aviso debería ponerse rojo, pero el script ni siquiera arranca. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={estilosLab.id} numero={4} titulo={estilosLab.titulo} pagina={estilosLab.pagina} inicial={estilosLab.inicial} verificaciones={estilosLab.verificaciones} pistas={estilosLab.pistas} solucion={estilosLab.solucion} explicacion={estilosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Haz que el botón alterne entre modo claro y oscuro, con una animación suave. Pruébalo con clics en la página.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

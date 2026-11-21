@@ -1,0 +1,145 @@
+---
+titulo: El DOM
+seccion: navegador
+tema: dom
+minutos: 13
+resumen: Cómo encontrar elementos con querySelector, leer y cambiar su contenido (textContent e innerHTML), sus atributos, clases y datos, crear y mover elementos, y recorrer el árbol del DOM.
+intro: 'El <u>DOM</u> es la página convertida en objetos: cada etiqueta es un elemento con propiedades y métodos. Leerlo y cambiarlo es lo que hace que una página reaccione: mostrar un mensaje, agregar una fila a una tabla, marcar una tarea como hecha. Casi todo se hace con una docena de métodos.'
+ejercicios: [dom-auto, dom-orden, dom-detective, dom-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { domAuto, domOrden, domDetective, domLab } from '../../data/ejercicios/navegador';
+
+## Encontrar elementos
+
+`querySelector` y `querySelectorAll` aceptan **cualquier selector de CSS**:
+
+```js
+document.body.innerHTML = `
+  <h1 id="titulo">Tienda</h1>
+  <ul class="productos">
+    <li data-precio="3">Té</li>
+    <li data-precio="5" class="destacado">Café</li>
+  </ul>`;
+
+console.log(document.querySelector("#titulo").textContent);       // el primero que coincida
+console.log(document.querySelectorAll(".productos li").length);   // todos
+console.log(document.querySelector("li.destacado").textContent);
+console.log(document.querySelector("li[data-precio='3']").textContent);
+console.log(document.querySelector("#no-existe"));                // null
+```
+
+`querySelector` devuelve el **primer** elemento o `null`; `querySelectorAll`, una `NodeList` (vacía si no hay nada). También se pueden llamar sobre un elemento, para buscar solo dentro de él: `lista.querySelector("li")`.
+
+## Contenido
+
+```js
+document.body.innerHTML = `<p id="saludo">Hola</p>`;
+const p = document.querySelector("#saludo");
+
+p.textContent = "Hola, <b>Ana</b>";   // texto tal cual: se ven los < >
+console.log(p.innerHTML);
+
+p.innerHTML = "Hola, <b>Ana</b>";     // se interpreta como HTML
+console.log(p.children.length);
+```
+
+<Nota tipo="error">
+  Nunca pongas en `innerHTML` un texto que venga del usuario o de afuera: si contiene `<img src=x onerror="…">`, ese código se ejecuta. Para mostrar texto, usa **`textContent`**. Lo vas a ver a fondo en *Seguridad en el navegador*.
+</Nota>
+
+## Atributos, clases y datos
+
+```js
+document.body.innerHTML = `<a id="enlace" href="/ayuda" class="boton" data-seccion="soporte">Ayuda</a>`;
+const a = document.querySelector("#enlace");
+
+console.log(a.getAttribute("href"));    // lo escrito en el HTML
+console.log(a.href);                     // la propiedad: la URL completa
+a.setAttribute("target", "_blank");
+
+a.classList.add("activo");
+a.classList.remove("boton");
+a.classList.toggle("oscuro");            // pone o quita
+console.log(a.className, a.classList.contains("activo"));
+
+console.log(a.dataset.seccion);          // data-seccion
+a.dataset.visitas = 3;                   // crea data-visitas="3"
+console.log(a.outerHTML);
+```
+
+## Crear, insertar y quitar
+
+```js
+document.body.innerHTML = `<ul id="lista"><li>Segundo</li></ul>`;
+const lista = document.querySelector("#lista");
+
+const primero = document.createElement("li");
+primero.textContent = "Primero";
+lista.prepend(primero);                  // al principio
+
+const ultimo = document.createElement("li");
+ultimo.textContent = "Último";
+lista.append(ultimo, " (fin)");          // al final; acepta varios y también textos
+
+lista.querySelector("li:nth-child(2)").before(document.createElement("hr"));
+console.log(lista.children.length);
+
+ultimo.remove();
+console.log([...lista.querySelectorAll("li")].map((li) => li.textContent));
+```
+
+Un elemento solo puede estar en un lugar: si haces `append` de uno que ya está en la página, **se mueve**. Para agregar muchos elementos de una vez, junta todo antes y agrégalo con un solo `append`, o usa un `DocumentFragment`.
+
+## Recorrer el árbol
+
+```js
+document.body.innerHTML = `<ul><li>a</li><li id="b">b</li><li>c</li></ul>`;
+const b = document.querySelector("#b");
+
+console.log(b.parentElement.tagName);
+console.log(b.previousElementSibling.textContent, b.nextElementSibling.textContent);
+console.log(b.closest("ul").children.length);   // sube hasta el primer ancestro que coincida
+console.log(b.matches("li#b"));
+```
+
+## Resumen
+
+- `querySelector` (uno o `null`) y `querySelectorAll` (una `NodeList` estática) usan selectores de CSS.
+- `textContent` para texto; `innerHTML` solo con HTML de confianza.
+- Atributos con `getAttribute`/`setAttribute`; clases con `classList`; datos con `dataset`.
+- `createElement` + `append`/`prepend`/`before`/`after` crean y ubican; `remove` quita.
+- `parentElement`, `children`, `closest` y `matches` para moverse por el árbol.
+
+<Practica>
+
+<Autoevaluacion id={domAuto.id} numero={1} titulo={domAuto.titulo} preguntas={domAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={domOrden.id} numero={2} titulo={domOrden.titulo} codigo={domOrden.codigo} salida={domOrden.salida} inicio={domOrden.inicio} explicacion={domOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una lista, un elemento borrado y dos búsquedas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={domDetective.id} numero={3} titulo={domDetective.titulo} codigo={domDetective.codigo} error={domDetective.error} culpable={domDetective.culpable} arreglos={domDetective.arreglos} hallazgo={domDetective.hallazgo} pista={domDetective.pista}>
+  <div slot="enunciado">
+    <p>Se querían leer todos los precios de la página como números. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={domLab.id} numero={4} titulo={domLab.titulo} pagina={domLab.pagina} inicial={domLab.inicial} verificaciones={domLab.verificaciones} pistas={domLab.pistas} solucion={domLab.solucion} explicacion={domLab.explicacion}>
+  <div slot="enunciado">
+    <p>Arma la lista de tareas en la página, creando un elemento por tarea. Vas a ver el resultado debajo del editor.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,120 @@
+---
+titulo: Procesos e hilos
+seccion: servidor
+tema: procesos-e-hilos
+minutos: 11
+resumen: Cómo ejecutar otros programas desde Node.js con child_process (execFile, spawn) sin riesgo de inyección, cómo repartir cálculos pesados en worker_threads, y cómo trabajar con el proceso actual (process.env, argumentos, señales y códigos de salida).
+intro: 'A veces tu programa necesita ayuda de afuera: convertir un video con ffmpeg, ejecutar git, llamar a un script de Python. Otras veces, el trabajo pesado es tuyo y bloquearía el event loop. Node.js tiene una herramienta para cada caso: <u>procesos hijos</u> para otros programas, y <u>worker threads</u> para tu propio JavaScript en paralelo.'
+ejercicios: [procesos-auto, procesos-orden, procesos-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { procesosAuto, procesosOrden, procesosDetective } from '../../data/ejercicios/servidor';
+
+## Ejecutar otros programas
+
+```js
+import { execFile, spawn } from "node:child_process";
+import { promisify } from "node:util";
+
+// Un comando corto: esperar el resultado completo
+const execFileP = promisify(execFile);
+const { stdout } = await execFileP("git", ["log", "-1", "--format=%s"]);
+console.log("último commit:", stdout.trim());
+
+// Un proceso largo o con mucha salida: ir leyendo a medida que llega
+const conversion = spawn("ffmpeg", ["-i", "video.mp4", "audio.mp3"]);
+conversion.stderr.on("data", (parte) => process.stdout.write("."));
+conversion.on("error", (e) => console.error("no se pudo ejecutar ffmpeg:", e.message));
+conversion.on("close", (codigo) => console.log(codigo === 0 ? "\nlisto" : `\nfalló (${codigo})`));
+```
+
+- **`execFile`**: ejecuta un programa con argumentos en un array y devuelve toda la salida.
+- **`spawn`**: igual, pero con streams para la entrada y la salida, para procesos largos.
+- **`exec`**: ejecuta un **texto** a través de una terminal (`sh` o `cmd`). Cómodo, pero peligroso.
+
+<Nota tipo="error">
+  Nunca armes un comando de `exec` con datos de afuera: `exec("convert " + nombre)` con un nombre como `"foto.jpg; rm -rf ~"` ejecuta ese segundo comando. Es una **inyección de comandos**. Con `execFile` o `spawn`, cada argumento va separado y no pasa por una terminal.
+</Nota>
+
+## worker_threads
+
+Para cálculos pesados en JavaScript, un **worker thread** corre en otro hilo del mismo proceso, como los Web Workers del navegador:
+
+```js
+// hash.mjs
+import { parentPort, workerData } from "node:worker_threads";
+import { scryptSync } from "node:crypto";
+
+const resultado = scryptSync(workerData.clave, "sal", 64).toString("hex");
+parentPort.postMessage(resultado);
+```
+
+```js
+// servidor.mjs
+import { Worker } from "node:worker_threads";
+
+function hashEnOtroHilo(clave) {
+  return new Promise((resolver, rechazar) => {
+    const w = new Worker(new URL("./hash.mjs", import.meta.url), { workerData: { clave } });
+    w.once("message", resolver);
+    w.once("error", rechazar);
+  });
+}
+
+console.log(await hashEnOtroHilo("secreto"));
+```
+
+Crear un worker cuesta: para muchas tareas, se usa un **pool** de workers reutilizables (por ejemplo, con la librería Piscina). Y para tareas que Node.js ya hace fuera del hilo (leer archivos, la mayoría de la criptografía asíncrona), no hacen falta: usa sus versiones asíncronas.
+
+## El proceso actual
+
+`process` tiene información y control sobre el programa que está corriendo:
+
+```js
+console.log(process.argv);        // [ruta de node, ruta del script, ...argumentos]
+console.log(process.env.HOME);    // variables de entorno
+console.log(process.pid, process.platform, process.version);
+console.log(process.memoryUsage().heapUsed);
+
+// Terminar con orden cuando piden detener el programa (Ctrl+C, o el sistema)
+process.on("SIGINT", async () => {
+  console.log("cerrando conexiones…");
+  await cerrarTodo();
+  process.exit(0);   // 0: todo bien; otro número: hubo un error
+});
+```
+
+El **código de salida** importa: los scripts, las herramientas de integración continua y los contenedores lo usan para saber si el programa terminó bien. `process.exitCode = 1` lo fija sin cortar el programa en seco.
+
+## Resumen
+
+- `execFile` y `spawn` ejecutan otros programas con argumentos separados; `exec` pasa por una terminal: cuidado con la inyección.
+- Escucha siempre el evento `error` de un proceso hijo.
+- `worker_threads` ejecuta JavaScript pesado en otro hilo, comunicándose por mensajes.
+- `process` da los argumentos, las variables de entorno, las señales y el código de salida.
+
+<Practica>
+
+<Autoevaluacion id={procesosAuto.id} numero={1} titulo={procesosAuto.titulo} preguntas={procesosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={procesosOrden.id} numero={2} titulo={procesosOrden.titulo} codigo={procesosOrden.codigo} salida={procesosOrden.salida} inicio={procesosOrden.inicio} explicacion={procesosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un hilo principal que lanza un worker. Ordena lo que aparecería en la terminal.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={procesosDetective.id} numero={3} titulo={procesosDetective.titulo} codigo={procesosDetective.codigo} error={procesosDetective.error} culpable={procesosDetective.culpable} arreglos={procesosDetective.arreglos} hallazgo={procesosDetective.hallazgo} pista={procesosDetective.pista}>
+  <div slot="enunciado">
+    <p>Un script que convierte videos funciona en una computadora y en otra no. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

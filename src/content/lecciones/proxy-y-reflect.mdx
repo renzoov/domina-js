@@ -1,0 +1,164 @@
+---
+titulo: Proxy y Reflect
+seccion: metaprogramacion
+tema: proxy-y-reflect
+minutos: 13
+resumen: Cómo interceptar las operaciones sobre un objeto con Proxy y sus trampas (get, set, has, deleteProperty, apply, construct…), cómo hacer la operación normal con Reflect, usos reales (validación, valores por defecto, registro, reactividad) y sus límites.
+intro: 'Un <u>Proxy</u> es un objeto que se pone delante de otro y decide qué pasa cada vez que alguien lo lee, lo escribe, le pregunta si tiene una propiedad o lo llama. Es la herramienta de metaprogramación más poderosa del lenguaje: con ella están hechas la reactividad de Vue, muchas librerías de validación y los "objetos mágicos" de algunos ORMs.'
+pizarron: proxyTrampas
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'El proxy (#2) envuelve al objetivo (#1). Fíjate en qué operaciones pasan por una trampa y cuáles no, y en dónde termina guardado cada dato.'
+ejercicios: [proxy-auto, proxy-orden, proxy-detective, proxy-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { proxyAuto, proxyOrden, proxyDetective, proxyLab } from '../../data/ejercicios/metaprogramacion';
+
+## Objetivo, handler y trampas
+
+`new Proxy(objetivo, handler)` recibe el objeto que envuelve y un **handler**, un objeto con las **trampas**: una función por cada operación que quieras interceptar. Las que no defines, pasan directo al objetivo.
+
+| Trampa | Intercepta |
+|---|---|
+| `get(obj, prop, receptor)` | Leer: `p.x`, `p[x]` |
+| `set(obj, prop, valor, receptor)` | Escribir: `p.x = 1` |
+| `has(obj, prop)` | `"x" in p` |
+| `deleteProperty(obj, prop)` | `delete p.x` |
+| `ownKeys(obj)` | `Object.keys(p)`, `for...in` |
+| `apply(fn, this, args)` | Llamar: `p(1, 2)` (si el objetivo es una función) |
+| `construct(Clase, args)` | `new p()` |
+
+Hay algunas más, una por cada operación interna del lenguaje.
+
+## Reflect: la operación normal
+
+`Reflect` tiene un método por cada trampa, con los mismos argumentos, que hace **lo que el lenguaje haría sin proxy**. Así, la trampa agrega su comportamiento y delega el resto:
+
+```js
+const registro = [];
+const espiado = new Proxy({ a: 1 }, {
+  get(obj, prop, receptor) {
+    registro.push(`leyó ${String(prop)}`);
+    return Reflect.get(obj, prop, receptor);
+  },
+  set(obj, prop, valor, receptor) {
+    registro.push(`escribió ${String(prop)} = ${valor}`);
+    return Reflect.set(obj, prop, valor, receptor);
+  },
+});
+
+espiado.a;
+espiado.b = 2;
+console.log(registro);
+```
+
+Usa `Reflect` en lugar de `obj[prop]`: respeta los getters, los prototipos y los descriptores, y en `set` devuelve el booleano que la trampa tiene que devolver.
+
+## Usos reales
+
+**Validación:**
+
+```js
+function validado(objetivo, reglas) {
+  return new Proxy(objetivo, {
+    set(obj, prop, valor) {
+      const regla = reglas[prop];
+      if (regla && !regla(valor)) throw new TypeError(`Valor inválido para ${String(prop)}: ${valor}`);
+      return Reflect.set(obj, prop, valor);
+    },
+  });
+}
+
+const usuario = validado({}, { edad: (v) => Number.isInteger(v) && v >= 0 });
+usuario.edad = 31;
+try {
+  usuario.edad = -5;
+} catch (e) {
+  console.log(e.message);
+}
+```
+
+**Reactividad**: avisar cada vez que algo cambia, que es como Vue actualiza la página.
+
+```js
+function reactivo(objetivo, alCambiar) {
+  return new Proxy(objetivo, {
+    set(obj, prop, valor) {
+      const antes = obj[prop];
+      const ok = Reflect.set(obj, prop, valor);
+      if (antes !== valor) alCambiar(prop, antes, valor);
+      return ok;
+    },
+  });
+}
+
+const estado = reactivo({ contador: 0 }, (prop, antes, ahora) => console.log(`${prop}: ${antes} → ${ahora}`));
+estado.contador++;
+estado.contador++;
+```
+
+**Interceptar funciones** con `apply`:
+
+```js
+const medido = new Proxy(Math.max, {
+  apply(fn, thisArg, args) {
+    console.log(`max llamado con ${args.length} argumentos`);
+    return Reflect.apply(fn, thisArg, args);
+  },
+});
+
+console.log(medido(3, 9, 4));
+```
+
+## Límites
+
+- **Invariantes**: un proxy no puede mentir sobre ciertas cosas del objetivo. Si una propiedad no es configurable ni `writable`, la trampa `get` tiene que devolver su valor real, o se lanza un `TypeError`.
+- **Identidad**: el proxy y el objetivo son objetos distintos (`proxy !== objetivo`).
+- **Campos privados y objetos nativos**: los `#campos` de una clase y los datos internos de `Map`, `Date` o `Set` no se ven a través del proxy. Llamar `proxy.get()` sobre un `Map` envuelto falla, porque `this` es el proxy y no el `Map`.
+- **Rendimiento**: cada operación pasa por una función. En código que se ejecuta millones de veces, se nota.
+
+<Nota tipo="consejo">
+  `Proxy.revocable(objetivo, handler)` devuelve `{ proxy, revoke }`: después de llamar a `revoke()`, cualquier operación sobre el proxy lanza un error. Útil para dar acceso temporal a un objeto.
+</Nota>
+
+## Resumen
+
+- Un **Proxy** envuelve un objeto y sus **trampas** interceptan operaciones: `get`, `set`, `has`, `deleteProperty`, `apply`, `construct`…
+- **Reflect** hace la operación normal: úsalo dentro de las trampas para delegar.
+- La trampa `set` debe devolver `true` si la asignación funcionó.
+- Usos: validación, valores por defecto, registro, reactividad, índices negativos.
+- Límites: invariantes, identidad distinta, campos privados y nativos, rendimiento.
+
+<Practica>
+
+<Autoevaluacion id={proxyAuto.id} numero={1} titulo={proxyAuto.titulo} preguntas={proxyAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={proxyOrden.id} numero={2} titulo={proxyOrden.titulo} codigo={proxyOrden.codigo} salida={proxyOrden.salida} inicio={proxyOrden.inicio} explicacion={proxyOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un array envuelto que entiende índices negativos. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={proxyDetective.id} numero={3} titulo={proxyDetective.titulo} codigo={proxyDetective.codigo} error={proxyDetective.error} culpable={proxyDetective.culpable} arreglos={proxyDetective.arreglos} hallazgo={proxyDetective.hallazgo} pista={proxyDetective.pista}>
+  <div slot="enunciado">
+    <p>La validación debería rechazar solo las edades negativas, pero rechaza todo. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={proxyLab.id} numero={4} titulo={proxyLab.titulo} inicial={proxyLab.inicial} verificaciones={proxyLab.verificaciones} pistas={proxyLab.pistas} solucion={proxyLab.solucion} explicacion={proxyLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>conDefecto(obj, defecto)</code> con un Proxy y <code>Reflect</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,57 @@
+---
+titulo: ES2023
+seccion: novedades
+tema: es2023
+minutos: 4
+resumen: Las novedades de ECMAScript 2023 (findLast y findLastIndex, los métodos de array que devuelven copias, symbols como claves débiles y la gramática hashbang) y dónde se explica cada una.
+intro: '<u>ES2023</u> se centró en los arrays: buscar desde el final y, sobre todo, cambiar sin modificar el original, algo que el estilo funcional y librerías como React venían pidiendo hace años.'
+ejercicios: [es2023-auto, es2023-orden]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { es2023Auto, es2023Orden } from '../../data/ejercicios/novedades';
+
+## Las novedades
+
+| Novedad | Qué hace | Se explica en |
+|---|---|---|
+| `findLast` y `findLastIndex` | Buscar desde el final | [Métodos de array](/colecciones/metodos-de-array) |
+| `toSorted`, `toReversed`, `toSpliced`, `with` | Copias con cambios, sin mutar | [Cambiar sin mutar](/colecciones/cambiar-sin-mutar) |
+| Symbols como claves de `WeakMap` y `WeakSet` | Claves débiles que no son objetos | [WeakMap y WeakSet](/colecciones/weakmap-y-weakset) |
+| Gramática *hashbang* (`#!/usr/bin/env node`) | La primera línea de un script ejecutable es válida | [Node.js hoy](/servidor/node-hoy) |
+
+## En una mirada
+
+```js
+const notas = [7, 9, 4, 8];
+
+console.log(notas.toSorted((a, b) => b - a), notas);   // el original no cambia
+console.log(notas.toReversed().at(0));
+console.log(notas.toSpliced(1, 2, 10));
+console.log(notas.with(-1, 6));
+console.log(notas.findLast((n) => n < 8), notas.findLastIndex((n) => n < 8));
+```
+
+## Resumen
+
+- `findLast` y `findLastIndex`.
+- `toSorted`, `toReversed`, `toSpliced` y `with`: cambiar sin mutar.
+- Symbols no registrados como claves débiles.
+- Hashbang al principio de los scripts.
+
+<Practica>
+
+<Autoevaluacion id={es2023Auto.id} numero={1} titulo={es2023Auto.titulo} preguntas={es2023Auto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={es2023Orden.id} numero={2} titulo={es2023Orden.titulo} codigo={es2023Orden.codigo} salida={es2023Orden.salida} inicio={es2023Orden.inicio} explicacion={es2023Orden.explicacion}>
+  <div slot="enunciado">
+    <p>Varias novedades de ES2023 juntas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+</Practica>

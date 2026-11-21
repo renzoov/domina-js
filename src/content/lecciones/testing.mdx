@@ -1,0 +1,150 @@
+---
+titulo: Testing
+seccion: herramientas
+tema: testing
+minutos: 12
+resumen: Para qué sirven las pruebas automáticas, cómo escribirlas con node:test y Vitest (describe, it, expect, assert), ganchos, mocks, pruebas asíncronas, cobertura, y los tipos de prueba (unitarias, de integración y de extremo a extremo).
+intro: 'Cambiar código da miedo cuando no sabes qué puedes romper. Las <u>pruebas automáticas</u> son código que comprueba tu código: las ejecutas en segundos, cada vez que cambias algo, y te avisan si algo dejó de funcionar. Con ellas puedes mejorar un programa sin miedo.'
+ejercicios: [testing-auto, testing-orden, testing-detective, testing-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { testingAuto, testingOrden, testingDetective, testingLab } from '../../data/ejercicios/herramientas';
+
+## Una prueba
+
+Una prueba ejecuta una pieza de código y **comprueba** el resultado. Si la comprobación falla, la prueba falla:
+
+```js
+// precio.js
+export function conDescuento(precio, porcentaje) {
+  if (porcentaje < 0 || porcentaje > 100) throw new RangeError("porcentaje inválido");
+  return precio * (1 - porcentaje / 100);
+}
+```
+
+```js
+// precio.test.js, con el ejecutor incluido en Node.js
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import { conDescuento } from "./precio.js";
+
+describe("conDescuento", () => {
+  it("aplica el porcentaje", () => {
+    assert.equal(conDescuento(200, 25), 150);
+  });
+
+  it("sin descuento devuelve el mismo precio", () => {
+    assert.equal(conDescuento(80, 0), 80);
+  });
+
+  it("rechaza porcentajes imposibles", () => {
+    assert.throws(() => conDescuento(80, 120), RangeError);
+  });
+});
+```
+
+```bash
+node --test            # busca y ejecuta los archivos *.test.js
+node --test --watch    # vuelve a ejecutar al guardar
+```
+
+## Vitest
+
+**Vitest** es el ejecutor más usado en proyectos con Vite. Usa `expect`, con la API de Jest, y se integra con la configuración de Vite (TypeScript, alias, plugins):
+
+```js
+import { describe, it, expect } from "vitest";
+import { conDescuento } from "./precio.js";
+
+describe("conDescuento", () => {
+  it("aplica el porcentaje", () => {
+    expect(conDescuento(200, 25)).toBe(150);
+  });
+
+  it("devuelve objetos iguales", () => {
+    expect({ total: 150, moneda: "PEN" }).toEqual({ total: 150, moneda: "PEN" });   // compara el contenido
+  });
+});
+```
+
+`toBe` compara con `===`; `toEqual`, el contenido de objetos y arrays. Hay muchos más: `toContain`, `toThrow`, `toMatch`, `toBeCloseTo` (para decimales)…
+
+## Asíncronas, ganchos y mocks
+
+```js
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+describe("carrito", () => {
+  let carrito;
+  beforeEach(() => {
+    carrito = [];   // cada prueba empieza con un carrito limpio
+  });
+
+  it("espera promesas con async/await", async () => {
+    const datos = await Promise.resolve({ ok: true });
+    expect(datos.ok).toBe(true);
+  });
+
+  it("controla el tiempo y las funciones con mocks", () => {
+    vi.useFakeTimers();
+    const avisar = vi.fn();                 // una función de mentira que registra sus llamadas
+    setTimeout(avisar, 1000);
+    vi.advanceTimersByTime(1000);           // adelanta el reloj sin esperar
+    expect(avisar).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+});
+```
+
+## Qué probar
+
+- **Pruebas unitarias**: una función o un módulo, aislados. Muchas, rápidas.
+- **Pruebas de integración**: varias piezas juntas (tu API con una base de datos de prueba).
+- **Pruebas de extremo a extremo** (E2E): la aplicación entera en un navegador real, como un usuario, con **Playwright**. Pocas, pero valiosas: este sitio se prueba así.
+
+Prueba el **comportamiento** (qué devuelve, qué muestra), no los detalles internos: así puedes reescribir el código sin reescribir las pruebas. Y prueba los casos borde: vacío, cero, negativo, el máximo, el error.
+
+<Nota tipo="consejo">
+  La **cobertura** (`node --test --experimental-test-coverage`, `vitest --coverage`) dice qué líneas ejecutaron las pruebas. Es útil para encontrar zonas sin probar, pero un 100 % no garantiza nada: una línea ejecutada no es una línea comprobada.
+</Nota>
+
+## Resumen
+
+- Una prueba ejecuta código y **comprueba** el resultado; corre en segundos cada vez que cambias algo.
+- `node:test` + `node:assert` vienen con Node.js; **Vitest** es la opción con Vite.
+- `toBe` compara con `===`; `toEqual`, el contenido.
+- Pruebas asíncronas con `async/await`; `beforeEach` para empezar limpio; mocks para la red, el tiempo y las dependencias.
+- Muchas unitarias, algunas de integración, pocas E2E. Prueba el comportamiento y los casos borde.
+
+<Practica>
+
+<Autoevaluacion id={testingAuto.id} numero={1} titulo={testingAuto.titulo} preguntas={testingAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={testingOrden.id} numero={2} titulo={testingOrden.titulo} codigo={testingOrden.codigo} salida={testingOrden.salida} inicio={testingOrden.inicio} explicacion={testingOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una suite con ganchos que avisan cuándo corren. Ordena lo que aparecería en la terminal.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={testingDetective.id} numero={3} titulo={testingDetective.titulo} codigo={testingDetective.codigo} error={testingDetective.error} culpable={testingDetective.culpable} arreglos={testingDetective.arreglos} hallazgo={testingDetective.hallazgo} pista={testingDetective.pista}>
+  <div slot="enunciado">
+    <p>Una prueba falla. Antes de tocar el código, encuentra dónde está el error de verdad y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={testingLab.id} numero={4} titulo={testingLab.titulo} inicial={testingLab.inicial} verificaciones={testingLab.verificaciones} pistas={testingLab.pistas} solucion={testingLab.solucion} explicacion={testingLab.explicacion}>
+  <div slot="enunciado">
+    <p>Con un mini ejecutor de pruebas, escribe tres pruebas para <code>precioFinal</code>, descubre el error y arréglalo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

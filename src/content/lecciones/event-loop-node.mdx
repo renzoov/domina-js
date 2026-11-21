@@ -1,0 +1,113 @@
+---
+titulo: El event loop de Node
+seccion: servidor
+tema: event-loop-node
+minutos: 12
+resumen: Cómo funciona el event loop de Node.js por dentro, con libuv, sus fases (timers, poll, check, close), las colas de process.nextTick y de microtareas, la diferencia entre setImmediate y setTimeout, y por qué nunca hay que bloquear el hilo en un servidor.
+intro: 'En la sección de Asincronía viste el event loop del navegador. El de Node.js sigue la misma idea, pero con más detalle: un recorrido por <u>fases</u>, cada una con su propia cola, más dos colas prioritarias. Saber en qué fase corre cada callback explica comportamientos que de otra forma parecen aleatorios.'
+pizarron: eventLoopNode
+modoPizarron: eventloop
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Fíjate en las notas de cada tarjeta: en qué <b>fase</b> espera cada callback. Y en cuándo se vacían las colas de <code>nextTick</code> y de microtareas: entre un callback y otro.'
+ejercicios: [loop-node-auto, loop-node-orden, loop-node-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { loopNodeAuto, loopNodeOrden, loopNodeDetective } from '../../data/ejercicios/servidor';
+
+## libuv
+
+Tu JavaScript corre en un solo hilo, pero Node.js no hace todo en ese hilo. **libuv**, la librería en C que está debajo, se encarga de la entrada y salida:
+
+- La **red** la atiende el sistema operativo, que avisa cuando hay datos.
+- Los **archivos**, la criptografía pesada y la compresión los hace un grupo de hilos auxiliares (cuatro por defecto).
+
+Cuando una operación termina, libuv deja su callback en la cola de la fase que corresponde.
+
+## Las fases
+
+Cada vuelta del event loop recorre estas fases, en orden:
+
+| Fase | Qué callbacks corren |
+|---|---|
+| **timers** | Los de `setTimeout` y `setInterval` cuyo tiempo venció |
+| **pending callbacks** | Algunos errores de sistema que quedaron pendientes |
+| **poll** | Los de entrada y salida: datos de red, archivos leídos… Si no hay nada que hacer, el loop espera aquí |
+| **check** | Los de `setImmediate` |
+| **close** | Los de cierre, como `socket.on("close")` |
+
+Y entre **cada** callback, de cualquier fase, Node.js vacía dos colas prioritarias:
+
+1. La de **`process.nextTick`**.
+2. La de **microtareas**: promesas y `queueMicrotask`.
+
+## setImmediate o setTimeout
+
+Como muestra el pizarrón, dentro de un callback de entrada y salida, `setImmediate` corre **antes** que `setTimeout(…, 0)`: la fase check viene justo después de poll, y timers espera a la vuelta siguiente.
+
+Desde el programa principal, en cambio, el orden entre los dos **no está garantizado**: depende de cuánto tardó el loop en arrancar. No escribas código que dependa de ese orden.
+
+## nextTick: con cuidado
+
+`process.nextTick(fn)` corre `fn` apenas termine la operación actual, antes que cualquier promesa y que cualquier fase. Se usa, por ejemplo, para que una función siempre llame a su callback de forma asíncrona.
+
+Pero su prioridad es un arma de doble filo: un `nextTick` que se agenda a sí mismo en bucle **nunca deja avanzar** al event loop. Para "hacer algo después", prefiere `setImmediate` o `queueMicrotask`.
+
+<Nota tipo="ojo">
+  En un módulo **ESM**, todo el archivo se evalúa dentro de una microtarea. Por eso, en el nivel superior de un `.mjs`, una promesa ya resuelta corre **antes** que un `process.nextTick`, al revés que en CommonJS. Es una trampa conocida: el orden de los ejemplos de esta lección es el de un archivo `.cjs`.
+</Nota>
+
+## No bloquees el hilo
+
+En un servidor, el único hilo atiende **todas** las peticiones. Si una petición hace algo síncrono y lento, las demás esperan:
+
+```js
+import http from "node:http";
+import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+
+http.createServer(async (req, res) => {
+  // ✗ Bloquea: mientras lee, nadie más es atendido
+  // const html = readFileSync("pagina.html", "utf8");
+
+  // ✓ No bloquea: libuv lee el archivo y el hilo sigue atendiendo
+  const html = await readFile("pagina.html", "utf8");
+  res.end(html);
+}).listen(3000);
+```
+
+Lo mismo con cálculos pesados (cifrar, comprimir, procesar imágenes, un JSON enorme): o las versiones asíncronas de Node, o un **worker thread**, el próximo tema.
+
+## Resumen
+
+- **libuv** hace la entrada y salida (la red con el sistema operativo y los archivos con un grupo de hilos) y avisa con callbacks.
+- El loop recorre fases: **timers → poll → check → close**.
+- Entre cada callback se vacían la cola de `nextTick` y, después, la de microtareas.
+- Dentro de un callback de I/O, `setImmediate` gana a `setTimeout(…, 0)`; desde el programa principal, el orden no está garantizado.
+- Nunca bloquees el hilo en un servidor: usa las APIs asíncronas o workers.
+
+<Practica>
+
+<Autoevaluacion id={loopNodeAuto.id} numero={1} titulo={loopNodeAuto.titulo} preguntas={loopNodeAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={loopNodeOrden.id} numero={2} titulo={loopNodeOrden.titulo} codigo={loopNodeOrden.codigo} salida={loopNodeOrden.salida} inicio={loopNodeOrden.inicio} explicacion={loopNodeOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Las dos colas prioritarias de Node y una fase. Ordena lo que aparecería en la terminal.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={loopNodeDetective.id} numero={3} titulo={loopNodeDetective.titulo} codigo={loopNodeDetective.codigo} error={loopNodeDetective.error} culpable={loopNodeDetective.culpable} arreglos={loopNodeDetective.arreglos} hallazgo={loopNodeDetective.hallazgo} pista={loopNodeDetective.pista}>
+  <div slot="enunciado">
+    <p>Un servidor se cae una vez por hora, cuando el inventario no responde. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

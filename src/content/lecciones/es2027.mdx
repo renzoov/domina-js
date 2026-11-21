@@ -1,0 +1,67 @@
+---
+titulo: ES2027 (ya terminada)
+seccion: novedades
+tema: es2027
+minutos: 5
+resumen: Las propuestas que ya llegaron a la etapa 4 y se publicarán en ECMAScript 2027 (Temporal, la gestión explícita de recursos con using, más iterator helpers como Iterator.zip, chunking, includes y join, y Atomics.pause) y dónde se explica cada una.
+intro: 'Una propuesta que llega a la etapa 4 ya está terminada, aunque la edición que la incluye se publique meses después. Las de <u>ES2027</u> ya tienen la última palabra de TC39, y varias ya funcionan en los navegadores: entre ellas, el reemplazo de <code>Date</code>.'
+nota: 'Antes de usar estas novedades en producción, comprueba su soporte en los navegadores y runtimes que te importan (en MDN, en la sección "Compatibilidad", o con Baseline). Todas tienen polyfills.'
+ejercicios: [es2027-auto, es2027-orden]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { es2027Auto, es2027Orden } from '../../data/ejercicios/novedades';
+
+## Las novedades
+
+| Novedad | Qué hace | Se explica en |
+|---|---|---|
+| **Temporal** | Fechas, horas, zonas e instantes, inmutables y sin sorpresas | [Fechas: Date y Temporal](/biblioteca-estandar/fechas) |
+| `using`, `await using`, `DisposableStack` | Liberar recursos automáticamente al salir del bloque | [Gestión explícita de recursos](/biblioteca-estandar/using) |
+| `Iterator.zip` | Recorrer varios iteradores a la vez | [Iterator helpers](/iteradores/iterator-helpers) |
+| *Chunking* (`chunks`, `windows`) | Partir un iterador en bloques o ventanas | [Iterator helpers](/iteradores/iterator-helpers) |
+| `includes` y `join` en iteradores | Como en los arrays | [Iterator helpers](/iteradores/iterator-helpers) |
+| `Atomics.pause` | Una pausa eficiente al esperar en memoria compartida | (tema avanzado de hilos) |
+
+## En una mirada
+
+```js
+const salida = Temporal.ZonedDateTime.from("2026-12-24T22:00[America/Lima]");
+const llegada = salida.add({ hours: 13 }).withTimeZone("Europe/Madrid");
+console.log(llegada.toPlainDateTime().toString());
+
+class Conexion {
+  constructor(nombre) { this.nombre = nombre; console.log("abre", nombre); }
+  [Symbol.dispose]() { console.log("cierra", this.nombre); }
+}
+{
+  using db = new Conexion("principal");
+  console.log("consultando…");
+}
+
+console.log(Iterator.from(["a", "b", "c"]).join(" · "));
+```
+
+## Resumen
+
+- **Temporal** reemplaza a `Date`.
+- `using` y `await using` liberan recursos solos; `DisposableStack` los agrupa.
+- Más *iterator helpers*: `zip`, *chunking*, `includes` y `join`.
+- `Atomics.pause` para la programación con hilos.
+
+<Practica>
+
+<Autoevaluacion id={es2027Auto.id} numero={1} titulo={es2027Auto.titulo} preguntas={es2027Auto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={es2027Orden.id} numero={2} titulo={es2027Orden.titulo} codigo={es2027Orden.codigo} salida={es2027Orden.salida} inicio={es2027Orden.inicio} explicacion={es2027Orden.explicacion}>
+  <div slot="enunciado">
+    <p>Varias novedades de ES2027 juntas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+</Practica>

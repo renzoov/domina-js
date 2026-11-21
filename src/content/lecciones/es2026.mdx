@@ -1,0 +1,66 @@
+---
+titulo: ES2026
+seccion: novedades
+tema: es2026
+minutos: 5
+resumen: Las novedades de ECMAScript 2026 (getOrInsert en Map, base64 y hexadecimal en Uint8Array, Math.sumPrecise, Error.isError, Array.fromAsync e Iterator.concat) y dónde se explica cada una.
+intro: '<u>ES2026</u>, la edición publicada este año, resuelve problemas pequeños pero muy repetidos: crear una entrada en un mapa si no existe, convertir bytes a base64, sumar decimales sin perder precisión.'
+ejercicios: [es2026-auto, es2026-orden]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { es2026Auto, es2026Orden } from '../../data/ejercicios/novedades';
+
+## Las novedades
+
+| Novedad | Qué hace | Se explica en |
+|---|---|---|
+| `Map.prototype.getOrInsert` y `getOrInsertComputed` | Leer una entrada o crearla si falta (*upsert*) | [Map y Set](/colecciones/map-y-set) |
+| Base64 y hexadecimal en `Uint8Array` | `toBase64`, `fromBase64`, `toHex`, `fromHex` | [Datos binarios](/colecciones/datos-binarios) |
+| `Math.sumPrecise` | Sumar sin acumular errores de redondeo | [Números](/fundamentos/numeros) |
+| `Error.isError` | ¿Es un error de verdad? Funciona entre realms | [Errores y excepciones](/control-de-flujo/errores-y-excepciones) |
+| `Array.fromAsync` | `Array.from` para iterables asíncronos | [Iteración asíncrona](/iteradores/iteracion-asincrona) |
+| `Iterator.concat` | Recorrer varios iterables seguidos | [Iterator helpers](/iteradores/iterator-helpers) |
+
+## En una mirada
+
+```js
+const porLetra = new Map();
+for (const palabra of ["sol", "sal", "mar"]) {
+  porLetra.getOrInsertComputed(palabra[0], () => []).push(palabra);
+}
+console.log(porLetra);
+
+const bytes = Uint8Array.fromHex("4a53");
+console.log(bytes, bytes.toBase64());
+
+console.log(Math.sumPrecise([1e20, 1, -1e20]), 1e20 + 1 - 1e20);
+
+async function* lento() { yield 1; yield 2; }
+console.log(await Array.fromAsync(lento()));
+
+console.log(Iterator.concat([1, 2], new Set([3])).toArray());
+```
+
+## Resumen
+
+- `getOrInsert` y `getOrInsertComputed` en `Map`.
+- `Uint8Array` con base64 y hexadecimal.
+- `Math.sumPrecise`, `Error.isError`, `Array.fromAsync` e `Iterator.concat`.
+
+<Practica>
+
+<Autoevaluacion id={es2026Auto.id} numero={1} titulo={es2026Auto.titulo} preguntas={es2026Auto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={es2026Orden.id} numero={2} titulo={es2026Orden.titulo} codigo={es2026Orden.codigo} salida={es2026Orden.salida} inicio={es2026Orden.inicio} explicacion={es2026Orden.explicacion}>
+  <div slot="enunciado">
+    <p>Varias novedades de ES2026 juntas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+</Practica>

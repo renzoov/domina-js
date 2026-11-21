@@ -1,0 +1,141 @@
+---
+titulo: Web Workers y mensajería
+seccion: navegador
+tema: web-workers
+minutos: 11
+resumen: Cómo ejecutar trabajo pesado en otro hilo con Web Workers, la comunicación por mensajes (postMessage, clonación estructurada y transferencia), MessageChannel para canales propios y BroadcastChannel para hablar entre pestañas.
+intro: 'En <b>El event loop</b> viste que un cálculo largo congela la página: el único hilo está ocupado. Un <u>Web Worker</u> es otro hilo, con su propio event loop, donde puedes mandar ese trabajo. La página sigue respondiendo mientras el worker calcula, y los dos se comunican con mensajes.'
+nota: 'Este mismo sitio usa un Web Worker para ejecutar tu código en los laboratorios: si escribes un bucle infinito, se congela el worker, no la página.'
+ejercicios: [workers-auto, workers-orden, workers-detective, workers-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { workersAuto, workersOrden, workersDetective, workersLab } from '../../data/ejercicios/navegador';
+
+## Un worker
+
+El worker es un archivo aparte. Recibe mensajes, trabaja y responde:
+
+```js
+// primos.js: corre en otro hilo
+self.addEventListener("message", (e) => {
+  const hasta = e.data;
+  const primos = [];
+  for (let n = 2; n <= hasta; n++) {
+    if (primos.every((p) => n % p !== 0)) primos.push(n);
+  }
+  self.postMessage(primos.length);
+});
+```
+
+```js
+// main.js: en la página
+const worker = new Worker(new URL("./primos.js", import.meta.url), { type: "module" });
+
+worker.addEventListener("message", (e) => {
+  mostrar(`Hay ${e.data} primos`);
+});
+worker.addEventListener("error", (e) => console.error("falló el worker:", e.message));
+
+worker.postMessage(200_000);   // la página sigue respondiendo mientras tanto
+```
+
+Con `{ type: "module" }`, el worker puede usar `import`. Para detenerlo: `worker.terminate()` desde la página, o `self.close()` desde adentro.
+
+## Qué puede y qué no
+
+Un worker tiene casi todo el lenguaje y muchas APIs: `fetch`, temporizadores, `IndexedDB`, `WebSocket`, `crypto`, `OffscreenCanvas`… Pero **no tiene DOM**: ni `document`, ni `window`, ni acceso a la página. Todo lo que tenga que verse, lo hace la página con los resultados que recibe.
+
+## Mensajes: copiar o transferir
+
+Lo que envías con `postMessage` se **copia** con la clonación estructurada, la misma de `structuredClone`: funcionan los objetos, arrays, fechas, `Map`, `Set` y arrays tipados, pero no las funciones ni los elementos del DOM.
+
+Copiar datos grandes cuesta. Un `ArrayBuffer` (y algunos otros objetos) se puede **transferir**: la memoria pasa al otro hilo sin copiarse, y el original queda vacío.
+
+```js
+const imagen = new Uint8Array(10_000_000);   // 10 MB
+
+// worker.postMessage(imagen.buffer, [imagen.buffer]) hace esto mismo:
+const recibido = structuredClone(imagen.buffer, { transfer: [imagen.buffer] });
+
+console.log(imagen.byteLength);     // 0: ya no es de la página
+console.log(recibido.byteLength);   // 10000000: la memoria pasó entera, sin copiarse
+```
+
+## Canales propios
+
+`MessageChannel` crea un par de puertos conectados: lo que se envía por uno llega por el otro. Sirve para darle a dos partes un canal privado:
+
+```js
+const canal = new MessageChannel();
+
+canal.port2.onmessage = (e) => {
+  console.log("port2 recibió:", e.data);
+  canal.port2.postMessage(e.data.toUpperCase());
+};
+canal.port1.onmessage = (e) => console.log("port1 recibió:", e.data);
+
+canal.port1.postMessage("hola");
+await new Promise((r) => setTimeout(r, 20));
+```
+
+## Entre pestañas: BroadcastChannel
+
+`BroadcastChannel` reparte mensajes entre todas las pestañas, ventanas y workers del mismo origen que abran un canal con el mismo nombre:
+
+```js
+const sesion = new BroadcastChannel("sesion");
+
+sesion.addEventListener("message", (e) => {
+  if (e.data === "cerrar") mostrarPantallaDeIngreso();
+});
+
+botonSalir.addEventListener("click", () => {
+  sesion.postMessage("cerrar");   // las demás pestañas se enteran
+  cerrarSesion();
+});
+```
+
+<Nota tipo="consejo">
+  Coordinar pedidos y respuestas por mensajes es tedioso: cada respuesta hay que asociarla a su pedido. Librerías como Comlink lo esconden, y te dejan llamar a las funciones del worker como si fueran locales, con `await`. Vas a escribir una versión pequeña en el laboratorio.
+</Nota>
+
+## Resumen
+
+- Un **Web Worker** ejecuta código en otro hilo: la página no se congela.
+- Los workers no tienen DOM; se comunican con `postMessage` y el evento `message`.
+- Los mensajes se **copian** (clonación estructurada); los `ArrayBuffer` se pueden **transferir**.
+- `MessageChannel` crea un canal privado de dos puertos; `BroadcastChannel` habla entre pestañas.
+- Para pedidos y respuestas, identifica cada pedido con un `id`.
+
+<Practica>
+
+<Autoevaluacion id={workersAuto.id} numero={1} titulo={workersAuto.titulo} preguntas={workersAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={workersOrden.id} numero={2} titulo={workersOrden.titulo} codigo={workersOrden.codigo} salida={workersOrden.salida} inicio={workersOrden.inicio} explicacion={workersOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Lo que se puede y no se puede enviar en un mensaje. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={workersDetective.id} numero={3} titulo={workersDetective.titulo} codigo={workersDetective.codigo} error={workersDetective.error} culpable={workersDetective.culpable} arreglos={workersDetective.arreglos} hallazgo={workersDetective.hallazgo} pista={workersDetective.pista}>
+  <div slot="enunciado">
+    <p>Se quería decirle al worker qué operación hacer. Encuentra la línea que falla y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={workersLab.id} numero={4} titulo={workersLab.titulo} pagina={workersLab.pagina} inicial={workersLab.inicial} verificaciones={workersLab.verificaciones} pistas={workersLab.pistas} solucion={workersLab.solucion} explicacion={workersLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>calcular(numero)</code>: envía pedidos por mensajes y devuelve, con una promesa, la respuesta que corresponde a cada uno.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

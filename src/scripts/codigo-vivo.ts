@@ -1,6 +1,8 @@
 // Convierte los bloques de código de la lección en "pizarras de prueba":
 // barra con nombre de archivo, botón Copiar y, si el ejemplo imprime algo, botón Ejecutar.
 
+import { ejecutarEnPagina } from './sandbox-pagina';
+
 const LIMITE_MS = 3000;
 const NOMBRES: Record<string, string> = { js: 'ejemplo.js', javascript: 'ejemplo.js', bash: 'terminal', sh: 'terminal', html: 'index.html', css: 'estilos.css', json: 'datos.json' };
 
@@ -31,16 +33,20 @@ export function iniciarCodigoVivo(raiz: ParentNode = document) {
     const lenguaje = pre.dataset.language || 'texto';
     const codigo = pre.innerText.replace(/\n$/, '');
     // Se dejan solo para copiar los ejemplos que necesitan lo que el sandbox no tiene:
-    // red (fetch), archivos (módulos), una página (document) o sintaxis que aún no existe
+    // red (fetch), almacenamiento, archivos (módulos) o sintaxis que aún no existe
     const asincrono =
       /\bfetch\s*\(/.test(codigo) ||
-      /\b(document|window|localStorage|sessionStorage|navigator)\./.test(codigo) ||
+      /\b(localStorage|sessionStorage|indexedDB|caches|serviceWorker)\b|document\.cookie/.test(codigo) ||
       /^\s*(import|export)\s/m.test(codigo) ||
       /\bimport\s*(\.\s*meta\b|\()|\brequire\s*\(/.test(codigo) ||
+      // Código de servidor: Node.js, Deno y Bun
+      /\b(process|Deno|Bun|__dirname|__filename)\b/.test(codigo) ||
       // Propuestas que los navegadores todavía no ejecutan: decorators y chunking de iteradores
       /^\s*@\w/m.test(codigo) ||
       /\.(chunks|windows)\s*\(/.test(codigo);
     const ejecutable = /^(js|javascript)$/.test(lenguaje) && /console\.\w+\s*\(/.test(codigo) && !asincrono;
+    // Los ejemplos que usan la página corren en un iframe con DOM, y se ve el resultado
+    const usaPagina = /\b(document|window|navigator|customElements|HTMLElement)\b/.test(codigo);
 
     const figura = document.createElement('figure');
     figura.className = `codigo-vivo lang-${lenguaje}`;
@@ -75,14 +81,21 @@ export function iniciarCodigoVivo(raiz: ParentNode = document) {
       salida.className = 'cv-salida';
       salida.hidden = true;
       salida.setAttribute('aria-live', 'polite');
+      let vistaPagina: HTMLIFrameElement | null = null;
       correr.addEventListener('click', async () => {
         correr.disabled = true;
-        const r = await ejecutar(codigo);
+        if (usaPagina && !vistaPagina) {
+          vistaPagina = document.createElement('iframe');
+          vistaPagina.className = 'cv-vista';
+          vistaPagina.title = 'La página que arma el ejemplo';
+          figura.insertBefore(vistaPagina, salida);
+        }
+        const r = usaPagina ? await ejecutarEnPagina('', codigo, [], vistaPagina!, LIMITE_MS) : await ejecutar(codigo);
         correr.disabled = false;
         salida!.hidden = false;
         salida!.classList.toggle('error', !!r.error || r.tiempo);
         const lineas = r.tiempo ? ['El ejemplo tardó demasiado y se detuvo.'] : [...r.salida, ...(r.error ? [r.error] : [])];
-        salida!.innerHTML = `<span class="cv-prompt">$ node ${NOMBRES.js}</span>\n${lineas.map((l) => l.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('\n') || '(sin salida)'}`;
+        salida!.innerHTML = `<span class="cv-prompt">${usaPagina ? 'Consola del navegador' : `$ node ${NOMBRES.js}`}</span>\n${lineas.map((l) => l.replace(/&/g, '&amp;').replace(/</g, '&lt;')).join('\n') || '(sin salida)'}`;
       });
       acciones.append(correr);
     }

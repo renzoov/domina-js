@@ -1,0 +1,141 @@
+---
+titulo: Seguridad en Node
+seccion: servidor
+tema: seguridad-node
+minutos: 12
+resumen: Cómo proteger un programa de Node.js, con el modelo de permisos (--permission), secretos fuera del código, validación de todo lo que entra, defensas contra inyección y path traversal, encabezados de seguridad, límites de uso y cuidado con las dependencias.
+intro: 'Un servidor está expuesto a internet: cualquiera puede enviarle cualquier cosa, todo el tiempo. Y un programa de Node.js corre con todos los permisos de quien lo ejecuta, junto con cientos de dependencias que no escribiste. La seguridad no es una capa que se agrega al final: son hábitos al escribir cada parte.'
+ejercicios: [seg-node-auto, seg-node-orden, seg-node-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { segNodeAuto, segNodeOrden, segNodeDetective } from '../../data/ejercicios/servidor';
+
+## El modelo de permisos
+
+Por defecto, un programa de Node.js puede hacer todo: leer cualquier archivo, ejecutar comandos, abrir conexiones. Con `--permission`, todo queda prohibido salvo lo que permitas:
+
+```bash
+node --permission \
+  --allow-fs-read=./publico --allow-fs-read=./config.json \
+  --allow-fs-write=./subidas \
+  servidor.mjs
+```
+
+Si una dependencia comprometida intenta leer `~/.ssh` o lanzar un proceso, Node.js lo bloquea con un error `ERR_ACCESS_DENIED`. Desde el código, `process.permission.has("fs.read", ruta)` dice si un permiso está concedido.
+
+## Secretos fuera del código
+
+Las claves de las APIs, las contraseñas de las bases de datos y los tokens van en **variables de entorno**, nunca en el código ni en el repositorio:
+
+```bash
+# .env (en el .gitignore)
+DATABASE_URL=postgres://usuario:clave@localhost/tienda
+STRIPE_KEY=sk_live_…
+```
+
+```bash
+node --env-file=.env servidor.mjs
+```
+
+```js
+const url = process.env.DATABASE_URL;
+if (!url) throw new Error("Falta DATABASE_URL");   // falla al arrancar, no a mitad de camino
+```
+
+Un secreto que llegó alguna vez al historial de Git está **filtrado**, aunque lo borres después: hay que cambiarlo.
+
+## Valida todo lo que entra
+
+El cuerpo, la URL, los parámetros, los encabezados y los archivos subidos vienen de afuera. Comprueba tipo, forma y tamaño antes de usarlos. Librerías como **Zod** o **Valibot** describen la forma esperada y validan en una línea:
+
+```js
+import { z } from "zod";
+
+const NuevoPedido = z.object({
+  producto: z.string().min(1).max(100),
+  cantidad: z.number().int().positive().max(50),
+  email: z.email(),
+});
+
+const resultado = NuevoPedido.safeParse(cuerpo);
+if (!resultado.success) return json(res, 400, { error: "datos inválidos" });
+const pedido = resultado.data;   // ya tiene la forma correcta
+```
+
+Limita también el **tamaño** de los cuerpos: sin límite, alguien puede enviar un JSON de varios gigas y agotar la memoria.
+
+## Inyecciones
+
+Cada vez que un dato de afuera se mezcla con código (SQL, comandos, rutas), hay riesgo de **inyección**:
+
+- **SQL**: usa siempre consultas con parámetros (`db.query("SELECT * FROM usuarios WHERE email = $1", [email])`), nunca concatenes.
+- **Comandos**: `execFile` o `spawn` con argumentos separados, nunca `exec` con texto armado.
+- **Rutas** (*path traversal*): un pedido de `/archivos/../../.env` puede leer lo que no debería. Resuelve la ruta y comprueba que siga dentro de la carpeta permitida:
+
+```js
+import path from "node:path";
+
+const PUBLICA = path.resolve("publico");
+
+function rutaPermitida(pedido) {
+  const ruta = path.resolve(PUBLICA, "." + path.posix.normalize("/" + pedido));
+  return ruta.startsWith(PUBLICA + path.sep) ? ruta : null;
+}
+```
+
+- **Contaminación de prototipos**: mezclar un JSON de afuera con `Object.assign` o un "merge profundo" puede escribir en `__proto__` y cambiar `Object.prototype` para todo el programa. Usa librerías que lo eviten, o `Object.create(null)` para los diccionarios.
+
+## Encabezados y límites
+
+- **Encabezados de seguridad** en las respuestas: `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`… El paquete **helmet** (o el middleware de tu framework) los pone por ti.
+- **Límites de uso** (*rate limiting*): pocas peticiones por minuto en el login, por ejemplo, para frenar los ataques de fuerza bruta.
+- **Contraseñas**: nunca en texto plano. Guárdalas con un algoritmo lento pensado para eso: `scrypt` (incluido en `node:crypto`), bcrypt o argon2.
+- **Errores**: registra el detalle en el servidor, pero al cliente devuélvele solo un mensaje genérico.
+
+## Dependencias
+
+Cada paquete que instalas, y cada dependencia de ese paquete, corre con tus permisos. Los ataques a la **cadena de suministro** (paquetes comprometidos o con nombres parecidos a los reales) son de los más comunes:
+
+- Usa un **lockfile** y súbelo al repositorio: fija las versiones exactas.
+- `npm audit` (o el equivalente de tu gestor) avisa de vulnerabilidades conocidas.
+- Revisa qué instalas: popularidad, mantenimiento, cuántas dependencias trae.
+- Desactiva los scripts de instalación cuando no hacen falta (`ignore-scripts`), o usa un gestor que pida permiso para ejecutarlos, como pnpm.
+
+<Nota tipo="consejo">
+  La guía de seguridad de Node.js (nodejs.org, sección "Security Best Practices") y el **OWASP Top 10** son buenas listas para revisar un proyecto antes de publicarlo.
+</Nota>
+
+## Resumen
+
+- `--permission` limita lo que puede hacer el programa, y con él cualquier dependencia.
+- Secretos en variables de entorno, nunca en el código ni en el repositorio.
+- **Valida** todo lo que entra (forma y tamaño), por ejemplo con Zod.
+- Contra las inyecciones: consultas con parámetros, `execFile`, rutas resueltas y comprobadas.
+- Encabezados de seguridad, límites de uso, contraseñas con `scrypt` y errores genéricos hacia afuera.
+- Lockfiles, auditorías y cuidado con lo que instalas.
+
+<Practica>
+
+<Autoevaluacion id={segNodeAuto.id} numero={1} titulo={segNodeAuto.titulo} preguntas={segNodeAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={segNodeOrden.id} numero={2} titulo={segNodeOrden.titulo} codigo={segNodeOrden.codigo} salida={segNodeOrden.salida} inicio={segNodeOrden.inicio} explicacion={segNodeOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una comprobación contra el <em>path traversal</em>, con cuatro pedidos. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={segNodeDetective.id} numero={3} titulo={segNodeDetective.titulo} codigo={segNodeDetective.codigo} error={segNodeDetective.error} culpable={segNodeDetective.culpable} arreglos={segNodeDetective.arreglos} hallazgo={segNodeDetective.hallazgo} pista={segNodeDetective.pista}>
+  <div slot="enunciado">
+    <p>Con el modelo de permisos activado, el programa no puede leer su configuración. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

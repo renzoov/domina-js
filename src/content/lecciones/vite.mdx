@@ -1,0 +1,127 @@
+---
+titulo: Vite y el bundling moderno
+seccion: herramientas
+tema: vite
+minutos: 10
+resumen: Por qué existen los empaquetadores, cómo funciona Vite (servidor de desarrollo con módulos ES y HMR, build optimizado para producción), su configuración, las variables de entorno con VITE_, la carpeta public y cómo publicar el resultado.
+intro: 'El navegador entiende módulos ES, pero no entiende TypeScript, ni JSX, ni <code>import "lodash"</code>, y cargar cientos de archivos pequeños en producción es lento. Un <u>empaquetador</u> (<em>bundler</em>) traduce y une tu código para el navegador. Vite es hoy el más usado: rápido al desarrollar y cuidadoso al publicar.'
+ejercicios: [vite-auto, vite-orden, vite-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { viteAuto, viteOrden, viteDetective } from '../../data/ejercicios/herramientas';
+
+## Crear un proyecto
+
+```bash
+npm create vite@latest mi-app      # elige "Vanilla" o un framework, con o sin TypeScript
+cd mi-app
+npm install
+npm run dev                        # http://localhost:5173
+```
+
+La estructura es simple: un `index.html` en la raíz (el punto de entrada, que carga tu `src/main.js` como módulo), la carpeta `src` y la carpeta `public`.
+
+## Dos modos
+
+**En desarrollo** (`vite`), no empaqueta nada: sirve tus archivos como **módulos ES** y transforma al vuelo solo lo que el navegador pide (TypeScript, JSX, CSS). Por eso arranca en milisegundos, sin importar el tamaño del proyecto. Las dependencias de `node_modules` sí se preprocesan una vez, para que carguen rápido.
+
+Con **HMR** (*Hot Module Replacement*), al guardar un archivo se reemplaza solo ese módulo en el navegador, sin recargar la página ni perder el estado.
+
+**En producción** (`vite build`), empaqueta y optimiza: une los módulos en pocos archivos, elimina el código que no se usa (*tree shaking*), minifica, divide en partes que se cargan cuando hacen falta (por cada `import()` dinámico) y pone un **hash** en cada nombre (`assets/index-3f9a1c.js`). El resultado queda en `dist/`, listo para cualquier servidor de archivos estáticos.
+
+```bash
+npm run build        # genera dist/
+npm run preview      # sirve dist/ para probarlo localmente
+```
+
+## Importar de todo
+
+Además de JavaScript, Vite entiende otros tipos de archivo en los `import`:
+
+```js
+import "./estilos.css";                          // se inyecta en la página
+import estilos from "./tarjeta.module.css";      // CSS Modules: clases con nombres únicos
+import logo from "./logo.svg";                   // la URL final del archivo
+import datos from "./datos.json";                // el objeto
+import textoPlano from "./aviso.txt?raw";        // el contenido como texto
+import Trabajador from "./calculo.js?worker";    // un Web Worker listo para usar
+```
+
+Lo que está en `public/` se copia tal cual y se referencia desde la raíz (`/favicon.ico`), sin pasar por el empaquetador.
+
+## Configuración
+
+Vite funciona sin configuración. Cuando hace falta, `vite.config.js`:
+
+```js
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  server: {
+    port: 3000,
+    proxy: { "/api": "http://localhost:8080" },   // redirige las llamadas a tu servidor
+  },
+  build: {
+    sourcemap: true,
+  },
+});
+```
+
+Los **plugins** agregan soporte para frameworks (React, Vue, Svelte) y para casi cualquier cosa. Vite usa la interfaz de plugins de Rollup, así que hay miles.
+
+## Variables de entorno
+
+Los archivos `.env`, `.env.development` y `.env.production` definen variables. Solo las que empiezan con **`VITE_`** llegan al código del navegador, a través de `import.meta.env`:
+
+```bash
+# .env
+VITE_API_URL=https://api.tienda.com
+DB_PASSWORD=no-llega-al-navegador
+```
+
+```js
+const api = import.meta.env.VITE_API_URL;
+if (import.meta.env.DEV) console.log("modo desarrollo");
+```
+
+<Nota tipo="error">
+  Todo lo que llega al navegador es público: cualquier persona puede leer las variables `VITE_` en el código publicado. Nunca pongas un secreto con ese prefijo.
+</Nota>
+
+## El ecosistema
+
+Vite es la base de muchos frameworks: Astro (con el que está hecho este sitio), SvelteKit, Nuxt, Remix, SolidStart y otros. Su ejecutor de pruebas, **Vitest**, usa la misma configuración. Por debajo, Vite está migrando a **Rolldown**, un empaquetador escrito en Rust, para que el build sea todavía más rápido.
+
+## Resumen
+
+- Un **empaquetador** traduce y une tu código para el navegador.
+- En desarrollo, Vite sirve módulos ES sin empaquetar y actualiza con **HMR**.
+- `vite build` empaqueta, optimiza, divide y pone hash en los nombres: el resultado va en `dist/`.
+- Importa CSS, JSON, imágenes, textos y workers; `public/` se copia tal cual.
+- Solo las variables `VITE_` llegan al navegador, y todas son públicas.
+
+<Practica>
+
+<Autoevaluacion id={viteAuto.id} numero={1} titulo={viteAuto.titulo} preguntas={viteAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={viteOrden.id} numero={2} titulo={viteOrden.titulo} codigo={viteOrden.codigo} salida={viteOrden.salida} inicio={viteOrden.inicio} explicacion={viteOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Cuatro valores de <code>import.meta.env</code> con el servidor de desarrollo. Ordena lo que aparecería en la consola del navegador.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={viteDetective.id} numero={3} titulo={viteDetective.titulo} codigo={viteDetective.codigo} error={viteDetective.error} culpable={viteDetective.culpable} arreglos={viteDetective.arreglos} hallazgo={viteDetective.hallazgo} pista={viteDetective.pista}>
+  <div slot="enunciado">
+    <p>La URL de la API está en el <code>.env</code>, pero el código no la ve. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

@@ -1,0 +1,66 @@
+---
+titulo: ES2024
+seccion: novedades
+tema: es2024
+minutos: 5
+resumen: Las novedades de ECMAScript 2024 (Object.groupBy y Map.groupBy, Promise.withResolvers, la bandera v de las expresiones regulares, ArrayBuffer redimensionable y transfer, isWellFormed y toWellFormed, Atomics.waitAsync) y dónde se explica cada una.
+intro: '<u>ES2024</u> trajo una función que todos escribían a mano, agrupar, y mejoró los rincones más técnicos: expresiones regulares con Unicode, buffers que crecen y texto mal formado.'
+ejercicios: [es2024-auto, es2024-orden]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { es2024Auto, es2024Orden } from '../../data/ejercicios/novedades';
+
+## Las novedades
+
+| Novedad | Qué hace | Se explica en |
+|---|---|---|
+| `Object.groupBy` y `Map.groupBy` | Agrupar una lista según un criterio | [Agrupar datos](/colecciones/agrupar) |
+| `Promise.withResolvers` | Una promesa con su `resolve` y `reject` por separado | [Combinadores de promesas](/asincronia/combinadores) |
+| Bandera `v` en expresiones regulares | Operaciones de conjuntos y Unicode mejorado | [Expresiones regulares](/biblioteca-estandar/expresiones-regulares) |
+| `ArrayBuffer` redimensionable y `transfer` | Buffers que crecen y se traspasan sin copiar | [Datos binarios](/colecciones/datos-binarios) |
+| `isWellFormed` y `toWellFormed` | Detectar y reparar texto con sustitutos sueltos | [Unicode y emojis](/biblioteca-estandar/unicode) |
+| `Atomics.waitAsync` | Esperar de forma asíncrona en memoria compartida | (tema avanzado de hilos) |
+
+## En una mirada
+
+```js
+const pedidos = [
+  { cliente: "Ana", estado: "enviado" },
+  { cliente: "Luis", estado: "pendiente" },
+  { cliente: "Eva", estado: "pendiente" },
+];
+const porEstado = Object.groupBy(pedidos, (p) => p.estado);
+console.log(Object.keys(porEstado), porEstado.pendiente.length);
+
+const buffer = new ArrayBuffer(4, { maxByteLength: 16 });
+buffer.resize(12);
+console.log(buffer.byteLength);
+
+console.log("café\uD800".isWellFormed(), "café\uD800".toWellFormed());
+```
+
+## Resumen
+
+- `Object.groupBy` y `Map.groupBy`.
+- `Promise.withResolvers`.
+- Bandera `v` en las expresiones regulares.
+- `ArrayBuffer` redimensionable y `transfer`.
+- `isWellFormed` y `toWellFormed` para el texto.
+
+<Practica>
+
+<Autoevaluacion id={es2024Auto.id} numero={1} titulo={es2024Auto.titulo} preguntas={es2024Auto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={es2024Orden.id} numero={2} titulo={es2024Orden.titulo} codigo={es2024Orden.codigo} salida={es2024Orden.salida} inicio={es2024Orden.inicio} explicacion={es2024Orden.explicacion}>
+  <div slot="enunciado">
+    <p>Varias novedades de ES2024 juntas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+</Practica>

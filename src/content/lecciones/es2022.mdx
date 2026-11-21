@@ -1,0 +1,72 @@
+---
+titulo: ES2022
+seccion: novedades
+tema: es2022
+minutos: 5
+resumen: Las novedades de ECMAScript 2022 (campos públicos y privados de clase, métodos privados, bloques static, #x in obj, await de nivel superior, at(), Object.hasOwn, la causa de los errores y la bandera d de las expresiones regulares) y dónde se explica cada una.
+intro: '<u>ES2022</u> completó las clases, con privacidad de verdad, y sumó herramientas que hoy se usan a diario, como <code>at()</code> y el <code>await</code> de nivel superior en los módulos.'
+ejercicios: [es2022-auto, es2022-orden]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { es2022Auto, es2022Orden } from '../../data/ejercicios/novedades';
+
+## Las novedades
+
+| Novedad | Qué hace | Se explica en |
+|---|---|---|
+| Campos de clase, públicos y privados (`#`) | Declarar datos en la clase; los `#` solo se ven adentro | [Campos públicos y privados](/clases/campos-privados) |
+| Métodos y accesores privados | `#metodo()`, `get #valor()` | [Campos públicos y privados](/clases/campos-privados) |
+| Bloques `static { }` | Inicializar la clase con lógica | [Campos públicos y privados](/clases/campos-privados) |
+| `#campo in obj` | Comprobar si un objeto es de la clase | [Campos públicos y privados](/clases/campos-privados) |
+| `await` de nivel superior | `await` fuera de funciones, en módulos | [async/await](/asincronia/async-await) |
+| `Array.prototype.at` (y en textos) | Índices negativos: `lista.at(-1)` | [Arrays](/colecciones/arrays) |
+| `Object.hasOwn` | ¿La propiedad es propia? | [Recorrer objetos](/objetos/recorrer-objetos) |
+| `new Error(mensaje, { cause })` | Encadenar el error original | [Errores y excepciones](/control-de-flujo/errores-y-excepciones) |
+| Bandera `d` en expresiones regulares | Las posiciones de cada grupo | [Expresiones regulares](/biblioteca-estandar/expresiones-regulares) |
+
+## En una mirada
+
+```js
+class Contador {
+  static #instancias = 0;
+  #valor = 0;
+  static { console.log("clase lista"); }
+  constructor() { Contador.#instancias++; }
+  sumar() { return ++this.#valor; }
+  static cuantos() { return Contador.#instancias; }
+}
+
+const c = new Contador();
+c.sumar();
+console.log(c.sumar(), Contador.cuantos());
+
+console.log("JavaScript".at(-1), [10, 20, 30].at(-2));
+
+const m = /(?<anio>\d{4})/d.exec("año 2026");
+console.log(m.indices.groups.anio);
+```
+
+## Resumen
+
+- Clases completas: campos públicos y privados, métodos privados, bloques `static`, `#x in obj`.
+- `await` de nivel superior en módulos.
+- `at()` para leer desde el final; `Object.hasOwn`; `cause` en los errores.
+- Bandera `d` para las posiciones de los grupos.
+
+<Practica>
+
+<Autoevaluacion id={es2022Auto.id} numero={1} titulo={es2022Auto.titulo} preguntas={es2022Auto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={es2022Orden.id} numero={2} titulo={es2022Orden.titulo} codigo={es2022Orden.codigo} salida={es2022Orden.salida} inicio={es2022Orden.inicio} explicacion={es2022Orden.explicacion}>
+  <div slot="enunciado">
+    <p>Varias novedades de ES2022 juntas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+</Practica>

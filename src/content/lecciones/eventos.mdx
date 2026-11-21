@@ -1,0 +1,156 @@
+---
+titulo: Eventos
+seccion: navegador
+tema: eventos
+minutos: 13
+resumen: Cómo reaccionar a lo que hace el usuario con addEventListener, el objeto evento (target, currentTarget, preventDefault), las fases de captura y burbujeo, la delegación de eventos y las opciones once, passive y signal.
+intro: 'Un clic, una tecla, el scroll, el envío de un formulario: todo lo que pasa en una página es un <u>evento</u>. Tu código se suscribe con <code>addEventListener</code> y el navegador lo llama cuando ocurre, a través del event loop. Entender cómo viaja un evento por el árbol es la clave para escribir menos código y con menos errores.'
+pizarron: burbujeo
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Las tarjetas son el camino del evento, de <code>window</code> al botón. Fíjate en en qué fase corre cada listener: bajando (captura), en el objetivo y subiendo (burbujeo).'
+ejercicios: [eventos-auto, eventos-orden, eventos-detective, eventos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { eventosAuto, eventosOrden, eventosDetective, eventosLab } from '../../data/ejercicios/navegador';
+
+## Escuchar un evento
+
+```js
+document.body.innerHTML = `<button id="contar">Clics: 0</button>`;
+const boton = document.querySelector("#contar");
+let clics = 0;
+
+boton.addEventListener("click", (e) => {
+  clics++;
+  boton.textContent = `Clics: ${clics}`;
+  console.log(e.type, e.target.tagName);
+});
+
+boton.click();   // simula un clic desde el código
+boton.click();
+```
+
+El listener recibe un **objeto evento** con información: `type`, `target` (dónde ocurrió), la tecla en un evento de teclado (`e.key`), la posición en uno de ratón (`e.clientX`)… Algunos eventos comunes: `click`, `input`, `change`, `submit`, `keydown`, `pointerdown`, `focus`, `scroll`.
+
+Para dejar de escuchar, `removeEventListener` necesita **la misma función**, así que guárdala en una variable.
+
+## Captura y burbujeo
+
+Como muestra el pizarrón, un evento recorre el árbol en tres fases: **captura** (bajando desde `window`), el **objetivo** y **burbujeo** (subiendo). Por defecto, los listeners corren en el burbujeo.
+
+Dentro del listener:
+
+- `e.target` es el elemento donde **ocurrió** el evento, que puede ser un hijo.
+- `e.currentTarget` es el elemento cuyo listener **se está ejecutando**.
+- `e.stopPropagation()` detiene el viaje: los ancestros no se enteran. Úsalo poco: rompe la delegación y otros listeners que dependen del burbujeo.
+
+## Acciones por defecto
+
+Muchos eventos tienen una acción del navegador: un enlace navega, un formulario se envía, un checkbox se marca. `e.preventDefault()` la cancela:
+
+```js
+document.body.innerHTML = `<a id="enlace" href="https://ejemplo.com">Ir</a>`;
+
+document.querySelector("#enlace").addEventListener("click", (e) => {
+  e.preventDefault();
+  console.log("no navego; muestro una vista previa");
+});
+
+document.querySelector("#enlace").click();
+```
+
+## Delegación
+
+En lugar de un listener por cada elemento, uno solo en el contenedor: el burbujeo trae los eventos de todos los hijos, incluso de los que se agreguen después.
+
+```js
+document.body.innerHTML = `
+  <ul id="colores">
+    <li data-color="rojo">Rojo</li>
+    <li data-color="azul">Azul</li>
+  </ul>`;
+const lista = document.querySelector("#colores");
+
+lista.addEventListener("click", (e) => {
+  const li = e.target.closest("li");
+  if (!li) return;                       // el clic no fue en un li
+  console.log("elegiste", li.dataset.color);
+});
+
+const verde = document.createElement("li");
+verde.dataset.color = "verde";
+verde.textContent = "Verde";
+lista.append(verde);                     // agregado después: también funciona
+
+lista.querySelectorAll("li").forEach((li) => li.click());
+```
+
+`closest` es la pieza clave: sube desde `e.target` hasta encontrar el elemento que te interesa, así que funciona aunque el clic caiga en un ícono o un texto dentro.
+
+## Opciones de addEventListener
+
+```js
+document.body.innerHTML = `<button id="unaVez">Solo una vez</button>`;
+const boton = document.querySelector("#unaVez");
+const control = new AbortController();
+
+boton.addEventListener("click", () => console.log("primera y única"), { once: true });
+boton.addEventListener("click", () => console.log("hasta que se cancele"), { signal: control.signal });
+
+boton.click();
+control.abort();   // quita el segundo listener
+boton.click();
+```
+
+- **`once: true`**: el listener se quita solo después de la primera vez.
+- **`signal`**: el listener se quita cuando se cancela la señal. Con un solo `abort()` quitas muchos listeners a la vez.
+- **`passive: true`**: prometes no llamar a `preventDefault`; el navegador puede hacer scroll sin esperar a tu código.
+- **`capture: true`**: el listener corre en la fase de captura.
+
+<Nota tipo="consejo">
+  También puedes crear y disparar tus propios eventos: `elemento.dispatchEvent(new CustomEvent("carrito:agregado", { detail: { id: 7 }, bubbles: true }))`. Es una buena forma de que partes independientes de una página se comuniquen.
+</Nota>
+
+## Resumen
+
+- `addEventListener(tipo, fn, opciones)` suscribe; el listener recibe el **objeto evento**.
+- Tres fases: **captura**, **objetivo** y **burbujeo**; por defecto se escucha en el burbujeo.
+- `e.target` es donde ocurrió; `e.currentTarget`, de quién es el listener.
+- `preventDefault()` cancela la acción del navegador; `stopPropagation()`, el viaje.
+- **Delegación**: un listener en el contenedor y `e.target.closest(…)`.
+- Opciones: `once`, `signal`, `passive` y `capture`.
+
+<Practica>
+
+<Autoevaluacion id={eventosAuto.id} numero={1} titulo={eventosAuto.titulo} preguntas={eventosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={eventosOrden.id} numero={2} titulo={eventosOrden.titulo} codigo={eventosOrden.codigo} salida={eventosOrden.salida} inicio={eventosOrden.inicio} explicacion={eventosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Cuatro listeners y un clic en el botón. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={eventosDetective.id} numero={3} titulo={eventosDetective.titulo} codigo={eventosDetective.codigo} error={eventosDetective.error} culpable={eventosDetective.culpable} arreglos={eventosDetective.arreglos} hallazgo={eventosDetective.hallazgo} pista={eventosDetective.pista}>
+  <div slot="enunciado">
+    <p>El botón funciona… a veces. Encuentra la línea que falla al hacer clic en el ícono y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={eventosLab.id} numero={4} titulo={eventosLab.titulo} pagina={eventosLab.pagina} inicial={eventosLab.inicial} verificaciones={eventosLab.verificaciones} pistas={eventosLab.pistas} solucion={eventosLab.solucion} explicacion={eventosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Haz que los botones "Borrar" funcionen con delegación: un solo listener en la lista. Puedes probarlo con clics en la página de abajo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

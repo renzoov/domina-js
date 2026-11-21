@@ -1,0 +1,112 @@
+---
+titulo: Deno y Bun
+seccion: servidor
+tema: deno-y-bun
+minutos: 10
+resumen: Qué son Deno y Bun, los otros dos runtimes de JavaScript para el servidor, en qué se diferencian de Node.js (permisos, TypeScript, velocidad, herramientas incluidas), su compatibilidad con npm, las APIs comunes de WinterTC y cómo elegir.
+intro: 'Node.js no es el único runtime de JavaScript fuera del navegador. <u>Deno</u>, creado por el mismo autor de Node, apuesta por la seguridad y los estándares web. <u>Bun</u> apuesta por la velocidad y por traer todas las herramientas en un solo programa. Los tres se parecen cada vez más, y conocerlos te da opciones.'
+ejercicios: [runtimes-auto, runtimes-orden, runtimes-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { runtimesAuto, runtimesOrden, runtimesDetective } from '../../data/ejercicios/servidor';
+
+## Deno
+
+Ryan Dahl, el creador de Node.js, presentó Deno en 2018 con una lista de cosas que habría hecho distinto. Sus rasgos:
+
+- **Seguro por defecto**: un programa no puede leer archivos, usar la red, leer variables de entorno ni ejecutar procesos si no le das permiso.
+- **TypeScript sin configurar**: ejecuta `.ts` directamente, y además **revisa** los tipos con `deno check`.
+- **APIs de la web**: `fetch`, `Request`, `Response`, Web Streams, `localStorage`…
+- **Herramientas incluidas**: formateador (`deno fmt`), linter (`deno lint`), pruebas (`deno test`), compilar a un ejecutable (`deno compile`).
+- **Compatible con npm y Node.js**: importa paquetes con `npm:` y entiende `package.json` y los módulos `node:`.
+
+```js
+// servidor.ts
+Deno.serve({ port: 8000 }, (req) => {
+  const url = new URL(req.url);
+  return Response.json({ ruta: url.pathname, hora: new Date().toISOString() });
+});
+```
+
+```bash
+deno run --allow-net=0.0.0.0:8000 servidor.ts
+```
+
+Los paquetes se publican también en **JSR**, un registro pensado para TypeScript y para funcionar en todos los runtimes.
+
+## Bun
+
+Bun nació en 2022 con una prioridad: la **velocidad**. Está escrito en Zig y usa JavaScriptCore, el motor de Safari. Sus rasgos:
+
+- **Todo en uno**: runtime, gestor de paquetes (`bun install`, muy rápido), empaquetador (`bun build`), ejecutor de pruebas (`bun test`) y ejecutor de scripts.
+- **Compatible con Node.js** como objetivo principal: la mayoría de los proyectos de Node funcionan sin cambios.
+- **TypeScript y JSX** sin configurar.
+- **APIs propias rápidas**: `Bun.serve`, `Bun.file`, `bun:sqlite`, clientes de bases de datos incluidos.
+
+```js
+// servidor.ts
+Bun.serve({
+  port: 3000,
+  fetch(req) {
+    return new Response(`Hola desde Bun ${Bun.version}`);
+  },
+});
+```
+
+```bash
+bun run servidor.ts
+bun install           # reemplaza a npm install
+bun test              # pruebas con una API parecida a Jest
+```
+
+## Lo que tienen en común
+
+Fíjate en que `Deno.serve`, `Bun.serve`, Cloudflare Workers y frameworks como Hono usan **la misma idea**: una función que recibe un `Request` y devuelve un `Response`, las clases de la web. El grupo **WinterTC** (dentro de Ecma, la misma organización que estandariza JavaScript) trabaja para que todos los runtimes del servidor compartan un mínimo común de APIs. Código escrito con esas APIs funciona en cualquiera.
+
+## ¿Cuál elijo?
+
+| Si te importa… | Considera |
+|---|---|
+| Estabilidad, ecosistema, que cualquier tutorial funcione | **Node.js** |
+| Seguridad por permisos, TypeScript con revisión, herramientas incluidas | **Deno** |
+| Velocidad de instalación y ejecución, todo en un programa | **Bun** |
+| Ejecutar en el borde (cerca del usuario), sin servidores | Cloudflare Workers, Deno Deploy |
+
+No es una decisión para siempre: con APIs estándar y un framework como Hono, cambiar de runtime suele ser cambiar una línea.
+
+<Nota>
+  Los tres runtimes copian las buenas ideas de los otros: Node.js sumó `--watch`, `--env-file`, un ejecutor de pruebas, TypeScript y un modelo de permisos después de que Deno y Bun los popularizaran. Esa competencia es buena para todos.
+</Nota>
+
+## Resumen
+
+- **Deno**: seguro por defecto (permisos), TypeScript revisado, APIs web, herramientas incluidas, compatible con npm.
+- **Bun**: muy rápido, gestor de paquetes, empaquetador y pruebas en un solo programa, compatible con Node.js.
+- Los dos ejecutan TypeScript directamente.
+- Un manejador `Request → Response` funciona en casi todos los runtimes; WinterTC estandariza esas APIs.
+
+<Practica>
+
+<Autoevaluacion id={runtimesAuto.id} numero={1} titulo={runtimesAuto.titulo} preguntas={runtimesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={runtimesOrden.id} numero={2} titulo={runtimesOrden.titulo} codigo={runtimesOrden.codigo} salida={runtimesOrden.salida} inicio={runtimesOrden.inicio} explicacion={runtimesOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un manejador escrito solo con APIs de la web, probado sin servidor. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={runtimesDetective.id} numero={3} titulo={runtimesDetective.titulo} codigo={runtimesDetective.codigo} error={runtimesDetective.error} culpable={runtimesDetective.culpable} arreglos={runtimesDetective.arreglos} hallazgo={runtimesDetective.hallazgo} pista={runtimesDetective.pista}>
+  <div slot="enunciado">
+    <p>Un script de Deno no puede leer su archivo de datos. Encuentra la línea que hay que cambiar y elige cómo.</p>
+  </div>
+</Detective>
+
+</Practica>

@@ -1,0 +1,117 @@
+---
+titulo: Depurar con DevTools
+seccion: herramientas
+tema: devtools
+minutos: 11
+resumen: Cómo usar las herramientas para desarrolladores del navegador para depurar (breakpoints, pasos, ámbitos, pila de llamadas, logpoints), inspeccionar la red, medir el rendimiento, encontrar fugas de memoria y depurar Node.js con las mismas herramientas.
+intro: 'Cuando algo falla, la tentación es llenar el código de <code>console.log</code>. Funciona, pero hay una forma mucho más potente: <u>detener el programa</u> en el momento exacto, mirar todas sus variables, y avanzar línea por línea viendo qué pasa. Las DevTools del navegador lo traen todo, y sirven también para Node.js.'
+ejercicios: [devtools-auto, devtools-orden, devtools-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { devtoolsAuto, devtoolsOrden, devtoolsDetective } from '../../data/ejercicios/herramientas';
+
+Ábrelas con **F12** (o **Ctrl+Shift+I**, **Cmd+Option+I** en Mac). Los paneles principales son Elements, Console, Sources, Network, Performance, Memory y Application.
+
+## Breakpoints
+
+En el panel **Sources**, haz clic en el número de una línea: el programa se detendrá ahí la próxima vez que llegue. Con el programa en pausa ves:
+
+- **Scope**: todas las variables visibles, locales, de closures y globales, con su valor.
+- **Call Stack**: la pila de llamadas, la misma de la sección 4. Haz clic en un marco para ver sus variables.
+- **Watch**: expresiones que quieres vigilar mientras avanzas.
+
+Y avanzas con los botones (o sus atajos):
+
+| Botón | Hace |
+|---|---|
+| Resume (F8) | Sigue hasta el próximo breakpoint |
+| Step over (F10) | Ejecuta la línea, sin entrar en las funciones que llama |
+| Step into (F11) | Entra en la función que se llama en esta línea |
+| Step out (Shift+F11) | Termina la función actual y vuelve a quien la llamó |
+
+Más tipos de breakpoint:
+
+- **Condicional**: clic derecho → *Add conditional breakpoint*; solo se detiene si la condición se cumple (`producto.id === 42`).
+- **Logpoint**: imprime un mensaje en la consola sin detenerse y sin tocar el código.
+- **En excepciones**: se detiene justo donde se lanza un error, incluso si alguien lo atrapa.
+- **En eventos, en el DOM o en peticiones**: cuando ocurre un clic, cuando cambia un elemento, cuando se pide cierta URL.
+
+La instrucción `debugger;` en el código hace lo mismo que un breakpoint (si las DevTools están abiertas).
+
+## Leer un error
+
+Un error en la consola trae la **pila de llamadas** del momento: la primera línea dice dónde falló, y las siguientes, quién llamó a quién. El origen del problema muchas veces está más abajo en la pila: en los datos que alguien pasó.
+
+Con los *source maps*, que generan Vite y los demás empaquetadores, las DevTools muestran tu código original (con TypeScript, sin minificar) aunque el navegador ejecute el empaquetado.
+
+## Red
+
+El panel **Network** muestra cada petición: URL, método, estado, tamaño, tiempo, encabezados, el cuerpo enviado y la respuesta. Útil para:
+
+- Ver si una petición falló (en rojo) y por qué: 404, 500, CORS.
+- Comprobar qué datos se enviaron de verdad.
+- Simular una conexión lenta (*Throttling*) o sin conexión.
+- Copiar una petición como `curl` o como `fetch` para repetirla.
+
+## Rendimiento
+
+El panel **Performance** graba lo que hace la página durante unos segundos: cada función, cada dibujo, cada tarea. Las **tareas largas** (más de 50 ms) aparecen marcadas: son las que traban la página. En la vista *Bottom-Up* ves qué funciones consumieron más tiempo. Puedes marcar tus propios tramos con `performance.mark` y `performance.measure`, que aparecen en la grabación.
+
+El panel **Lighthouse** (o *PageSpeed Insights*) mide la página entera: velocidad de carga, accesibilidad, buenas prácticas.
+
+## Memoria
+
+Si la memoria de la página crece sin parar, hay una fuga. En el panel **Memory**:
+
+1. Toma un *heap snapshot*.
+2. Repite la acción sospechosa (abrir y cerrar un diálogo varias veces).
+3. Toma otro y compáralos (*Comparison*): busca objetos que crecieron y deberían haberse liberado, y mira qué los retiene (*Retainers*).
+
+Las causas típicas las viste en *Memoria y recolector de basura*: listeners sin quitar, temporizadores, cachés que crecen, elementos del DOM retirados que alguien sigue guardando.
+
+## Node.js con las mismas herramientas
+
+```bash
+node --inspect servidor.js          # abre el depurador
+node --inspect-brk script.js        # y se detiene en la primera línea
+```
+
+Después, en Chrome, abre `chrome://inspect` y elige el proceso: tienes Sources, Console, Performance y Memory para tu programa de Node. Los editores como VS Code se conectan a lo mismo y te dejan poner breakpoints directamente en el código.
+
+<Nota tipo="consejo">
+  Antes de depurar, reproduce el error de forma fiable: los pasos exactos, los datos exactos. Un error que puedes provocar a voluntad ya está medio resuelto.
+</Nota>
+
+## Resumen
+
+- **Breakpoints** (normales, condicionales, en excepciones) y **logpoints** en el panel Sources; `debugger;` en el código.
+- En pausa: **Scope** (variables), **Call Stack** (la pila) y **Watch**; avanza con *step over*, *into* y *out*.
+- La pila de un error se lee de arriba abajo; la causa suele estar más abajo.
+- **Network** para las peticiones; **Performance** para las tareas largas; **Memory** para las fugas.
+- `node --inspect` y `chrome://inspect` depuran Node.js con las mismas herramientas.
+
+<Practica>
+
+<Autoevaluacion id={devtoolsAuto.id} numero={1} titulo={devtoolsAuto.titulo} preguntas={devtoolsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={devtoolsOrden.id} numero={2} titulo={devtoolsOrden.titulo} codigo={devtoolsOrden.codigo} salida={devtoolsOrden.salida} inicio={devtoolsOrden.inicio} explicacion={devtoolsOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Marcas de rendimiento alrededor de un bucle. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={devtoolsDetective.id} numero={3} titulo={devtoolsDetective.titulo} codigo={devtoolsDetective.codigo} error={devtoolsDetective.error} culpable={devtoolsDetective.culpable} arreglos={devtoolsDetective.arreglos} hallazgo={devtoolsDetective.hallazgo} pista={devtoolsDetective.pista}>
+  <div slot="enunciado">
+    <p>Lee la pila de llamadas del error para encontrar dónde empezó el problema, que no es donde salta.</p>
+  </div>
+</Detective>
+
+</Practica>

@@ -1,0 +1,156 @@
+---
+titulo: Service Workers y PWA
+seccion: navegador
+tema: service-workers
+minutos: 11
+resumen: Qué es un Service Worker y su ciclo de vida (registro, install, activate, fetch), cómo responder peticiones desde la caché con distintas estrategias, cómo actualizarlo, y qué hace falta para que una web se instale como aplicación (PWA).
+intro: 'Un <u>Service Worker</u> es un worker especial que se pone entre tus páginas y la red. Cada petición pasa por él, y él decide: ir a la red, responder desde una caché propia, o combinar las dos. Es lo que permite que una web cargue al instante, funcione sin conexión y se instale como una aplicación.'
+nota: 'Un Service Worker necesita un sitio real (HTTPS y archivos), así que los ejemplos de esta lección son para leer y copiar. La práctica no tiene laboratorio.'
+ejercicios: [sw-auto, sw-orden, sw-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { swAuto, swOrden, swDetective } from '../../data/ejercicios/navegador';
+
+## Registrar
+
+```js
+// main.js
+if ("serviceWorker" in navigator) {
+  const registro = await navigator.serviceWorker.register("/sw.js");
+  console.log("alcance:", registro.scope);
+}
+```
+
+Un Service Worker controla las páginas dentro de su **alcance**: por defecto, la carpeta donde está el archivo y sus subcarpetas. Por eso suele vivir en la raíz del sitio. Solo funciona en **HTTPS** (o en `localhost`, para desarrollar).
+
+## El ciclo de vida
+
+1. **`install`**: la primera vez que se registra (o cuando cambia el archivo). El momento de guardar en caché lo necesario para funcionar sin conexión.
+2. **`activate`**: cuando ya no queda ninguna página usando una versión anterior. El momento de borrar cachés viejas.
+3. **`fetch`**: cada petición de las páginas que controla pasa por aquí.
+
+```js
+// sw.js
+const VERSION = "v3";
+const ESENCIALES = ["/", "/estilos.css", "/app.js", "/sin-conexion.html"];
+
+self.addEventListener("install", (e) => {
+  e.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(ESENCIALES)));
+});
+
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys().then((claves) =>
+      Promise.all(claves.filter((c) => c !== VERSION).map((c) => caches.delete(c)))
+    )
+  );
+});
+```
+
+`e.waitUntil(promesa)` le dice al navegador que no dé por terminada la fase hasta que la promesa se cumpla.
+
+Ojo: en la **primera visita**, la página ya estaba cargada antes de que existiera el Service Worker, así que no la controla. Empieza a controlar desde la siguiente navegación (o enseguida, si llama a `self.clients.claim()` al activarse).
+
+## Estrategias de caché
+
+En el evento `fetch`, `e.respondWith(promesa)` responde la petición con lo que quieras:
+
+```js
+self.addEventListener("fetch", (e) => {
+  const url = new URL(e.request.url);
+
+  // Archivos que cambian poco: primero la caché, si no, la red
+  if (url.pathname.match(/\.(css|js|woff2|png)$/)) {
+    e.respondWith(
+      caches.match(e.request).then((guardada) => guardada ?? fetch(e.request))
+    );
+    return;
+  }
+
+  // Páginas: primero la red, y si no hay conexión, la copia guardada o una página de aviso
+  if (e.request.mode === "navigate") {
+    e.respondWith(
+      fetch(e.request).catch(async () =>
+        (await caches.match(e.request)) ?? caches.match("/sin-conexion.html")
+      )
+    );
+  }
+});
+```
+
+Las estrategias más comunes:
+
+| Estrategia | Cómo | Para |
+|---|---|---|
+| *Cache first* | Caché; si no está, red | Archivos con versión en el nombre, fuentes, imágenes |
+| *Network first* | Red; si falla, caché | Páginas y datos que deben estar al día |
+| *Stale-while-revalidate* | Caché enseguida y, en paralelo, red para actualizar | Datos que pueden estar un poco viejos |
+
+Escribir esto a mano es delicado; la librería **Workbox**, de Google, implementa estas estrategias y el precacheo.
+
+## Actualizar
+
+Si cambias `sw.js`, el navegador detecta la versión nueva, la instala y la deja **esperando** hasta que se cierren todas las pestañas con la vieja. Para activarla antes, la versión nueva puede llamar a `self.skipWaiting()`, con cuidado: las páginas abiertas pasarían a usar un Service Worker que no esperaban.
+
+## PWA: instalar la web como aplicación
+
+Una **Progressive Web App** es una web que, además, se puede instalar: tiene su ícono, se abre en su propia ventana y funciona sin conexión. Necesita:
+
+- **HTTPS**.
+- Un **manifiesto** con el nombre, los íconos, los colores y cómo se abre:
+
+```json
+{
+  "name": "Domina JS",
+  "short_name": "DominaJS",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1b2a23",
+  "theme_color": "#f7df1e",
+  "icons": [{ "src": "/icono-512.png", "sizes": "512x512", "type": "image/png" }]
+}
+```
+
+```html
+<link rel="manifest" href="/manifest.webmanifest">
+```
+
+- Un **Service Worker** con un evento `fetch`, para que funcione sin conexión.
+
+<Nota tipo="ojo">
+  Un error en la estrategia de caché puede dejar a los usuarios atrapados en una versión vieja del sitio. Versiona las cachés, prueba las actualizaciones, y ten a mano un Service Worker "vacío" que se desregistre por si algo sale mal.
+</Nota>
+
+## Resumen
+
+- Un **Service Worker** se pone entre tus páginas y la red; controla las páginas dentro de su alcance.
+- Ciclo: registro → `install` (precachear) → `activate` (limpiar) → `fetch` (responder).
+- `e.respondWith` responde con caché, red o una combinación: *cache first*, *network first*, *stale-while-revalidate*.
+- Las versiones nuevas esperan a que se cierren las páginas viejas, salvo `skipWaiting`.
+- **PWA** = HTTPS + manifiesto + Service Worker.
+
+<Practica>
+
+<Autoevaluacion id={swAuto.id} numero={1} titulo={swAuto.titulo} preguntas={swAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={swOrden.id} numero={2} titulo={swOrden.titulo} codigo={swOrden.codigo} salida={swOrden.salida} inicio={swOrden.inicio} explicacion={swOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una primera visita y una recarga. Ordena los mensajes que aparecerían en la consola del Service Worker.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={swDetective.id} numero={3} titulo={swDetective.titulo} codigo={swDetective.codigo} error={swDetective.error} culpable={swDetective.culpable} arreglos={swDetective.arreglos} hallazgo={swDetective.hallazgo} pista={swDetective.pista}>
+  <div slot="enunciado">
+    <p>El registro del Service Worker falla con un error de seguridad. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

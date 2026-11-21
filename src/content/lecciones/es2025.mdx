@@ -1,0 +1,67 @@
+---
+titulo: ES2025
+seccion: novedades
+tema: es2025
+minutos: 6
+resumen: Las novedades de ECMAScript 2025 (iterator helpers, métodos de conjuntos en Set, módulos JSON y atributos de importación, RegExp.escape, modificadores y grupos con nombre repetidos en expresiones regulares, Promise.try y Float16Array) y dónde se explica cada una.
+intro: '<u>ES2025</u> fue una edición grande: los iteradores ganaron los métodos de los arrays, los conjuntos sus operaciones matemáticas, y los módulos aprendieron a importar JSON de forma segura.'
+ejercicios: [es2025-auto, es2025-orden]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { es2025Auto, es2025Orden } from '../../data/ejercicios/novedades';
+
+## Las novedades
+
+| Novedad | Qué hace | Se explica en |
+|---|---|---|
+| *Iterator helpers* e `Iterator.from` | `map`, `filter`, `take`, `drop`, `toArray`… en iteradores, perezosos | [Iterator helpers](/iteradores/iterator-helpers) |
+| Métodos de `Set` | `union`, `intersection`, `difference`, `symmetricDifference`, `isSubsetOf`… | [Map y Set](/colecciones/map-y-set) |
+| Módulos JSON y atributos de importación | `import datos from "./x.json" with { type: "json" }` | [JSON](/objetos/json) e [Import maps](/modulos/import-maps) |
+| `RegExp.escape` | Usar un texto literal dentro de una regex | [Expresiones regulares](/biblioteca-estandar/expresiones-regulares) |
+| Modificadores de regex `(?i:…)` | Activar banderas solo en una parte | [Expresiones regulares](/biblioteca-estandar/expresiones-regulares) |
+| Grupos con nombre repetidos | El mismo nombre en alternativas distintas | [Expresiones regulares](/biblioteca-estandar/expresiones-regulares) |
+| `Promise.try` | Convertir también los errores síncronos en rechazos | [Combinadores de promesas](/asincronia/combinadores) |
+| `Float16Array` y `Math.f16round` | Decimales de media precisión | [Datos binarios](/colecciones/datos-binarios) |
+
+## En una mirada
+
+```js
+function* naturales() {
+  let n = 1;
+  while (true) yield n++;
+}
+console.log(naturales().filter((n) => n % 3 === 0).take(3).toArray());
+
+const frontend = new Set(["js", "css", "html"]);
+const backend = new Set(["js", "sql"]);
+console.log(frontend.union(backend).size, [...frontend.difference(backend)]);
+
+console.log(/(?i:hola) Mundo/.test("HOLA Mundo"), RegExp.escape("a.b").endsWith("\\.b"));
+console.log(new Float16Array([1.1])[0]);
+```
+
+## Resumen
+
+- *Iterator helpers*: los métodos de los arrays, perezosos, en cualquier iterador.
+- Operaciones de conjuntos en `Set`.
+- Módulos JSON con atributos de importación.
+- `RegExp.escape`, modificadores y grupos con nombre repetidos.
+- `Promise.try` y `Float16Array`.
+
+<Practica>
+
+<Autoevaluacion id={es2025Auto.id} numero={1} titulo={es2025Auto.titulo} preguntas={es2025Auto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={es2025Orden.id} numero={2} titulo={es2025Orden.titulo} codigo={es2025Orden.codigo} salida={es2025Orden.salida} inicio={es2025Orden.inicio} explicacion={es2025Orden.explicacion}>
+  <div slot="enunciado">
+    <p>Varias novedades de ES2025 juntas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+</Practica>

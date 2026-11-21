@@ -1,0 +1,155 @@
+---
+titulo: fetch y HTTP
+seccion: navegador
+tema: fetch
+minutos: 13
+resumen: Cómo pedir y enviar datos con fetch, qué hay en una petición y una respuesta (métodos, estados, encabezados, cuerpo), por qué un 404 no es un error para fetch, cómo enviar JSON y formularios, CORS, cancelar y leer respuestas por partes.
+intro: 'Casi toda página moderna habla con un servidor: carga productos, envía un comentario, guarda una preferencia. <code>fetch</code> es la forma estándar de hacer esas peticiones HTTP desde JavaScript, en el navegador y también en Node.js, Deno y Bun. Es simple de usar, pero tiene un par de detalles que confunden a todo el mundo la primera vez.'
+nota: 'La página de prueba de esta lección no tiene red: los ejemplos con <code>fetch</code> son para leer y copiar, y el laboratorio usa un servidor simulado dentro de la página.'
+ejercicios: [fetch-auto, fetch-orden, fetch-detective, fetch-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { fetchAuto, fetchOrden, fetchDetective, fetchLab } from '../../data/ejercicios/navegador';
+
+## Una petición
+
+```js
+const res = await fetch("/api/productos?categoria=te");
+
+console.log(res.status);                        // 200
+console.log(res.ok);                            // true si el estado está entre 200 y 299
+console.log(res.headers.get("content-type"));   // application/json
+
+const productos = await res.json();             // el cuerpo, ya convertido
+```
+
+Hay **dos esperas**: `fetch` se cumple cuando llegan el estado y los encabezados, y `res.json()` cuando termina de llegar el cuerpo. El cuerpo se lee **una sola vez**, con el método que corresponda: `json()`, `text()`, `blob()`, `arrayBuffer()` o `formData()`.
+
+## Un 404 no es un error
+
+La promesa de `fetch` solo se **rechaza** si no hay respuesta: sin conexión, CORS bloqueado, petición cancelada. Un `404` o un `500` **son respuestas**, y la promesa se cumple. Hay que mirar `res.ok`:
+
+```js
+async function obtenerJSON(url, opciones) {
+  const res = await fetch(url, opciones);
+  if (!res.ok) throw new Error(`HTTP ${res.status} en ${url}`);
+  return res.json();
+}
+
+try {
+  const producto = await obtenerJSON("/api/productos/7");
+  mostrar(producto);
+} catch (e) {
+  mostrarError(e.message);   // red caída o error HTTP: el mismo camino
+}
+```
+
+Esta pequeña función es la que casi todo proyecto termina escribiendo.
+
+## Enviar datos
+
+```js
+// JSON
+await fetch("/api/comentarios", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ texto: "¡Gran artículo!", articulo: 42 }),
+});
+
+// Un formulario entero, incluidos archivos
+await fetch("/api/perfil", {
+  method: "PUT",
+  body: new FormData(document.querySelector("#perfil")),
+});
+```
+
+Los métodos más usados: `GET` (leer, el de por defecto), `POST` (crear), `PUT`/`PATCH` (modificar) y `DELETE` (borrar).
+
+## Request y Response
+
+`fetch` trabaja con dos objetos que también puedes crear tú, por ejemplo en pruebas o en un Service Worker:
+
+```js
+const res = new Response(JSON.stringify({ ok: true }), {
+  status: 201,
+  headers: { "Content-Type": "application/json" },
+});
+
+console.log(res.status, res.ok, res.statusText === "");
+console.log(await res.json());
+
+const peticion = new Request("https://api.ejemplo.com/datos", { method: "POST", body: "hola" });
+console.log(peticion.method, new URL(peticion.url).hostname);
+```
+
+## CORS
+
+Por seguridad, una página solo puede **leer** las respuestas de su propio origen. Para leer las de otro, ese servidor tiene que permitirlo con encabezados como `Access-Control-Allow-Origin`. Eso es **CORS**. Si falla, verás en la consola un error que menciona CORS, y `fetch` se rechaza.
+
+No se arregla desde el navegador: lo decide el servidor. Las soluciones son configurar el servidor (si es tuyo), usar una API que permita tu origen, o pasar la petición por tu propio servidor.
+
+## Cancelar y leer por partes
+
+`fetch` acepta una señal, como viste en *Cancelar con AbortController*:
+
+```js
+const res = await fetch("/api/informe", { signal: AbortSignal.timeout(5000) });
+```
+
+Y el cuerpo es un **stream**: puedes procesarlo a medida que llega, por ejemplo para mostrar el progreso de una descarga o las respuestas de un modelo de lenguaje que llegan palabra por palabra:
+
+```js
+const res = await fetch("/api/respuesta-larga");
+const lector = res.body.pipeThrough(new TextDecoderStream()).getReader();
+
+while (true) {
+  const { value, done } = await lector.read();
+  if (done) break;
+  mostrarParte(value);
+}
+```
+
+<Nota tipo="error">
+  Nunca pongas claves secretas de una API en el código del navegador: cualquiera puede verlas en las DevTools. Las peticiones que necesitan una clave tienen que pasar por tu servidor.
+</Nota>
+
+## Resumen
+
+- `await fetch(url)` da la respuesta; `await res.json()` (o `text`, `blob`…), el cuerpo, una sola vez.
+- `fetch` **no se rechaza** con un 404 o un 500: comprueba `res.ok`.
+- Para enviar: `method`, `headers` y `body` (`JSON.stringify` o un `FormData`).
+- **CORS** lo decide el servidor: el navegador solo lo aplica.
+- `signal` para cancelar; `res.body` es un stream que se lee por partes.
+
+<Practica>
+
+<Autoevaluacion id={fetchAuto.id} numero={1} titulo={fetchAuto.titulo} preguntas={fetchAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={fetchOrden.id} numero={2} titulo={fetchOrden.titulo} codigo={fetchOrden.codigo} salida={fetchOrden.salida} inicio={fetchOrden.inicio} explicacion={fetchOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una respuesta creada a mano, leída por partes. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={fetchDetective.id} numero={3} titulo={fetchDetective.titulo} codigo={fetchDetective.codigo} error={fetchDetective.error} culpable={fetchDetective.culpable} arreglos={fetchDetective.arreglos} hallazgo={fetchDetective.hallazgo} pista={fetchDetective.pista}>
+  <div slot="enunciado">
+    <p>Se pidió un producto que no existe, y el error aparece donde no se lo espera. Encuentra la línea que falta revisar y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={fetchLab.id} numero={4} titulo={fetchLab.titulo} pagina={fetchLab.pagina} inicial={fetchLab.inicial} verificaciones={fetchLab.verificaciones} pistas={fetchLab.pistas} solucion={fetchLab.solucion} explicacion={fetchLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>cargarUsuario(id)</code> con <code>fetch</code>, tratando los errores HTTP. La página trae un servidor simulado.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

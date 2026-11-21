@@ -1,0 +1,124 @@
+---
+titulo: Guardar datos
+seccion: navegador
+tema: guardar-datos
+minutos: 11
+resumen: Las formas de guardar datos en el navegador (localStorage, sessionStorage, IndexedDB, Cache API y cookies), cuánto duran, cuánto caben, cómo guardar objetos con JSON y qué no conviene guardar ahí.
+intro: 'El tema que eligió alguien, un carrito a medio armar, un borrador sin enviar: hay datos que conviene recordar entre visitas sin pasar por un servidor. El navegador ofrece varios lugares para guardarlos, cada uno pensado para un tamaño y un uso distintos.'
+nota: 'La página de prueba de esta lección está aislada y no tiene almacenamiento: los ejemplos son para leer y copiar, y el laboratorio usa un <code>localStorage</code> simulado que se comporta igual que el real.'
+ejercicios: [guardar-auto, guardar-orden, guardar-detective, guardar-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { guardarAuto, guardarOrden, guardarDetective, guardarLab } from '../../data/ejercicios/navegador';
+
+## Las opciones
+
+| Almacén | Dura | Tamaño | API | Para |
+|---|---|---|---|---|
+| `localStorage` | Hasta que se borre | Unos 5 MB | Síncrona, solo texto | Preferencias, borradores pequeños |
+| `sessionStorage` | Mientras dure la pestaña | Unos 5 MB | Síncrona, solo texto | Estado de un proceso en curso |
+| IndexedDB | Hasta que se borre | Mucho (una parte del disco) | Asíncrona, objetos y archivos | Datos grandes, apps sin conexión |
+| Cache API | Hasta que se borre | Mucho | Asíncrona, peticiones y respuestas | Archivos para usar sin conexión |
+| Cookies | Hasta su fecha | Unos 4 KB | Texto, viajan al servidor | Sesiones, preferencias que el servidor necesita |
+
+Todos son **por origen**: una página solo ve lo que guardó su propio dominio.
+
+## localStorage y sessionStorage
+
+```js
+localStorage.setItem("tema", "oscuro");
+console.log(localStorage.getItem("tema"));      // "oscuro"
+console.log(localStorage.getItem("idioma"));    // null: no existe
+localStorage.removeItem("tema");
+localStorage.clear();                           // borra todo lo de este origen
+```
+
+Solo guardan **textos**. Para objetos y arrays, conviértelos con JSON:
+
+```js
+const carrito = [{ id: 7, cantidad: 2 }];
+localStorage.setItem("carrito", JSON.stringify(carrito));
+
+const guardado = JSON.parse(localStorage.getItem("carrito") ?? "[]");
+```
+
+Y lee siempre a la defensiva: la clave puede no existir, o el texto puede estar dañado (por una versión anterior de tu código, por ejemplo). Lo vas a resolver en el laboratorio.
+
+Si el usuario tiene la página abierta en dos pestañas, el evento `storage` avisa a las demás cuando una cambia algo:
+
+```js
+window.addEventListener("storage", (e) => {
+  if (e.key === "tema") aplicarTema(e.newValue);
+});
+```
+
+## IndexedDB
+
+Una base de datos completa en el navegador: guarda objetos (no solo textos), archivos, millones de registros, con índices para buscar. Es **asíncrona**, así que no bloquea la página. Su API original, basada en eventos, es incómoda; en la práctica se usa con una librería pequeña como `idb`:
+
+```js
+import { openDB } from "idb";
+
+const db = await openDB("tienda", 1, {
+  upgrade(db) {
+    db.createObjectStore("pedidos", { keyPath: "id" });
+  },
+});
+
+await db.put("pedidos", { id: 1, total: 25, fecha: new Date() });
+const pedido = await db.get("pedidos", 1);
+```
+
+## Cookies
+
+Las cookies se envían **al servidor en cada petición**, y por eso son el lugar para las sesiones. Las que crea el servidor con el atributo `HttpOnly` no se pueden leer desde JavaScript, y eso protege la sesión si alguien inyecta un script en la página. Desde JavaScript, la API moderna es `cookieStore`:
+
+```js
+await cookieStore.set({ name: "idioma", value: "es", expires: Date.now() + 30 * 864e5 });
+const idioma = await cookieStore.get("idioma");
+```
+
+<Nota tipo="error">
+  Nada de lo que guardas en el navegador es secreto ni confiable: el usuario puede verlo y cambiarlo desde las DevTools, y cualquier script que corra en tu página puede leer `localStorage`. No guardes ahí contraseñas, y no confíes en lo que leas sin validarlo.
+</Nota>
+
+## Resumen
+
+- `localStorage` (permanente) y `sessionStorage` (por pestaña): síncronos, pequeños y solo de texto. Usa JSON.
+- Lee a la defensiva: `null` si no existe, y un `try/catch` alrededor de `JSON.parse`.
+- IndexedDB para datos grandes o estructurados; la Cache API para respuestas y archivos.
+- Las cookies viajan al servidor; las `HttpOnly` no las ve JavaScript.
+- Lo guardado en el navegador lo puede ver y cambiar el usuario.
+
+<Practica>
+
+<Autoevaluacion id={guardarAuto.id} numero={1} titulo={guardarAuto.titulo} preguntas={guardarAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={guardarOrden.id} numero={2} titulo={guardarOrden.titulo} codigo={guardarOrden.codigo} salida={guardarOrden.salida} inicio={guardarOrden.inicio} explicacion={guardarOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un número, un objeto y una clave que no existe. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={guardarDetective.id} numero={3} titulo={guardarDetective.titulo} codigo={guardarDetective.codigo} error={guardarDetective.error} culpable={guardarDetective.culpable} arreglos={guardarDetective.arreglos} hallazgo={guardarDetective.hallazgo} pista={guardarDetective.pista}>
+  <div slot="enunciado">
+    <p>La página funciona para quien ya compró, pero falla en la primera visita. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={guardarLab.id} numero={4} titulo={guardarLab.titulo} pagina={guardarLab.pagina} inicial={guardarLab.inicial} verificaciones={guardarLab.verificaciones} pistas={guardarLab.pistas} solucion={guardarLab.solucion} explicacion={guardarLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>guardar</code> y <code>leer</code>: cualquier valor con JSON, y un valor por defecto cuando no hay nada o está dañado.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

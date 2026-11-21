@@ -1,0 +1,68 @@
+---
+titulo: ES2021
+seccion: novedades
+tema: es2021
+minutos: 5
+resumen: Las novedades de ECMAScript 2021 (replaceAll, Promise.any y AggregateError, asignaciones lógicas, separadores numéricos, WeakRef y FinalizationRegistry) y en qué lección se explica cada una.
+intro: 'Cada año, en junio, Ecma International publica una nueva edición de ECMAScript con las propuestas que TC39 terminó durante el año anterior. Esta sección las reúne por edición, para que veas de un vistazo qué cambió y dónde se explica cada cosa. <u>ES2021</u> trajo varias comodidades para el día a día.'
+nota: 'Todas las novedades de esta página funcionan en los navegadores y en Node.js desde hace años: puedes usarlas sin pensar en compatibilidad.'
+ejercicios: [es2021-auto, es2021-orden]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { es2021Auto, es2021Orden } from '../../data/ejercicios/novedades';
+
+## Las novedades
+
+| Novedad | Qué hace | Se explica en |
+|---|---|---|
+| `String.prototype.replaceAll` | Reemplaza todas las apariciones de un texto | [Texto y template literals](/fundamentos/texto) |
+| `Promise.any` y `AggregateError` | La primera promesa que se cumpla; si fallan todas, un error con todos los motivos | [Combinadores de promesas](/asincronia/combinadores) |
+| `&&=`, `\|\|=`, `??=` | Asignar solo cuando hace falta | [Operadores](/fundamentos/operadores) |
+| Separadores numéricos (`1_000_000`) | Números largos más legibles | [Números](/fundamentos/numeros) |
+| `WeakRef` y `FinalizationRegistry` | Referencias débiles y avisos cuando se libera un objeto | [Memoria y recolector de basura](/como-se-ejecuta-js/memoria) |
+
+## En una mirada
+
+```js
+const precios = { envio: 0, descuento: null };
+precios.envio ||= 5;          // 0 es falsy: lo reemplaza
+precios.descuento ??= 10;     // null: lo reemplaza
+console.log(precios);
+
+const presupuesto = 2_500_000;
+console.log(presupuesto / 1_000);
+
+console.log("2026-11-21".replaceAll("-", "/"));
+
+try {
+  await Promise.any([Promise.reject(new Error("A")), Promise.reject(new Error("B"))]);
+} catch (e) {
+  console.log(e.name, e.errors.length);
+}
+```
+
+## Resumen
+
+- `replaceAll` sin expresiones regulares.
+- `Promise.any` y `AggregateError`.
+- Asignaciones lógicas `&&=`, `||=` y `??=`.
+- Separadores numéricos con guion bajo.
+- `WeakRef` y `FinalizationRegistry`, para casos avanzados de memoria.
+
+<Practica>
+
+<Autoevaluacion id={es2021Auto.id} numero={1} titulo={es2021Auto.titulo} preguntas={es2021Auto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={es2021Orden.id} numero={2} titulo={es2021Orden.titulo} codigo={es2021Orden.codigo} salida={es2021Orden.salida} inicio={es2021Orden.inicio} explicacion={es2021Orden.explicacion}>
+  <div slot="enunciado">
+    <p>Varias novedades de ES2021 juntas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+</Practica>

@@ -2262,3 +2262,321 @@ console.log("2. síncrono");`,
     },
   ],
 };
+
+export const proxyTrampas: DatosVisualizador = {
+  codigo: `const objetivo = { nombre: "Ana" };
+
+const proxy = new Proxy(objetivo, {
+  get(obj, prop) {
+    console.log(\`leyendo \${prop}\`);
+    return Reflect.get(obj, prop) ?? "(no existe)";
+  },
+  set(obj, prop, valor) {
+    if (prop === "edad" && valor < 0) throw new RangeError("edad inválida");
+    return Reflect.set(obj, prop, valor);
+  },
+});
+
+console.log(proxy.nombre);
+proxy.edad = 31;
+console.log(proxy.ciudad);
+console.log(objetivo.edad);`,
+  pasos: [
+    {
+      lineas: [1, 3],
+      pila: [m('objetivo', '→ objeto #1'), obj('objeto #1', "{ nombre: 'Ana' }"), m('proxy', '→ proxy #2', true), obj('proxy #2', 'envuelve al #1 · trampas: get, set', true)],
+      consola: [],
+      evento: 'entra',
+      anotacion: 'envoltorio',
+      texto: '<code>new Proxy</code> crea un objeto que <b>envuelve</b> al objetivo. No copia nada: cada operación sobre el proxy pasa primero por el <em>handler</em>, el objeto con las <b>trampas</b>.',
+    },
+    {
+      lineas: [14, 4, 5],
+      pila: [m('objetivo', '→ objeto #1'), obj('objeto #1', "{ nombre: 'Ana' }"), m('proxy', '→ proxy #2'), obj('proxy #2', 'trampa get: prop = "nombre"', true)],
+      consola: ['leyendo nombre'],
+      evento: 'imprime',
+      anotacion: 'get',
+      texto: 'Leer <code>proxy.nombre</code> no va directo al objeto: ejecuta la trampa <code>get</code>, que recibe el objetivo y el nombre de la propiedad. Lo primero que hace es avisar.',
+    },
+    {
+      lineas: [6, 14],
+      pila: [m('objetivo', '→ objeto #1'), obj('objeto #1', "{ nombre: 'Ana' } ← Reflect.get", true), m('proxy', '→ proxy #2'), obj('proxy #2', 'devuelve "Ana"')],
+      consola: ['leyendo nombre', 'Ana'],
+      evento: 'imprime',
+      anotacion: 'Reflect',
+      texto: '<code>Reflect.get</code> hace la lectura normal en el objetivo. Lo que devuelve la trampa es lo que recibe quien leyó.',
+    },
+    {
+      lineas: [15, 8, 9, 10],
+      pila: [m('objetivo', '→ objeto #1'), obj('objeto #1', "{ nombre: 'Ana', edad: 31 }", true), m('proxy', '→ proxy #2'), obj('proxy #2', 'trampa set: edad = 31 ✓')],
+      consola: ['leyendo nombre', 'Ana'],
+      evento: 'ejecuta',
+      anotacion: 'set',
+      texto: 'Asignar pasa por la trampa <code>set</code>, que <b>valida</b> antes de guardar. 31 es válido: <code>Reflect.set</code> lo guarda en el objetivo y devuelve <code>true</code>.',
+      prediccion: {
+        pregunta: '¿Dónde se guarda la edad?',
+        opciones: ['En el proxy', 'En el objetivo, a través de Reflect.set'],
+        correcta: 1,
+        explicacion: 'El proxy no guarda nada propio: todo termina en el objetivo.',
+      },
+    },
+    {
+      lineas: [16, 5, 6],
+      pila: [m('objetivo', '→ objeto #1'), obj('objeto #1', "{ nombre: 'Ana', edad: 31 }"), m('proxy', '→ proxy #2'), obj('proxy #2', 'trampa get: "ciudad" no existe', true)],
+      consola: ['leyendo nombre', 'Ana', 'leyendo ciudad', '(no existe)'],
+      evento: 'imprime',
+      anotacion: 'por defecto',
+      texto: '<code>ciudad</code> no existe: <code>Reflect.get</code> da <code>undefined</code> y la trampa lo cambia por un valor por defecto. Sin proxy, habrías leído <code>undefined</code>.',
+    },
+    {
+      lineas: [17],
+      pila: [m('objetivo', '→ objeto #1', true), obj('objeto #1', "{ nombre: 'Ana', edad: 31 }"), m('proxy', '→ proxy #2'), obj('proxy #2', 'no interviene')],
+      consola: ['leyendo nombre', 'Ana', 'leyendo ciudad', '(no existe)', '31'],
+      evento: 'fin',
+      texto: 'Leer el <b>objetivo</b> directamente no pasa por ninguna trampa: no se imprime "leyendo". El proxy solo intercepta lo que se hace <b>a través de él</b>. Así funcionan la validación, los valores por defecto y la reactividad de librerías como Vue.',
+    },
+  ],
+};
+
+export const cargaPagina: DatosVisualizador = {
+  codigo: `<head>
+  <script src="analitica.js" async></script>
+  <script src="app.js" defer></script>
+  <script src="viejo.js"></script>
+</head>
+<body>
+  <h1>Hola</h1>
+  <img src="foto.jpg">
+  <script type="module" src="main.js"></script>
+</body>`,
+  pasos: [
+    {
+      lineas: [2],
+      pila: [m('analizador HTML', 'leyendo el <head>', true), obj('analitica.js', 'async · descargando en paralelo')],
+      consola: [],
+      evento: 'entra',
+      anotacion: 'async',
+      texto: 'El navegador lee el HTML de arriba abajo. Un script <code>async</code> se descarga <b>en paralelo</b>: el analizador no se detiene.',
+    },
+    {
+      lineas: [3],
+      pila: [m('analizador HTML', 'sigue leyendo', true), obj('analitica.js', 'async · descargando'), obj('app.js', 'defer · descargando, espera el final')],
+      consola: [],
+      evento: 'entra',
+      anotacion: 'defer',
+      texto: 'Un script <code>defer</code> también se descarga en paralelo, pero se queda esperando: se ejecutará cuando el HTML termine de leerse.',
+    },
+    {
+      lineas: [4],
+      pila: [m('analizador HTML', 'DETENIDO en la línea 4', true), obj('analitica.js', 'async · descargando'), obj('app.js', 'defer · esperando'), obj('viejo.js', 'clásico · descarga y ejecuta YA')],
+      consola: ['viejo.js'],
+      evento: 'ejecuta',
+      anotacion: 'bloquea',
+      texto: 'Un script <b>clásico</b>, sin atributos, <b>detiene</b> al analizador: hay que descargarlo y ejecutarlo antes de seguir leyendo, porque podría modificar el HTML que viene. Mientras tanto, la página no avanza.',
+      prediccion: {
+        pregunta: 'Mientras se descarga viejo.js, ¿sigue leyéndose el <body>?',
+        opciones: ['Sí, en paralelo', 'No, el analizador está detenido'],
+        correcta: 1,
+        explicacion: 'Los scripts clásicos bloquean la lectura del HTML.',
+      },
+    },
+    {
+      lineas: [7, 8],
+      pila: [m('analizador HTML', 'leyendo el <body>', true), obj('app.js', 'defer · esperando'), obj('foto.jpg', 'descargando')],
+      consola: ['viejo.js', 'analitica.js'],
+      evento: 'ejecuta',
+      anotacion: 'en cualquier momento',
+      texto: 'El analizador sigue con el <code>&lt;body&gt;</code>. En algún momento llega <code>analitica.js</code> y, por ser <code>async</code>, se ejecuta <b>en cuanto llega</b>, interrumpiendo un instante lo que haya. Su momento exacto es impredecible.',
+    },
+    {
+      lineas: [9],
+      pila: [m('analizador HTML', 'última línea', true), obj('app.js', 'defer · esperando'), obj('main.js', 'module · se comporta como defer'), obj('foto.jpg', 'descargando')],
+      consola: ['viejo.js', 'analitica.js'],
+      evento: 'entra',
+      anotacion: 'module',
+      texto: 'Un <code>type="module"</code> es diferido por defecto: se suma a la fila de los <code>defer</code>, en orden.',
+    },
+    {
+      lineas: [10],
+      pila: [m('HTML terminado', 'el DOM está completo', true), obj('foto.jpg', 'todavía descargando')],
+      consola: ['viejo.js', 'analitica.js', 'app.js', 'main.js', 'DOMContentLoaded'],
+      evento: 'imprime',
+      anotacion: 'DOM listo',
+      texto: 'Terminó el HTML: ahora corren los diferidos, <b>en el orden en que aparecieron</b> (<code>app.js</code>, después <code>main.js</code>), y se dispara <code>DOMContentLoaded</code>. La imagen puede no haber llegado todavía.',
+      prediccion: {
+        pregunta: '¿Qué se ejecuta primero, app.js o main.js?',
+        opciones: ['app.js: los diferidos respetan el orden del HTML', 'main.js: los módulos tienen prioridad', 'El que llegue primero'],
+        correcta: 0,
+        explicacion: 'defer y los módulos se ejecutan en orden de aparición.',
+      },
+    },
+    {
+      lineas: [],
+      pila: [m('página completa', 'imágenes, estilos e iframes cargados')],
+      consola: ['viejo.js', 'analitica.js', 'app.js', 'main.js', 'DOMContentLoaded', 'load'],
+      evento: 'fin',
+      texto: 'Cuando además terminan de cargar las imágenes y los estilos, se dispara <code>load</code>. Regla práctica: tu código en un <code>type="module"</code> o con <code>defer</code>; <code>async</code> solo para scripts independientes; y nada de scripts clásicos en el <code>&lt;head&gt;</code>.',
+    },
+  ],
+};
+
+export const burbujeo: DatosVisualizador = {
+  codigo: `<ul id="lista">
+  <li id="item">
+    <button id="boton">Borrar</button>
+  </li>
+</ul>
+
+<script>
+  lista.addEventListener("click", () => console.log("ul, captura"), { capture: true });
+  boton.addEventListener("click", () => console.log("button"));
+  item.addEventListener("click", () => console.log("li"));
+  lista.addEventListener("click", () => console.log("ul"));
+</script>`,
+  pasos: [
+    {
+      lineas: [3],
+      pila: [m('window'), m('document'), m('<ul id="lista">'), m('<li id="item">'), m('<button id="boton">', '¡clic aquí!', true)],
+      consola: [],
+      evento: 'inicio',
+      anotacion: 'clic',
+      texto: 'El usuario hace clic en el botón. El evento no ocurre solo en el botón: va a recorrer todo el camino desde <code>window</code> hasta él, y de vuelta.',
+    },
+    {
+      lineas: [8],
+      pila: [m('window', 'captura ↓'), m('document', 'captura ↓'), m('<ul id="lista">', 'captura ↓ · listener', true), m('<li id="item">'), m('<button id="boton">')],
+      consola: ['ul, captura'],
+      evento: 'imprime',
+      anotacion: 'captura',
+      texto: 'Fase de <b>captura</b>: el evento baja desde <code>window</code>. Solo se ejecutan los listeners con <code>capture: true</code>, como el del <code>ul</code>.',
+      prediccion: {
+        pregunta: '¿Qué listener corre primero?',
+        opciones: ['El del button, donde fue el clic', 'El del ul con capture: true'],
+        correcta: 1,
+        explicacion: 'La captura ocurre antes, mientras el evento baja.',
+      },
+    },
+    {
+      lineas: [9],
+      pila: [m('window'), m('document'), m('<ul id="lista">'), m('<li id="item">'), m('<button id="boton">', 'objetivo · listener', true)],
+      consola: ['ul, captura', 'button'],
+      evento: 'imprime',
+      anotacion: 'objetivo',
+      texto: 'El evento llega al <b>objetivo</b>, el elemento donde ocurrió: <code>e.target</code>. Se ejecutan sus listeners.',
+    },
+    {
+      lineas: [10],
+      pila: [m('window'), m('document'), m('<ul id="lista">'), m('<li id="item">', 'burbujeo ↑ · listener', true), m('<button id="boton">')],
+      consola: ['ul, captura', 'button', 'li'],
+      evento: 'imprime',
+      anotacion: 'burbujeo',
+      texto: 'Fase de <b>burbujeo</b>: el evento sube por los ancestros y ejecuta sus listeners normales. Primero el <code>li</code>…',
+    },
+    {
+      lineas: [11],
+      pila: [m('window'), m('document'), m('<ul id="lista">', 'burbujeo ↑ · listener', true), m('<li id="item">'), m('<button id="boton">')],
+      consola: ['ul, captura', 'button', 'li', 'ul'],
+      evento: 'imprime',
+      anotacion: 'sube',
+      texto: '…después el <code>ul</code>. Dentro de este listener, <code>e.target</code> sigue siendo el botón, y <code>e.currentTarget</code> es el <code>ul</code>.',
+    },
+    {
+      lineas: [],
+      pila: [m('window', 'burbujeo ↑', true), m('document', 'burbujeo ↑'), m('<ul id="lista">'), m('<li id="item">'), m('<button id="boton">')],
+      consola: ['ul, captura', 'button', 'li', 'ul'],
+      evento: 'fin',
+      texto: 'El evento sigue subiendo hasta <code>document</code> y <code>window</code>. Esto permite la <b>delegación</b>: un solo listener en un contenedor atiende los clics de todos sus hijos, incluso de los que se agreguen después.',
+    },
+  ],
+};
+
+export const eventLoopNode: DatosVisualizador = {
+  codigo: `const fs = require("node:fs");
+
+fs.readFile(__filename, () => {
+  setTimeout(() => console.log("timeout"), 0);
+  setImmediate(() => console.log("immediate"));
+  process.nextTick(() => console.log("nextTick"));
+});
+
+Promise.resolve().then(() => console.log("promesa"));
+process.nextTick(() => console.log("nextTick 1"));
+console.log("síncrono");`,
+  pasos: [
+    {
+      lineas: [3, 9, 10, 11],
+      pila: [z('pila', 'programa principal', 'corre entero', true), z('api', 'leer el archivo', 'libuv, en otro hilo'), z('micro', 'nextTick 1', 'cola de nextTick'), z('micro', 'promesa', 'cola de microtareas')],
+      consola: ['síncrono'],
+      evento: 'imprime',
+      anotacion: 'síncrono',
+      texto: 'Corre todo el programa principal. La lectura del archivo se delega en <b>libuv</b>, la librería que hace el trabajo de entrada y salida. Se agendan un <code>nextTick</code> y una promesa.',
+    },
+    {
+      lineas: [10],
+      pila: [z('pila', 'nextTick 1', true), z('api', 'leer el archivo', 'libuv, en otro hilo'), z('micro', 'promesa', 'cola de microtareas')],
+      consola: ['síncrono', 'nextTick 1'],
+      evento: 'imprime',
+      anotacion: 'nextTick',
+      texto: 'Al terminar el código, Node.js vacía primero la cola de <code>process.nextTick</code>, propia de Node…',
+      prediccion: {
+        pregunta: '¿Qué corre primero: el nextTick o la promesa?',
+        opciones: ['La promesa, se agendó antes', 'El nextTick: su cola tiene prioridad'],
+        correcta: 1,
+        explicacion: 'Node.js vacía la cola de nextTick antes que la de microtareas.',
+      },
+    },
+    {
+      lineas: [9],
+      pila: [z('pila', 'promesa', true), z('api', 'leer el archivo', 'libuv, en otro hilo')],
+      consola: ['síncrono', 'nextTick 1', 'promesa'],
+      evento: 'imprime',
+      anotacion: 'microtarea',
+      texto: '…y después la de microtareas: las promesas. Recién entonces entra en las <b>fases</b> del event loop.',
+    },
+    {
+      lineas: [3, 4, 5, 6],
+      pila: [z('pila', 'callback de readFile', 'fase poll', true), z('tarea', '() => console.log("timeout")', 'fase timers'), z('tarea', '() => console.log("immediate")', 'fase check'), z('micro', 'nextTick', 'cola de nextTick')],
+      consola: ['síncrono', 'nextTick 1', 'promesa'],
+      evento: 'entra',
+      anotacion: 'poll',
+      texto: 'El event loop de Node recorre fases: <b>timers</b>, <b>poll</b> (entrada y salida), <b>check</b> (<code>setImmediate</code>)… Cuando el archivo está leído, su callback corre en la fase <b>poll</b> y agenda tres cosas, cada una en su lugar.',
+    },
+    {
+      lineas: [6],
+      pila: [z('pila', 'nextTick', true), z('tarea', '() => console.log("timeout")', 'fase timers'), z('tarea', '() => console.log("immediate")', 'fase check')],
+      consola: ['síncrono', 'nextTick 1', 'promesa', 'nextTick'],
+      evento: 'imprime',
+      anotacion: 'entre fases',
+      texto: 'Después de <b>cada</b> callback, antes de seguir con la fase, se vacían las colas de nextTick y de microtareas.',
+    },
+    {
+      lineas: [5],
+      pila: [z('pila', 'immediate', 'fase check', true), z('tarea', '() => console.log("timeout")', 'fase timers, en la próxima vuelta')],
+      consola: ['síncrono', 'nextTick 1', 'promesa', 'nextTick', 'immediate'],
+      evento: 'imprime',
+      anotacion: 'check',
+      texto: 'Después de poll viene la fase <b>check</b>: corre el <code>setImmediate</code>. El temporizador tiene que esperar a que el loop dé la vuelta y vuelva a la fase timers.',
+      prediccion: {
+        pregunta: 'Dentro de un callback de I/O, ¿qué corre antes?',
+        opciones: ['setTimeout(…, 0)', 'setImmediate'],
+        correcta: 1,
+        explicacion: 'La fase check viene justo después de poll; timers, en la vuelta siguiente.',
+      },
+    },
+    {
+      lineas: [4],
+      pila: [z('pila', 'timeout', 'fase timers', true)],
+      consola: ['síncrono', 'nextTick 1', 'promesa', 'nextTick', 'immediate', 'timeout'],
+      evento: 'imprime',
+      anotacion: 'timers',
+      texto: 'Nueva vuelta, fase <b>timers</b>: corre el <code>setTimeout</code>.',
+    },
+    {
+      lineas: [],
+      pila: [],
+      consola: ['síncrono', 'nextTick 1', 'promesa', 'nextTick', 'immediate', 'timeout'],
+      evento: 'fin',
+      texto: 'No queda nada pendiente: ni temporizadores, ni lecturas, ni conexiones. Node.js termina el proceso. Un servidor no termina nunca porque siempre tiene una conexión escuchando.',
+    },
+  ],
+};

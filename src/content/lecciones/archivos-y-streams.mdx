@@ -1,0 +1,148 @@
+---
+titulo: Archivos y streams
+seccion: servidor
+tema: archivos-y-streams
+minutos: 12
+resumen: Cómo leer, escribir y recorrer archivos y carpetas con node:fs/promises, armar rutas con node:path, y procesar datos grandes por partes con streams, pipeline y for await.
+intro: 'Leer una configuración, guardar un informe, recorrer una carpeta de imágenes, procesar un registro de varios gigas: trabajar con archivos es de lo más común en Node.js. Para archivos pequeños alcanza con leerlos enteros; para los grandes, los <u>streams</u> permiten procesarlos por partes, sin agotar la memoria.'
+ejercicios: [archivos-auto, archivos-orden, archivos-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { archivosAuto, archivosOrden, archivosDetective } from '../../data/ejercicios/servidor';
+
+## Leer y escribir
+
+```js
+import { readFile, writeFile, appendFile, mkdir } from "node:fs/promises";
+import { join } from "node:path";
+
+const ruta = join(import.meta.dirname, "datos", "config.json");
+
+const config = JSON.parse(await readFile(ruta, "utf8"));   // sin "utf8" devuelve un Buffer
+config.visitas += 1;
+
+await mkdir(join(import.meta.dirname, "datos"), { recursive: true });   // no falla si ya existe
+await writeFile(ruta, JSON.stringify(config, null, 2));
+await appendFile(join(import.meta.dirname, "registro.txt"), `${new Date().toISOString()} visita\n`);
+```
+
+Los errores llegan con un `code`: `ENOENT` (no existe), `EACCES` (sin permiso), `EEXIST` (ya existe), `EISDIR` (es una carpeta)…
+
+```js
+import { readFile } from "node:fs/promises";
+
+try {
+  await readFile("no-existe.txt", "utf8");
+} catch (e) {
+  if (e.code === "ENOENT") console.log("Todavía no hay archivo: empiezo vacío");
+  else throw e;
+}
+```
+
+## Rutas
+
+Las rutas relativas se resuelven desde el **directorio de trabajo** (`process.cwd()`), no desde el archivo. Arma siempre las rutas a partir de `import.meta.dirname`, y con `node:path`, que conoce las diferencias entre sistemas:
+
+```js
+import path from "node:path";
+
+path.join("datos", "..", "config", "app.json");   // "config/app.json"
+path.resolve("src", "index.js");                 // ruta absoluta desde el directorio de trabajo
+path.basename("/fotos/viaje.jpg");               // "viaje.jpg"
+path.extname("informe.pdf");                     // ".pdf"
+path.dirname("/fotos/2026/viaje.jpg");           // "/fotos/2026"
+path.parse("/fotos/viaje.jpg");                  // { root, dir, base, ext, name }
+```
+
+## Carpetas
+
+```js
+import { readdir, stat } from "node:fs/promises";
+
+const entradas = await readdir("./fotos", { withFileTypes: true, recursive: true });
+for (const e of entradas) {
+  if (e.isFile() && e.name.endsWith(".jpg")) {
+    const info = await stat(path.join(e.parentPath, e.name));
+    console.log(e.name, `${(info.size / 1024).toFixed(0)} KB`);
+  }
+}
+```
+
+## Streams
+
+Un **stream** es un flujo de datos que llega o sale por partes (*chunks*). Hay cuatro tipos:
+
+- **Readable**: de donde se lee (un archivo, una petición HTTP, `process.stdin`).
+- **Writable**: donde se escribe (un archivo, una respuesta HTTP, `process.stdout`).
+- **Transform**: transforma lo que pasa (comprimir, cifrar, convertir).
+- **Duplex**: las dos cosas (un socket de red).
+
+`pipeline` los conecta, maneja los errores y cierra todo al terminar:
+
+```js
+import { createReadStream, createWriteStream } from "node:fs";
+import { createGzip } from "node:zlib";
+import { pipeline } from "node:stream/promises";
+
+// Comprime un archivo de cualquier tamaño, usando poca memoria
+await pipeline(
+  createReadStream("registro.log"),
+  createGzip(),
+  createWriteStream("registro.log.gz"),
+);
+```
+
+Si el destino es más lento que el origen, el stream frena la lectura hasta que el destino se pone al día. Se llama **contrapresión** (*backpressure*), y `pipeline` la maneja por ti.
+
+Los streams que se leen son **iterables asíncronos**, así que se pueden recorrer con `for await`, como viste en *Iteración asíncrona*:
+
+```js
+import { createReadStream } from "node:fs";
+import { createInterface } from "node:readline";
+
+// Contar las líneas con errores de un registro enorme, línea por línea
+let errores = 0;
+const lineas = createInterface({ input: createReadStream("servidor.log") });
+for await (const linea of lineas) {
+  if (linea.includes("ERROR")) errores++;
+}
+console.log(`${errores} errores`);
+```
+
+<Nota tipo="consejo">
+  Node.js también entiende los **Web Streams** del navegador (`ReadableStream`, `TransformStream`), los mismos de `fetch`. `Readable.fromWeb` y `Readable.toWeb` convierten entre los dos mundos.
+</Nota>
+
+## Resumen
+
+- `node:fs/promises`: `readFile`, `writeFile`, `appendFile`, `mkdir`, `readdir`, `stat`…
+- Los errores traen un `code`: `ENOENT`, `EACCES`, `EEXIST`.
+- Arma las rutas desde `import.meta.dirname` y con `node:path`.
+- Los **streams** procesan datos por partes; `pipeline` los conecta y maneja errores y contrapresión.
+- Los streams que se leen se recorren con `for await`.
+
+<Practica>
+
+<Autoevaluacion id={archivosAuto.id} numero={1} titulo={archivosAuto.titulo} preguntas={archivosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={archivosOrden.id} numero={2} titulo={archivosOrden.titulo} codigo={archivosOrden.codigo} salida={archivosOrden.salida} inicio={archivosOrden.inicio} explicacion={archivosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Cuatro funciones de <code>node:path</code>. Ordena lo que aparecería en la terminal.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={archivosDetective.id} numero={3} titulo={archivosDetective.titulo} codigo={archivosDetective.codigo} error={archivosDetective.error} culpable={archivosDetective.culpable} arreglos={archivosDetective.arreglos} hallazgo={archivosDetective.hallazgo} pista={archivosDetective.pista}>
+  <div slot="enunciado">
+    <p>El archivo está junto al script, pero Node.js dice que no existe. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

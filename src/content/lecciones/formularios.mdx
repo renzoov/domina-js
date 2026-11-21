@@ -1,0 +1,155 @@
+---
+titulo: Formularios y validación
+seccion: navegador
+tema: formularios
+minutos: 12
+resumen: Cómo leer y enviar formularios desde JavaScript (el evento submit, FormData), reaccionar mientras el usuario escribe (input y change), y validar con las reglas de HTML, la API de validación y mensajes propios.
+intro: 'Los formularios son la forma principal en que una persona le da datos a una página: registrarse, buscar, comprar, comentar. HTML ya trae mucho resuelto (tipos de campo, validación, envío con Enter). El trabajo de JavaScript es <u>aprovechar eso</u>, no reemplazarlo, y sumar lo que falte.'
+ejercicios: [form-auto, form-orden, form-detective, form-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { formAuto, formOrden, formDetective, formLab } from '../../data/ejercicios/navegador';
+
+## El evento submit
+
+Escucha `submit` en el **formulario**, no `click` en el botón: también se dispara al pulsar Enter en un campo. Y cancela el envío por defecto, que recargaría la página:
+
+```js
+document.body.innerHTML = `
+  <form id="buscar">
+    <input name="q" value="javascript">
+    <button>Buscar</button>
+  </form>`;
+const form = document.querySelector("#buscar");
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  console.log("buscando:", form.q.value);
+});
+
+form.requestSubmit();   // como si el usuario pulsara el botón
+```
+
+Los campos se pueden leer por su `name` directamente desde el formulario: `form.q`, `form.email`.
+
+## FormData
+
+`FormData` junta todos los campos con `name` de una vez. Se puede enviar directamente con `fetch`, o convertir en un objeto:
+
+```js
+document.body.innerHTML = `
+  <form id="pedido">
+    <input name="producto" value="té">
+    <input name="cantidad" type="number" value="2">
+    <select name="envio"><option>normal</option><option selected>express</option></select>
+  </form>`;
+
+const datos = new FormData(document.querySelector("#pedido"));
+const pedido = Object.fromEntries(datos);
+console.log(pedido);
+console.log(Number(pedido.cantidad) * 3);   // los valores son textos
+```
+
+## Mientras el usuario escribe
+
+- **`input`**: con cada cambio, letra por letra.
+- **`change`**: cuando el valor queda confirmado (al salir del campo, o al elegir en un `select` o checkbox).
+
+```js
+document.body.innerHTML = `<input id="nombre"> <p id="vista"></p>`;
+const campo = document.querySelector("#nombre");
+const vista = document.querySelector("#vista");
+
+campo.addEventListener("input", () => {
+  vista.textContent = `Hola, ${campo.value || "…"}`;
+});
+
+campo.value = "Ana";
+campo.dispatchEvent(new Event("input"));   // simula que el usuario escribió
+console.log(vista.textContent);
+```
+
+## Validar con HTML
+
+Los atributos de HTML ya validan: `required`, `type="email"`, `min`, `max`, `minlength`, `pattern`… y la API de validación te deja consultar el resultado desde JavaScript:
+
+```js
+document.body.innerHTML = `<input id="edad" type="number" min="18" required>`;
+const edad = document.querySelector("#edad");
+
+edad.value = "15";
+console.log(edad.checkValidity());          // false
+console.log(edad.validity.rangeUnderflow);  // por qué: debajo del mínimo
+console.log(edad.validationMessage);        // el mensaje del navegador
+
+edad.value = "30";
+console.log(edad.checkValidity());
+```
+
+`form.checkValidity()` comprueba todos los campos; `form.reportValidity()` además muestra los mensajes del navegador. En CSS, las pseudoclases `:invalid` y `:user-invalid` (esta última, solo después de que el usuario tocó el campo) permiten dar estilo a los errores.
+
+## Reglas propias
+
+Para reglas que HTML no tiene, `setCustomValidity` marca un campo como inválido con tu mensaje, y `""` lo vuelve válido:
+
+```js
+document.body.innerHTML = `<input id="clave" value="secreto1"> <input id="repetir" value="secreto2">`;
+const clave = document.querySelector("#clave");
+const repetir = document.querySelector("#repetir");
+
+function comprobar() {
+  repetir.setCustomValidity(repetir.value === clave.value ? "" : "Las contraseñas no coinciden");
+}
+
+comprobar();
+console.log(repetir.checkValidity(), repetir.validationMessage);
+repetir.value = "secreto1";
+comprobar();
+console.log(repetir.checkValidity());
+```
+
+<Nota tipo="error">
+  La validación en el navegador es para ayudar a la persona, no para proteger tus datos: cualquiera puede saltársela. El servidor tiene que **volver a validar todo** lo que recibe.
+</Nota>
+
+## Resumen
+
+- Escucha `submit` en el formulario y llama a `preventDefault()`.
+- Lee los campos por su `name` o con `FormData`; los valores son siempre textos.
+- `input` con cada cambio; `change` al confirmar.
+- La validación de HTML (`required`, `type`, `min`, `pattern`) se consulta con `checkValidity()` y `validity`.
+- `setCustomValidity` agrega reglas propias.
+- El servidor siempre valida de nuevo.
+
+<Practica>
+
+<Autoevaluacion id={formAuto.id} numero={1} titulo={formAuto.titulo} preguntas={formAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={formOrden.id} numero={2} titulo={formOrden.titulo} codigo={formOrden.codigo} salida={formOrden.salida} inicio={formOrden.inicio} explicacion={formOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un formulario con casillas repetidas y un campo numérico. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={formDetective.id} numero={3} titulo={formDetective.titulo} codigo={formDetective.codigo} error={formDetective.error} culpable={formDetective.culpable} arreglos={formDetective.arreglos} hallazgo={formDetective.hallazgo} pista={formDetective.pista}>
+  <div slot="enunciado">
+    <p>Al enviar el formulario, la consola muestra un error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={formLab.id} numero={4} titulo={formLab.titulo} pagina={formLab.pagina} inicial={formLab.inicial} verificaciones={formLab.verificaciones} pistas={formLab.pistas} solucion={formLab.solucion} explicacion={formLab.explicacion}>
+  <div slot="enunciado">
+    <p>Maneja el envío del formulario: valida, lee los datos y muestra un mensaje en la página.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

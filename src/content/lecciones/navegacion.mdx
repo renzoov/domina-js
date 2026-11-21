@@ -1,0 +1,107 @@
+---
+titulo: Navegación e historial
+seccion: navegador
+tema: navegacion
+minutos: 10
+resumen: Cómo cambian la URL las aplicaciones de una sola página sin recargar, con la History API (pushState, replaceState, popstate) y la moderna Navigation API (el evento navigate e intercept), y qué necesita el servidor para que funcione.
+intro: 'En una aplicación de una sola página (SPA), pasar de "inicio" a "producto 7" no recarga nada: JavaScript cambia el contenido y la URL. Para que el botón "atrás", los marcadores y los enlaces compartidos sigan funcionando, el historial del navegador tiene que enterarse. De eso se encargan la History API y su sucesora, la Navigation API.'
+nota: 'La página de prueba de esta lección no tiene una URL propia, así que los ejemplos son para leer y copiar. La práctica no tiene laboratorio.'
+ejercicios: [nav-auto, nav-orden, nav-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { navAuto, navOrden, navDetective } from '../../data/ejercicios/navegador';
+
+## La History API
+
+```js
+// Cambia la URL y agrega una entrada al historial, sin recargar
+history.pushState({ productoId: 7 }, "", "/productos/7");
+mostrarProducto(7);
+
+// Cambia la URL actual, sin agregar una entrada (por ejemplo, al aplicar un filtro)
+history.replaceState({ ...history.state, orden: "precio" }, "", "/productos/7?orden=precio");
+
+// Cuando el usuario va atrás o adelante entre tus entradas
+window.addEventListener("popstate", (e) => {
+  mostrarSegun(location.pathname, e.state);
+});
+```
+
+- `pushState(estado, "", url)`: nueva entrada. El `estado` es un objeto que te devuelven en `popstate`.
+- `replaceState`: reemplaza la entrada actual.
+- `popstate`: se dispara al moverse por el historial. **No** se dispara con tus propios `pushState`.
+- `history.back()`, `forward()` y `go(n)` mueven el historial desde el código.
+
+La URL nueva tiene que ser del **mismo origen**: no puedes "disfrazar" tu página con la dirección de otro sitio.
+
+El problema: hay que interceptar a mano cada clic en tus enlaces (con delegación de eventos), llamar a `pushState`, y además escuchar `popstate` para atrás y adelante. Son dos caminos para la misma idea.
+
+## La Navigation API
+
+La Navigation API, disponible en los navegadores modernos, une todo en un solo evento, **`navigate`**, que se dispara con **cualquier** navegación: enlaces, envíos de formularios, atrás y adelante, y las que hagas desde el código.
+
+```js
+navigation.addEventListener("navigate", (evento) => {
+  if (!evento.canIntercept || evento.hashChange || evento.downloadRequest) return;
+
+  const url = new URL(evento.destination.url);
+  if (url.pathname.startsWith("/productos/")) {
+    evento.intercept({
+      async handler() {
+        const id = url.pathname.split("/").pop();
+        const producto = await cargarProducto(id);
+        mostrarProducto(producto);
+      },
+    });
+  }
+});
+
+// Navegar desde el código
+navigation.navigate("/productos/7");
+```
+
+Con `intercept`, el navegador cambia la URL y el historial por ti, y tu `handler` muestra el contenido. Mientras el `handler` corre, el navegador muestra que la página "está cargando" y, si el usuario navega a otro lado, cancela la navegación en curso (con la señal `evento.signal`). Además, `navigation.entries()` lista el historial de tu aplicación y `navigation.currentEntry` dice dónde estás.
+
+## Lo que necesita el servidor
+
+Si alguien guarda `https://tienda.com/productos/7` y la abre más tarde, el navegador se la pide **al servidor**. Si el servidor solo conoce `/`, responderá 404. Hay dos soluciones:
+
+- Configurar el servidor para que responda la página principal en todas las rutas de la aplicación (y que JavaScript muestre lo que corresponde).
+- Generar una página HTML por cada ruta, por adelantado o en el servidor. Es lo que hacen frameworks como Astro, con el que está hecho este sitio.
+
+<Nota tipo="consejo">
+  Antes de construir una SPA, considera si la necesitas. Con páginas normales y las View Transitions entre documentos (`@view-transition { navigation: auto; }`), la navegación ya se ve fluida, y los enlaces, el historial y los marcadores funcionan solos.
+</Nota>
+
+## Resumen
+
+- `pushState` y `replaceState` cambian la URL sin recargar; `popstate` avisa de atrás y adelante.
+- Solo se puede cambiar a URLs del **mismo origen**.
+- La **Navigation API** une todo en el evento `navigate`; `intercept` deja que tu código lo maneje.
+- Cada ruta de la aplicación tiene que funcionar también al abrirse directamente desde el servidor.
+
+<Practica>
+
+<Autoevaluacion id={navAuto.id} numero={1} titulo={navAuto.titulo} preguntas={navAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={navOrden.id} numero={2} titulo={navOrden.titulo} codigo={navOrden.codigo} salida={navOrden.salida} inicio={navOrden.inicio} explicacion={navOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un enrutador muy pequeño que traduce URLs en pantallas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={navDetective.id} numero={3} titulo={navDetective.titulo} codigo={navDetective.codigo} error={navDetective.error} culpable={navDetective.culpable} arreglos={navDetective.arreglos} hallazgo={navDetective.hallazgo} pista={navDetective.pista}>
+  <div slot="enunciado">
+    <p>Un enlace al blog de la tienda lanza un error de seguridad. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

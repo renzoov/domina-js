@@ -13,8 +13,11 @@ interface Props {
   pistas: [string, string, string];
   solucion: string;
   explicacion: string;
+  /** HTML de una página: el código corre en el navegador, con DOM, y el lector ve el resultado */
+  pagina?: string;
 }
-const { id, numero, titulo, inicial, verificaciones, pistas, solucion, explicacion } = Astro.props;
+const { id, numero, titulo, inicial, verificaciones, pistas, solucion, explicacion, pagina } = Astro.props;
+const conPagina = pagina !== undefined;
 const solucionHtml = resaltar(solucion);
 ---
 <Ejercicio id={id} numero={numero} formato="Laboratorio" titulo={titulo}>
@@ -23,15 +26,21 @@ const solucionHtml = resaltar(solucion);
     <div class="marco">
       <div class="cv-barra">
         <span class="cv-puntos" aria-hidden="true"><i></i><i></i><i></i></span>
-        <span class="cv-nombre">programa.js</span>
+        <span class="cv-nombre">{conPagina ? 'app.js' : 'programa.js'}</span>
         <span class="vivo">se ejecuta mientras escribes</span>
       </div>
       <div class="editor" data-editor>
         <label class="sr-only" for={`${id}-texto`}>Tu código</label>
         <textarea id={`${id}-texto`} data-respaldo spellcheck="false">{inicial}</textarea>
       </div>
+      {conPagina && (
+        <div class="pagina">
+          <p class="rotulo">La página <span>index.html</span></p>
+          <iframe data-vista title="Vista previa de la página que arma tu código" sandbox="allow-scripts allow-forms"></iframe>
+        </div>
+      )}
       <div class="salida">
-        <p class="cv-prompt">$ node programa.js</p>
+        <p class="cv-prompt">{conPagina ? 'Consola del navegador' : '$ node programa.js'}</p>
         <output data-salida>(escribe tu código: se ejecuta solo)</output>
       </div>
     </div>
@@ -54,7 +63,7 @@ const solucionHtml = resaltar(solucion);
       <pre class="caja"><code>{solucionHtml.map((h, i) => (<span class="l"><i aria-hidden="true">{i + 1}</i><Fragment set:html={h || ' '} /></span>))}</code></pre>
       <div class="explica" set:html={explicacion} />
     </div>
-    <script type="application/json" data-config set:html={JSON.stringify({ inicial, verificaciones: verificaciones.map((v) => v.prueba), pistas }).replace(/</g, '\\u003c')} />
+    <script type="application/json" data-config set:html={JSON.stringify({ inicial, verificaciones: verificaciones.map((v) => v.prueba), pistas, pagina }).replace(/</g, '\\u003c')} />
   </div>
 </Ejercicio>
 
@@ -93,6 +102,10 @@ const solucionHtml = resaltar(solucion);
   .checks li[data-estado='ok'] { color: var(--chalk); }
   .checks li[data-estado='ok'] .marca { background: var(--ok); border-color: var(--ok); }
   .checks li[data-estado='mal'] .marca { border-color: var(--red); }
+  .pagina { padding: 10px 14px 12px; border-top: 2px dashed var(--chalk-08); background: var(--pozo-hondo); }
+  .pagina .rotulo { display: flex; gap: 10px; align-items: baseline; margin-bottom: 8px; color: var(--azul); }
+  .pagina .rotulo span { font: 400 0.75rem var(--mono); letter-spacing: 0; text-transform: none; color: var(--chalk-45); }
+  .pagina iframe { display: block; width: 100%; height: 240px; resize: vertical; overflow: auto; border: 2px solid var(--chalk-15); border-radius: var(--r-suave); background: #14201a; }
   .salida { padding: 10px 14px 12px; border-top: 2px dashed var(--chalk-08); background: var(--pozo-hondo); }
   .salida .cv-prompt { margin: 0; font: 400 0.8rem var(--mono); }
   .salida output { display: block; margin-top: 4px; min-height: 3.2em; font: 400 0.8rem/1.55 var(--mono); color: var(--chalk); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 9.5em; overflow-y: auto; }

@@ -1,0 +1,77 @@
+---
+titulo: Lo que viene
+seccion: novedades
+tema: lo-que-viene
+minutos: 7
+resumen: Cómo nace una novedad de JavaScript (TC39 y sus etapas, de la 0 a la 4), dónde seguir las propuestas, y algunas de las que están en camino, como Decorators, import defer, importar texto, Signals, pattern matching y anotaciones de tipos.
+intro: 'JavaScript sigue cambiando cada año, y el proceso es abierto: cualquiera puede leer las propuestas, sus discusiones y las actas de las reuniones. Saber cómo funciona te ayuda a distinguir lo que ya puedes usar de lo que todavía puede cambiar por completo.'
+nota: 'Las etapas de las propuestas cambian con el tiempo. Esta página describe el estado al momento de escribirla (noviembre de 2026): antes de apostar por una propuesta, revisa su estado actual en el repositorio tc39/proposals.'
+ejercicios: [viene-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import { vieneAuto } from '../../data/ejercicios/novedades';
+
+## TC39 y las etapas
+
+**TC39** es el comité de Ecma International que mantiene ECMAScript. Lo forman representantes de los navegadores, de empresas y de la comunidad, y decide por consenso. Cada novedad pasa por etapas:
+
+| Etapa | Significa |
+|---|---|
+| 0 | Una idea presentada |
+| 1 | El comité acepta explorar el problema |
+| 2 | Hay un borrador del diseño y la sintaxis |
+| 2.7 | El diseño está aprobado; faltan pruebas y validación |
+| 3 | Lista para implementar: los navegadores la prueban |
+| 4 | Terminada: entra en la próxima edición |
+
+Solo desde la etapa 3 tiene sentido empezar a usarla, con cuidado; desde la 4, sin miedo (salvo por la compatibilidad de cada navegador). Muchas propuestas cambian mucho, o se abandonan, en las primeras etapas.
+
+## Algunas propuestas en camino
+
+- **Decorators** (etapa 2.7): `@nombre` sobre clases y sus miembros. Ya se usan con TypeScript y Babel. Lo viste en [Decorators](/clases/decorators).
+- **`import defer`**: importar un módulo sin ejecutarlo hasta que se use por primera vez, para arrancar más rápido.
+- **Importar texto**: `import plantilla from "./correo.txt" with { type: "text" }`, como los módulos JSON.
+- ***Source phase imports***: importar un módulo sin evaluarlo, para pasárselo a un worker o compilarlo después; pensado sobre todo para WebAssembly.
+- **Signals**: un modelo estándar de estado reactivo, para que los frameworks compartan la misma base.
+- **Pattern matching**: una expresión `match` para elegir según la forma de un valor, mucho más potente que `switch`.
+- **Type Annotations**: que los motores acepten (e ignoren) la sintaxis de tipos, como hace ya Node.js al borrarlos.
+- **Pipeline** (`|>`): encadenar funciones de izquierda a derecha, `valor |> f(%) |> g(%)`. Lleva años en discusión.
+
+```js
+// Así podría verse el pattern matching (sintaxis todavía en discusión, no funciona hoy)
+const mensaje = match (respuesta) {
+  when { status: 200, body }: `Datos: ${body}`;
+  when { status: 404 }: "No encontrado";
+  default: "Error";
+};
+```
+
+## Dónde seguirlas
+
+- **github.com/tc39/proposals**: la lista de todas las propuestas activas, con su etapa.
+- El repositorio de cada propuesta: su explicación, ejemplos y discusiones.
+- Las **notas de las reuniones** de TC39, también públicas.
+- Blogs como el de V8 (v8.dev) y las notas de versión de los navegadores, para saber cuándo se puede usar cada cosa.
+
+<Nota tipo="consejo">
+  Esta sección se actualiza cada año, cuando se publica una nueva edición. La forma más fácil de estar al día es volver a ella: cada novedad enlaza a la lección donde se explica.
+</Nota>
+
+## Resumen
+
+- TC39 decide por consenso; las propuestas avanzan por etapas, de la 0 a la 4.
+- Desde la etapa 3, con cuidado; desde la 4, para usar.
+- En camino: Decorators, `import defer`, importar texto, Signals, pattern matching, anotaciones de tipos, pipeline…
+- Todo el proceso es público, en el GitHub de TC39.
+
+<Practica>
+
+<Autoevaluacion id={vieneAuto.id} numero={1} titulo={vieneAuto.titulo} preguntas={vieneAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

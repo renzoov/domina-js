@@ -3,6 +3,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
 import { tags as t } from '@lezer/highlight';
 import { marcarEjercicio } from './progreso';
+import { ejecutarEnPagina } from './sandbox-pagina';
 
 const temaTiza = EditorView.theme(
   {
@@ -46,7 +47,9 @@ function iniciar(el: HTMLElement) {
     inicial: string;
     verificaciones: string[];
     pistas: string[];
+    pagina?: string;
   };
+  const marcoPagina = el.querySelector<HTMLIFrameElement>('[data-vista]');
   const id = el.dataset.id!;
   const contenedor = el.querySelector<HTMLElement>('[data-editor]')!;
   const respaldo = contenedor.querySelector('textarea')!;
@@ -98,7 +101,28 @@ function iniciar(el: HTMLElement) {
     espera = window.setTimeout(ejecutar, 600);
   }
 
+  let turno = 0;
   function ejecutar() {
+    if (config.pagina !== undefined && marcoPagina) {
+      // Con página: corre en un iframe visible, con DOM. Solo vale la ejecución más reciente.
+      // Las verificaciones hacen clics y cambian la página: corren en una copia oculta,
+      // y la vista visible muestra solo lo que hizo el código del lector.
+      const mio = ++turno;
+      const codigo = vista.state.doc.toString();
+      Promise.all([
+        ejecutarEnPagina(config.pagina, codigo, [], marcoPagina, LIMITE_MS),
+        ejecutarEnPagina(config.pagina, codigo, config.verificaciones, undefined, LIMITE_MS),
+      ]).then(([visible, oculta]) => {
+        if (mio !== turno) return;
+        const r = { ...visible, resultados: oculta.resultados, tiempo: visible.tiempo || oculta.tiempo };
+        if (r.tiempo) {
+          salida.classList.add('error');
+          salida.textContent = 'Tu código tardó demasiado. ¿Hay un bucle o una recursión que nunca termina?';
+          checks.forEach((li) => estado(li, 'mal'));
+        } else pintar(r);
+      });
+      return;
+    }
     if (!worker) nuevoWorker();
     clearTimeout(reloj);
     reloj = window.setTimeout(() => {

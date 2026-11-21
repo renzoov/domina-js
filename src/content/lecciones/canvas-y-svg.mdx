@@ -1,0 +1,144 @@
+---
+titulo: 'Gráficos: Canvas y SVG'
+seccion: navegador
+tema: canvas-y-svg
+minutos: 12
+resumen: Las dos formas de dibujar en la web, Canvas (píxeles, con la API 2D) y SVG (formas que son elementos del DOM), cómo se usan desde JavaScript, cómo animar y cuándo conviene cada una.
+intro: 'Un gráfico de barras, un juego, un editor de imágenes, un ícono animado: para dibujar, la web ofrece dos tecnologías muy distintas. <u>Canvas</u> es un lienzo de píxeles que pintas con comandos; <u>SVG</u> es un dibujo hecho de elementos, como el HTML. Elegir bien entre las dos ahorra mucho trabajo.'
+ejercicios: [graficos-auto, graficos-orden, graficos-detective, graficos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { graficosAuto, graficosOrden, graficosDetective, graficosLab } from '../../data/ejercicios/navegador';
+
+## Canvas
+
+Un `<canvas>` es una superficie de píxeles. Le pides un **contexto** de dibujo y le das órdenes:
+
+```js
+document.body.innerHTML = `<canvas id="lienzo" width="300" height="120"></canvas>`;
+const ctx = document.querySelector("#lienzo").getContext("2d");
+
+ctx.fillStyle = "#1b2a23";
+ctx.fillRect(0, 0, 300, 120);              // fondo
+
+ctx.fillStyle = "#f7df1e";
+ctx.fillRect(20, 20, 80, 80);              // un cuadrado
+
+ctx.beginPath();                           // un círculo, con un trazado
+ctx.arc(170, 60, 40, 0, Math.PI * 2);
+ctx.strokeStyle = "#8fd0f7";
+ctx.lineWidth = 4;
+ctx.stroke();
+
+ctx.fillStyle = "#f2a7b8";
+ctx.font = "bold 20px system-ui";
+ctx.fillText("JS", 240, 68);
+
+console.log("dibujado");
+```
+
+Lo que pintas son solo píxeles: el canvas no recuerda que ahí hay "un círculo". Para moverlo, borras (`clearRect`) y repintas todo.
+
+## Animar un canvas
+
+Las animaciones repintan en cada cuadro con `requestAnimationFrame`:
+
+```js
+document.body.innerHTML = `<canvas id="lienzo" width="300" height="80"></canvas>`;
+const ctx = document.querySelector("#lienzo").getContext("2d");
+let x = 0;
+
+function cuadro() {
+  ctx.clearRect(0, 0, 300, 80);
+  ctx.fillStyle = "#c4ec8c";
+  ctx.beginPath();
+  ctx.arc(20 + x, 40, 16, 0, Math.PI * 2);
+  ctx.fill();
+  x += 4;
+  if (x < 260) requestAnimationFrame(cuadro);
+  else console.log("llegó");
+}
+requestAnimationFrame(cuadro);
+```
+
+En pantallas de alta densidad, para que no se vea borroso, el tamaño interno del canvas tiene que multiplicarse por `devicePixelRatio`, y después escalar el contexto con `ctx.scale(dpr, dpr)`.
+
+## SVG
+
+En SVG, cada forma es un **elemento**, con atributos, estilos de CSS y eventos. Se crean con `createElementNS`, porque pertenecen al espacio de nombres de SVG:
+
+```js
+const SVG = "http://www.w3.org/2000/svg";
+const svg = document.createElementNS(SVG, "svg");
+svg.setAttribute("viewBox", "0 0 200 100");
+svg.setAttribute("width", "300");
+
+const circulo = document.createElementNS(SVG, "circle");
+circulo.setAttribute("cx", 50);
+circulo.setAttribute("cy", 50);
+circulo.setAttribute("r", 30);
+circulo.setAttribute("fill", "#f7df1e");
+circulo.addEventListener("click", () => circulo.setAttribute("fill", "#f2a7b8"));
+svg.append(circulo);
+
+document.body.append(svg);
+circulo.dispatchEvent(new MouseEvent("click"));   // simula un clic
+console.log(circulo.getAttribute("fill"));
+```
+
+El `viewBox` define un sistema de coordenadas propio: el dibujo se escala al tamaño que le des, siempre nítido. Para dibujos fijos, como íconos, lo habitual es escribir el SVG directamente en el HTML y cambiar algún atributo o clase desde JavaScript.
+
+## ¿Cuál uso?
+
+| | Canvas | SVG |
+|---|---|---|
+| Qué es | Píxeles | Elementos del DOM |
+| Escala | Se pixela (hay que ajustarlo) | Siempre nítido |
+| Muchos objetos (miles) | Muy rápido | Se vuelve pesado |
+| Eventos por objeto | Hay que calcularlos a mano | Gratis, como en HTML |
+| Accesibilidad | Hay que agregarla aparte | Con `<title>` y atributos ARIA |
+| Ideal para | Juegos, partículas, imágenes, visualizaciones enormes | Íconos, gráficos interactivos, diagramas, logos |
+
+<Nota>
+  Para 3D y efectos muy pesados, el canvas tiene otros contextos: **WebGL** y su sucesor, **WebGPU**, que usan la tarjeta gráfica. Casi siempre se usan a través de una librería como Three.js.
+</Nota>
+
+## Resumen
+
+- **Canvas**: un lienzo de píxeles; dibujas con un contexto (`getContext("2d")`) y no guarda objetos.
+- Para animar un canvas, repinta en cada `requestAnimationFrame`.
+- **SVG**: formas que son elementos, creadas con `createElementNS`; escalan sin perder calidad.
+- Canvas para muchísimos objetos o píxeles; SVG para gráficos interactivos, íconos y diagramas.
+
+<Practica>
+
+<Autoevaluacion id={graficosAuto.id} numero={1} titulo={graficosAuto.titulo} preguntas={graficosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={graficosOrden.id} numero={2} titulo={graficosOrden.titulo} codigo={graficosOrden.codigo} salida={graficosOrden.salida} inicio={graficosOrden.inicio} explicacion={graficosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Leer píxeles de un canvas y comparar espacios de nombres. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={graficosDetective.id} numero={3} titulo={graficosDetective.titulo} codigo={graficosDetective.codigo} error={graficosDetective.error} culpable={graficosDetective.culpable} arreglos={graficosDetective.arreglos} hallazgo={graficosDetective.hallazgo} pista={graficosDetective.pista}>
+  <div slot="enunciado">
+    <p>El canvas existe, pero no se puede dibujar en él. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={graficosLab.id} numero={4} titulo={graficosLab.titulo} pagina={graficosLab.pagina} inicial={graficosLab.inicial} verificaciones={graficosLab.verificaciones} pistas={graficosLab.pistas} solucion={graficosLab.solucion} explicacion={graficosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Dibuja un gráfico de barras en SVG a partir de los datos. Lo vas a ver aparecer debajo del editor.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,179 @@
+---
+titulo: TypeScript para quien ya sabe JS
+seccion: herramientas
+tema: typescript
+minutos: 14
+resumen: Qué agrega TypeScript a JavaScript (tipos que se comprueban antes de ejecutar y desaparecen después), los tipos básicos, interfaces, uniones, genéricos, inferencia y estrechamiento, any frente a unknown, tsconfig, JSDoc, y cómo ejecutar .ts directamente en Node.js.
+intro: 'TypeScript es JavaScript con <u>tipos</u>: anotas qué forma tienen tus datos, y un comprobador te avisa, antes de ejecutar, cuando algo no encaja. No es otro lenguaje: todo lo que sabes de JavaScript sigue valiendo, y los tipos desaparecen al ejecutar. Hoy es el estándar de facto en proyectos medianos y grandes.'
+ejercicios: [ts-auto, ts-orden, ts-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { tsAuto, tsOrden, tsDetective } from '../../data/ejercicios/herramientas';
+
+## Tipos sobre lo que ya sabes
+
+```ts
+let nombre: string = "Ana";
+let edad = 31;                       // inferido: number
+const activo = true;                 // inferido: true (un literal, porque es const)
+let etiquetas: string[] = ["js"];
+let punto: [number, number] = [3, 4];    // tupla: largo y tipos fijos
+
+function saludar(persona: string, formal = false): string {
+  return formal ? `Buenos días, ${persona}` : `Hola, ${persona}`;
+}
+
+saludar("Luis");
+// saludar(42);   // error: Argument of type 'number' is not assignable to parameter of type 'string'
+```
+
+No hace falta anotar todo: TypeScript **infiere** los tipos de las variables y de lo que devuelven las funciones. Se anotan, sobre todo, los parámetros.
+
+## Objetos: type e interface
+
+```ts
+interface Producto {
+  id: number;
+  nombre: string;
+  precio: number;
+  descripcion?: string;           // opcional
+  readonly sku: string;           // no se puede reasignar
+}
+
+type Moneda = "PEN" | "USD" | "EUR";     // unión de literales
+
+function formatear(p: Producto, moneda: Moneda = "PEN"): string {
+  return `${p.nombre}: ${p.precio.toFixed(2)} ${moneda}`;
+}
+```
+
+`interface` y `type` sirven casi para lo mismo con objetos; `type` además describe uniones, tuplas y combinaciones. Los tipos son **estructurales**: cualquier objeto con esas propiedades sirve, se llame como se llame.
+
+## Uniones y estrechamiento
+
+Una **unión** (`A | B`) dice que un valor puede ser uno u otro. Antes de usar algo que solo tiene uno, hay que **estrechar** el tipo con una comprobación que TypeScript entiende:
+
+```ts
+type Resultado =
+  | { ok: true; datos: Producto[] }
+  | { ok: false; error: string };
+
+function mostrar(r: Resultado) {
+  if (r.ok) {
+    console.log(r.datos.length);    // aquí TypeScript sabe que hay datos
+  } else {
+    console.log(r.error);           // y aquí, que hay error
+  }
+}
+
+function largo(x: string | string[]) {
+  return typeof x === "string" ? x.length : x.join("").length;
+}
+```
+
+`typeof`, `instanceof`, `in`, comparar con un literal y `Array.isArray` estrechan el tipo.
+
+## Genéricos
+
+Un **genérico** es un tipo con un "hueco" que se llena al usarlo, para escribir funciones y estructuras que sirven para cualquier tipo sin perder información:
+
+```ts
+function primero<T>(lista: T[]): T | undefined {
+  return lista[0];
+}
+
+const n = primero([3, 1, 2]);         // number | undefined
+const s = primero(["a", "b"]);        // string | undefined
+
+interface Respuesta<T> {
+  datos: T;
+  pagina: number;
+}
+const r: Respuesta<Producto[]> = { datos: [], pagina: 1 };
+```
+
+## any, unknown y los datos de afuera
+
+- **`any`** apaga la comprobación: todo vale. Es una salida de emergencia, no un tipo.
+- **`unknown`** es "no sé qué es": obliga a comprobarlo antes de usarlo. Es lo correcto para datos de afuera.
+
+```ts
+const datos: unknown = await respuesta.json();
+// datos.nombre;   // error: 'datos' is of type 'unknown'
+if (typeof datos === "object" && datos !== null && "nombre" in datos) {
+  console.log(datos.nombre);
+}
+```
+
+Recuerda que los tipos **no existen al ejecutar**: lo que llega de una API, un formulario o un archivo puede ser cualquier cosa, aunque lo anotes como `Producto`. Para validar de verdad, una librería como **Zod** comprueba en ejecución y además te da el tipo.
+
+## Configurar y ejecutar
+
+```bash
+npm install -D typescript
+npx tsc --init          # crea tsconfig.json
+npx tsc --noEmit        # comprueba los tipos de todo el proyecto, sin generar archivos
+```
+
+En `tsconfig.json`, activa siempre `"strict": true`: es lo que hace que TypeScript atrape los errores importantes, como usar algo que puede ser `undefined`.
+
+Para **ejecutar**: los empaquetadores (Vite) y los runtimes (Deno, Bun) entienden `.ts` directamente, y Node.js también, desde la versión 23.6, **borrando los tipos**:
+
+```bash
+node servidor.ts
+```
+
+Node no comprueba los tipos (para eso sigue `tsc`), y solo acepta la sintaxis que se puede borrar sin más: nada de `enum`, `namespace` con código ni parámetros de constructor con modificadores. Con `"erasableSyntaxOnly": true` en el `tsconfig.json`, TypeScript te avisa si usas algo de eso.
+
+## Tipos sin TypeScript: JSDoc
+
+Si prefieres no compilar, puedes escribir los tipos en comentarios JSDoc dentro de archivos `.js`, y pedirle a TypeScript que los compruebe (`"checkJs": true`):
+
+```js
+/**
+ * @param {number} precio
+ * @param {number} [porcentaje=0]
+ * @returns {number}
+ */
+export function conDescuento(precio, porcentaje = 0) {
+  return precio * (1 - porcentaje / 100);
+}
+```
+
+<Nota>
+  Hay una propuesta en TC39, *Type Annotations*, para que los motores de JavaScript acepten (e ignoren) la sintaxis de tipos directamente, como hace ya Node.js al borrarlos. Si avanza, el `.ts` y el `.js` se parecerían todavía más.
+</Nota>
+
+## Resumen
+
+- TypeScript = JavaScript + tipos que se **comprueban antes** de ejecutar y **desaparecen** después.
+- Anota los parámetros; el resto suele inferirse.
+- `interface`/`type` para objetos; **uniones** con estrechamiento; **genéricos** para código reutilizable.
+- `unknown` para lo que viene de afuera, y valida en ejecución; `any` solo como último recurso.
+- `strict: true`; `tsc --noEmit` comprueba; Node.js ejecuta `.ts` borrando los tipos.
+
+<Practica>
+
+<Autoevaluacion id={tsAuto.id} numero={1} titulo={tsAuto.titulo} preguntas={tsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={tsOrden.id} numero={2} titulo={tsOrden.titulo} codigo={tsOrden.codigo} salida={tsOrden.salida} inicio={tsOrden.inicio} explicacion={tsOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un archivo TypeScript ejecutado con Node.js. Ordena lo que aparecería en la terminal.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={tsDetective.id} numero={3} titulo={tsDetective.titulo} codigo={tsDetective.codigo} error={tsDetective.error} culpable={tsDetective.culpable} arreglos={tsDetective.arreglos} hallazgo={tsDetective.hallazgo} pista={tsDetective.pista}>
+  <div slot="enunciado">
+    <p>TypeScript se queja antes de ejecutar. Encuentra la línea donde nace el problema y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

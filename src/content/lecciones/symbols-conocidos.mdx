@@ -1,0 +1,143 @@
+---
+titulo: Symbols conocidos
+seccion: metaprogramacion
+tema: symbols-conocidos
+minutos: 10
+resumen: Los symbols que el propio lenguaje busca en tus objetos para cambiar su comportamiento (Symbol.iterator, asyncIterator, toPrimitive, toStringTag, hasInstance, dispose…) y el registro global de Symbol.for.
+intro: 'En <b>Symbols</b> viste que un symbol es una clave única que no choca con ninguna otra. El lenguaje aprovecha esa idea: define unos cuantos symbols <u>conocidos</u> y, si tu objeto tiene una propiedad con esa clave, la usa. Así puedes enseñarle a tu objeto a recorrerse, a convertirse en número o a liberarse.'
+ejercicios: [conocidos-auto, conocidos-orden, conocidos-detective, conocidos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { conocidosAuto, conocidosOrden, conocidosDetective, conocidosLab } from '../../data/ejercicios/metaprogramacion';
+
+## Los que ya conoces
+
+| Symbol | Lo usa… | Lo viste en |
+|---|---|---|
+| `Symbol.iterator` | `for...of`, spread, desestructuración | *El protocolo iterable* |
+| `Symbol.asyncIterator` | `for await...of` | *Iteración asíncrona* |
+| `Symbol.dispose` | `using` | *Gestión explícita de recursos* |
+| `Symbol.asyncDispose` | `await using` | *Gestión explícita de recursos* |
+
+Todos siguen la misma idea: el lenguaje define el **nombre** del gancho y tú pones la **función**.
+
+## Symbol.toPrimitive
+
+Cuando un objeto tiene que convertirse en un primitivo (en una suma, un template literal, una comparación), el lenguaje busca `[Symbol.toPrimitive](hint)`. El `hint` dice qué se espera:
+
+- `"number"`: `+obj`, `obj * 2`, `obj > 3`
+- `"string"`: `` `${obj}` ``, `String(obj)`
+- `"default"`: `obj + algo`, `obj == algo`
+
+```js
+const duracion = {
+  segundos: 90,
+  [Symbol.toPrimitive](hint) {
+    return hint === "string" ? `${Math.floor(this.segundos / 60)} min ${this.segundos % 60} s` : this.segundos;
+  },
+};
+
+console.log(`Duró ${duracion}`);
+console.log(duracion * 2);
+console.log(duracion > 60);
+```
+
+Sin él, el lenguaje prueba con `valueOf()` y `toString()`, como viste en *Conversión de tipos*.
+
+## Symbol.toStringTag
+
+Cambia la etiqueta que muestra `Object.prototype.toString`, la forma más confiable de saber "qué es" un valor:
+
+```js
+class Billetera {
+  get [Symbol.toStringTag]() {
+    return "Billetera";
+  }
+}
+
+console.log(Object.prototype.toString.call(new Billetera()));
+console.log(Object.prototype.toString.call(new Map()));
+console.log(Object.prototype.toString.call(null));
+```
+
+## Symbol.hasInstance
+
+Decide qué responde `instanceof`. Permite que `instanceof` compruebe una **forma** en lugar de un prototipo:
+
+```js
+class Iterable {
+  static [Symbol.hasInstance](valor) {
+    return valor != null && typeof valor[Symbol.iterator] === "function";
+  }
+}
+
+console.log([1, 2] instanceof Iterable);
+console.log("hola" instanceof Iterable);
+console.log({} instanceof Iterable);
+```
+
+## Otros
+
+- **`Symbol.isConcatSpreadable`**: decide si `concat` reparte el objeto como un array.
+- **`Symbol.species`**: el constructor que usan métodos como `map` para crear el resultado en clases que extienden `Array`.
+- **`Symbol.match`, `replace`, `search`, `split`**: permiten que un objeto propio funcione como una expresión regular en los métodos de texto.
+- **`Symbol.unscopables`**: un detalle histórico para el viejo `with`.
+
+## El registro global: Symbol.for
+
+`Symbol("x")` crea un symbol **nuevo** cada vez. `Symbol.for("x")` lo busca en un **registro global** y, si no existe, lo crea: dos partes del programa que no se conocen obtienen el mismo symbol.
+
+```js
+const a = Symbol("app.tema");
+const b = Symbol("app.tema");
+const c = Symbol.for("app.tema");
+const d = Symbol.for("app.tema");
+
+console.log(a === b, c === d);
+console.log(Symbol.keyFor(c), Symbol.keyFor(a));
+```
+
+<Nota tipo="consejo">
+  Usa nombres con prefijo en el registro global (`"mi-libreria.config"`), porque es compartido por todo el programa, incluidas las librerías. Y recuerda que los symbols conocidos (`Symbol.iterator` y compañía) no están en ese registro: son propiedades de `Symbol`.
+</Nota>
+
+## Resumen
+
+- Los **symbols conocidos** son ganchos: el lenguaje busca esas claves en tus objetos.
+- `Symbol.iterator`, `asyncIterator`, `dispose` y `asyncDispose` conectan con `for...of`, `for await` y `using`.
+- `Symbol.toPrimitive` controla la conversión a número o texto según el `hint`.
+- `Symbol.toStringTag` cambia la etiqueta de `Object.prototype.toString`; `Symbol.hasInstance`, el resultado de `instanceof`.
+- `Symbol.for` comparte symbols a través de un registro global.
+
+<Practica>
+
+<Autoevaluacion id={conocidosAuto.id} numero={1} titulo={conocidosAuto.titulo} preguntas={conocidosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={conocidosOrden.id} numero={2} titulo={conocidosOrden.titulo} codigo={conocidosOrden.codigo} salida={conocidosOrden.salida} inicio={conocidosOrden.inicio} explicacion={conocidosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un objeto que decide cómo convertirse según el contexto. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={conocidosDetective.id} numero={3} titulo={conocidosDetective.titulo} codigo={conocidosDetective.codigo} error={conocidosDetective.error} culpable={conocidosDetective.culpable} arreglos={conocidosDetective.arreglos} hallazgo={conocidosDetective.hallazgo} pista={conocidosDetective.pista}>
+  <div slot="enunciado">
+    <p>Dos partes del programa usan "la misma" clave, pero no encuentran el ajuste. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={conocidosLab.id} numero={4} titulo={conocidosLab.titulo} inicial={conocidosLab.inicial} verificaciones={conocidosLab.verificaciones} pistas={conocidosLab.pistas} solucion={conocidosLab.solucion} explicacion={conocidosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe la clase <code>Dinero</code> con <code>Symbol.toPrimitive</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

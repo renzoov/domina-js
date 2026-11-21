@@ -1,0 +1,132 @@
+---
+titulo: Template tags
+seccion: metaprogramacion
+tema: template-tags
+minutos: 9
+resumen: Qué es un template etiquetado, qué recibe la función tag (los trozos de texto y los valores por separado), String.raw y la versión cruda del texto, y usos reales como escapar HTML, armar consultas seguras o quitar sangrías.
+intro: 'Si pones el nombre de una función pegado a un template literal, <code>miTag`Hola, ${nombre}`</code>, el template no se arma solo: se le entrega a la función, separado en sus partes, y ella decide qué devolver. Esa pequeña sintaxis está detrás de muchas librerías populares de estilos, HTML y SQL.'
+ejercicios: [tags-auto, tags-orden, tags-detective, tags-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { tagsAuto, tagsOrden, tagsDetective, tagsLab } from '../../data/ejercicios/metaprogramacion';
+
+## Qué recibe un tag
+
+```js
+function inspeccionar(textos, ...valores) {
+  console.log(textos);
+  console.log(valores);
+  return "lo que yo quiera";
+}
+
+const nombre = "Ana";
+const edad = 31;
+console.log(inspeccionar`Hola, ${nombre}. Tienes ${edad} años.`);
+```
+
+- El primer argumento es un **array con los trozos de texto fijo**.
+- Después, cada **valor interpolado**, como un argumento aparte (con `...valores` los juntas).
+- Siempre hay **un trozo más que valores**: si el template empieza o termina con un valor, el trozo correspondiente es `""`.
+- Puede devolver **cualquier cosa**, no solo un texto.
+
+Para rearmar el texto, se alternan trozos y valores:
+
+```js
+function mayusculas(textos, ...valores) {
+  return textos.reduce((acc, t, i) => acc + String(valores[i - 1]).toUpperCase() + t);
+}
+
+const fruta = "mango";
+console.log(mayusculas`Quiero un ${fruta} y un ${"kiwi"}, por favor.`);
+```
+
+## Texto crudo y String.raw
+
+El array de textos tiene además una propiedad `raw`, con los trozos **tal como se escribieron**, sin interpretar las secuencias de escape. `String.raw` es un tag del lenguaje que la usa:
+
+```js
+console.log("C:\nuevo");             // \n se convierte en un salto de línea
+console.log(String.raw`C:\nuevo`);   // se queda como \n
+console.log(String.raw`\d+\.\d+`);   // útil para armar expresiones regulares
+```
+
+## Usos reales
+
+**Escapar HTML**: el texto fijo lo escribió el programador; los valores pueden venir de cualquier lado. Un tag los recibe por separado y puede escapar solo los valores. Lo vas a escribir en el laboratorio.
+
+**Consultas seguras**: en lugar de devolver un texto, el tag devuelve la consulta con marcadores y los valores aparte, para que la base de datos nunca los confunda con código:
+
+```js
+function sql(textos, ...valores) {
+  return {
+    texto: textos.join("?"),
+    parametros: valores,
+  };
+}
+
+const email = "ana@mail.com'; DROP TABLE usuarios; --";
+console.log(sql`SELECT * FROM usuarios WHERE email = ${email}`);
+```
+
+**Quitar la sangría** de textos de varias líneas escritos dentro del código:
+
+```js
+function sinSangria(textos, ...valores) {
+  const texto = String.raw({ raw: textos }, ...valores);
+  const lineas = texto.split("\n").filter((l, i, arr) => !((i === 0 || i === arr.length - 1) && !l.trim()));
+  const minimo = Math.min(...lineas.filter((l) => l.trim()).map((l) => l.match(/^ */)[0].length));
+  return lineas.map((l) => l.slice(minimo)).join("\n");
+}
+
+const mensaje = sinSangria`
+    Hola, Ana:
+      Tu pedido llegó.
+    Saludos.
+  `;
+console.log(mensaje);
+```
+
+<Nota>
+  Los editores reconocen algunos tags por su nombre y resaltan el contenido como el lenguaje correspondiente: `html`, `css`, `sql`, `graphql`… Es una de las razones por las que muchas librerías los usan.
+</Nota>
+
+## Resumen
+
+- ``` tag`plantilla` ``` llama a `tag` con los **trozos de texto** y, aparte, los **valores**.
+- Siempre hay un trozo más que valores; el tag puede devolver cualquier cosa.
+- `textos.raw` tiene los trozos sin interpretar los escapes; `String.raw` es el tag que los usa.
+- Usos: escapar HTML, consultas seguras, estilos, traducciones, quitar sangrías.
+- Ojo: con paréntesis, ``` tag(`…`) ```, el template se arma antes y la función recibe un texto normal.
+
+<Practica>
+
+<Autoevaluacion id={tagsAuto.id} numero={1} titulo={tagsAuto.titulo} preguntas={tagsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={tagsOrden.id} numero={2} titulo={tagsOrden.titulo} codigo={tagsOrden.codigo} salida={tagsOrden.salida} inicio={tagsOrden.inicio} explicacion={tagsOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un tag que cuenta lo que recibe, y <code>String.raw</code>. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={tagsDetective.id} numero={3} titulo={tagsDetective.titulo} codigo={tagsDetective.codigo} error={tagsDetective.error} culpable={tagsDetective.culpable} arreglos={tagsDetective.arreglos} hallazgo={tagsDetective.hallazgo} pista={tagsDetective.pista}>
+  <div slot="enunciado">
+    <p>El tag está bien escrito, pero falla al usarlo. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={tagsLab.id} numero={4} titulo={tagsLab.titulo} inicial={tagsLab.inicial} verificaciones={tagsLab.verificaciones} pistas={tagsLab.pistas} solucion={tagsLab.solucion} explicacion={tagsLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe el tag <code>html</code>, que escape los valores pero no el texto fijo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

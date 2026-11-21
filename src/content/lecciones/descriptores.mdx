@@ -1,0 +1,130 @@
+---
+titulo: Descriptores de propiedades
+seccion: metaprogramacion
+tema: descriptores
+minutos: 10
+resumen: Los atributos ocultos de cada propiedad (value, writable, enumerable, configurable, get y set), cómo leerlos con Object.getOwnPropertyDescriptor y definirlos con Object.defineProperty, y cómo se relacionan con freeze, los getters y el recorrido de objetos.
+intro: 'Una propiedad no es solo un nombre y un valor. Por debajo tiene <u>atributos</u> que deciden si se puede cambiar, si aparece al recorrer el objeto y si se puede borrar. Casi nunca los ves, porque las propiedades normales los tienen todos en <code>true</code>, pero el lenguaje los usa en todas partes, y puedes usarlos tú.'
+ejercicios: [desc-auto, desc-orden, desc-detective, desc-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { descAuto, descOrden, descDetective, descLab } from '../../data/ejercicios/metaprogramacion';
+
+## Ver los atributos
+
+```js
+const libro = { titulo: "Rayuela" };
+
+console.log(Object.getOwnPropertyDescriptor(libro, "titulo"));
+console.log(Object.getOwnPropertyDescriptor([1, 2], "length"));
+console.log(Object.getOwnPropertyDescriptor(Array.prototype, "map").enumerable);
+```
+
+Una **propiedad de datos** tiene cuatro atributos:
+
+| Atributo | Si es `false`… |
+|---|---|
+| `value` | (el valor) |
+| `writable` | No se puede cambiar el valor |
+| `enumerable` | No aparece en `Object.keys`, `for...in`, el spread ni `JSON.stringify` |
+| `configurable` | No se puede borrar ni cambiar sus atributos |
+
+Por eso `map` no aparece al recorrer un array: en el prototipo, los métodos no son enumerables. Y el `length` de un array se puede cambiar, pero no borrar.
+
+## Definir con atributos
+
+`Object.defineProperty` crea o modifica una propiedad con los atributos que elijas. **Lo que no indiques queda en `false`**:
+
+```js
+const pedido = { id: 7 };
+
+Object.defineProperty(pedido, "creado", {
+  value: "2026-11-21",
+  enumerable: true,     // visible, pero…
+  writable: false,      // …de solo lectura
+});
+
+pedido.creado = "otra fecha";          // se ignora (TypeError en modo estricto)
+console.log(pedido.creado);
+console.log(Object.keys(pedido));
+```
+
+`Object.defineProperties(obj, { a: {…}, b: {…} })` define varias de una vez, y `Object.getOwnPropertyDescriptors(obj)` las lee todas.
+
+## Propiedades de acceso
+
+En lugar de `value` y `writable`, una propiedad puede tener `get` y `set`: son los getters y setters que viste en las clases.
+
+```js
+const temperatura = { celsius: 20 };
+
+Object.defineProperty(temperatura, "fahrenheit", {
+  get() { return this.celsius * 9 / 5 + 32; },
+  set(f) { this.celsius = (f - 32) * 5 / 9; },
+  enumerable: true,
+});
+
+console.log(temperatura.fahrenheit);
+temperatura.fahrenheit = 212;
+console.log(temperatura.celsius);
+```
+
+## Copias que conservan los atributos
+
+El spread y `Object.assign` copian solo **valores**: un getter se ejecuta y se copia su resultado, y los atributos se pierden. Para una copia fiel:
+
+```js
+const original = {};
+Object.defineProperty(original, "fija", { value: 1, enumerable: true });
+
+const conSpread = { ...original };
+const fiel = Object.defineProperties({}, Object.getOwnPropertyDescriptors(original));
+
+console.log(Object.getOwnPropertyDescriptor(conSpread, "fija").writable);  // true: se perdió
+console.log(Object.getOwnPropertyDescriptor(fiel, "fija").writable);       // false
+```
+
+<Nota>
+  Los niveles de *Inmutabilidad* son atajos sobre estos atributos: `Object.freeze` pone `writable` y `configurable` en `false` en todas las propiedades y prohíbe agregar nuevas; `Object.seal` solo pone `configurable` en `false`.
+</Nota>
+
+## Resumen
+
+- Cada propiedad tiene atributos: `value`, `writable`, `enumerable` y `configurable` (o `get` y `set`).
+- `Object.getOwnPropertyDescriptor` los lee; `Object.defineProperty` los define.
+- Con `defineProperty`, lo que no indicas queda en **`false`**.
+- `enumerable: false` oculta la propiedad al recorrer y al convertir a JSON.
+- Spread y `assign` copian valores, no atributos; `getOwnPropertyDescriptors` + `defineProperties` copian todo.
+
+<Practica>
+
+<Autoevaluacion id={descAuto.id} numero={1} titulo={descAuto.titulo} preguntas={descAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={descOrden.id} numero={2} titulo={descOrden.titulo} codigo={descOrden.codigo} salida={descOrden.salida} inicio={descOrden.inicio} explicacion={descOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una propiedad definida con <code>defineProperty</code> y otra con un literal. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={descDetective.id} numero={3} titulo={descDetective.titulo} codigo={descDetective.codigo} error={descDetective.error} culpable={descDetective.culpable} arreglos={descDetective.arreglos} hallazgo={descDetective.hallazgo} pista={descDetective.pista}>
+  <div slot="enunciado">
+    <p>La actualización de la versión falla. El error salta en una línea, pero la causa está en otra. Encuéntrala.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={descLab.id} numero={4} titulo={descLab.titulo} inicial={descLab.inicial} verificaciones={descLab.verificaciones} pistas={descLab.pistas} solucion={descLab.solucion} explicacion={descLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>agregarOculta(obj, clave, valor)</code>: una propiedad que se lee y se cambia, pero no aparece al recorrer.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

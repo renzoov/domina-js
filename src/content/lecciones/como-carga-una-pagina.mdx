@@ -1,0 +1,108 @@
+---
+titulo: Cómo carga una página
+seccion: navegador
+tema: como-carga-una-pagina
+minutos: 11
+resumen: Qué hace el navegador desde que recibe el HTML hasta que la página está lista, cómo bloquean los scripts clásicos, en qué se diferencian defer, async y type="module", y los eventos DOMContentLoaded y load.
+intro: 'Todo lo que hiciste hasta ahora corre igual en cualquier runtime. Desde aquí, el escenario es el <u>navegador</u>: una página con HTML, estilos, imágenes y tus scripts. Antes de tocar nada, conviene saber en qué orden llega cada cosa, porque la mayoría de los errores de "no encuentra el elemento" vienen de ahí.'
+nota: 'En esta sección, los ejemplos y laboratorios que usan la página corren en una <b>página de prueba aislada</b>, dentro de esta misma lección: verás el resultado debajo del código.'
+pizarron: cargaPagina
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Sigue al analizador del HTML y a cada script. Fíjate en cuál de ellos detiene la lectura, cuáles se descargan en paralelo y en qué orden se ejecutan (lo ves en la consola).'
+ejercicios: [carga-auto, carga-orden, carga-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { cargaAuto, cargaOrden, cargaDetective } from '../../data/ejercicios/navegador';
+
+## Del texto al DOM
+
+Cuando el navegador recibe el HTML, lo **analiza** de arriba abajo y va construyendo un árbol de objetos: el **DOM** (*Document Object Model*). Cada etiqueta es un nodo del árbol, y ese árbol es lo que tu JavaScript lee y modifica.
+
+En paralelo, descarga lo que el HTML va pidiendo (estilos, imágenes, fuentes) y, con el DOM y los estilos, **dibuja** la página.
+
+## Los scripts y el analizador
+
+Un `<script>` puede cambiar el HTML que todavía no se leyó, así que, por defecto, el navegador hace lo más prudente: **se detiene**, lo descarga, lo ejecuta y recién después sigue. Como muestra el pizarrón, eso tiene dos costos:
+
+- La página tarda más en mostrarse: nada de lo que viene después del script avanza.
+- El script no puede ver los elementos que están **más abajo**: todavía no existen.
+
+Los atributos cambian ese comportamiento:
+
+| Script | Descarga | Se ejecuta | Orden |
+|---|---|---|---|
+| `<script src>` | Bloquea la lectura | Enseguida | El del HTML |
+| `<script src defer>` | En paralelo | Al terminar el HTML | El del HTML |
+| `<script src async>` | En paralelo | En cuanto llega | Cualquiera |
+| `<script type="module">` | En paralelo | Al terminar el HTML (como `defer`) | El del HTML |
+
+```html
+<head>
+  <!-- Tu aplicación: diferida, puede usar todo el DOM -->
+  <script type="module" src="main.js"></script>
+
+  <!-- Algo independiente, que no importa cuándo corra -->
+  <script async src="https://analitica.ejemplo.com/a.js"></script>
+</head>
+```
+
+## DOMContentLoaded y load
+
+Dos eventos marcan el progreso:
+
+- **`DOMContentLoaded`**: el HTML se leyó entero y corrieron los scripts diferidos. El DOM está completo.
+- **`load`** (en `window`): además terminaron de cargar las imágenes, los estilos, los iframes…
+
+```js
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("el DOM está listo");
+});
+
+window.addEventListener("load", () => {
+  console.log("todo cargó, imágenes incluidas");
+});
+
+console.log("estado actual:", document.readyState);
+```
+
+`document.readyState` dice en qué momento estás: `"loading"`, `"interactive"` (DOM listo) o `"complete"`. En la página de prueba de este ejemplo, todo ya cargó, así que los listeners se agregan tarde y no llegan a ejecutarse.
+
+<Nota tipo="consejo">
+  Con `defer` o `type="module"` no necesitas `DOMContentLoaded`: tu código ya corre cuando el DOM está completo. El viejo consejo de "poner los scripts al final del `<body>`" resolvía lo mismo, de una forma menos clara.
+</Nota>
+
+## Resumen
+
+- El navegador **analiza** el HTML de arriba abajo y construye el **DOM**.
+- Un script clásico **detiene** el análisis: no ve lo que está más abajo y retrasa la página.
+- `defer` y `type="module"`: descarga en paralelo, ejecución al terminar el HTML, en orden.
+- `async`: descarga en paralelo, ejecución en cuanto llega, en cualquier orden.
+- `DOMContentLoaded`: DOM listo. `load`: todo cargado.
+
+<Practica>
+
+<Autoevaluacion id={cargaAuto.id} numero={1} titulo={cargaAuto.titulo} preguntas={cargaAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={cargaOrden.id} numero={2} titulo={cargaOrden.titulo} codigo={cargaOrden.codigo} salida={cargaOrden.salida} inicio={cargaOrden.inicio} explicacion={cargaOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos scripts clásicos, uno diferido y dos eventos. Ordena lo que aparecería en la consola del navegador.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={cargaDetective.id} numero={3} titulo={cargaDetective.titulo} codigo={cargaDetective.codigo} error={cargaDetective.error} culpable={cargaDetective.culpable} arreglos={cargaDetective.arreglos} hallazgo={cargaDetective.hallazgo} pista={cargaDetective.pista}>
+  <div slot="enunciado">
+    <p>El título nunca aparece y la consola muestra un error. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

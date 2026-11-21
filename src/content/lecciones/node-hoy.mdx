@@ -1,0 +1,108 @@
+---
+titulo: Node.js hoy
+seccion: servidor
+tema: node-hoy
+minutos: 11
+resumen: Qué es Node.js y cómo se ve en 2026, con ESM, el prefijo node:, las APIs de la web incluidas (fetch, WebSocket), --watch, --env-file, el ejecutor de pruebas, TypeScript sin compilar, versiones LTS y las herramientas que ya no hacen falta.
+intro: 'Node.js llevó JavaScript fuera del navegador en 2009: el mismo motor V8, pero con acceso a archivos, red y procesos. Hoy es la base de servidores, herramientas de línea de comandos y de casi todo el ecosistema de desarrollo web. Y cambió mucho: si aprendiste Node hace unos años, muchas de las librerías que usabas ya no hacen falta.'
+nota: 'Los ejemplos de esta sección son para ejecutar en tu computadora con Node.js (versión 22 o posterior): el sandbox de la página corre en el navegador. Instálalo desde nodejs.org o con un gestor de versiones como fnm.'
+ejercicios: [node-auto, node-orden, node-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { nodeAuto, nodeOrden, nodeDetective } from '../../data/ejercicios/servidor';
+
+## Lo que es
+
+Node.js es un **runtime**: el motor V8 más una biblioteca propia (archivos, red, procesos, criptografía) y un event loop basado en la librería **libuv**. No tiene `document` ni `window`; tiene `process`, módulos como `node:fs` y `node:http`, y acceso completo a tu sistema.
+
+```bash
+node --version          # v24.x
+node programa.js        # ejecutar un archivo
+node                    # consola interactiva (REPL)
+node -e 'console.log(1 + 1)'
+```
+
+## Módulos: ESM y el prefijo node:
+
+Los proyectos nuevos usan ESM (`"type": "module"` en el `package.json`, o archivos `.mjs`), como viste en la sección de Módulos. Los módulos propios de Node se importan con el prefijo `node:`:
+
+```js
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
+
+const config = JSON.parse(await readFile(join(import.meta.dirname, "config.json"), "utf8"));
+console.log(config.nombre, randomUUID());
+```
+
+## Lo que ya viene incluido
+
+Cosas que antes necesitaban un paquete de npm:
+
+| Antes | Ahora |
+|---|---|
+| `node-fetch`, `axios` | `fetch` global |
+| `ws` (cliente) | `WebSocket` global |
+| `nodemon` | `node --watch app.js` |
+| `dotenv` | `node --env-file=.env app.js` o `process.loadEnvFile()` |
+| `jest`, `mocha` | `node --test` y `node:test` |
+| `ts-node`, compilar antes | `node app.ts` (quita los tipos y ejecuta) |
+| `yargs`, `minimist` | `parseArgs` de `node:util` |
+| `chalk` | `styleText` de `node:util` |
+| `sqlite3` | `node:sqlite` |
+| `uuid` | `crypto.randomUUID()` |
+
+```js
+import { styleText } from "node:util";
+
+console.log(styleText(["green", "bold"], "✔ Listo"));
+console.log(process.env.PUERTO ?? "3000");   // con --env-file=.env
+```
+
+## TypeScript sin compilar
+
+Desde Node 23.6 (y en las versiones LTS siguientes), `node archivo.ts` funciona directamente: Node **borra** las anotaciones de tipos y ejecuta el resto. No revisa los tipos (para eso sigue estando `tsc`), y solo admite la sintaxis de TypeScript que se puede borrar sin más: nada de `enum` ni de `namespace` con código. Lo vas a ver en *TypeScript para quien ya sabe JS*.
+
+## Versiones
+
+Node publica una versión mayor cada seis meses. Las **pares** (22, 24, 26…) se convierten en **LTS** (*long-term support*) y tienen unos tres años de correcciones: son las que se usan en producción. Las impares son para probar lo que viene.
+
+Para tener varias versiones instaladas y cambiar entre ellas, usa un gestor como **fnm**, **nvm** o **Volta**, y fija la del proyecto en un archivo `.node-version` o en el campo `engines` del `package.json`.
+
+<Nota tipo="consejo">
+  La documentación oficial (nodejs.org/docs) está muy bien organizada: cada módulo indica su **estabilidad** (experimental, estable, obsoleto) y desde qué versión existe cada función. Úsala como en *Cómo leer documentación*.
+</Nota>
+
+## Resumen
+
+- Node.js = V8 + libuv + una biblioteca para archivos, red y procesos. No tiene DOM.
+- ESM e imports con el prefijo `node:`.
+- Vienen incluidos `fetch`, `WebSocket`, `--watch`, `--env-file`, `node --test`, `parseArgs`, `styleText` y `node:sqlite`.
+- `node archivo.ts` ejecuta TypeScript quitando los tipos.
+- En producción, versiones **LTS** (pares).
+
+<Practica>
+
+<Autoevaluacion id={nodeAuto.id} numero={1} titulo={nodeAuto.titulo} preguntas={nodeAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={nodeOrden.id} numero={2} titulo={nodeOrden.titulo} codigo={nodeOrden.codigo} salida={nodeOrden.salida} inicio={nodeOrden.inicio} explicacion={nodeOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un programa de línea de comandos que lee sus argumentos. Ordena lo que aparecería en la terminal.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={nodeDetective.id} numero={3} titulo={nodeDetective.titulo} codigo={nodeDetective.codigo} error={nodeDetective.error} culpable={nodeDetective.culpable} arreglos={nodeDetective.arreglos} hallazgo={nodeDetective.hallazgo} pista={nodeDetective.pista}>
+  <div slot="enunciado">
+    <p>Un servidor pasado de CommonJS a ESM deja de arrancar. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

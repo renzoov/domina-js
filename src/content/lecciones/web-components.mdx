@@ -1,0 +1,152 @@
+---
+titulo: Web Components
+seccion: navegador
+tema: web-components
+minutos: 12
+resumen: Cómo crear etiquetas HTML propias con Custom Elements, su ciclo de vida (connectedCallback, attributeChangedCallback…), encapsular estructura y estilos con Shadow DOM, plantillas y slots, y cuándo conviene usarlos.
+intro: '¿Y si pudieras escribir <code>&lt;selector-fecha&gt;</code> o <code>&lt;tarjeta-producto&gt;</code> en tu HTML, como si fueran etiquetas del navegador? Los <u>Web Components</u> lo permiten, sin frameworks: defines la etiqueta con una clase, y funciona en cualquier página, con cualquier librería o sin ninguna.'
+ejercicios: [wc-auto, wc-orden, wc-detective, wc-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { wcAuto, wcOrden, wcDetective, wcLab } from '../../data/ejercicios/navegador';
+
+## Un elemento propio
+
+```js
+class SaludoUsuario extends HTMLElement {
+  connectedCallback() {
+    const nombre = this.getAttribute("nombre") ?? "visitante";
+    this.textContent = `👋 Hola, ${nombre}`;
+  }
+}
+
+customElements.define("saludo-usuario", SaludoUsuario);
+
+document.body.innerHTML = `
+  <saludo-usuario nombre="Ana"></saludo-usuario>
+  <p><saludo-usuario></saludo-usuario></p>`;
+console.log(document.querySelectorAll("saludo-usuario").length);
+```
+
+- La clase extiende `HTMLElement`.
+- `customElements.define(nombre, clase)` la registra. El nombre **lleva guion**.
+- Los elementos que ya estaban en la página se "actualizan" al definirse; los que se agreguen después, también.
+
+## El ciclo de vida
+
+| Método | Se llama cuando… |
+|---|---|
+| `constructor()` | Se crea el elemento. Llama a `super()` y no toques atributos ni hijos todavía. |
+| `connectedCallback()` | Se agrega a la página. Lugar para armar el contenido y los listeners. |
+| `disconnectedCallback()` | Se quita. Lugar para limpiar: temporizadores, listeners globales, observers. |
+| `attributeChangedCallback(nombre, antes, ahora)` | Cambia un atributo declarado en `static observedAttributes`. |
+
+```js
+class BarraProgreso extends HTMLElement {
+  static observedAttributes = ["valor"];
+
+  attributeChangedCallback(nombre, antes, ahora) {
+    this.style.cssText = `display:block; height:10px; background:#f7df1e; width:${Number(ahora)}%`;
+    console.log(`${nombre}: ${antes} → ${ahora}`);
+  }
+}
+customElements.define("barra-progreso", BarraProgreso);
+
+const barra = document.createElement("barra-progreso");
+document.body.append(barra);
+barra.setAttribute("valor", 30);
+barra.setAttribute("valor", 80);
+```
+
+## Shadow DOM
+
+El **Shadow DOM** le da al componente un DOM propio y **encapsulado**: sus estilos no se escapan a la página, y los de la página no lo rompen.
+
+```js
+class Etiqueta extends HTMLElement {
+  connectedCallback() {
+    if (this.shadowRoot) return;
+    const raiz = this.attachShadow({ mode: "open" });
+    raiz.innerHTML = `
+      <style>
+        span { padding: 2px 10px; border-radius: 99px; background: #c4ec8c; color: #14201a; font: 600 13px system-ui; }
+      </style>
+      <span><slot>sin texto</slot></span>`;
+  }
+}
+customElements.define("mi-etiqueta", Etiqueta);
+
+document.body.innerHTML = `
+  <style>span { color: red; }</style>
+  <mi-etiqueta>Nuevo</mi-etiqueta> <mi-etiqueta></mi-etiqueta> <span>un span de la página</span>`;
+console.log(document.querySelector("mi-etiqueta").shadowRoot.querySelector("span").textContent.trim());
+```
+
+- `attachShadow({ mode: "open" })` crea la raíz; `this.shadowRoot` la devuelve.
+- Un `<slot>` muestra el contenido que puso quien usa el componente (aquí, "Nuevo"), con un texto por defecto.
+- El `span { color: red }` de la página no afecta al de adentro, y al revés.
+- Para dejar que la página personalice algo, usa propiedades personalizadas de CSS, que sí atraviesan el Shadow DOM, o `::part()`.
+
+## Plantillas
+
+`<template>` guarda HTML que no se muestra ni se ejecuta hasta que lo clonas. Es la forma eficiente de crear muchas copias de la misma estructura:
+
+```js
+document.body.innerHTML = `
+  <template id="fila"><li><strong></strong> <span></span></li></template>
+  <ul id="lista"></ul>`;
+
+const plantilla = document.querySelector("#fila");
+for (const [nombre, precio] of [["Té", 3], ["Café", 5]]) {
+  const copia = plantilla.content.cloneNode(true);
+  copia.querySelector("strong").textContent = nombre;
+  copia.querySelector("span").textContent = `S/ ${precio}`;
+  document.querySelector("#lista").append(copia);
+}
+console.log(document.querySelectorAll("#lista li").length);
+```
+
+<Nota tipo="consejo">
+  Los Web Components brillan para piezas reutilizables entre proyectos y frameworks distintos: un sistema de diseño, un widget que otros insertan en su página. Para una aplicación entera, los frameworks (con su manejo de estado y de datos) siguen siendo más cómodos, y pueden usar Web Components adentro.
+</Nota>
+
+## Resumen
+
+- Una clase que extiende `HTMLElement` + `customElements.define("con-guion", Clase)`.
+- `connectedCallback` arma, `disconnectedCallback` limpia, `attributeChangedCallback` reacciona a los atributos de `observedAttributes`.
+- **Shadow DOM** (`attachShadow`) encapsula estructura y estilos; `<slot>` muestra el contenido de afuera.
+- `<template>` guarda HTML para clonar.
+- Funcionan en cualquier página, con o sin framework.
+
+<Practica>
+
+<Autoevaluacion id={wcAuto.id} numero={1} titulo={wcAuto.titulo} preguntas={wcAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={wcOrden.id} numero={2} titulo={wcOrden.titulo} codigo={wcOrden.codigo} salida={wcOrden.salida} inicio={wcOrden.inicio} explicacion={wcOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un elemento que avisa de cada momento de su vida. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={wcDetective.id} numero={3} titulo={wcDetective.titulo} codigo={wcDetective.codigo} error={wcDetective.error} culpable={wcDetective.culpable} arreglos={wcDetective.arreglos} hallazgo={wcDetective.hallazgo} pista={wcDetective.pista}>
+  <div slot="enunciado">
+    <p>El componente no llega a registrarse. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={wcLab.id} numero={4} titulo={wcLab.titulo} pagina={wcLab.pagina} inicial={wcLab.inicial} verificaciones={wcLab.verificaciones} pistas={wcLab.pistas} solucion={wcLab.solucion} explicacion={wcLab.explicacion}>
+  <div slot="enunciado">
+    <p>Define <code>&lt;contador-clics&gt;</code> con Shadow DOM. La página ya tiene dos: van a cobrar vida en cuanto los definas.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,120 @@
+---
+titulo: Seguridad en el navegador
+seccion: navegador
+tema: seguridad
+minutos: 13
+resumen: Los ataques más comunes contra una página (XSS, CSRF, clickjacking, dependencias de terceros) y sus defensas desde el código y desde el servidor (insertar texto en lugar de HTML, Content Security Policy, Trusted Types, cookies SameSite y HttpOnly, integridad de subrecursos).
+intro: 'Tu página corre en el navegador de otra persona, junto a sus sesiones y sus datos. Si un atacante consigue ejecutar código en ella, puede hacer todo lo que esa persona puede hacer. La buena noticia: los ataques más comunes tienen defensas conocidas, y la mayoría se aplican escribiendo el código de una forma en lugar de otra.'
+ejercicios: [seguridad-auto, seguridad-orden, seguridad-detective, seguridad-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { seguridadAuto, seguridadOrden, seguridadDetective, seguridadLab } from '../../data/ejercicios/navegador';
+
+## XSS: código ajeno en tu página
+
+Un **XSS** (*cross-site scripting*) ocurre cuando un dato que controla otra persona termina interpretado como HTML o JavaScript. El caso típico:
+
+```js
+document.body.innerHTML = `<p id="saludo"></p>`;
+const nombre = '<img src="data:," onerror="document.title = \'hackeado\'">';   // viene de la URL, de un formulario…
+
+document.querySelector("#saludo").innerHTML = `Hola, ${nombre}`;   // ✗ vulnerable
+
+await new Promise((r) => setTimeout(r, 100));
+console.log(document.title);
+```
+
+La imagen no existe, su `onerror` se ejecuta, y con él el código del atacante. Las defensas:
+
+- **Inserta datos como texto**: `textContent`, `createElement` + `append`, `setAttribute`. Nunca `innerHTML`, `insertAdjacentHTML` ni `document.write` con datos externos.
+- **Cuidado con las URLs**: un `href` o `src` con `javascript:` también ejecuta código. Si la URL viene de afuera, comprueba que su protocolo sea `http:` o `https:`.
+- **Si de verdad necesitas HTML de afuera** (un comentario con formato, por ejemplo), pásalo por un sanitizador como DOMPurify, que deja solo las etiquetas seguras.
+- **Nada de `eval`** ni `new Function` con textos que vengan de afuera.
+
+```js
+document.body.innerHTML = `<p id="saludo"></p> <a id="perfil">perfil</a>`;
+const nombre = '<img src=x onerror="alert(1)">';
+const web = "javascript:alert(1)";
+
+document.querySelector("#saludo").textContent = `Hola, ${nombre}`;   // ✓ se ve como texto
+
+const url = new URL(web, location.href);
+if (["http:", "https:"].includes(url.protocol)) {
+  document.querySelector("#perfil").href = url.href;
+} else {
+  console.log("URL rechazada:", url.protocol);
+}
+```
+
+## Content Security Policy
+
+La **CSP** es un encabezado que envía el servidor diciendo de dónde puede cargar la página scripts, estilos, imágenes y demás. Lo que no está permitido se bloquea, así que si un XSS logra inyectar algo, no se ejecuta:
+
+```
+Content-Security-Policy: default-src 'self'; script-src 'self' https://cdn.ejemplo.com; img-src 'self' data:; object-src 'none'; frame-ancestors 'none'
+```
+
+Con una CSP estricta no funcionan los scripts en línea (`<script>…</script>` en el HTML, `onclick="…"`): todo el código va en archivos, y los listeners se agregan con `addEventListener`.
+
+**Trusted Types** va un paso más allá: con `require-trusted-types-for 'script'` en la CSP, el navegador **rechaza** cualquier texto asignado a `innerHTML` (y a otros lugares peligrosos) que no haya pasado por una política de saneado tuya.
+
+## CSRF y las cookies
+
+Un **CSRF** (*cross-site request forgery*) es hacer que el navegador de la víctima envíe, desde otro sitio, una petición a tu servidor, con su cookie de sesión: "transferir 1000 a la cuenta del atacante". Las defensas son del lado de las cookies y del servidor:
+
+- **`SameSite=Lax`** (el valor por defecto en los navegadores modernos) o `Strict`: la cookie no viaja en las peticiones que otros sitios inician con métodos peligrosos.
+- **`HttpOnly`**: JavaScript no puede leer la cookie, así que un XSS no puede robar la sesión.
+- **`Secure`**: solo viaja por HTTPS.
+- Para las acciones importantes, un token CSRF que el servidor comprueba.
+
+## Otros frentes
+
+- **Clickjacking**: tu página se carga, invisible, dentro de un `<iframe>` de otro sitio, y el usuario hace clic en tus botones sin saberlo. Defensa: `frame-ancestors 'none'` en la CSP.
+- **Enlaces a otros sitios**: con `target="_blank"`, agrega `rel="noopener"` (los navegadores modernos ya lo hacen por defecto) para que la página abierta no pueda controlar la tuya.
+- **Scripts de terceros**: cada script que cargas de otro dominio tiene todo el poder sobre tu página. Cárgalos con **integridad de subrecursos** (`integrity="sha384-…"`), y el navegador rechazará el archivo si alguien lo modifica.
+- **Secretos**: nada que esté en el código del navegador es secreto. Las claves de las APIs van en el servidor.
+
+<Nota tipo="error">
+  La validación del navegador (formularios, comprobaciones en JavaScript) mejora la experiencia, pero no protege nada: cualquiera puede saltarla. El servidor tiene que validar y autorizar **cada** petición.
+</Nota>
+
+## Resumen
+
+- **XSS**: inserta datos como texto (`textContent`, `append`), nunca como HTML; comprueba los protocolos de las URLs; sanea el HTML que de verdad necesites.
+- **CSP** limita de dónde se carga y ejecuta código; **Trusted Types** bloquea las asignaciones peligrosas.
+- Cookies con **`SameSite`**, **`HttpOnly`** y **`Secure`** contra CSRF y el robo de sesión.
+- `frame-ancestors` contra el clickjacking; `integrity` para los scripts de terceros.
+- Nada en el navegador es secreto ni confiable: el servidor valida todo.
+
+<Practica>
+
+<Autoevaluacion id={seguridadAuto.id} numero={1} titulo={seguridadAuto.titulo} preguntas={seguridadAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={seguridadOrden.id} numero={2} titulo={seguridadOrden.titulo} codigo={seguridadOrden.codigo} salida={seguridadOrden.salida} inicio={seguridadOrden.inicio} explicacion={seguridadOrden.explicacion}>
+  <div slot="enunciado">
+    <p>El mismo texto como contenido y como HTML, y una URL peligrosa. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={seguridadDetective.id} numero={3} titulo={seguridadDetective.titulo} codigo={seguridadDetective.codigo} error={seguridadDetective.error} culpable={seguridadDetective.culpable} arreglos={seguridadDetective.arreglos} hallazgo={seguridadDetective.hallazgo} pista={seguridadDetective.pista}>
+  <div slot="enunciado">
+    <p>Después de activar una CSP, el botón de comprar dejó de funcionar. Encuentra la línea y elige el arreglo correcto.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={seguridadLab.id} numero={4} titulo={seguridadLab.titulo} pagina={seguridadLab.pagina} inicial={seguridadLab.inicial} verificaciones={seguridadLab.verificaciones} pistas={seguridadLab.pistas} solucion={seguridadLab.solucion} explicacion={seguridadLab.explicacion}>
+  <div slot="enunciado">
+    <p>El código actual es vulnerable a XSS. Reescríbelo para mostrar los comentarios de forma segura.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

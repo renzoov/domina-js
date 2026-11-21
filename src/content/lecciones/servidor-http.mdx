@@ -1,0 +1,168 @@
+---
+titulo: Un servidor HTTP desde cero
+seccion: servidor
+tema: servidor-http
+minutos: 13
+resumen: Cómo crear un servidor web con node:http, sin frameworks, leyendo el método, la ruta y el cuerpo de cada petición, respondiendo JSON con el estado correcto, sirviendo archivos, y qué resuelven frameworks como Hono, Fastify o Express.
+intro: 'Detrás de cada página y de cada API hay un servidor que recibe peticiones y devuelve respuestas. Con Node.js se puede escribir uno en pocas líneas, sin instalar nada. Hacerlo una vez desde cero, con <code>node:http</code>, es la mejor forma de entender qué hacen por ti los frameworks.'
+ejercicios: [http-auto, http-orden, http-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { httpAuto, httpOrden, httpDetective } from '../../data/ejercicios/servidor';
+
+## El servidor más pequeño
+
+```js
+import http from "node:http";
+
+const servidor = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end(`Hola desde ${req.url}`);
+});
+
+servidor.listen(3000, () => console.log("http://localhost:3000"));
+```
+
+La función se ejecuta **una vez por petición**. `req` (la petición) trae `method`, `url` y `headers`; `res` (la respuesta) se escribe con `writeHead` (estado y encabezados) y `end` (el cuerpo, y termina).
+
+## Rutas y JSON
+
+Para decidir qué responder, mira el método y la ruta:
+
+```js
+import http from "node:http";
+
+const tareas = [{ id: 1, titulo: "Estudiar Node", hecha: false }];
+
+function json(res, estado, datos) {
+  res.writeHead(estado, { "Content-Type": "application/json" });
+  res.end(JSON.stringify(datos));
+}
+
+async function leerJSON(req) {
+  let cuerpo = "";
+  for await (const parte of req) cuerpo += parte;   // req es un stream
+  return JSON.parse(cuerpo || "{}");
+}
+
+http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+
+  try {
+    if (req.method === "GET" && url.pathname === "/tareas") {
+      return json(res, 200, tareas);
+    }
+    if (req.method === "POST" && url.pathname === "/tareas") {
+      const { titulo } = await leerJSON(req);
+      if (!titulo) return json(res, 400, { error: "falta el título" });
+      const tarea = { id: tareas.length + 1, titulo, hecha: false };
+      tareas.push(tarea);
+      return json(res, 201, tarea);
+    }
+    const coincide = url.pathname.match(/^\/tareas\/(\d+)$/);
+    if (req.method === "GET" && coincide) {
+      const tarea = tareas.find((t) => t.id === Number(coincide[1]));
+      return tarea ? json(res, 200, tarea) : json(res, 404, { error: "no existe" });
+    }
+    json(res, 404, { error: "ruta desconocida" });
+  } catch (e) {
+    json(res, 500, { error: "error interno" });   // nunca envíes el detalle del error al cliente
+  }
+}).listen(3000);
+```
+
+Cada rama termina con `return`: una petición tiene **una sola** respuesta. Pruébalo desde otra terminal:
+
+```bash
+curl http://localhost:3000/tareas
+curl -X POST -H "Content-Type: application/json" -d '{"titulo":"Practicar"}' http://localhost:3000/tareas
+```
+
+## Los estados que más se usan
+
+| Estado | Significa |
+|---|---|
+| 200 OK / 201 Created / 204 No Content | Bien / creado / bien, sin cuerpo |
+| 301, 302, 307, 308 | Redirección (con el encabezado `Location`) |
+| 400 Bad Request | Los datos que llegaron no son válidos |
+| 401 Unauthorized / 403 Forbidden | Falta identificarse / no tiene permiso |
+| 404 Not Found / 405 Method Not Allowed | No existe / ese método no se acepta ahí |
+| 500 Internal Server Error | Algo falló en el servidor |
+
+## Servir archivos
+
+```js
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
+import path from "node:path";
+
+const PUBLICA = path.join(import.meta.dirname, "publico");
+const TIPOS = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".png": "image/png" };
+
+async function servirArchivo(pathname, res) {
+  const ruta = path.join(PUBLICA, pathname);
+  if (!ruta.startsWith(PUBLICA + path.sep)) return json(res, 403, { error: "prohibido" });   // nada de ../
+  try {
+    await stat(ruta);
+    res.writeHead(200, { "Content-Type": TIPOS[path.extname(ruta)] ?? "application/octet-stream" });
+    createReadStream(ruta).pipe(res);   // el archivo viaja por partes
+  } catch {
+    json(res, 404, { error: "no existe" });
+  }
+}
+```
+
+## Para qué un framework
+
+Lo que acabas de escribir a mano (rutas con parámetros, leer JSON, validar, manejar errores, archivos estáticos) es lo que resuelven los frameworks:
+
+- **Hono**: pequeño, rápido y basado en `Request` y `Response`: funciona igual en Node.js, Deno, Bun y Cloudflare Workers.
+- **Fastify**: muy rápido, con validación por esquemas y un sistema de plugins.
+- **Express**: el más antiguo y conocido, con un ecosistema enorme de *middlewares*.
+
+```js
+import { Hono } from "hono";
+import { serve } from "@hono/node-server";
+
+const app = new Hono();
+app.get("/tareas/:id", (c) => c.json({ id: Number(c.req.param("id")) }));
+serve({ fetch: app.fetch, port: 3000 });
+```
+
+<Nota tipo="error">
+  Un servidor recibe datos de cualquiera: valida todo lo que llega (tipo, tamaño, formato), limita el tamaño de los cuerpos y no devuelvas los mensajes de error internos al cliente. Lo verás en *Seguridad en Node*.
+</Nota>
+
+## Resumen
+
+- `http.createServer((req, res) => …)` se llama una vez por petición.
+- Mira `req.method` y la ruta (`new URL(req.url, …)`) para decidir; responde con `writeHead` y `end`.
+- El cuerpo de una petición es un stream: léelo con `for await`.
+- Una petición, una respuesta: termina cada rama con `return`.
+- Los frameworks (Hono, Fastify, Express) resuelven rutas, cuerpos, validación y errores.
+
+<Practica>
+
+<Autoevaluacion id={httpAuto.id} numero={1} titulo={httpAuto.titulo} preguntas={httpAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={httpOrden.id} numero={2} titulo={httpOrden.titulo} codigo={httpOrden.codigo} salida={httpOrden.salida} inicio={httpOrden.inicio} explicacion={httpOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un servidor que recibe un POST desde otra terminal. Ordena lo que aparecería en la terminal del servidor.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={httpDetective.id} numero={3} titulo={httpDetective.titulo} codigo={httpDetective.codigo} error={httpDetective.error} culpable={httpDetective.culpable} arreglos={httpDetective.arreglos} hallazgo={httpDetective.hallazgo} pista={httpDetective.pista}>
+  <div slot="enunciado">
+    <p>El servidor se cae cada vez que alguien consulta <code>/salud</code>. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

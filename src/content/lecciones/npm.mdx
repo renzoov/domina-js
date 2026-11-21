@@ -1,0 +1,132 @@
+---
+titulo: npm, pnpm y dependencias
+seccion: herramientas
+tema: npm
+minutos: 11
+resumen: Qué es npm, el package.json y sus campos, cómo instalar y actualizar dependencias, el versionado semántico y sus rangos, el lockfile, los scripts, npx, pnpm y otros gestores, y cómo cuidar la seguridad de las dependencias.
+intro: 'Casi ningún proyecto se escribe desde cero: se apoya en <u>paquetes</u> que otras personas publicaron, y esos paquetes en otros. npm es el registro donde viven (más de tres millones) y la herramienta que los instala. Entender cómo funciona te ahorra horas de "en mi computadora sí andaba".'
+nota: 'Los ejemplos de esta sección se ejecutan en una terminal de tu computadora, con Node.js instalado.'
+ejercicios: [npm-auto, npm-orden, npm-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { npmAuto, npmOrden, npmDetective } from '../../data/ejercicios/herramientas';
+
+## El package.json
+
+Todo proyecto de JavaScript tiene un `package.json` en su raíz. Se crea con `npm init -y` y describe el proyecto:
+
+```json
+{
+  "name": "tienda",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "vitest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": { "node": ">=22" }
+}
+```
+
+- **`dependencies`**: lo que el programa necesita para funcionar.
+- **`devDependencies`**: lo que solo se usa para desarrollar (pruebas, empaquetador, linter).
+- **`scripts`**: comandos con nombre; se ejecutan con `npm run dev`, `npm test`…
+
+## Instalar y actualizar
+
+```bash
+npm install hono            # agrega a dependencies
+npm install -D vitest       # agrega a devDependencies
+npm install                 # instala todo lo que dice el package.json
+npm ci                      # instala EXACTAMENTE lo del lockfile (para integración continua)
+npm uninstall hono
+npm outdated                # qué tiene versiones nuevas
+npm update                  # actualiza dentro de los rangos permitidos
+```
+
+Todo se instala en la carpeta `node_modules`, que **nunca** se sube al repositorio (va en el `.gitignore`).
+
+## Versionado semántico
+
+Las versiones tienen tres números: **MAYOR.MENOR.PARCHE**.
+
+- **Parche** (1.4.**3**): corrige errores, sin cambios en la API.
+- **Menor** (1.**5**.0): agrega funciones, sin romper lo existente.
+- **Mayor** (**2**.0.0): puede romper cosas.
+
+Los rangos del `package.json` dicen qué versiones aceptas:
+
+| Rango | Acepta |
+|---|---|
+| `"1.4.2"` | Solo esa |
+| `"~1.4.2"` | Parches: 1.4.x desde 1.4.2 |
+| `"^1.4.2"` | Menores y parches: 1.x.y desde 1.4.2 (el de por defecto) |
+| `"*"` o `"latest"` | Cualquiera (evítalo) |
+
+## El lockfile
+
+Con rangos, dos personas que instalan en días distintos pueden recibir versiones distintas. El **lockfile** (`package-lock.json`, `pnpm-lock.yaml`, `bun.lock`) guarda la versión **exacta** de cada paquete del árbol entero, dependencias de dependencias incluidas. Súbelo al repositorio: así todos, y el servidor, instalan lo mismo.
+
+## npx
+
+`npx` ejecuta el programa de un paquete sin instalarlo de forma global:
+
+```bash
+npx eslint .                          # usa el de node_modules, o lo descarga
+npx create-vite@latest mi-proyecto    # crea un proyecto nuevo
+```
+
+## Otros gestores
+
+- **pnpm**: guarda cada versión de cada paquete una sola vez en el disco y la enlaza en cada proyecto: instala rápido y ocupa mucho menos. Es más estricto: no deja usar paquetes que no declaraste.
+- **Yarn**: el primer competidor de npm; muchas de sus ideas, como el lockfile, se adoptaron después en npm.
+- **Bun**: su `bun install` es el más rápido.
+
+Con **Corepack** o el campo `packageManager` del `package.json`, el proyecto fija qué gestor y qué versión se usa.
+
+<Nota tipo="error">
+  Cada dependencia corre con tus permisos, y trae sus propias dependencias. Antes de instalar algo, mira si se mantiene, cuánta gente lo usa y cuánto trae consigo. Revisa los avisos de `npm audit`, y desconfía de los nombres parecidos a paquetes conocidos: es una técnica de ataque habitual.
+</Nota>
+
+## Resumen
+
+- El `package.json` describe el proyecto: dependencias, `devDependencies`, scripts y requisitos.
+- Versionado semántico MAYOR.MENOR.PARCHE; `^` acepta menores y parches, `~` solo parches.
+- El **lockfile** fija las versiones exactas de todo el árbol: súbelo al repositorio; en integración continua, `npm ci`.
+- `npx` ejecuta paquetes sin instalarlos; pnpm y Bun son alternativas más rápidas.
+- Cada dependencia es código ajeno con tus permisos: elige con cuidado.
+
+<Practica>
+
+<Autoevaluacion id={npmAuto.id} numero={1} titulo={npmAuto.titulo} preguntas={npmAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={npmOrden.id} numero={2} titulo={npmOrden.titulo} codigo={npmOrden.codigo} salida={npmOrden.salida} inicio={npmOrden.inicio} explicacion={npmOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un verificador de rangos de versiones simplificado. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={npmDetective.id} numero={3} titulo={npmDetective.titulo} codigo={npmDetective.codigo} error={npmDetective.error} culpable={npmDetective.culpable} arreglos={npmDetective.arreglos} hallazgo={npmDetective.hallazgo} pista={npmDetective.pista}>
+  <div slot="enunciado">
+    <p>Después de actualizar React, <code>npm install</code> se niega a instalar. Encuentra la línea del <code>package.json</code> que causa el conflicto y elige qué hacer.</p>
+  </div>
+</Detective>
+
+</Practica>

@@ -1,0 +1,123 @@
+---
+titulo: Observers
+seccion: navegador
+tema: observers
+minutos: 10
+resumen: Cómo enterarse de cambios sin preguntar a cada rato, con IntersectionObserver (visibilidad), ResizeObserver (tamaño de un elemento) y MutationObserver (cambios en el DOM), y cómo dejar de observar.
+intro: 'Para saber si una imagen ya está a la vista, se podía escuchar el <code>scroll</code> y medir posiciones decenas de veces por segundo. Funcionaba, pero ralentizaba la página. Los <u>observers</u> invierten la relación: le dices al navegador qué te interesa y él te avisa, agrupando los cambios y en el mejor momento.'
+ejercicios: [observers-auto, observers-orden, observers-detective, observers-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { observersAuto, observersOrden, observersDetective, observersLab } from '../../data/ejercicios/navegador';
+
+Los tres siguen el mismo patrón: creas el observador con un callback, le dices qué observar con `observe(elemento)`, y lo detienes con `unobserve(elemento)` o `disconnect()`.
+
+## IntersectionObserver
+
+Avisa cuando un elemento **entra o sale** de la parte visible (o de otro contenedor con scroll). El ejemplo clásico es la carga diferida de imágenes:
+
+```js
+const obs = new IntersectionObserver((entradas, observador) => {
+  for (const entrada of entradas) {
+    if (!entrada.isIntersecting) continue;
+    const img = entrada.target;
+    img.src = img.dataset.src;     // carga la imagen de verdad
+    observador.unobserve(img);     // ya no hace falta vigilarla
+  }
+}, { rootMargin: "200px" });       // empieza a cargar 200 px antes de que aparezca
+
+document.querySelectorAll("img[data-src]").forEach((img) => obs.observe(img));
+```
+
+Opciones útiles: `rootMargin` agranda o achica la zona de detección, y `threshold` dice qué fracción del elemento tiene que verse (`0.5` es la mitad). Cada entrada trae además `intersectionRatio`, cuánto se ve.
+
+Para imágenes, hoy alcanza con `<img loading="lazy">`. `IntersectionObserver` sigue siendo la herramienta para todo lo demás: scroll infinito, animar al aparecer, saber qué secciones leyó alguien.
+
+## ResizeObserver
+
+Avisa cuando cambia el **tamaño de un elemento**, por cualquier motivo, no solo porque cambió la ventana:
+
+```js
+document.body.innerHTML = `<div id="panel" style="width: 300px; height: 50px; background: #8fd0f7"></div>`;
+const panel = document.querySelector("#panel");
+
+const obs = new ResizeObserver(([entrada]) => {
+  const ancho = Math.round(entrada.contentRect.width);
+  console.log("ancho:", ancho, ancho < 250 ? "(compacto)" : "(normal)");
+});
+obs.observe(panel);
+
+await new Promise((r) => setTimeout(r, 50));
+panel.style.width = "200px";
+await new Promise((r) => setTimeout(r, 50));
+obs.disconnect();
+```
+
+Avisa una vez al empezar a observar, y después con cada cambio. Muchas veces las *container queries* de CSS resuelven lo mismo sin JavaScript; `ResizeObserver` es para cuando el código necesita el número, como al dibujar un gráfico.
+
+## MutationObserver
+
+Avisa cuando cambia el **DOM**: hijos agregados o quitados, atributos, texto. Útil cuando lo cambia código que no controlas:
+
+```js
+document.body.innerHTML = `<div id="caja" class="a"></div>`;
+const caja = document.querySelector("#caja");
+
+const obs = new MutationObserver((cambios) => {
+  for (const c of cambios) {
+    if (c.type === "attributes") console.log(`cambió ${c.attributeName}: "${c.oldValue}" → "${caja.getAttribute(c.attributeName)}"`);
+    if (c.type === "childList") console.log(`hijos: +${c.addedNodes.length} −${c.removedNodes.length}`);
+  }
+});
+obs.observe(caja, { attributes: true, attributeOldValue: true, childList: true, subtree: true });
+
+caja.className = "b";
+caja.append(document.createElement("span"));
+```
+
+Las opciones dicen qué vigilar: `childList`, `attributes` (con `attributeFilter` para elegir cuáles), `characterData` y `subtree` (también los descendientes).
+
+<Nota tipo="ojo">
+  Los callbacks de los observers no corren en el momento del cambio, sino después, agrupados: los de `MutationObserver` en una microtarea, y los de `IntersectionObserver` y `ResizeObserver` antes de dibujar el siguiente cuadro. Y no olvides desconectarlos cuando el elemento deja de usarse: un observador vivo mantiene vivo lo que observa.
+</Nota>
+
+## Resumen
+
+- Los observers te **avisan** de cambios, agrupados, en lugar de que tú preguntes sin parar.
+- `IntersectionObserver`: visibilidad (carga diferida, scroll infinito, animaciones al aparecer).
+- `ResizeObserver`: tamaño de un elemento.
+- `MutationObserver`: cambios en el DOM; su callback corre en una microtarea, con todos los cambios juntos.
+- `observe`, `unobserve` y `disconnect` en los tres.
+
+<Practica>
+
+<Autoevaluacion id={observersAuto.id} numero={1} titulo={observersAuto.titulo} preguntas={observersAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={observersOrden.id} numero={2} titulo={observersOrden.titulo} codigo={observersOrden.codigo} salida={observersOrden.salida} inicio={observersOrden.inicio} explicacion={observersOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un <code>MutationObserver</code> y tres cambios en la lista. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={observersDetective.id} numero={3} titulo={observersDetective.titulo} codigo={observersDetective.codigo} error={observersDetective.error} culpable={observersDetective.culpable} arreglos={observersDetective.arreglos} hallazgo={observersDetective.hallazgo} pista={observersDetective.pista}>
+  <div slot="enunciado">
+    <p>La galería debería cargar las imágenes al aparecer, pero lanza un error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={observersLab.id} numero={4} titulo={observersLab.titulo} pagina={observersLab.pagina} inicial={observersLab.inicial} verificaciones={observersLab.verificaciones} pistas={observersLab.pistas} solucion={observersLab.solucion} explicacion={observersLab.explicacion}>
+  <div slot="enunciado">
+    <p>Haz que el total del carrito se actualice solo, con un <code>MutationObserver</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>
