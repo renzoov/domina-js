@@ -690,7 +690,7 @@ TypeError: Invalid value used as weak map key`,
     {
       texto: 'Cambiarlo por una <code>WeakSet</code>',
       correcta: false,
-      porque: '<code>WeakSet</code> tiene la misma regla (solo objetos) y además no guarda valores asociados.',
+      porque: '<code>WeakSet</code> tiene la misma regla (objetos o símbolos no registrados) y además no guarda valores asociados.',
     },
   ],
 };

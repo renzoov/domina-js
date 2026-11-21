@@ -62,6 +62,23 @@ console.log(contarNodos(a));  // 2, sin quedarse en un bucle infinito
 
 Como el laboratorio de *Memoria*: guardar un resultado caro calculado a partir de un objeto, sin que la caché impida liberarlo.
 
+## Símbolos como claves (ES2023)
+
+Desde ES2023, una `WeakMap` (y una `WeakSet`) también acepta **símbolos** como claves, siempre que no estén registrados. Un `Symbol("…")` es único y puede dejar de usarse, igual que un objeto. Uno creado con `Symbol.for("…")` vive en un registro global y nunca se libera, así que no sirve:
+
+```js
+const datos = new WeakMap();
+const sesion = Symbol("sesion");
+datos.set(sesion, { usuario: "Ana" });
+console.log(datos.get(sesion).usuario);  // "Ana"
+
+try {
+  datos.set(Symbol.for("global"), 1);
+} catch (error) {
+  console.log(error.name);  // "TypeError": un símbolo registrado no se libera nunca
+}
+```
+
 ## Lo que no pueden hacer
 
 | | `Map` / `Set` | `WeakMap` / `WeakSet` |
@@ -83,7 +100,7 @@ Todo lo que falta tiene la misma razón: el contenido puede cambiar **en cualqui
 - Las colecciones débiles recuerdan datos **mientras el objeto exista**.
 - `WeakMap`: datos extra sobre objetos ajenos y cachés por objeto.
 - `WeakSet`: marcar objetos ya vistos o procesados, y detectar ciclos.
-- No tienen `size`, no se recorren y solo aceptan objetos como claves.
+- No tienen `size`, no se recorren y solo aceptan objetos como claves, o símbolos no registrados desde ES2023.
 - ¿Hay que recorrer? `Map`/`Set`. ¿Solo consultar por objeto? La versión débil.
 
 <Practica>

@@ -311,8 +311,8 @@ Cada lección mezcla los formatos que tienen sentido para su tema:
   - Nunca corre en la página principal.
 - **Tests de laboratorio:** funciones de verificación escritas por lección; cada una tiene un texto en español que se muestra como ítem de la lista.
 - **Datos:**
-  - Los ejercicios viven como contenido (`src/content/ejercicios/`), con `tipo`, `enunciado`, `pistas`, `solucion` y `verificaciones`.
-  - Crear un ejercicio nuevo no requiere programar.
+  - Los ejercicios viven como datos en `src/data/ejercicios/` (un archivo `.ts` por sección), con su enunciado, pistas, solución y verificaciones; cada lección los lista en su frontmatter (`ejercicios`) y los coloca con los componentes de `src/components/ejercicios/`.
+  - Crear un ejercicio nuevo es agregar un objeto de datos, sin tocar los componentes.
 - **Accesibilidad:**
   - Todo lo que se arrastra se puede hacer también con teclado (seleccionar y mover).
   - Las predicciones y los resultados se anuncian con `aria-live`.
@@ -363,4 +363,4 @@ Verificado el 2026-11-20 contra `tc39/proposals` (*finished-proposals* y README)
 - **ES2025:** `RegExp.escape`, Float16, `Promise.try`, *iterator helpers*, JSON modules, import attributes, modificadores de RegExp y métodos nuevos de `Set`.
 - **ES2027 (terminadas):** Temporal, gestión explícita de recursos (`using`), *iterator chunking*, `Iterator.includes` y `join`, recorrer iteradores a la vez y `Atomics.pause`.
 - **Decorators:** Stage 2.7, no terminada.
-- **Pendiente:** confirmar las ediciones ES2021–ES2024 fila por fila contra la tabla al escribir cada lección (la lectura de esa parte quedó incompleta).
+- **ES2021–ES2024:** verificado el 2026-11-21 fila por fila (24 propuestas). Las páginas de novedades las cubren todas y cada edición citada en las lecciones coincide. Se agregaron los temas que faltaban: símbolos como claves débiles (WeakMap y WeakSet), hashbang (Node.js hoy) y `Atomics.waitAsync` (Web Workers), además de las marcas de edición que faltaban en el temario.

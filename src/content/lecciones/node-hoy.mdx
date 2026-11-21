@@ -63,6 +63,24 @@ console.log(styleText(["green", "bold"], "✔ Listo"));
 console.log(process.env.PUERTO ?? "3000");   // con --env-file=.env
 ```
 
+## Scripts ejecutables: el hashbang
+
+Si la primera línea de un archivo empieza con `#!`, el sistema la usa para saber con qué programa ejecutarlo. Node siempre la aceptó, y desde ES2023 es parte del lenguaje: cualquier motor la ignora sin dar error.
+
+```js
+#!/usr/bin/env node
+// saludar.js
+const nombre = process.argv[2] ?? "mundo";
+console.log(`Hola, ${nombre}`);
+```
+
+```bash
+chmod +x saludar.js
+./saludar.js Ana        # Hola, Ana
+```
+
+Tiene que ser la primera línea, sin nada antes. En Windows no se usa; ahí ejecutas `node saludar.js`. Es lo que llevan los comandos que instala npm (el campo `bin` del `package.json`).
+
 ## TypeScript sin compilar
 
 Desde Node 23.6 (y en las versiones LTS siguientes), `node archivo.ts` funciona directamente: Node **borra** las anotaciones de tipos y ejecuta el resto. No revisa los tipos (para eso sigue estando `tsc`), y solo admite la sintaxis de TypeScript que se puede borrar sin más: nada de `enum` ni de `namespace` con código. Lo vas a ver en *TypeScript para quien ya sabe JS*.
@@ -82,6 +100,7 @@ Para tener varias versiones instaladas y cambiar entre ellas, usa un gestor como
 - Node.js = V8 + libuv + una biblioteca para archivos, red y procesos. No tiene DOM.
 - ESM e imports con el prefijo `node:`.
 - Vienen incluidos `fetch`, `WebSocket`, `--watch`, `--env-file`, `node --test`, `parseArgs`, `styleText` y `node:sqlite`.
+- Un hashbang (`#!/usr/bin/env node`) en la primera línea convierte el archivo en un comando (ES2023).
 - `node archivo.ts` ejecuta TypeScript quitando los tipos.
 - En producción, versiones **LTS** (pares).
 

@@ -66,6 +66,28 @@ console.log(imagen.byteLength);     // 0: ya no es de la página
 console.log(recibido.byteLength);   // 10000000: la memoria pasó entera, sin copiarse
 ```
 
+## Memoria compartida: SharedArrayBuffer y Atomics
+
+Transferir **mueve** la memoria de un hilo a otro. A veces los dos hilos necesitan ver la **misma** memoria a la vez. Un `SharedArrayBuffer` enviado con `postMessage` no se copia ni se mueve, así que la página y el worker leen y escriben los mismos bytes. Para no pisarse, se usan las operaciones de `Atomics`:
+
+```js
+// En la página
+const memoria = new Int32Array(new SharedArrayBuffer(4));
+worker.postMessage(memoria);   // el worker ve los mismos bytes
+
+// Esperar un cambio sin congelar la página (ES2024)
+const { async, value } = Atomics.waitAsync(memoria, 0, 0);
+if (async) value.then(() => mostrar(Atomics.load(memoria, 0)));
+
+// En worker.js
+self.onmessage = ({ data: memoria }) => {
+  Atomics.store(memoria, 0, 42);
+  Atomics.notify(memoria, 0);   // despierta a quien espera
+};
+```
+
+`Atomics.wait` bloquea el hilo, por eso la página no puede usarlo. `Atomics.waitAsync` hace lo mismo con una promesa. Por seguridad, `SharedArrayBuffer` solo existe si la página está **aislada** con las cabeceras `Cross-Origin-Opener-Policy: same-origin` y `Cross-Origin-Embedder-Policy: require-corp`. Puedes comprobarlo con `crossOriginIsolated`. Para la mayoría de los casos, los mensajes alcanzan.
+
 ## Canales propios
 
 `MessageChannel` crea un par de puertos conectados: lo que se envía por uno llega por el otro. Sirve para darle a dos partes un canal privado:
@@ -109,6 +131,7 @@ botonSalir.addEventListener("click", () => {
 - Un **Web Worker** ejecuta código en otro hilo: la página no se congela.
 - Los workers no tienen DOM; se comunican con `postMessage` y el evento `message`.
 - Los mensajes se **copian** (clonación estructurada); los `ArrayBuffer` se pueden **transferir**.
+- `SharedArrayBuffer` comparte memoria entre hilos; `Atomics.waitAsync` (ES2024) espera un cambio sin congelar la página.
 - `MessageChannel` crea un canal privado de dos puertos; `BroadcastChannel` habla entre pestañas.
 - Para pedidos y respuestas, identifica cada pedido con un `id`.
 
