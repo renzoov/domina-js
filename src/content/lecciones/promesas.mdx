@@ -1,0 +1,168 @@
+---
+titulo: Promesas
+seccion: asincronia
+tema: promesas
+minutos: 13
+resumen: Qué es una promesa y sus tres estados, cómo crearla con new Promise, consumirla con then, catch y finally, por qué then devuelve una promesa nueva y cómo se propagan los errores por la cadena.
+intro: 'Una <u>promesa</u> es un objeto que representa un valor que todavía no existe: la respuesta de un servidor, el contenido de un archivo, el resultado de un cálculo lento. En lugar de pasar un callback y confiar, recibes un objeto que puedes guardar, pasar, encadenar y combinar. Es la base de todo el JavaScript asíncrono moderno.'
+pizarron: promesaEstados
+modoPizarron: eventloop
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Los recuadros punteados son promesas. Fíjate en cómo cambia el estado de cada una, en qué momento se ejecuta cada función de los <code>then</code> y en qué cola espera antes de entrar a la pila.'
+ejercicios: [promesas-auto, promesas-orden, promesas-detective, promesas-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { promesasAuto, promesasOrden, promesasDetective, promesasLab } from '../../data/ejercicios/asincronia';
+
+## Tres estados
+
+Una promesa siempre está en uno de tres estados:
+
+- **Pendiente** (*pending*): todavía no hay resultado.
+- **Cumplida** (*fulfilled*): terminó bien y tiene un **valor**.
+- **Rechazada** (*rejected*): falló y tiene un **motivo**, normalmente un `Error`.
+
+Pasa de pendiente a cumplida o rechazada **una sola vez**, y después ya no cambia. A una promesa que ya no está pendiente se le dice *resuelta* (*settled*).
+
+```js
+const lista = Promise.resolve("lista");
+const pendiente = new Promise(() => {});  // nunca se resuelve
+const fallida = Promise.reject(new Error("ups"));
+fallida.catch(() => {});                  // la manejamos, para que no sea un rechazo sin catch
+
+console.log(lista);
+console.log(pendiente);
+console.log(fallida);
+```
+
+## Crear una promesa
+
+`new Promise` recibe una función, que se ejecuta **en el momento**, con dos parámetros: uno para cumplir la promesa y otro para rechazarla.
+
+```js
+function tirarDado() {
+  return new Promise((cumplir, rechazar) => {
+    setTimeout(() => {
+      const n = Math.ceil(Math.random() * 6);
+      if (n === 1) rechazar(new Error("salió 1: pierdes"));
+      else cumplir(n);
+    }, 100);
+  });
+}
+
+tirarDado()
+  .then((n) => console.log("salió", n))
+  .catch((e) => console.log(e.message));
+```
+
+Para envolver un valor que ya tienes: `Promise.resolve(valor)` y `Promise.reject(error)`.
+
+## then, catch y finally
+
+- **`then(fn)`** registra qué hacer con el valor cuando la promesa se cumpla.
+- **`catch(fn)`** registra qué hacer si se rechaza.
+- **`finally(fn)`** se ejecuta en los dos casos, para limpiar.
+
+```js
+const cargando = { visible: true };
+
+Promise.resolve({ nombre: "Ana" })
+  .then((usuario) => console.log("hola,", usuario.nombre))
+  .catch((e) => console.log("no se pudo:", e.message))
+  .finally(() => {
+    cargando.visible = false;
+    console.log("ocultar el «cargando…»");
+  });
+```
+
+## Encadenar
+
+La clave de las promesas: **`then` devuelve una promesa nueva**, que se cumple con lo que devuelva su función. Por eso cada paso recibe el resultado del anterior, como muestra el pizarrón:
+
+```js
+Promise.resolve(3)
+  .then((n) => n * 2)          // 6
+  .then((n) => n + 1)          // 7
+  .then((n) => console.log(n));
+```
+
+Si la función de un `then` devuelve **otra promesa**, la cadena espera a que se cumpla. Así, el callback hell del tema anterior queda plano:
+
+```js
+const esperar = (ms, valor) => new Promise((r) => setTimeout(() => r(valor), ms));
+
+const buscarUsuario = (id) => esperar(30, { id, nombre: "Ana" });
+const buscarPedidos = (usuario) => esperar(30, ["té", "pan"]);
+const calcularEnvio = (pedidos) => esperar(30, pedidos.length * 5);
+
+buscarUsuario(7)
+  .then((usuario) => buscarPedidos(usuario))
+  .then((pedidos) => calcularEnvio(pedidos))
+  .then((envio) => console.log("envío:", envio))
+  .catch((e) => console.log("algo falló:", e.message));
+```
+
+Un solo `catch` al final atrapa el error de **cualquier** paso.
+
+## Errores que bajan por la cadena
+
+Un rechazo, o un error lanzado dentro de un `then`, se salta todos los `then` hasta el primer `catch`. Y si el `catch` devuelve un valor, la cadena **se recupera** y sigue:
+
+```js
+Promise.resolve("datos")
+  .then(() => {
+    throw new Error("falló el paso 2");
+  })
+  .then(() => console.log("no se ejecuta"))
+  .catch((e) => {
+    console.log("atrapado:", e.message);
+    return "valor por defecto";
+  })
+  .then((v) => console.log("sigue con:", v));
+```
+
+<Nota tipo="error">
+  Una promesa rechazada sin ningún `catch` es un **rechazo no manejado**: el navegador lo muestra en la consola y Node.js termina el programa. Toda cadena debería terminar en un `catch`, o estar dentro de un `try` con `await`.
+</Nota>
+
+## Resumen
+
+- Una promesa está **pendiente**, **cumplida** (con un valor) o **rechazada** (con un motivo), y cambia una sola vez.
+- `new Promise((cumplir, rechazar) => …)` la crea; su función corre en el momento.
+- `then` maneja el valor, `catch` el error y `finally` corre siempre.
+- `then` devuelve una promesa **nueva**: por eso se encadenan. Si devuelves una promesa, la cadena la espera.
+- Los errores bajan hasta el primer `catch`.
+
+<Practica>
+
+<Autoevaluacion id={promesasAuto.id} numero={1} titulo={promesasAuto.titulo} preguntas={promesasAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={promesasOrden.id} numero={2} titulo={promesasOrden.titulo} codigo={promesasOrden.codigo} salida={promesasOrden.salida} inicio={promesasOrden.inicio} explicacion={promesasOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una cadena con un error en el medio. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={promesasDetective.id} numero={3} titulo={promesasDetective.titulo} codigo={promesasDetective.codigo} error={promesasDetective.error} culpable={promesasDetective.culpable} arreglos={promesasDetective.arreglos} hallazgo={promesasDetective.hallazgo} pista={promesasDetective.pista}>
+  <div slot="enunciado">
+    <p>Los pedidos se buscan, pero no llegan al último paso. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={promesasLab.id} numero={4} titulo={promesasLab.titulo} inicial={promesasLab.inicial} verificaciones={promesasLab.verificaciones} pistas={promesasLab.pistas} solucion={promesasLab.solucion} explicacion={promesasLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>esperar(ms)</code>: una promesa que se cumple pasado un tiempo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

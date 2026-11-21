@@ -1,7 +1,7 @@
 // Convierte los bloques de código de la lección en "pizarras de prueba":
 // barra con nombre de archivo, botón Copiar y, si el ejemplo imprime algo, botón Ejecutar.
 
-const LIMITE_MS = 1500;
+const LIMITE_MS = 3000;
 const NOMBRES: Record<string, string> = { js: 'ejemplo.js', javascript: 'ejemplo.js', bash: 'terminal', sh: 'terminal', html: 'index.html', css: 'estilos.css', json: 'datos.json' };
 
 const icono = (d: string) =>
@@ -30,15 +30,17 @@ export function iniciarCodigoVivo(raiz: ParentNode = document) {
     if (pre.closest('.codigo-vivo')) return;
     const lenguaje = pre.dataset.language || 'texto';
     const codigo = pre.innerText.replace(/\n$/, '');
-    // Los ejemplos asíncronos imprimirían después de que el worker responde, y los módulos
-    // necesitan archivos que el sandbox no tiene: se dejan solo para copiar
+    // Se dejan solo para copiar los ejemplos que necesitan lo que el sandbox no tiene:
+    // red (fetch), archivos (módulos), una página (document) o sintaxis que aún no existe
     const asincrono =
-      /\b(setTimeout|setInterval|fetch)\s*\(|\bawait\b/.test(codigo) ||
+      /\bfetch\s*\(/.test(codigo) ||
+      /\b(document|window|localStorage|sessionStorage|navigator)\./.test(codigo) ||
       /^\s*(import|export)\s/m.test(codigo) ||
+      /\bimport\s*(\.\s*meta\b|\()|\brequire\s*\(/.test(codigo) ||
       // Propuestas que los navegadores todavía no ejecutan: decorators y chunking de iteradores
       /^\s*@\w/m.test(codigo) ||
       /\.(chunks|windows)\s*\(/.test(codigo);
-    const ejecutable = /^(js|javascript)$/.test(lenguaje) && /console\.log\s*\(/.test(codigo) && !asincrono;
+    const ejecutable = /^(js|javascript)$/.test(lenguaje) && /console\.\w+\s*\(/.test(codigo) && !asincrono;
 
     const figura = document.createElement('figure');
     figura.className = `codigo-vivo lang-${lenguaje}`;

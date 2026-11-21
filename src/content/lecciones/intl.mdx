@@ -1,0 +1,139 @@
+---
+titulo: Internacionalización con Intl
+seccion: biblioteca-estandar
+tema: intl
+minutos: 12
+resumen: Cómo mostrar números, monedas, unidades, fechas, tiempos relativos, listas, plurales y nombres de idiomas según las reglas de cada idioma y país con la API Intl, y cómo ordenar y segmentar texto correctamente.
+intro: 'Un mismo precio se escribe <code>1.234,50 €</code> en España, <code>$1,234.50</code> en Estados Unidos y <code>S/ 1,234.50</code> en Perú. Las fechas, los plurales y hasta el orden alfabético cambian de un idioma a otro. <u>Intl</u> trae todas esas reglas incorporadas: le dices el idioma y él se encarga del resto.'
+ejercicios: [intl-auto, intl-orden, intl-detective, intl-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { intlAuto, intlOrden, intlDetective, intlLab } from '../../data/ejercicios/biblioteca';
+
+## El idioma
+
+Todos los formateadores de `Intl` reciben primero un **identificador de idioma** (*locale*): `"es"` (español), `"es-PE"` (español de Perú), `"en-US"`, `"pt-BR"`… Sin él, usan el del navegador o del sistema.
+
+```js
+console.log(navigator.language ?? "(sin navegador)");
+console.log(Intl.DateTimeFormat().resolvedOptions().locale);
+```
+
+## Números, monedas y unidades
+
+```js
+const n = 1234567.891;
+
+console.log(new Intl.NumberFormat("es-ES").format(n));
+console.log(new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(49.9));
+console.log(new Intl.NumberFormat("es", { style: "percent" }).format(0.256));
+console.log(new Intl.NumberFormat("es", { notation: "compact" }).format(2500000));
+console.log(new Intl.NumberFormat("es", { style: "unit", unit: "kilometer-per-hour" }).format(90));
+console.log(new Intl.NumberFormat("es", { maximumFractionDigits: 1 }).format(3.14159));
+```
+
+Crea el formateador **una vez** y reutilízalo: crearlo cuesta más que usarlo.
+
+## Fechas y horas
+
+```js
+const fecha = new Date(Date.UTC(2026, 10, 20, 18, 30));
+
+console.log(new Intl.DateTimeFormat("es", { dateStyle: "full", timeZone: "UTC" }).format(fecha));
+console.log(new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" }).format(fecha));
+console.log(new Intl.DateTimeFormat("es", { hour: "numeric", minute: "2-digit", timeZone: "America/Lima" }).format(fecha));
+```
+
+Con Temporal, cada objeto tiene `toLocaleString`, que usa este mismo formateador.
+
+## Tiempo relativo y duraciones
+
+```js
+const rel = new Intl.RelativeTimeFormat("es", { numeric: "auto" });
+console.log(rel.format(-1, "day"), "·", rel.format(2, "week"), "·", rel.format(-3, "hour"));
+
+const dur = new Intl.DurationFormat("es", { style: "long" });
+console.log(dur.format({ hours: 1, minutes: 5 }));
+```
+
+## Listas y plurales
+
+```js
+console.log(new Intl.ListFormat("es").format(["pan", "leche", "huevos"]));
+console.log(new Intl.ListFormat("es", { type: "disjunction" }).format(["té", "café"]));
+
+const plural = new Intl.PluralRules("es");
+const mensajes = { one: "mensaje nuevo", other: "mensajes nuevos" };
+for (const n of [0, 1, 5]) {
+  console.log(n, mensajes[plural.select(n)]);
+}
+```
+
+`PluralRules` devuelve una categoría (`"zero"`, `"one"`, `"two"`, `"few"`, `"many"` u `"other"`). El español usa dos; el árabe, las seis. Escribir `n === 1 ? … : …` solo funciona en algunos idiomas.
+
+## Ordenar texto
+
+`sort()` sin comparador ordena por código Unicode: las mayúsculas van antes que las minúsculas y las letras con acento, al final. `Intl.Collator` ordena como una persona:
+
+```js
+const nombres = ["Zoe", "ana", "Óscar", "ñandú", "Nicolás"];
+
+console.log([...nombres].sort());
+console.log([...nombres].sort(new Intl.Collator("es").compare));
+console.log(new Intl.Collator("es", { sensitivity: "base" }).compare("Ana", "ána"));  // 0: iguales
+```
+
+## Nombres de idiomas, países y monedas
+
+```js
+const idiomas = new Intl.DisplayNames("es", { type: "language" });
+const regiones = new Intl.DisplayNames("es", { type: "region" });
+const monedas = new Intl.DisplayNames("es", { type: "currency" });
+
+console.log(idiomas.of("pt-BR"), "·", regiones.of("JP"), "·", monedas.of("PEN"));
+```
+
+<Nota tipo="ojo">
+  Algunos formatos usan **espacios especiales** (de no separación), no el espacio normal, para que el símbolo y el número no queden en líneas distintas. Si comparas el resultado de `Intl` con un texto escrito a mano, puede no coincidir aunque se vea igual.
+</Nota>
+
+## Resumen
+
+- `Intl` conoce las reglas de cada idioma y país: dale un identificador como `"es-PE"`.
+- `NumberFormat`: números, monedas (siempre con `currency`), porcentajes, unidades, notación compacta.
+- `DateTimeFormat`, `RelativeTimeFormat` y `DurationFormat`: fechas, "hace 3 días" y duraciones.
+- `ListFormat` une listas; `PluralRules` elige la forma del plural.
+- `Collator` ordena texto correctamente; `DisplayNames` traduce nombres de idiomas, regiones y monedas.
+
+<Practica>
+
+<Autoevaluacion id={intlAuto.id} numero={1} titulo={intlAuto.titulo} preguntas={intlAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={intlOrden.id} numero={2} titulo={intlOrden.titulo} codigo={intlOrden.codigo} salida={intlOrden.salida} inicio={intlOrden.inicio} explicacion={intlOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un número en dos idiomas, una lista y un tiempo relativo. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={intlDetective.id} numero={3} titulo={intlDetective.titulo} codigo={intlDetective.codigo} error={intlDetective.error} culpable={intlDetective.culpable} arreglos={intlDetective.arreglos} hallazgo={intlDetective.hallazgo} pista={intlDetective.pista}>
+  <div slot="enunciado">
+    <p>Se quería mostrar un precio en soles. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={intlLab.id} numero={4} titulo={intlLab.titulo} inicial={intlLab.inicial} verificaciones={intlLab.verificaciones} pistas={intlLab.pistas} solucion={intlLab.solucion} explicacion={intlLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>describirCarrito</code> con <code>Intl.ListFormat</code> e <code>Intl.PluralRules</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,116 @@
+---
+titulo: Import maps y atributos de importación
+seccion: modulos
+tema: import-maps
+minutos: 9
+resumen: Cómo usar nombres de paquetes en el navegador sin herramientas con import maps, prefijos y scopes, import.meta.resolve, y los atributos de importación de ES2025 para importar JSON (y CSS en los navegadores).
+intro: 'En Node.js escribes <code>import { format } from "date-fns"</code> y funciona, porque Node.js busca en <code>node_modules</code>. En el navegador, ese mismo import falla: el navegador solo entiende rutas y URLs. Los <u>import maps</u> le enseñan qué significa cada nombre, y los <u>atributos de importación</u> le dicen qué tipo de archivo está importando.'
+nota: 'Como el resto de la sección, estos ejemplos necesitan una página y varios archivos: son para leer y copiar.'
+ejercicios: [maps-auto, maps-orden, maps-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { mapsAuto, mapsOrden, mapsDetective } from '../../data/ejercicios/modulos';
+
+## Un import map
+
+Un `<script type="importmap">`, **antes** de cualquier módulo, asocia nombres con URLs:
+
+```html
+<script type="importmap">
+  {
+    "imports": {
+      "date-fns": "https://esm.sh/date-fns@4.1.0",
+      "componentes/": "/src/componentes/"
+    }
+  }
+</script>
+
+<script type="module">
+  import { format } from "date-fns";
+  import { Boton } from "componentes/boton.js";
+
+  console.log(format(new Date(), "dd/MM/yyyy"));
+</script>
+```
+
+- Una clave sin barra final (`"date-fns"`) reemplaza ese nombre exacto.
+- Una clave con barra final (`"componentes/"`) es un **prefijo**: todo lo que empiece así se resuelve dentro de esa carpeta.
+
+Así, el código de tus módulos se escribe igual que en un proyecto con Node.js, y la versión de cada dependencia se cambia en un solo lugar.
+
+## Scopes
+
+Un mapa puede tener reglas distintas según quién importa, con `"scopes"`. Por ejemplo, para que una parte antigua del sitio siga usando otra versión:
+
+```json
+{
+  "imports": { "fecha": "/libs/fecha@3/index.js" },
+  "scopes": {
+    "/legado/": { "fecha": "/libs/fecha@2/index.js" }
+  }
+}
+```
+
+Y para saber a qué URL se resuelve algo, sin cargarlo, está `import.meta.resolve("fecha")`.
+
+## Atributos de importación (ES2025)
+
+Un módulo JavaScript se ejecuta al importarlo. ¿Qué pasa si importas un archivo `.json` y el servidor, por error o a propósito, devuelve código? Por seguridad, para importar algo que **no** es JavaScript hay que decir qué tipo esperas, con `with`:
+
+```js
+import config from "./config.json" with { type: "json" };
+import traducciones from "./es.json" with { type: "json" };
+
+console.log(config.version, traducciones.saludo);
+```
+
+El runtime comprueba que el archivo sea de verdad JSON y lo entrega ya convertido en objeto. Funciona en los navegadores modernos, Node.js, Deno y Bun. También con el `import()` dinámico:
+
+```js
+const { default: datos } = await import("./datos.json", { with: { type: "json" } });
+```
+
+En los navegadores existe además `type: "css"`, que importa una hoja de estilos para usarla en Web Components:
+
+```js
+import estilos from "./tarjeta.css" with { type: "css" };
+document.adoptedStyleSheets = [...document.adoptedStyleSheets, estilos];
+```
+
+<Nota>
+  Verás código antiguo con `assert { type: "json" }` en lugar de `with`. Era una versión anterior de la propuesta y ya no se recomienda: usa `with`.
+</Nota>
+
+## Resumen
+
+- El navegador solo entiende rutas y URLs; un **import map** le enseña nombres como `"date-fns"`.
+- Claves exactas y **prefijos** terminados en `/`; `"scopes"` para reglas por carpeta.
+- `import.meta.resolve` dice a qué URL se resolvería un import.
+- **Atributos de importación** (ES2025): `with { type: "json" }` importa JSON de forma segura.
+- `with { type: "css" }` importa hojas de estilo en los navegadores.
+
+<Practica>
+
+<Autoevaluacion id={mapsAuto.id} numero={1} titulo={mapsAuto.titulo} preguntas={mapsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={mapsOrden.id} numero={2} titulo={mapsOrden.titulo} codigo={mapsOrden.codigo} salida={mapsOrden.salida} inicio={mapsOrden.inicio} explicacion={mapsOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una página con un import map. Ordena las URLs que imprimiría la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={mapsDetective.id} numero={3} titulo={mapsDetective.titulo} codigo={mapsDetective.codigo} error={mapsDetective.error} culpable={mapsDetective.culpable} arreglos={mapsDetective.arreglos} hallazgo={mapsDetective.hallazgo} pista={mapsDetective.pista}>
+  <div slot="enunciado">
+    <p>Un import que funciona en Node.js falla en el navegador. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

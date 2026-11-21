@@ -1,0 +1,183 @@
+---
+titulo: 'Gestión explícita de recursos: using'
+seccion: biblioteca-estandar
+tema: using
+minutos: 11
+resumen: Cómo liberar recursos (archivos, conexiones, suscripciones) de forma automática con using y await using (ES2027), el protocolo Symbol.dispose y Symbol.asyncDispose, el orden de liberación, y DisposableStack para juntar varias limpiezas.
+intro: 'Abrir un archivo, una conexión o una suscripción implica una promesa implícita: <u>cerrarla</u> cuando termines, también si algo falla en el medio. Hasta ahora eso se hacía a mano con <code>try/finally</code>, y era fácil olvidarlo. Con <code>using</code>, el lenguaje lo hace por ti al salir del bloque.'
+nota: 'La gestión explícita de recursos forma parte de <b>ES2027</b>: ya terminada en TC39 y disponible en los navegadores modernos y en Node.js 24. En esta página puedes ejecutar los ejemplos.'
+ejercicios: [using-auto, using-orden, using-detective, using-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { usingAuto, usingOrden, usingDetective, usingLab } from '../../data/ejercicios/biblioteca';
+
+## El problema
+
+```js
+function abrir(nombre) {
+  console.log("abre", nombre);
+  return { cerrar: () => console.log("cierra", nombre) };
+}
+
+function procesar() {
+  const archivo = abrir("datos.txt");
+  try {
+    console.log("procesando…");
+    throw new Error("formato inválido");
+  } finally {
+    archivo.cerrar();   // hay que acordarse, en cada función
+  }
+}
+
+try { procesar(); } catch (e) { console.log("error:", e.message); }
+```
+
+Funciona, pero con dos o tres recursos el código se llena de `try/finally` anidados, y basta un olvido para dejar algo abierto.
+
+## using
+
+Un objeto **desechable** (*disposable*) tiene un método bajo la clave `Symbol.dispose`. Si lo declaras con `using`, ese método se llama **automáticamente** al salir del bloque, pase lo que pase:
+
+```js
+function abrir(nombre) {
+  console.log("abre", nombre);
+  return {
+    nombre,
+    [Symbol.dispose]() {
+      console.log("cierra", nombre);
+    },
+  };
+}
+
+function procesar() {
+  using archivo = abrir("datos.txt");
+  console.log("procesando", archivo.nombre);
+  throw new Error("formato inválido");
+}   // ← aquí se llama a archivo[Symbol.dispose](), aunque haya un error
+
+try { procesar(); } catch (e) { console.log("error:", e.message); }
+```
+
+`using` declara una constante, como `const`, y solo se puede usar dentro de bloques, funciones y módulos.
+
+## Varios recursos
+
+Con varios `using`, se liberan en orden **inverso** al de apertura, como una pila: lo que se abrió después puede depender de lo anterior.
+
+```js
+const recurso = (n) => ({ [Symbol.dispose]: () => console.log("libera", n) });
+
+{
+  using conexion = recurso("conexión");
+  using transaccion = recurso("transacción");
+  console.log("trabajando");
+}
+```
+
+Si el valor es `null` o `undefined`, `using` simplemente no hace nada al salir: útil para recursos opcionales.
+
+## await using
+
+Muchas limpiezas son **asíncronas**: cerrar una conexión, vaciar datos a disco. Para eso está `Symbol.asyncDispose`, con `await using`, que espera a que termine la limpieza:
+
+```js
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function conectar(nombre) {
+  console.log("conecta", nombre);
+  return {
+    async [Symbol.asyncDispose]() {
+      await esperar(20);
+      console.log("desconectó", nombre, "(tardó 20 ms)");
+    },
+  };
+}
+
+async function tarea() {
+  await using db = conectar("principal");
+  console.log("consultando");
+}
+
+await tarea();
+console.log("tarea terminada, conexión ya cerrada");
+```
+
+## DisposableStack
+
+`DisposableStack` junta varias limpiezas en un solo objeto desechable. Sirve cuando no sabes de antemano cuántos recursos vas a abrir, o para recursos que no tienen `Symbol.dispose`:
+
+```js
+function prepararPantalla() {
+  using pila = new DisposableStack();
+
+  const intervalo = setInterval(() => {}, 1000);
+  pila.defer(() => {
+    clearInterval(intervalo);
+    console.log("intervalo detenido");
+  });
+
+  const conexion = pila.use({ [Symbol.dispose]: () => console.log("conexión cerrada") });
+  pila.adopt("suscripción", (s) => console.log(s, "cancelada"));
+
+  console.log("pantalla lista");
+  // Si algo fallara aquí, todo lo anterior se liberaría solo
+  return pila.move();   // transfiere las limpiezas a quien llamó
+}
+
+{
+  using limpieza = prepararPantalla();
+  console.log("usando la pantalla");
+}
+```
+
+- `defer(fn)` agrega una función de limpieza.
+- `use(recurso)` agrega un objeto desechable y lo devuelve.
+- `adopt(valor, fn)` agrega un valor cualquiera con su función de limpieza.
+- `move()` pasa todo a una pila nueva, para que la función pueda devolver sus recursos sin liberarlos.
+
+`AsyncDisposableStack` es la versión asíncrona, para `await using`.
+
+<Nota>
+  El lenguaje y las plataformas ya están adoptando el protocolo: en Node.js, los archivos de `fs/promises` y otros objetos tienen `Symbol.asyncDispose`, y los iteradores de los generadores tienen `Symbol.dispose`. Poco a poco, más APIs van a funcionar directamente con `using`.
+</Nota>
+
+## Resumen
+
+- `using x = recurso` llama a `x[Symbol.dispose]()` al salir del bloque, también con errores, `return` o `break`.
+- Los recursos se liberan en orden **inverso** al de apertura.
+- `await using` y `Symbol.asyncDispose` para limpiezas asíncronas.
+- `DisposableStack` (y `AsyncDisposableStack`) junta limpiezas con `defer`, `use`, `adopt` y `move`.
+- Reemplaza los `try/finally` de limpieza, que eran fáciles de olvidar.
+
+<Practica>
+
+<Autoevaluacion id={usingAuto.id} numero={1} titulo={usingAuto.titulo} preguntas={usingAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={usingOrden.id} numero={2} titulo={usingOrden.titulo} codigo={usingOrden.codigo} salida={usingOrden.salida} inicio={usingOrden.inicio} explicacion={usingOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos recursos en un bloque. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={usingDetective.id} numero={3} titulo={usingDetective.titulo} codigo={usingDetective.codigo} error={usingDetective.error} culpable={usingDetective.culpable} arreglos={usingDetective.arreglos} hallazgo={usingDetective.hallazgo} pista={usingDetective.pista}>
+  <div slot="enunciado">
+    <p>El archivo tiene un método para cerrarse, pero <code>using</code> no lo encuentra. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={usingLab.id} numero={4} titulo={usingLab.titulo} inicial={usingLab.inicial} verificaciones={usingLab.verificaciones} pistas={usingLab.pistas} solucion={usingLab.solucion} explicacion={usingLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>conectar(nombre)</code>: un recurso desechable que se cierra solo, aunque haya un error.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

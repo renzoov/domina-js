@@ -1,0 +1,132 @@
+---
+titulo: Callbacks
+seccion: asincronia
+tema: callbacks
+minutos: 9
+resumen: El primer estilo de código asíncrono, con funciones que se llaman cuando la tarea termina; la convención error-first de Node.js, por qué try/catch no atrapa errores asíncronos y el problema del callback hell.
+intro: 'Antes de las promesas, la única forma de escribir código asíncrono era pasar una función que el runtime llamaría al terminar: un <u>callback</u>. Todavía aparece en todas partes (eventos, temporizadores, APIs antiguas de Node.js) y entender sus problemas es la mejor forma de entender por qué existen las promesas.'
+ejercicios: [callbacks-auto, callbacks-orden, callbacks-detective, callbacks-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { callbacksAuto, callbacksOrden, callbacksDetective, callbacksLab } from '../../data/ejercicios/asincronia';
+
+## Avísame cuando termines
+
+Una función asíncrona con callback recibe, además de sus datos, la función que debe llamar al terminar:
+
+```js
+function prepararCafe(tipo, alTerminar) {
+  console.log(`preparando ${tipo}…`);
+  setTimeout(() => {
+    alTerminar(`un ${tipo} caliente`);
+  }, 200);
+}
+
+prepararCafe("cortado", (cafe) => console.log("listo:", cafe));
+console.log("mientras, leo el diario");
+```
+
+## Error primero
+
+¿Cómo avisa una función con callback que algo salió mal? No puede lanzar un error, porque cuando falla ya nadie la está esperando en un `try`. Node.js popularizó una convención: el **primer argumento** del callback es el error (o `null`), y los siguientes, el resultado.
+
+```js
+function buscarUsuario(id, cb) {
+  setTimeout(() => {
+    if (id <= 0) cb(new Error("id inválido"));
+    else cb(null, { id, nombre: "Ana" });
+  }, 50);
+}
+
+buscarUsuario(7, (error, usuario) => {
+  if (error) return console.log("Falló:", error.message);
+  console.log("Encontré a", usuario.nombre);
+});
+
+buscarUsuario(-1, (error, usuario) => {
+  if (error) return console.log("Falló:", error.message);
+  console.log("Encontré a", usuario.nombre);
+});
+```
+
+## Por qué try/catch no sirve
+
+```js
+try {
+  setTimeout(() => {
+    throw new Error("¡ups!");
+  }, 0);
+} catch (e) {
+  console.log("Nunca llego aquí");
+}
+console.log("el try ya terminó");
+```
+
+Cuando el callback lanza, el `try` terminó hace rato: el callback corre en otra vuelta del event loop, con la pila vacía. El error no tiene quién lo atrape y termina el programa. Con callbacks, los errores **siempre** se pasan como argumento.
+
+## El callback hell
+
+Cuando cada paso depende del anterior, los callbacks se anidan:
+
+```js
+buscarUsuario(7, (error, usuario) => {
+  if (error) return manejar(error);
+  buscarPedidos(usuario.id, (error, pedidos) => {
+    if (error) return manejar(error);
+    buscarDetalle(pedidos[0], (error, detalle) => {
+      if (error) return manejar(error);
+      calcularEnvio(detalle, (error, envio) => {
+        if (error) return manejar(error);
+        mostrar(envio);
+      });
+    });
+  });
+});
+```
+
+Es la **pirámide de la perdición**: el código se desplaza a la derecha, el manejo de errores se repite en cada nivel, y hacer dos cosas en paralelo o reintentar una se vuelve muy difícil. Hay otro problema, menos visible: le entregas tu función a código ajeno y **confías** en que la llame una vez, ni cero ni dos veces. Se llama *inversión de control*.
+
+<Nota tipo="consejo">
+  Las promesas, el próximo tema, resuelven estos problemas. Si usas una API antigua de Node.js con callbacks, `util.promisify` la convierte en una que devuelve promesas, y casi todas tienen ya su versión moderna (`node:fs/promises`, por ejemplo).
+</Nota>
+
+## Resumen
+
+- Un **callback** es una función que se pasa para que la llamen cuando la tarea termine.
+- Convención **error-first**: `(error, resultado)`; mira siempre primero el error.
+- `try/catch` no atrapa errores lanzados dentro de un callback asíncrono.
+- Anidar callbacks lleva al **callback hell**: difícil de leer, de manejar errores y de combinar.
+- Una función asíncrona debe llamar al callback **siempre** de forma asíncrona.
+
+<Practica>
+
+<Autoevaluacion id={callbacksAuto.id} numero={1} titulo={callbacksAuto.titulo} preguntas={callbacksAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={callbacksOrden.id} numero={2} titulo={callbacksOrden.titulo} codigo={callbacksOrden.codigo} salida={callbacksOrden.salida} inicio={callbacksOrden.inicio} explicacion={callbacksOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos divisiones asíncronas, una de ellas imposible. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={callbacksDetective.id} numero={3} titulo={callbacksDetective.titulo} codigo={callbacksDetective.codigo} error={callbacksDetective.error} culpable={callbacksDetective.culpable} arreglos={callbacksDetective.arreglos} hallazgo={callbacksDetective.hallazgo} pista={callbacksDetective.pista}>
+  <div slot="enunciado">
+    <p>Hay un <code>try/catch</code>, pero el error se escapa igual. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={callbacksLab.id} numero={4} titulo={callbacksLab.titulo} inicial={callbacksLab.inicial} verificaciones={callbacksLab.verificaciones} pistas={callbacksLab.pistas} solucion={callbacksLab.solucion} explicacion={callbacksLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>sumarLuego(a, b, cb)</code> al estilo error-first, siempre asíncrona.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

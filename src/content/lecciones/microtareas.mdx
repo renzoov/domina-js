@@ -1,0 +1,135 @@
+---
+titulo: Microtareas y macrotareas
+seccion: asincronia
+tema: microtareas
+minutos: 11
+resumen: Las dos colas del event loop, qué va a cada una (promesas y queueMicrotask frente a temporizadores y eventos), en qué orden se vacían, dónde encaja requestAnimationFrame y cómo una cadena de microtareas puede congelar la página.
+intro: 'En <b>El event loop</b> viste una sola cola. En realidad hay <u>dos</u>, y no tienen la misma prioridad. Saber a cuál va cada cosa explica por qué un <code>then</code> corre antes que un <code>setTimeout</code> de 0 ms, y responde el acertijo favorito de las entrevistas de JavaScript.'
+pizarron: microtareas
+modoPizarron: eventloop
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Hay dos colas: la de <b>tareas</b> (azul) y la de <b>microtareas</b> (rosa). Cuando la pila queda vacía, hay algo en las dos. Fíjate en cuál elige primero el event loop.'
+ejercicios: [micro-auto, micro-orden, micro-detective, micro-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { microAuto, microOrden, microDetective, microLab } from '../../data/ejercicios/asincronia';
+
+## Dos colas
+
+| Cola | Qué va ahí |
+|---|---|
+| **Tareas** (macrotareas) | Callbacks de `setTimeout` y `setInterval`, eventos (clics, teclas), mensajes de workers, respuestas de red |
+| **Microtareas** | Reacciones de promesas (`then`, `catch`, `finally`), lo que sigue a un `await`, `queueMicrotask(fn)` |
+
+## El orden
+
+Cada vuelta del event loop hace esto:
+
+1. Ejecuta **una** tarea, la primera de la cola de tareas. (El programa principal cuenta como la primera.)
+2. Vacía **toda** la cola de microtareas, incluidas las que se agreguen mientras tanto.
+3. En el navegador, si toca, **dibuja** la página (y antes ejecuta los `requestAnimationFrame`).
+4. Vuelve a empezar.
+
+Como viste en el pizarrón, el resultado práctico es: **lo síncrono primero, después todas las microtareas, después una macrotarea**.
+
+```js
+console.log("1");
+setTimeout(() => console.log("5: macrotarea"), 0);
+queueMicrotask(() => console.log("3: microtarea"));
+Promise.resolve().then(() => console.log("4: microtarea"));
+console.log("2");
+```
+
+## await también es una microtarea
+
+Lo que viene después de un `await` se retoma como microtarea:
+
+```js
+async function f() {
+  console.log("B: f empieza");
+  await null;
+  console.log("D: f retoma (microtarea)");
+}
+
+console.log("A");
+setTimeout(() => console.log("E: macrotarea"), 0);
+f();
+console.log("C");
+```
+
+## Microtareas que no terminan nunca
+
+Como la cola de microtareas se vacía **entera** antes de seguir, una microtarea que siempre agenda otra impide que corra cualquier tarea: temporizadores, clics y el dibujo de la página.
+
+```js
+let vueltas = 0;
+function sinFin() {
+  vueltas++;
+  if (vueltas < 100000) queueMicrotask(sinFin);  // con un límite, para no colgar esta página
+}
+
+setTimeout(() => console.log("el temporizador corrió después de", vueltas, "microtareas"), 0);
+queueMicrotask(sinFin);
+```
+
+Sin el límite, el temporizador no correría nunca y la pestaña quedaría congelada. Con `setTimeout` en lugar de `queueMicrotask`, en cambio, cada vuelta le daría paso a los eventos y al dibujo.
+
+## requestAnimationFrame
+
+En el navegador, `requestAnimationFrame(fn)` ejecuta `fn` justo **antes del siguiente dibujo**, unas 60 veces por segundo (o al ritmo de la pantalla). Es el lugar correcto para animar:
+
+```js
+let x = 0;
+function mover() {
+  x += 2;
+  if (x < 10) requestAnimationFrame(mover);
+  else console.log("animación terminada en x =", x);
+}
+requestAnimationFrame(mover);
+```
+
+<Nota>
+  ¿Para qué sirve `queueMicrotask` en la práctica? Para ejecutar algo "apenas termine el código actual", antes que cualquier evento o temporizador. Las librerías lo usan, por ejemplo, para agrupar varios cambios y procesarlos juntos una sola vez.
+</Nota>
+
+## Resumen
+
+- Hay dos colas: **tareas** (temporizadores, eventos, red) y **microtareas** (promesas, `await`, `queueMicrotask`).
+- Orden: lo síncrono, después **todas** las microtareas, después **una** tarea, y se repite.
+- Por eso un `then` corre antes que un `setTimeout(…, 0)`.
+- Microtareas que se encadenan sin fin congelan la página.
+- `requestAnimationFrame` corre antes de cada dibujo: úsalo para animar.
+
+<Practica>
+
+<Autoevaluacion id={microAuto.id} numero={1} titulo={microAuto.titulo} preguntas={microAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={microOrden.id} numero={2} titulo={microOrden.titulo} codigo={microOrden.codigo} salida={microOrden.salida} inicio={microOrden.inicio} explicacion={microOrden.explicacion}>
+  <div slot="enunciado">
+    <p>El acertijo de las entrevistas: lo síncrono, dos tipos de microtareas y una macrotarea. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={microDetective.id} numero={3} titulo={microDetective.titulo} codigo={microDetective.codigo} error={microDetective.error} culpable={microDetective.culpable} arreglos={microDetective.arreglos} hallazgo={microDetective.hallazgo} pista={microDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien supuso un orden que no es el real. Encuentra la línea que provoca el problema y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={microLab.id} numero={4} titulo={microLab.titulo} inicial={microLab.inicial} verificaciones={microLab.verificaciones} pistas={microLab.pistas} solucion={microLab.solucion} explicacion={microLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>programar(registro)</code> usando una cola distinta para cada instrucción.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

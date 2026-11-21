@@ -1,0 +1,107 @@
+---
+titulo: Si JS tiene un solo hilo, ¿cómo espera?
+seccion: asincronia
+tema: como-espera
+minutos: 9
+resumen: Por qué esperar bloqueando congela todo, cómo delega JavaScript la espera en el runtime, qué significa run to completion y por qué un setTimeout de 0 ms no se ejecuta enseguida.
+intro: 'Una página pide datos a un servidor, que tarda medio segundo en responder. Si JavaScript se quedara <u>parado esperando</u>, durante ese medio segundo no habría clics, ni animaciones, ni scroll: la página estaría congelada. La solución de JavaScript es no esperar nunca: <u>dejar un encargo y seguir</u>.'
+nota: 'Esta sección retoma lo que viste en <b>Motor y runtime</b> y en <b>La pila de llamadas</b>. Desde aquí, el sandbox de la página ejecuta código asíncrono: puedes probar <code>setTimeout</code>, promesas y <code>await</code> en los ejemplos y en los laboratorios.'
+ejercicios: [espera-auto, espera-orden, espera-detective, espera-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { esperaAuto, esperaOrden, esperaDetective, esperaLab } from '../../data/ejercicios/asincronia';
+
+## Esperar bloqueando
+
+Imagina que quieres esperar un segundo y escribes un bucle que mira el reloj:
+
+```js
+const inicio = Date.now();
+while (Date.now() - inicio < 500) {
+  // esperar… sin hacer nada más
+}
+console.log("pasó medio segundo");
+```
+
+Funciona, pero durante ese medio segundo el único hilo de JavaScript está **ocupado dando vueltas**. En una página, nada responde: es lo que pasa cuando una pestaña se "cuelga". A esta forma de esperar se le llama **bloquear**.
+
+## Dejar un encargo
+
+La alternativa es pedirle al **runtime** que avise cuando pase el tiempo, y seguir trabajando:
+
+```js
+console.log("pongo el agua a hervir");
+
+setTimeout(() => {
+  console.log("¡el agua hierve!");
+}, 300);
+
+console.log("mientras tanto, corto el pan");
+console.log("y preparo las tazas");
+```
+
+`setTimeout` no espera: le entrega la función al runtime y termina enseguida. El runtime cuenta el tiempo **fuera de tu hilo** y, cuando pasa, deja la función lista para ejecutarse. Es lo mismo que hace con una descarga, la lectura de un archivo o un clic: tú dejas una función (un **callback**) y el runtime la llama cuando hay algo que hacer.
+
+## Run to completion
+
+Una regla sostiene todo esto: una función que empezó a ejecutarse corre **hasta el final** sin que nada la interrumpa. Un callback nunca "se cuela" en medio de otro código: espera a que la pila de llamadas quede **vacía**.
+
+```js
+setTimeout(() => console.log("temporizador"), 0);
+
+for (let i = 1; i <= 3; i++) {
+  console.log("vuelta", i);
+}
+console.log("fin del programa");
+```
+
+Aunque el temporizador es de **0 ms**, su callback corre al final: primero tiene que terminar todo el código que está en la pila.
+
+<Nota tipo="ojo">
+  El tiempo de `setTimeout` es un **mínimo**, no una cita exacta. Si la pila está ocupada cuando vence, el callback espera. Por eso nunca hay que bloquear el hilo con cálculos largos: retrasan todo lo demás.
+</Nota>
+
+## Lo que viene
+
+Esta idea, dejar encargos y procesar los avisos de a uno cuando la pila está libre, tiene un nombre: el **event loop**, el próximo tema. Después verás las tres formas de escribir código que espera: **callbacks**, **promesas** y **async/await**.
+
+## Resumen
+
+- Esperar con un bucle **bloquea** el único hilo: todo se congela.
+- JavaScript no espera: le deja un **encargo** al runtime y sigue.
+- El runtime cuenta el tiempo y atiende la red y los eventos fuera de tu hilo.
+- **Run to completion**: un callback solo corre cuando la pila está vacía.
+- `setTimeout(f, 0)` significa "lo antes posible", que es **después** del código actual.
+
+<Practica>
+
+<Autoevaluacion id={esperaAuto.id} numero={1} titulo={esperaAuto.titulo} preguntas={esperaAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={esperaOrden.id} numero={2} titulo={esperaOrden.titulo} codigo={esperaOrden.codigo} salida={esperaOrden.salida} inicio={esperaOrden.inicio} explicacion={esperaOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un temporizador de 0 ms y un bucle. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={esperaDetective.id} numero={3} titulo={esperaDetective.titulo} codigo={esperaDetective.codigo} error={esperaDetective.error} culpable={esperaDetective.culpable} arreglos={esperaDetective.arreglos} hallazgo={esperaDetective.hallazgo} pista={esperaDetective.pista}>
+  <div slot="enunciado">
+    <p>El dato se asigna, pero no a tiempo. Encuentra la línea que falla y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={esperaLab.id} numero={4} titulo={esperaLab.titulo} inicial={esperaLab.inicial} verificaciones={esperaLab.verificaciones} pistas={esperaLab.pistas} solucion={esperaLab.solucion} explicacion={esperaLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>avisarDespues(texto, ms)</code> sin bloquear el programa.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

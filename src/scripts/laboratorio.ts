@@ -31,7 +31,7 @@ const colores = HighlightStyle.define([
   { tag: [t.operator, t.punctuation], color: '#b8bcb4' },
 ]);
 
-const LIMITE_MS = 1500;
+const LIMITE_MS = 4500;
 
 export function iniciarLaboratorios() {
   document.querySelectorAll<HTMLElement>('[data-lab]').forEach((el) => {

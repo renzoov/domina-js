@@ -1,0 +1,145 @@
+---
+titulo: Cancelar con AbortController
+seccion: asincronia
+tema: abortcontroller
+minutos: 10
+resumen: Cómo cancelar operaciones asíncronas con AbortController y AbortSignal, límites de tiempo con AbortSignal.timeout, combinar señales con AbortSignal.any, cancelar un fetch y escribir tus propias funciones cancelables.
+intro: 'El usuario escribe en un buscador, y cada letra lanza una búsqueda. Si escribe rápido, las respuestas viejas ya no sirven: hay que <u>cancelarlas</u>. Una promesa, por sí sola, no se puede detener. Para eso existe <code>AbortController</code>, el mecanismo estándar de cancelación de la web y de Node.js.'
+ejercicios: [abort-auto, abort-orden, abort-detective, abort-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { abortAuto, abortOrden, abortDetective, abortLab } from '../../data/ejercicios/asincronia';
+
+## Controlador y señal
+
+Hay dos piezas:
+
+- El **controlador** (`AbortController`) es el botón de cancelar: tiene el método `abort()`.
+- La **señal** (`controller.signal`) es lo que se le pasa a la operación. Avisa cuando se cancela.
+
+```js
+const control = new AbortController();
+const { signal } = control;
+
+signal.addEventListener("abort", () => {
+  console.log("se canceló:", signal.reason);
+});
+
+console.log(signal.aborted);  // false
+control.abort("ya no hace falta");
+console.log(signal.aborted);  // true
+```
+
+Quien cancela no necesita saber nada de la operación; la operación no necesita saber quién cancela. Solo comparten la señal.
+
+## Cancelar un fetch
+
+`fetch` acepta una señal. Si se cancela, la promesa se rechaza con un error de nombre `AbortError`:
+
+```js
+const control = new AbortController();
+
+fetch("/api/buscar?q=java", { signal: control.signal })
+  .then((r) => r.json())
+  .then((datos) => mostrar(datos))
+  .catch((e) => {
+    if (e.name === "AbortError") return;  // cancelada a propósito: no es un error
+    mostrarError(e);
+  });
+
+// El usuario siguió escribiendo: esta búsqueda ya no sirve
+control.abort();
+```
+
+Distinguir `AbortError` del resto es importante: una cancelación intencional no debería mostrarse como un fallo.
+
+## Límites de tiempo y señales combinadas
+
+`AbortSignal.timeout(ms)` crea una señal que se cancela sola. `AbortSignal.any([…])` combina varias: se cancela en cuanto lo hace cualquiera.
+
+```js
+const usuario = new AbortController();
+
+const señal = AbortSignal.any([
+  usuario.signal,            // el botón «cancelar»
+  AbortSignal.timeout(100),  // o 100 ms, lo que pase primero
+]);
+
+señal.addEventListener("abort", () => {
+  console.log("cancelada por:", señal.reason.name);
+});
+```
+
+Si la señal se canceló por tiempo, el motivo es un error de nombre `TimeoutError`; si fue por `abort()` sin argumento, `AbortError`.
+
+## Tus propias funciones cancelables
+
+Cualquier función asíncrona puede respetar una señal. El contrato es siempre el mismo:
+
+1. Si la señal **ya** está cancelada, rechazar enseguida.
+2. Escuchar el evento `abort`.
+3. Al cancelarse, **liberar** lo que se estaba usando (temporizadores, conexiones) y rechazar con `signal.reason`.
+
+```js
+function esperar(ms, signal) {
+  return new Promise((ok, mal) => {
+    if (signal?.aborted) return mal(signal.reason);
+    const id = setTimeout(ok, ms);
+    signal?.addEventListener("abort", () => {
+      clearTimeout(id);
+      mal(signal.reason);
+    }, { once: true });
+  });
+}
+
+try {
+  await esperar(1000, AbortSignal.timeout(50));
+} catch (e) {
+  console.log("detenida:", e.name);
+}
+```
+
+<Nota tipo="consejo">
+  `signal.throwIfAborted()` lanza el motivo si la señal está cancelada. Es cómodo en funciones largas con varios pasos: lo llamas entre paso y paso para no seguir trabajando en algo que ya nadie quiere.
+</Nota>
+
+## Resumen
+
+- `AbortController` cancela; su `signal` se le pasa a la operación.
+- `fetch(url, { signal })` se rechaza con `AbortError` al cancelarse: no lo trates como un fallo.
+- `AbortSignal.timeout(ms)` cancela por tiempo (`TimeoutError`); `AbortSignal.any` combina señales.
+- Una función cancelable comprueba `signal.aborted`, escucha `abort`, libera recursos y rechaza con `signal.reason`.
+- Un controlador por operación: una señal cancelada lo está para siempre.
+
+<Practica>
+
+<Autoevaluacion id={abortAuto.id} numero={1} titulo={abortAuto.titulo} preguntas={abortAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={abortOrden.id} numero={2} titulo={abortOrden.titulo} codigo={abortOrden.codigo} salida={abortOrden.salida} inicio={abortOrden.inicio} explicacion={abortOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una señal que se cancela dos veces. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={abortDetective.id} numero={3} titulo={abortDetective.titulo} codigo={abortDetective.codigo} error={abortDetective.error} culpable={abortDetective.culpable} arreglos={abortDetective.arreglos} hallazgo={abortDetective.hallazgo} pista={abortDetective.pista}>
+  <div slot="enunciado">
+    <p>Una búsqueda nueva se cancela antes de empezar. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={abortLab.id} numero={4} titulo={abortLab.titulo} inicial={abortLab.inicial} verificaciones={abortLab.verificaciones} pistas={abortLab.pistas} solucion={abortLab.solucion} explicacion={abortLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>esperar(ms, signal)</code>: una espera que se puede cancelar.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

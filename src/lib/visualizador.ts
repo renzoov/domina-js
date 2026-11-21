@@ -8,9 +8,16 @@ export interface Marco {
   nota?: string;
   /** Resalta este marco/variable (por defecto se resalta el último) */
   destacar?: boolean;
-  /** 'objeto': un valor que vive aparte en memoria (se dibuja distinto a una variable) */
-  tipo?: 'objeto';
+  /**
+   * 'objeto': un valor que vive aparte en memoria (se dibuja distinto a una variable).
+   * En el modo event loop: 'pila' (un marco de la pila), 'api' (trabajo del runtime),
+   * 'tarea' (cola de tareas) y 'micro' (cola de microtareas).
+   */
+  tipo?: 'objeto' | 'pila' | 'api' | 'tarea' | 'micro';
 }
+
+/** Rótulo de cada zona del modo event loop (se dibuja sobre la tarjeta) */
+export const ZONAS: Record<string, string> = { pila: 'pila', api: 'Web API', tarea: 'cola de tareas', micro: 'microtareas' };
 
 export type Evento = 'inicio' | 'entra' | 'sale' | 'ejecuta' | 'imprime' | 'error' | 'fin';
 

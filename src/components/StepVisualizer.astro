@@ -1,7 +1,7 @@
 ---
 import Icono from './Icono.astro';
 import { resaltar } from '../lib/resaltar';
-import type { DatosVisualizador } from '../lib/visualizador';
+import { ZONAS, type DatosVisualizador } from '../lib/visualizador';
 
 interface Props {
   id: string;
@@ -11,8 +11,9 @@ interface Props {
   fijarControles?: boolean;
   /** false oculta la pila y la gráfica de profundidad (lecciones que todavía no la explican) */
   mostrarPila?: boolean;
-  /** 'variables' reutiliza la columna para mostrar variables y sus valores */
-  modo?: 'pila' | 'variables';
+  /** 'variables' reutiliza la columna para mostrar variables y sus valores;
+   *  'eventloop' muestra la pila, las APIs del runtime y las colas, cada una con su color */
+  modo?: 'pila' | 'variables' | 'eventloop';
 }
 const { id, titulo = 'En el pizarrón', datos, fijarControles = true, mostrarPila = true, modo = 'pila' } = Astro.props;
 // Marco resaltado: el que pide «destacar», o el de arriba
@@ -51,16 +52,16 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
       <div class="pila-cab">
         {modo === 'pila'
           ? <p class="rotulo cima">Pila<Icono nombre="subir" />cima</p>
-          : <p class="rotulo">Variables</p>}
+          : <p class="rotulo">{modo === 'eventloop' ? 'Pila, APIs y colas' : 'Variables'}</p>}
         <span class="anotacion" data-anotacion data-flecha={flechaDe(inicial.evento)} aria-hidden="true">{inicial.anotacion}</span>
       </div>
-      <ol class="marcos" data-pila aria-label={modo === 'pila' ? 'Pila de llamadas, de abajo hacia arriba' : 'Variables y sus valores'}>
+      <ol class="marcos" data-pila aria-label={modo === 'pila' ? 'Pila de llamadas, de abajo hacia arriba' : modo === 'eventloop' ? 'Pila, APIs del runtime y colas' : 'Variables y sus valores'}>
         {inicial.pila.map((m, k) => (
-          <li class:list={['marco', 'caja', { cima: resaltado(inicial.pila) === k, objeto: m.tipo === 'objeto' }]}>{m.nombre}{m.nota && <small>{m.nota}</small>}</li>
+          <li class:list={['marco', 'caja', m.tipo && (m.tipo === 'objeto' ? 'objeto' : `z-${m.tipo}`), { cima: resaltado(inicial.pila) === k }]} data-zona={m.tipo && ZONAS[m.tipo]}>{m.nombre}{m.nota && <small>{m.nota}</small>}</li>
         ))}
       </ol>
       <div class="suelo" aria-hidden="true"></div>
-      <p class="vacia" data-vacia hidden={inicial.pila.length > 0}>{modo === 'pila' ? 'La pila está vacía.' : 'Todavía no hay variables.'}</p>
+      <p class="vacia" data-vacia hidden={inicial.pila.length > 0}>{modo === 'pila' ? 'La pila está vacía.' : modo === 'eventloop' ? 'Pila y colas vacías.' : 'Todavía no hay variables.'}</p>
     </div>
   </div>
 
@@ -109,7 +110,7 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
     <ol>
       {pasos.map((p, i) => (
         <li id={`${id}-paso-${i + 1}-texto`}>
-          <a href={`#${id}-paso-${i + 1}`}>Paso {i + 1}</a>: {limpiar(p.texto)} <span class="pila-txt">{modo === 'pila' ? `Pila: ${p.pila.length ? p.pila.map((m) => m.nombre).join(' → ') : 'vacía'}.` : `Variables: ${p.pila.length ? p.pila.map((m) => `${m.nombre} ${m.nota ?? ''}`.trim()).join(', ') : 'ninguna'}.`}</span>
+          <a href={`#${id}-paso-${i + 1}`}>Paso {i + 1}</a>: {limpiar(p.texto)} <span class="pila-txt">{modo === 'pila' ? `Pila: ${p.pila.length ? p.pila.map((m) => m.nombre).join(' → ') : 'vacía'}.` : modo === 'eventloop' ? `Estado: ${p.pila.length ? p.pila.map((m) => `${m.tipo && ZONAS[m.tipo] ? ZONAS[m.tipo] + ': ' : ''}${m.nombre} ${m.nota ?? ''}`.trim()).join(', ') : 'todo vacío'}.` : `Variables: ${p.pila.length ? p.pila.map((m) => `${m.nombre} ${m.nota ?? ''}`.trim()).join(', ') : 'ninguna'}.`}</span>
         </li>
       ))}
     </ol>
@@ -131,6 +132,16 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
   .modo-variables .marcos { flex-direction: column; }
   .modo-variables .suelo, .modo-variables .leyenda, .modo-variables .profundidad { display: none; }
   .modo-variables .pila-cab { margin-bottom: 10px; }
+  /* Modo event loop: igual que variables, con cada zona en su color de tiza y su rótulo arriba */
+  .modo-eventloop .marcos { flex-direction: column; }
+  .modo-eventloop .suelo, .modo-eventloop .leyenda, .modo-eventloop .profundidad { display: none; }
+  .modo-eventloop .pila-cab { margin-bottom: 10px; }
+  .marcos :global(.marco[data-zona]) { position: relative; margin-top: 14px; }
+  .marcos :global(.marco[data-zona])::before { content: attr(data-zona); position: absolute; top: -15px; left: 2px; font: 400 0.62rem/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--zona, var(--chalk-45)); }
+  .marcos :global(.marco.z-api) { --zona: var(--naranja); border-color: color-mix(in srgb, var(--naranja) 65%, transparent); color: var(--naranja); }
+  .marcos :global(.marco.z-tarea) { --zona: var(--azul); border-style: dashed; border-color: color-mix(in srgb, var(--azul) 65%, transparent); color: var(--azul); }
+  .marcos :global(.marco.z-micro) { --zona: var(--pink); border-style: dashed; border-color: color-mix(in srgb, var(--pink) 65%, transparent); color: var(--pink); }
+  .marcos :global(.marco.z-api small), .marcos :global(.marco.z-tarea small), .marcos :global(.marco.z-micro small) { color: var(--chalk); }
   .vhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
   .vhead h3 { margin: 0; font: 700 1.65rem/1 var(--hand); color: var(--chalk); }
   .contador { font: 400 0.78rem/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--azul); white-space: nowrap; }

@@ -1,0 +1,136 @@
+---
+titulo: ES Modules
+seccion: modulos
+tema: es-modules
+minutos: 11
+resumen: Cómo dividir un programa en archivos con import y export, exportaciones con nombre y por defecto, el orden de evaluación, los enlaces vivos, el import() dinámico e import.meta.
+intro: 'Un programa real no cabe en un archivo. Los <u>módulos</u> permiten dividirlo en piezas, cada una con su propio scope, que deciden qué muestran hacia afuera (<code>export</code>) y qué necesitan de las demás (<code>import</code>). Es el sistema estándar de JavaScript, el mismo en el navegador, Node.js, Deno y Bun.'
+nota: 'Los módulos necesitan varios archivos, y el sandbox de esta página ejecuta uno solo. Por eso los ejemplos de esta sección son para leer y copiar, y la práctica no tiene laboratorio. Para probarlos, crea los archivos en tu editor y ejecútalos con Node.js, o ábrelos desde una página con <code>&lt;script type="module"&gt;</code>.'
+ejercicios: [esm-auto, esm-orden, esm-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { esmAuto, esmOrden, esmDetective } from '../../data/ejercicios/modulos';
+
+## export e import
+
+Un módulo es un archivo. Lo que no se exporta es privado:
+
+```js
+// matematicas.js
+const PI_APROX = 3.14;                     // privado: nadie más lo ve
+
+export function areaCirculo(r) {           // exportación con nombre
+  return PI_APROX * r * r;
+}
+
+export const nombre = "matemáticas";
+
+export default function sumar(a, b) {      // exportación por defecto (una por módulo)
+  return a + b;
+}
+```
+
+```js
+// main.js
+import sumar, { areaCirculo, nombre as modulo } from "./matematicas.js";
+import * as mat from "./matematicas.js";   // todo, como un objeto
+
+console.log(sumar(2, 3));
+console.log(areaCirculo(2), modulo);
+console.log(mat.nombre);
+```
+
+- Las exportaciones **con nombre** se importan entre llaves, con el mismo nombre (o renombradas con `as`).
+- La exportación **por defecto** se importa sin llaves, con el nombre que elijas.
+- Muchos equipos prefieren usar solo exportaciones con nombre: el nombre es el mismo en todo el proyecto y los editores lo autocompletan mejor.
+
+## Cómo se carga un módulo
+
+1. Se leen **todos** los `import` antes de ejecutar nada: por eso solo pueden ir en el nivel superior.
+2. Se cargan las dependencias, y las dependencias de las dependencias.
+3. Se evalúan **de las hojas a la raíz**: un módulo corre después de todo lo que importa.
+4. Cada módulo se evalúa **una sola vez**, aunque lo importen cien archivos.
+
+Además, todo módulo corre en **modo estricto**, tiene su **propio scope** (sus variables no son globales) y su `this` en el nivel superior es `undefined`.
+
+## Enlaces vivos
+
+Lo que importas no es una copia, sino un **enlace** a la variable del otro módulo. Si el módulo la cambia, lo ves:
+
+```js
+// contador.js
+export let cuenta = 0;
+export function sumar() { cuenta++; }
+
+// main.js
+import { cuenta, sumar } from "./contador.js";
+sumar();
+console.log(cuenta);  // 1: es la misma variable
+// cuenta = 5;        // TypeError: los imports son de solo lectura
+```
+
+## import() dinámico
+
+`import(ruta)` carga un módulo **cuando hace falta** y devuelve una promesa. Sirve para no cargar al principio código pesado que quizá nunca se use:
+
+```js
+botonGrafico.addEventListener("click", async () => {
+  const { dibujarGrafico } = await import("./grafico-pesado.js");
+  dibujarGrafico(datos);
+});
+```
+
+La ruta puede calcularse en el momento, por ejemplo con el idioma del usuario:
+
+```js
+const textos = await import(`./idiomas/${idioma}.js`);
+```
+
+## import.meta
+
+`import.meta` tiene información sobre el módulo actual:
+
+```js
+console.log(import.meta.url);        // la URL de este archivo
+console.log(import.meta.resolve("./datos.json")); // la URL de otro, relativa a este
+// En Node.js, además:
+console.log(import.meta.dirname, import.meta.filename);
+```
+
+<Nota>
+  En el navegador, un módulo se carga con `<script type="module" src="main.js">`. Se ejecuta cuando el HTML terminó de leerse (como `defer`), y las rutas de los `import` deben ser rutas relativas (`./`), absolutas (`/`) o URLs completas, con la extensión `.js`.
+</Nota>
+
+## Resumen
+
+- `export` muestra lo que el módulo ofrece; lo demás es privado.
+- Exportaciones **con nombre** (`{ x }`) y **por defecto** (una por módulo).
+- Los `import` se resuelven antes de ejecutar; las dependencias se evalúan primero, una sola vez.
+- Los imports son **enlaces vivos** y de solo lectura.
+- `import()` carga módulos bajo demanda y devuelve una promesa; `import.meta` describe el módulo actual.
+
+<Practica>
+
+<Autoevaluacion id={esmAuto.id} numero={1} titulo={esmAuto.titulo} preguntas={esmAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={esmOrden.id} numero={2} titulo={esmOrden.titulo} codigo={esmOrden.codigo} salida={esmOrden.salida} inicio={esmOrden.inicio} explicacion={esmOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Tres archivos que se importan en cadena. Al ejecutar <code>node main.js</code>, ¿en qué orden aparecería cada línea?</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={esmDetective.id} numero={3} titulo={esmDetective.titulo} codigo={esmDetective.codigo} error={esmDetective.error} culpable={esmDetective.culpable} arreglos={esmDetective.arreglos} hallazgo={esmDetective.hallazgo} pista={esmDetective.pista}>
+  <div slot="enunciado">
+    <p>El navegador se niega a ejecutar el archivo. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

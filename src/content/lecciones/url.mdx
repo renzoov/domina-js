@@ -1,0 +1,135 @@
+---
+titulo: URL y URLSearchParams
+seccion: biblioteca-estandar
+tema: url
+minutos: 9
+resumen: Cómo leer y construir direcciones web con la clase URL (sus partes, rutas relativas, URL.canParse y URL.parse) y cómo manejar los parámetros de búsqueda con URLSearchParams sin errores de codificación.
+intro: 'Armar una dirección pegando textos, <code>"/buscar?q=" + texto</code>, funciona hasta que alguien busca <code>"té &amp; café"</code> y el <code>&amp;</code> parte el parámetro en dos. La clase <u>URL</u> entiende las direcciones como el navegador: las separa en partes, resuelve rutas relativas y codifica cada carácter donde corresponde.'
+ejercicios: [url-auto, url-orden, url-detective, url-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { urlAuto, urlOrden, urlDetective, urlLab } from '../../data/ejercicios/biblioteca';
+
+## Las partes de una URL
+
+```js
+const url = new URL("https://ana:clave@tienda.com:8080/productos/te?color=verde&pagina=2#opiniones");
+
+console.log(url.protocol);  // https:
+console.log(url.username, url.password);
+console.log(url.hostname, url.port);
+console.log(url.host);      // con el puerto
+console.log(url.origin);    // protocolo + host
+console.log(url.pathname);
+console.log(url.search);
+console.log(url.hash);
+```
+
+Las partes se pueden **cambiar**, y la URL se actualiza entera:
+
+```js
+const url = new URL("https://tienda.com/productos");
+url.pathname = "/productos/té verde";
+url.hash = "precio";
+console.log(url.href);
+```
+
+Fíjate en que los caracteres especiales del camino se codificaron solos.
+
+## Rutas relativas
+
+El segundo argumento es la **base** contra la que se resuelve una ruta relativa, igual que hace el navegador con un enlace:
+
+```js
+const base = "https://tienda.com/es/productos/te";
+
+console.log(new URL("cafe", base).href);        // hermano
+console.log(new URL("../ayuda", base).href);    // sube un nivel
+console.log(new URL("/carrito", base).href);    // desde la raíz
+console.log(new URL("?pagina=2", base).href);   // solo cambia la búsqueda
+```
+
+## ¿Es una URL válida?
+
+`new URL` lanza un `TypeError` si el texto no es una URL. Para comprobar sin `try/catch`:
+
+```js
+console.log(URL.canParse("https://ejemplo.com"));   // true
+console.log(URL.canParse("no es una url"));         // false
+console.log(URL.parse("tampoco"));                  // null, en lugar de lanzar
+console.log(URL.parse("/perfil", "https://a.com")?.href);
+```
+
+## URLSearchParams
+
+`url.searchParams` es un objeto para leer y escribir los parámetros de búsqueda, que se encarga de la codificación:
+
+```js
+const url = new URL("https://tienda.com/buscar?q=te&etiqueta=oferta&etiqueta=nuevo");
+const p = url.searchParams;
+
+console.log(p.get("q"), p.has("pagina"));
+console.log(p.getAll("etiqueta"));    // un parámetro puede repetirse
+
+p.set("q", "té & café");              // reemplaza
+p.append("pagina", "2");              // agrega
+p.delete("etiqueta");
+console.log(url.search);
+
+for (const [clave, valor] of p) console.log(clave, "=", valor);
+```
+
+También se puede usar sola, por ejemplo para armar el cuerpo de un formulario o leer los parámetros de la página actual:
+
+```js
+const params = new URLSearchParams({ nombre: "Ana López", edad: 31 });
+console.log(params.toString());
+
+const leidos = new URLSearchParams("?orden=precio&desc=1");
+console.log(Object.fromEntries(leidos));
+```
+
+<Nota tipo="ojo">
+  Los parámetros siempre son **textos**: `p.get("pagina")` devuelve `"2"`, no `2`. Conviértelos con `Number(…)` antes de hacer cuentas. Y `get` devuelve `null` si el parámetro no existe.
+</Nota>
+
+## Resumen
+
+- `new URL(texto, base?)` separa una dirección en partes: `protocol`, `hostname`, `pathname`, `search`, `hash`…
+- La base resuelve rutas relativas como un navegador.
+- `URL.canParse` y `URL.parse` comprueban sin lanzar errores.
+- `searchParams` lee y escribe parámetros (`get`, `getAll`, `set`, `append`, `delete`) y **codifica** por ti.
+- Nunca armes URLs concatenando textos.
+
+<Practica>
+
+<Autoevaluacion id={urlAuto.id} numero={1} titulo={urlAuto.titulo} preguntas={urlAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={urlOrden.id} numero={2} titulo={urlOrden.titulo} codigo={urlOrden.codigo} salida={urlOrden.salida} inicio={urlOrden.inicio} explicacion={urlOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una URL que se lee, se cambia y se resuelve. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={urlDetective.id} numero={3} titulo={urlDetective.titulo} codigo={urlDetective.codigo} error={urlDetective.error} culpable={urlDetective.culpable} arreglos={urlDetective.arreglos} hallazgo={urlDetective.hallazgo} pista={urlDetective.pista}>
+  <div slot="enunciado">
+    <p>Una función que arma enlaces a perfiles falla en Node.js. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={urlLab.id} numero={4} titulo={urlLab.titulo} inicial={urlLab.inicial} verificaciones={urlLab.verificaciones} pistas={urlLab.pistas} solucion={urlLab.solucion} explicacion={urlLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>conFiltros(direccion, filtros)</code> con <code>URL</code> y <code>searchParams</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,139 @@
+---
+titulo: Organizar un proyecto
+seccion: modulos
+tema: organizar-un-proyecto
+minutos: 10
+resumen: Cómo repartir el código en módulos (por funcionalidad o por tipo), qué exponer y qué esconder, los barrel files y su costo, cómo evitar dependencias circulares, los efectos al importar y el campo exports del package.json.
+intro: 'Saber escribir <code>import</code> y <code>export</code> es la mitad del trabajo. La otra mitad es decidir <u>dónde va cada cosa</u>: qué módulos existen, qué muestra cada uno y quién depende de quién. Un proyecto bien repartido se entiende, se prueba y se cambia sin miedo.'
+nota: 'Como el resto de la sección, estos ejemplos necesitan varios archivos: son para leer y copiar.'
+ejercicios: [organizar-auto, organizar-orden, organizar-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { organizarAuto, organizarOrden, organizarDetective } from '../../data/ejercicios/modulos';
+
+## Por funcionalidad, no por tipo
+
+Hay dos formas comunes de repartir las carpetas:
+
+```
+Por tipo                          Por funcionalidad
+src/                              src/
+  componentes/                      carrito/
+    CarritoLista.js                   CarritoLista.js
+    PerfilTarjeta.js                  carrito.js        (la lógica)
+  servicios/                          carrito.test.js
+    carrito.js                      perfil/
+    perfil.js                         PerfilTarjeta.js
+  utils/                              perfil.js
+    formatearPrecio.js              compartido/
+                                      formatearPrecio.js
+```
+
+Por tipo es cómodo al principio. Pero cuando el proyecto crece, cambiar "el carrito" obliga a saltar entre carpetas. **Por funcionalidad**, lo que cambia junto vive junto, y borrar una funcionalidad es borrar una carpeta.
+
+## Un módulo, una responsabilidad
+
+Cada módulo debería tener un propósito que se explique en una frase, y exportar lo **mínimo** necesario. Lo que no exportas lo puedes cambiar sin romper a nadie.
+
+```js
+// carrito/carrito.js
+const items = [];                         // privado
+
+export function agregar(producto) {       // la interfaz pública
+  items.push(producto);
+}
+
+export function total() {
+  return items.reduce((s, p) => s + p.precio, 0);
+}
+```
+
+## Barrel files
+
+Un *barrel* es un `index.js` que reexporta lo de su carpeta, para importar todo desde un solo lugar:
+
+```js
+// componentes/index.js
+export { Boton } from "./boton.js";
+export { Tabla } from "./tabla.js";
+export * from "./formularios.js";
+
+// en otro lado
+import { Boton, Tabla } from "./componentes/index.js";
+```
+
+Es cómodo, pero tiene un costo: importar **una** cosa del barrel carga y evalúa **todo** lo que reexporta. En proyectos grandes, eso hace más lentos los arranques y las pruebas. Úsalos con moderación, sobre todo dentro de tu propio código.
+
+## Dependencias circulares
+
+Si `a.js` importa a `b.js` y `b.js` importa a `a.js`, uno de los dos se evalúa primero y encuentra al otro **a medio cargar**, con sus constantes todavía en la zona muerta temporal. A veces funciona, a veces no, según el orden: es frágil.
+
+La solución casi siempre es la misma: mover lo que comparten a un **tercer módulo** del que dependan los dos.
+
+## Efectos al importar
+
+Un módulo que hace cosas solo por ser importado (conectarse a algo, modificar el DOM, cambiar objetos globales) es más difícil de probar y de reutilizar. Lo recomendable es que un módulo **solo declare** cosas, y que el trabajo empiece cuando alguien llama a sus funciones.
+
+```js
+// Mejor: no hace nada hasta que lo llaman
+export function iniciarAnaliticas(config) { /* … */ }
+
+// Peor: se ejecuta al importarlo, quieras o no
+// conectarAnaliticas();
+```
+
+## El campo exports
+
+Si publicas un paquete, `"exports"` en el `package.json` define exactamente qué se puede importar desde afuera. Lo que no está ahí es privado, aunque el archivo exista:
+
+```json
+{
+  "name": "mi-libreria",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./fechas": "./src/fechas/index.js"
+  }
+}
+```
+
+Con esto, `import x from "mi-libreria/fechas"` funciona, pero `"mi-libreria/src/interno.js"` no.
+
+<Nota tipo="consejo">
+  También existe `"imports"`, para alias **internos** que empiezan con `#`: `{ "imports": { "#utils/*": "./src/utils/*.js" } }` te deja escribir `import { x } from "#utils/fechas"` en todo el proyecto, sin rutas como `../../../utils`.
+</Nota>
+
+## Resumen
+
+- Organiza **por funcionalidad**: lo que cambia junto, vive junto.
+- Cada módulo, una responsabilidad; exporta lo mínimo.
+- Los **barrel files** son cómodos, pero cargan todo lo que reexportan.
+- Evita las **dependencias circulares** moviendo lo compartido a un tercer módulo.
+- Los módulos deberían declarar, no actuar, al importarse.
+- `"exports"` decide qué es público en un paquete; `"imports"`, los alias internos con `#`.
+
+<Practica>
+
+<Autoevaluacion id={organizarAuto.id} numero={1} titulo={organizarAuto.titulo} preguntas={organizarAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={organizarOrden.id} numero={2} titulo={organizarOrden.titulo} codigo={organizarOrden.codigo} salida={organizarOrden.salida} inicio={organizarOrden.inicio} explicacion={organizarOrden.explicacion}>
+  <div slot="enunciado">
+    <p><code>main.js</code> solo quiere el botón. Al ejecutarlo, ¿en qué orden aparecería cada línea?</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={organizarDetective.id} numero={3} titulo={organizarDetective.titulo} codigo={organizarDetective.codigo} error={organizarDetective.error} culpable={organizarDetective.culpable} arreglos={organizarDetective.arreglos} hallazgo={organizarDetective.hallazgo} pista={organizarDetective.pista}>
+  <div slot="enunciado">
+    <p>Dos módulos que se necesitan mutuamente. Encuentra la línea que falla y elige la mejor solución.</p>
+  </div>
+</Detective>
+
+</Practica>

@@ -1,0 +1,141 @@
+---
+titulo: Timers y la consola a fondo
+seccion: biblioteca-estandar
+tema: timers-y-consola
+minutos: 10
+resumen: Los detalles de setTimeout y setInterval (argumentos, cancelación, tiempos mínimos, pestañas en segundo plano), cómo medir el tiempo con performance.now, y las herramientas de la consola que van más allá de console.log.
+intro: '<code>setTimeout</code> y <code>console.log</code> son de lo primero que se aprende, y de lo que más se usa sin conocer del todo. Este tema reúne sus detalles: cómo cancelar, por qué los temporizadores no son relojes exactos, y la docena de métodos de la consola que hacen que depurar sea mucho más rápido.'
+ejercicios: [consola-auto, consola-orden, consola-detective, consola-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { consolaAuto, consolaOrden, consolaDetective, consolaLab } from '../../data/ejercicios/biblioteca';
+
+## setTimeout y setInterval
+
+```js
+// Argumentos extra: se le pasan al callback
+setTimeout((nombre, emoji) => console.log(`Hola, ${nombre} ${emoji}`), 20, "Ana", "👋");
+
+// Cancelar: los dos devuelven un identificador
+const aviso = setTimeout(() => console.log("no se ve"), 50);
+clearTimeout(aviso);
+
+// Repetir hasta que se cancele
+let n = 0;
+const intervalo = setInterval(() => {
+  console.log("tic", ++n);
+  if (n === 3) clearInterval(intervalo);
+}, 30);
+```
+
+## No son relojes exactos
+
+El tiempo de un temporizador es un **mínimo**:
+
+- Si la pila está ocupada cuando vence, espera (lo viste en *El event loop*).
+- Los navegadores imponen un mínimo de unos **4 ms** a los temporizadores muy anidados.
+- En una **pestaña en segundo plano**, los navegadores los frenan mucho, a veces a uno por segundo o menos, para ahorrar batería.
+
+Por eso, para **medir** cuánto pasó, no cuentes vueltas: compara marcas de tiempo con `performance.now()`, que es preciso y no depende de la hora del sistema.
+
+```js
+const inicio = performance.now();
+let suma = 0;
+for (let i = 0; i < 1e6; i++) suma += i;
+console.log(`tardó ${(performance.now() - inicio).toFixed(1)} ms`);
+```
+
+## setTimeout encadenado
+
+Un `setTimeout` que se vuelve a programar al terminar es más seguro que un `setInterval` para tareas que pueden tardar, como consultar un servidor: cada vuelta empieza **después** de que terminó la anterior, así que nunca se encimen.
+
+```js
+let vueltas = 0;
+function consultar() {
+  vueltas++;
+  console.log("consulto el servidor, vuelta", vueltas);
+  if (vueltas < 3) setTimeout(consultar, 25);  // la próxima, cuando esta terminó
+}
+consultar();
+```
+
+## La consola, más allá de log
+
+**Niveles.** `console.info`, `console.warn` y `console.error` se muestran con distinto color y se pueden filtrar en las DevTools. `console.debug` suele estar oculto por defecto.
+
+**Tablas.** Para arrays de objetos, `console.table` es mucho más legible:
+
+```js
+console.table([
+  { producto: "té", precio: 3, stock: 12 },
+  { producto: "café", precio: 4.5, stock: 0 },
+]);
+```
+
+**Grupos.** `console.group` sangra todo lo que sigue hasta `console.groupEnd`:
+
+```js
+console.group("Pedido 7");
+console.log("cliente: Ana");
+console.log("total: 25");
+console.groupEnd();
+console.log("fin");
+```
+
+**Contar, medir y comprobar.**
+
+```js
+for (const evento of ["clic", "scroll", "clic"]) console.count(evento);
+
+console.time("carga");
+for (let i = 0; i < 1e5; i++);
+console.timeEnd("carga");   // carga: 1.234ms
+
+console.assert(1 + 1 === 2, "esto no se imprime");
+console.assert([].length > 0, "la lista está vacía");
+```
+
+<Nota tipo="consejo">
+  En las DevTools del navegador hay más: `console.log` acepta objetos que se pueden desplegar, `console.dir` muestra las propiedades de un elemento del DOM en lugar de su HTML, `console.trace()` imprime la pila de llamadas, y escribir `$0` en la consola te da el elemento seleccionado en el panel de elementos.
+</Nota>
+
+## Resumen
+
+- `setTimeout(fn, ms, ...args)` pasa argumentos al callback; los dos temporizadores devuelven un id para cancelarlos.
+- El tiempo es un **mínimo**: la pila ocupada, el mínimo de 4 ms y las pestañas en segundo plano lo retrasan.
+- Mide el tiempo con `performance.now()`, nunca contando vueltas.
+- Un `setTimeout` encadenado no se encima como un `setInterval`.
+- La consola tiene niveles (`info`, `warn`, `error`), `table`, `group`, `count`, `time`, `assert` y `trace`.
+
+<Practica>
+
+<Autoevaluacion id={consolaAuto.id} numero={1} titulo={consolaAuto.titulo} preguntas={consolaAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={consolaOrden.id} numero={2} titulo={consolaOrden.titulo} codigo={consolaOrden.codigo} salida={consolaOrden.salida} inicio={consolaOrden.inicio} explicacion={consolaOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos temporizadores, contadores y una aserción. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={consolaDetective.id} numero={3} titulo={consolaDetective.titulo} codigo={consolaDetective.codigo} error={consolaDetective.error} culpable={consolaDetective.culpable} arreglos={consolaDetective.arreglos} hallazgo={consolaDetective.hallazgo} pista={consolaDetective.pista}>
+  <div slot="enunciado">
+    <p>El reloj debería detenerse a los 350 ms. Encuentra la línea que falla y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={consolaLab.id} numero={4} titulo={consolaLab.titulo} inicial={consolaLab.inicial} verificaciones={consolaLab.verificaciones} pistas={consolaLab.pistas} solucion={consolaLab.solucion} explicacion={consolaLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>repetir(fn, veces, ms)</code> con un <code>setTimeout</code> encadenado que devuelva una promesa.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

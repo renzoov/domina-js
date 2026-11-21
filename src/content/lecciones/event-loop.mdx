@@ -1,0 +1,119 @@
+---
+titulo: El event loop
+seccion: asincronia
+tema: event-loop
+minutos: 11
+resumen: Las piezas que hacen funcionar la asincronía (la pila de llamadas, las APIs del runtime y la cola de tareas), cómo las conecta el event loop y por qué el orden de los callbacks no depende del orden en que se escriben.
+intro: 'El <u>event loop</u> es el mecanismo que hace posible que un lenguaje con un solo hilo atienda clics, temporizadores y respuestas de red sin congelarse. No es magia: son tres piezas y una regla muy simple, que se repite sin parar mientras el programa vive.'
+pizarron: eventLoop
+modoPizarron: eventloop
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Cada tarjeta indica en qué zona está: la <b>pila</b>, una <b>Web API</b> del runtime o la <b>cola de tareas</b>. Sigue el viaje del callback, del <code>setTimeout</code> a la cola y de la cola a la pila, y fíjate en cuándo puede entrar.'
+ejercicios: [loop-auto, loop-orden, loop-detective, loop-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { loopAuto, loopOrden, loopDetective, loopLab } from '../../data/ejercicios/asincronia';
+
+## Las tres piezas
+
+| Pieza | Qué hace |
+|---|---|
+| **Pila de llamadas** | Ejecuta tu código, una función a la vez. La conoces del tema *La pila de llamadas*. |
+| **APIs del runtime** | Hacen el trabajo que espera: temporizadores, red, archivos, eventos. Corren fuera de tu hilo. |
+| **Cola de tareas** | Una fila de callbacks listos para ejecutarse, en orden de llegada. |
+
+## La regla
+
+El **event loop** repite, una y otra vez:
+
+1. ¿La pila de llamadas está **vacía**?
+2. Si lo está, toma la **primera** tarea de la cola y la pone en la pila.
+3. Esa tarea corre hasta terminar (*run to completion*). Volver al paso 1.
+
+Eso es todo. Como muestra el pizarrón, un callback de `setTimeout` hace siempre el mismo viaje: del runtime a la cola cuando vence el tiempo, y de la cola a la pila cuando el event loop lo deja pasar.
+
+## Lo que no depende del orden del código
+
+El orden en que se ejecutan los callbacks no es el orden en que se escriben, sino el orden en que **llegan a la cola**:
+
+```js
+setTimeout(() => console.log("lento: 200 ms"), 200);
+setTimeout(() => console.log("rápido: 50 ms"), 50);
+setTimeout(() => console.log("inmediato: 0 ms"), 0);
+console.log("programa principal");
+```
+
+Y cada callback espera a que terminen los anteriores:
+
+```js
+const inicio = Date.now();
+
+setTimeout(() => {
+  console.log(`llegué a los ${Date.now() - inicio} ms, no a los 10`);
+}, 10);
+
+// Un trabajo pesado que ocupa la pila 200 ms
+while (Date.now() - inicio < 200) {}
+console.log("terminó el trabajo pesado");
+```
+
+El temporizador venció a los 10 ms, pero su callback no pudo entrar a la pila hasta que el bucle la liberó.
+
+## Eventos
+
+Los clics, las teclas y el scroll funcionan igual: el navegador detecta el evento y pone tu función en la cola.
+
+```js
+let clics = 0;
+boton.addEventListener("click", () => {
+  clics++;  // esta función entra a la cola cada vez que alguien hace clic
+});
+```
+
+Si un callback tarda mucho, todos los demás (incluido redibujar la página) esperan. Por eso las páginas "se traban" con código pesado.
+
+<Nota>
+  Hay una segunda cola, con más prioridad que la de tareas: la de **microtareas**, donde van las promesas. La vas a ver en *Microtareas y macrotareas*, cuando ya conozcas las promesas.
+</Nota>
+
+## Resumen
+
+- Tres piezas: la **pila**, las **APIs del runtime** y la **cola de tareas**.
+- El runtime pone cada callback en la cola cuando su evento ocurre: venció el tiempo, llegó un clic, terminó una descarga.
+- El **event loop** pasa la primera tarea de la cola a la pila, solo cuando la pila está vacía.
+- El orden de ejecución lo decide la **llegada a la cola**, no el orden del código.
+- Un callback lento retrasa a todos los demás.
+
+<Practica>
+
+<Autoevaluacion id={loopAuto.id} numero={1} titulo={loopAuto.titulo} preguntas={loopAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={loopOrden.id} numero={2} titulo={loopOrden.titulo} codigo={loopOrden.codigo} salida={loopOrden.salida} inicio={loopOrden.inicio} explicacion={loopOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Tres temporizadores, uno de ellos dentro de otro. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={loopDetective.id} numero={3} titulo={loopDetective.titulo} codigo={loopDetective.codigo} error={loopDetective.error} culpable={loopDetective.culpable} arreglos={loopDetective.arreglos} hallazgo={loopDetective.hallazgo} pista={loopDetective.pista}>
+  <div slot="enunciado">
+    <p>Se quería saludar dentro de un segundo, pero el saludo sale enseguida y después Node.js protesta. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={loopLab.id} numero={4} titulo={loopLab.titulo} inicial={loopLab.inicial} verificaciones={loopLab.verificaciones} pistas={loopLab.pistas} solucion={loopLab.solucion} explicacion={loopLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>cuentaRegresiva(desde)</code>: un número cada 50 ms, sin bloquear el programa.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

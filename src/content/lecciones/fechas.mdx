@@ -1,0 +1,144 @@
+---
+titulo: 'Fechas: Date y Temporal'
+seccion: biblioteca-estandar
+tema: fechas
+minutos: 13
+resumen: Los problemas de Date (meses desde 0, mutabilidad, zonas horarias, análisis de textos) y la API Temporal (ES2027) con sus tipos PlainDate, PlainTime, PlainDateTime, ZonedDateTime, Instant y Duration, para calcular y comparar fechas sin sorpresas.
+intro: '<code>Date</code> llegó a JavaScript en 1995, copiado casi al pie de la letra de una clase de Java que el propio Java abandonó poco después. Tiene meses que empiezan en 0, objetos que cambian sin avisar y una relación confusa con las zonas horarias. <u>Temporal</u>, terminada en TC39 y ya en los navegadores, es su reemplazo moderno.'
+nota: 'Temporal forma parte de <b>ES2027</b>. Ya funciona en los navegadores modernos, y en esta página puedes ejecutar todos los ejemplos. Si tu proyecto necesita soportar navegadores antiguos, existe un polyfill oficial: <code>@js-temporal/polyfill</code>.'
+ejercicios: [fechas-auto, fechas-orden, fechas-detective, fechas-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { fechasAuto, fechasOrden, fechasDetective, fechasLab } from '../../data/ejercicios/biblioteca';
+
+## Los problemas de Date
+
+```js
+const fecha = new Date(2026, 0, 15);    // ¡enero es el mes 0!
+console.log(fecha.getMonth());           // 0
+
+const otra = fecha;
+otra.setDate(20);                        // muta el objeto…
+console.log(fecha.getDate());            // …y "fecha" también cambió: 20
+
+const sorpresa = new Date(2026, 0, 31);
+sorpresa.setMonth(1);                    // ¿31 de febrero?
+console.log(sorpresa.getMonth() + 1, sorpresa.getDate());  // 3 3: se "pasó" a marzo
+```
+
+Y hay más: un `Date` es siempre un instante en UTC que se muestra en la zona horaria del equipo, así que "la misma fecha" cambia según dónde corre el código. Y analizar textos (`new Date("2026-01-15")` frente a `new Date("2026/01/15")`) da resultados distintos según el formato.
+
+## Temporal: un tipo para cada cosa
+
+Temporal separa conceptos que `Date` mezclaba:
+
+| Tipo | Representa | Ejemplo |
+|---|---|---|
+| `PlainDate` | Una fecha de calendario | Un cumpleaños: `2026-03-14` |
+| `PlainTime` | Una hora del día | Apertura de la tienda: `09:30` |
+| `PlainDateTime` | Fecha y hora, sin zona | Una alarma "a las 7 donde esté" |
+| `ZonedDateTime` | Fecha y hora en una zona | Una reunión en Lima: `2026-03-14T10:00[America/Lima]` |
+| `Instant` | Un momento exacto, universal | Cuándo se guardó un registro |
+| `Duration` | Una cantidad de tiempo | `P1DT2H` (1 día y 2 horas) |
+
+```js
+const cumple = Temporal.PlainDate.from("2026-03-14");
+console.log(cumple.year, cumple.month, cumple.day);  // marzo es el 3
+console.log(cumple.dayOfWeek, cumple.daysInMonth);  // 6 (sábado), 31
+
+const apertura = Temporal.PlainTime.from("09:30");
+console.log(apertura.add({ minutes: 45 }).toString());
+
+const hoy = Temporal.Now.plainDateISO();
+console.log(typeof hoy.toString());
+```
+
+## Inmutables y con aritmética de calendario
+
+Todos los objetos de Temporal son **inmutables**: `add`, `subtract` y `with` devuelven uno nuevo. Y la aritmética respeta el calendario:
+
+```js
+const fin = Temporal.PlainDate.from("2026-01-31");
+
+console.log(fin.add({ months: 1 }).toString());   // 2026-02-28: el último día válido
+console.log(fin.with({ day: 1 }).toString());     // 2026-01-01
+console.log(fin.toString());                      // intacta
+```
+
+## Diferencias y comparaciones
+
+```js
+const inicio = Temporal.PlainDate.from("2026-01-10");
+const entrega = Temporal.PlainDate.from("2026-03-25");
+
+const falta = inicio.until(entrega, { largestUnit: "months" });
+console.log(falta.toString(), falta.months, falta.days);  // P2M15D
+
+console.log(Temporal.PlainDate.compare(inicio, entrega));   // -1: inicio va antes
+console.log(inicio.equals(Temporal.PlainDate.from("2026-01-10")));
+```
+
+`compare` devuelve -1, 0 o 1, así que sirve directamente para ordenar: `fechas.sort(Temporal.PlainDate.compare)`.
+
+## Zonas horarias
+
+`ZonedDateTime` conoce las reglas de cada zona, incluidos los cambios de horario de verano:
+
+```js
+const reunion = Temporal.ZonedDateTime.from("2026-03-14T10:00[America/Lima]");
+
+console.log(reunion.withTimeZone("Europe/Madrid").toPlainTime().toString());
+console.log(reunion.withTimeZone("Asia/Tokyo").toPlainDateTime().toString());
+```
+
+Para mostrar fechas a las personas, cada tipo tiene `toLocaleString`, que usa `Intl` (el tema *Internacionalización*):
+
+```js
+const cumple = Temporal.PlainDate.from("2026-03-14");
+console.log(cumple.toLocaleString("es", { dateStyle: "full" }));
+```
+
+<Nota tipo="consejo">
+  Para guardar o enviar fechas, usa siempre texto en formato ISO (`2026-03-14`, `2026-03-14T10:00:00Z`): es lo que devuelve `toString()` y lo que entiende `from()`. Los objetos de Temporal no se pueden pasar por `JSON` directamente: se convierten en ese mismo texto.
+</Nota>
+
+## Resumen
+
+- `Date` tiene meses desde 0, es **mutable**, mezcla instantes con zonas horarias y analiza textos de forma inconsistente.
+- **Temporal** (ES2027) ofrece un tipo para cada concepto: `PlainDate`, `PlainTime`, `PlainDateTime`, `ZonedDateTime`, `Instant` y `Duration`.
+- Sus objetos son **inmutables**: `add`, `subtract` y `with` devuelven otros nuevos.
+- `until`/`since` miden diferencias; `compare` y `equals` comparan.
+- Para mostrar, `toLocaleString`; para guardar, el texto ISO de `toString()`.
+
+<Practica>
+
+<Autoevaluacion id={fechasAuto.id} numero={1} titulo={fechasAuto.titulo} preguntas={fechasAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={fechasOrden.id} numero={2} titulo={fechasOrden.titulo} codigo={fechasOrden.codigo} salida={fechasOrden.salida} inicio={fechasOrden.inicio} explicacion={fechasOrden.explicacion}>
+  <div slot="enunciado">
+    <p>La misma operación con <code>Date</code> y con Temporal. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={fechasDetective.id} numero={3} titulo={fechasDetective.titulo} codigo={fechasDetective.codigo} error={fechasDetective.error} culpable={fechasDetective.culpable} arreglos={fechasDetective.arreglos} hallazgo={fechasDetective.hallazgo} pista={fechasDetective.pista}>
+  <div slot="enunciado">
+    <p>Se quería el día siguiente a Navidad. Encuentra la línea que falla y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={fechasLab.id} numero={4} titulo={fechasLab.titulo} inicial={fechasLab.inicial} verificaciones={fechasLab.verificaciones} pistas={fechasLab.pistas} solucion={fechasLab.solucion} explicacion={fechasLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>diasEntre(desde, hasta)</code> con <code>Temporal.PlainDate</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

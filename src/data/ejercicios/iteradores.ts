@@ -510,3 +510,41 @@ TypeError: paginas is not a function or its return value is not iterable`,
     },
   ],
 };
+
+export const asincLab = {
+  id: 'asinc-lab',
+  titulo: 'Un generador con pausas',
+  inicial: `const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Escribe el generador asíncrono conPausa(lista, ms): entrega cada elemento
+// de la lista, esperando ms milisegundos antes de cada uno.
+
+for await (const x of conPausa(["a", "b", "c"], 50)) {
+  console.log(x);
+}
+`,
+  verificaciones: [
+    { texto: 'Imprime <code>a</code>, <code>b</code> y <code>c</code>', prueba: 'return __salida.join("|") === "a|b|c";' },
+    { texto: 'Es un generador asíncrono (<code>async function*</code>)', prueba: 'return Object.prototype.toString.call(conPausa([], 1)) === "[object AsyncGenerator]";' },
+    { texto: 'Espera de verdad: dos elementos con 60 ms tardan al menos 110 ms', prueba: 'const t = performance.now(); const r = await Array.fromAsync(conPausa([1, 2], 60)); return r.join() === "1,2" && performance.now() - t >= 110;' },
+  ],
+  pistas: [
+    'Un generador asíncrono se escribe <code>async function* conPausa(lista, ms) { … }</code>, arriba de todo.',
+    'Recorre la lista con <code>for (const x of lista)</code>.',
+    'Dentro del bucle: primero <code>await esperar(ms);</code> y después <code>yield x;</code>',
+  ] as [string, string, string],
+  solucion: `const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function* conPausa(lista, ms) {
+  for (const x of lista) {
+    await esperar(ms);
+    yield x;
+  }
+}
+
+for await (const x of conPausa(["a", "b", "c"], 50)) {
+  console.log(x);
+}`,
+  explicacion:
+    '<p>El <code>for await</code> pide un valor, el generador espera 50 ms y lo entrega, y el bucle lo imprime antes de pedir el siguiente. Quien recorre no ve las pausas: solo una secuencia de valores que llegan con el tiempo.</p>',
+};

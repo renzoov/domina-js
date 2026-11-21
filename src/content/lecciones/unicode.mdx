@@ -1,0 +1,139 @@
+---
+titulo: Unicode y emojis
+seccion: biblioteca-estandar
+tema: unicode
+minutos: 11
+resumen: Qué es Unicode, cómo guarda JavaScript el texto (unidades UTF-16, puntos de código y grafemas), por qué los emojis rompen length y slice, cómo normalizar acentos, contar caracteres de verdad con Intl.Segmenter y detectar texto mal formado (ES2024).
+intro: '<code>"👍".length</code> da 2. <code>"👨‍👩‍👧".length</code> da 8. Y dos palabras que se ven idénticas pueden no ser iguales con <code>===</code>. No son errores de JavaScript: son consecuencias de cómo se guarda el texto. Entenderlo te ahorra errores muy difíciles de ver con contadores, recortes y comparaciones.'
+ejercicios: [unicode-auto, unicode-orden, unicode-detective, unicode-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { unicodeAuto, unicodeOrden, unicodeDetective, unicodeLab } from '../../data/ejercicios/biblioteca';
+
+## Tres formas de contar
+
+**Unicode** le asigna un número, el **punto de código**, a cada carácter de cada sistema de escritura: `A` es U+0041, `ñ` es U+00F1, `👍` es U+1F44D. JavaScript guarda los textos en **UTF-16**: cada punto de código ocupa una o dos **unidades** de 16 bits.
+
+| Nivel | Qué es | Cómo se cuenta |
+|---|---|---|
+| Unidad UTF-16 | Lo que guarda JavaScript | `texto.length`, `texto[i]`, `slice` |
+| Punto de código | Un carácter de Unicode | `[...texto].length`, `for...of` |
+| Grafema | Lo que una persona ve como un carácter | `Intl.Segmenter` |
+
+```js
+const textos = ["hola", "ñandú", "👍", "👨‍👩‍👧"];
+const seg = new Intl.Segmenter("es", { granularity: "grapheme" });
+
+for (const t of textos) {
+  console.log(t, t.length, [...t].length, [...seg.segment(t)].length);
+}
+```
+
+La familia son tres personas unidas por un carácter invisible, el *unión de ancho cero* (ZWJ): 5 puntos de código, 8 unidades, 1 grafema.
+
+## Puntos de código
+
+```js
+const pulgar = "👍";
+
+console.log(pulgar.codePointAt(0).toString(16));  // 1f44d
+console.log(String.fromCodePoint(0x1f600));       // 😀
+console.log("\u{1F680} despegue");                // escape con el punto de código
+
+for (const c of "a👍b") console.log(c);           // for...of recorre por puntos de código
+```
+
+## Normalizar
+
+Algunos caracteres se pueden escribir de dos formas: `é` como un solo punto de código (U+00E9), o como `e` + un acento combinante (U+0301). Se ven igual, pero no son iguales:
+
+```js
+const a = "café";
+const b = "café";
+
+console.log(a === b, a.length, b.length);
+console.log(a.normalize() === b.normalize());   // NFC por defecto: compone
+console.log(b.normalize("NFD").length);         // NFD: descompone
+```
+
+Normaliza (con `normalize()`, que usa la forma NFC) antes de comparar, buscar o guardar textos que vienen de fuentes distintas.
+
+Un truco útil: descomponer y quitar los acentos, para buscar sin que importen:
+
+```js
+const sinAcentos = (t) => t.normalize("NFD").replace(/\p{M}/gu, "");
+console.log(sinAcentos("Ñandú, canción, pingüino"));
+```
+
+## Texto mal formado (ES2024)
+
+Si cortas un texto en medio de un emoji, queda medio par de unidades suelto (un *sustituto solitario*). Ese texto está mal formado y rompe funciones como `encodeURIComponent`:
+
+```js
+const roto = "👍 ok".slice(0, 1);
+
+console.log(roto.isWellFormed());     // false
+console.log(roto.toWellFormed());     // reemplaza lo suelto por �
+console.log("👍 ok".isWellFormed());
+```
+
+## Cortar y contar bien
+
+```js
+const seg = new Intl.Segmenter("es", { granularity: "grapheme" });
+
+function recortar(texto, max) {
+  const partes = [...seg.segment(texto)].map((s) => s.segment);
+  return partes.length > max ? partes.slice(0, max).join("") + "…" : texto;
+}
+
+console.log(recortar("Hola 👨‍👩‍👧 familia", 6));
+
+const palabras = new Intl.Segmenter("es", { granularity: "word" });
+console.log([...palabras.segment("¡Hola, mundo!")].filter((s) => s.isWordLike).map((s) => s.segment));
+```
+
+<Nota tipo="consejo">
+  Las expresiones regulares también necesitan la bandera `u` (o `v`) para tratar los emojis como un solo carácter y para entender `\p{L}` (letras), `\p{Emoji}` y otras propiedades de Unicode.
+</Nota>
+
+## Resumen
+
+- JavaScript guarda el texto en **UTF-16**: `length` cuenta unidades, no caracteres.
+- `[...texto]` y `for...of` recorren por **puntos de código**; `Intl.Segmenter`, por **grafemas** (lo que se ve).
+- Un mismo carácter puede tener varias representaciones: **normaliza** antes de comparar.
+- Cortar en medio de un emoji deja texto **mal formado**; `isWellFormed` y `toWellFormed` (ES2024) lo detectan y reparan.
+- Para contar o recortar lo que ve una persona, usa `Intl.Segmenter`.
+
+<Practica>
+
+<Autoevaluacion id={unicodeAuto.id} numero={1} titulo={unicodeAuto.titulo} preguntas={unicodeAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={unicodeOrden.id} numero={2} titulo={unicodeOrden.titulo} codigo={unicodeOrden.codigo} salida={unicodeOrden.salida} inicio={unicodeOrden.inicio} explicacion={unicodeOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos <code>é</code>, un pulgar y una familia. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={unicodeDetective.id} numero={3} titulo={unicodeDetective.titulo} codigo={unicodeDetective.codigo} error={unicodeDetective.error} culpable={unicodeDetective.culpable} arreglos={unicodeDetective.arreglos} hallazgo={unicodeDetective.hallazgo} pista={unicodeDetective.pista}>
+  <div slot="enunciado">
+    <p>Se quería poner la inicial de una reacción en una URL. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={unicodeLab.id} numero={4} titulo={unicodeLab.titulo} inicial={unicodeLab.inicial} verificaciones={unicodeLab.verificaciones} pistas={unicodeLab.pistas} solucion={unicodeLab.solucion} explicacion={unicodeLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>contarCaracteres(texto)</code>, que cuente lo que ve una persona.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

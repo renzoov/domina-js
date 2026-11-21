@@ -1,4 +1,4 @@
-import type { DatosVisualizador, Marco } from '../lib/visualizador';
+import { ZONAS, type DatosVisualizador, type Marco } from '../lib/visualizador';
 import { registrarPrediccion } from './progreso';
 
 const ANCHO = 1000;
@@ -71,10 +71,16 @@ function iniciar(el: HTMLElement) {
     // escribe lo que entró
     despues.slice(comun).forEach((m) => {
       const li = document.createElement('li');
-      li.className = m.tipo === 'objeto' ? 'marco caja objeto' : 'marco caja';
+      // Las zonas llevan prefijo (z-pila…) para no chocar con las clases del componente
+      li.className = !m.tipo ? 'marco caja' : m.tipo === 'objeto' ? 'marco caja objeto' : `marco caja z-${m.tipo}`;
+      if (m.tipo && ZONAS[m.tipo]) li.dataset.zona = ZONAS[m.tipo];
       li.textContent = m.nombre;
       if (m.nota) li.append(nota(m.nota));
-      if (animar && !sinMovimiento()) li.classList.add('escribe');
+      if (animar && !sinMovimiento()) {
+        li.classList.add('escribe');
+        // Al terminar se quita: el recorte de la animación taparía el rótulo de la zona
+        li.addEventListener('animationend', () => li.classList.remove('escribe'), { once: true });
+      }
       // los que se borran siguen en el DOM un instante: los nuevos van antes de ellos
       const primeroBorrado = pila.querySelector('li.borra');
       pila.insertBefore(li, primeroBorrado);

@@ -5,15 +5,16 @@ tema: iteracion-asincrona
 minutos: 10
 resumen: Cómo recorrer valores que llegan con el tiempo con for await...of, generadores asíncronos (async function*), el protocolo Symbol.asyncIterator y Array.fromAsync (ES2026).
 intro: 'Algunos datos no están todos listos al empezar: llegan <u>de a poco</u>. Las páginas de una API, las líneas de un archivo enorme, los mensajes de un chat. La iteración asíncrona junta dos ideas, el recorrido de los iteradores y la espera de las promesas, para recorrer esos datos como si fueran una lista.'
-nota: 'Este tema usa <code>async</code>, <code>await</code> y promesas, que se explican a fondo en la sección <b>Asincronía</b>. Si todavía no las viste, quédate con la idea general y vuelve después. Por la misma razón, los ejemplos son para leer y copiar: el sandbox de esta página todavía no ejecuta código asíncrono.'
-ejercicios: [asinc-auto, asinc-orden, asinc-detective]
+nota: 'Este tema usa <code>async</code>, <code>await</code> y promesas, que se explican a fondo en la sección <b>Asincronía</b>. Si todavía no las viste, quédate con la idea general y vuelve después.'
+ejercicios: [asinc-auto, asinc-orden, asinc-detective, asinc-lab]
 ---
 import Practica from '../../components/ejercicios/Practica.astro';
 import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
 import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
 import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
 import Nota from '../../components/Nota.astro';
-import { asincAuto, asincOrden, asincDetective } from '../../data/ejercicios/iteradores';
+import { asincAuto, asincOrden, asincDetective, asincLab } from '../../data/ejercicios/iteradores';
 
 ## for await...of
 
@@ -132,5 +133,11 @@ En la práctica, casi nunca lo escribirás a mano: un `async function*` lo hace 
     <p>Se querían mostrar las páginas de una API a medida que llegan. Encuentra la línea que falla y elige el arreglo.</p>
   </div>
 </Detective>
+
+<Laboratorio id={asincLab.id} numero={4} titulo={asincLab.titulo} inicial={asincLab.inicial} verificaciones={asincLab.verificaciones} pistas={asincLab.pistas} solucion={asincLab.solucion} explicacion={asincLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe el generador asíncrono <code>conPausa(lista, ms)</code>: entrega cada elemento después de una pausa.</p>
+  </div>
+</Laboratorio>
 
 </Practica>

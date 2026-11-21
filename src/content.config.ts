@@ -19,7 +19,7 @@ const lecciones = defineCollection({
     /** false: el pizarrón principal no muestra la pila (antes de explicarla) */
     mostrarPila: z.boolean().default(true),
     /** 'variables': la columna del pizarrón muestra variables en vez de la pila */
-    modoPizarron: z.enum(['pila', 'variables']).default('pila'),
+    modoPizarron: z.enum(['pila', 'variables', 'eventloop']).default('pila'),
     /** Qué mirar en el pizarrón (va junto a él en la primera pantalla) */
     guia: z.object({ titulo: z.string(), texto: z.string() }).optional(),
     /** Nota ¡ojo! junto al pizarrón (HTML simple) */

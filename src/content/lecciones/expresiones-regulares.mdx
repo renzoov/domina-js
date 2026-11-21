@@ -1,0 +1,161 @@
+---
+titulo: Expresiones regulares
+seccion: biblioteca-estandar
+tema: expresiones-regulares
+minutos: 14
+resumen: Cómo escribir patrones de texto con expresiones regulares, las banderas (g, i, m, s, u, y, d y v), los métodos test, match, matchAll, replace y split, grupos con nombre, búsquedas hacia adelante y atrás, y lo nuevo de ES2025 (RegExp.escape, modificadores y grupos con nombre repetidos).
+intro: '¿Este texto es un email? ¿Dónde aparece una fecha en este párrafo? ¿Cómo reemplazo todos los espacios dobles? Las <u>expresiones regulares</u> son un pequeño lenguaje para describir patrones de texto. Tienen fama de crípticas, pero con las piezas básicas y un par de herramientas modernas se vuelven muy legibles.'
+ejercicios: [regex-auto, regex-orden, regex-detective, regex-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { regexAuto, regexOrden, regexDetective, regexLab } from '../../data/ejercicios/biblioteca';
+
+## Las piezas
+
+Una expresión regular se escribe entre barras, `/patrón/banderas`, o con `new RegExp("patrón", "banderas")`.
+
+| Pieza | Significa | Ejemplo |
+|---|---|---|
+| `.` | Cualquier carácter (salvo salto de línea) | `/c.sa/` → casa, cosa |
+| `\d`, `\w`, `\s` | Dígito, letra/número/guion bajo, espacio | `/\d\d/` → 42 |
+| `[abc]`, `[^abc]`, `[a-z]` | Uno de esos, ninguno de esos, un rango | `/[aeiou]/` |
+| `*`, `+`, `?`, `{2,4}` | 0 o más, 1 o más, 0 o 1, entre 2 y 4 | `/\d{4}/` → 2026 |
+| `^`, `$` | Inicio, final del texto | `/^Hola/` |
+| `\b` | Borde de palabra | `/\bsol\b/` no encuentra "consola" |
+| `(…)`, `(?:…)` | Grupo que captura, grupo que no | `/(ja)+/` |
+| `a\|b` | Una cosa u otra | `/té\|café/` |
+
+Los caracteres especiales (`. * + ? ( ) [ ] { } ^ $ | \ /`) se escapan con `\` para buscarlos literalmente: `/\$\d+/` busca un precio como `$20`.
+
+## Los métodos
+
+```js
+const texto = "Ana tiene 31 años y Luis 27";
+
+console.log(/\d+/.test(texto));                  // ¿hay alguna coincidencia?
+console.log(texto.match(/\d+/)[0]);              // la primera
+console.log(texto.match(/\d+/g));                // todas (con g)
+console.log(texto.replace(/\d+/g, "??"));        // reemplazar
+console.log("a, b ,c".split(/\s*,\s*/));         // dividir
+console.log(texto.search(/Luis/));               // posición
+```
+
+## Banderas
+
+| Bandera | Efecto |
+|---|---|
+| `g` | Todas las coincidencias |
+| `i` | Ignora mayúsculas |
+| `m` | `^` y `$` funcionan por línea |
+| `s` | `.` incluye los saltos de línea |
+| `u` | Unicode: entiende emojis y `\p{…}` |
+| `v` | Unicode mejorado (ES2024): operaciones de conjuntos en `[…]` |
+| `y` | "Pegajosa": busca exactamente en `lastIndex` |
+| `d` | Guarda las posiciones de cada grupo en `indices` (ES2022) |
+
+```js
+// u y v: propiedades Unicode, como "cualquier letra de cualquier idioma"
+console.log("Ñandú 42 東京".match(/\p{L}+/gu));
+
+// v: letras, MENOS las ASCII de la a a la z
+console.log("añoéz".match(/[\p{L}--[a-z]]/gv));
+```
+
+## Grupos con nombre
+
+En lugar de leer los grupos por posición, ponles nombre con `(?<nombre>…)`:
+
+```js
+const fecha = /(?<dia>\d{2})\/(?<mes>\d{2})\/(?<anio>\d{4})/;
+const { groups } = "Vence el 20/11/2026".match(fecha);
+
+console.log(groups.anio, groups.mes, groups.dia);
+console.log("20/11/2026".replace(fecha, "$<anio>-$<mes>-$<dia>"));
+```
+
+`matchAll` (con `g`) recorre todas las coincidencias, con sus grupos:
+
+```js
+const texto = "té: $3, café: $4.5";
+for (const m of texto.matchAll(/(?<producto>\p{L}+): \$(?<precio>[\d.]+)/gu)) {
+  console.log(m.groups.producto, Number(m.groups.precio));
+}
+```
+
+## Mirar alrededor
+
+Las búsquedas **hacia adelante** (`(?=…)`, `(?!…)`) y **hacia atrás** (`(?<=…)`, `(?<!…)`) comprueban qué hay al lado sin incluirlo en el resultado:
+
+```js
+console.log("100 USD, 200 EUR".match(/\d+(?= EUR)/)[0]);  // seguido de EUR
+console.log("precio: $35".match(/(?<=\$)\d+/)[0]);        // precedido de $
+```
+
+## Lo nuevo de ES2025
+
+**`RegExp.escape`** escapa un texto para usarlo literalmente dentro de un patrón. Imprescindible cuando el texto viene del usuario:
+
+```js
+const buscado = "1.5 (aprox)";
+const re = new RegExp(RegExp.escape(buscado), "g");
+console.log("valor: 1.5 (aprox), otro: 1x5 aprox".replace(re, "[X]"));
+```
+
+**Modificadores**: activar o desactivar banderas solo en una parte, con `(?i:…)` o `(?-i:…)`:
+
+```js
+const re = /^(?i:error):\s(?-i:[A-Z]+)$/;
+console.log(re.test("ERROR: DISCO"), re.test("error: DISCO"), re.test("error: disco"));
+```
+
+**Grupos con nombre repetidos** en alternativas distintas:
+
+```js
+const fecha = /(?<anio>\d{4})-\d{2}|\d{2}\/(?<anio>\d{4})/;
+console.log("2026-11".match(fecha).groups.anio, "11/2026".match(fecha).groups.anio);
+```
+
+<Nota tipo="consejo">
+  Una regex larga se lee mejor si la armas por partes con nombres, o la comentas. Y no todo necesita una: `texto.includes("x")`, `startsWith` o `split(",")` son más claros cuando alcanzan.
+</Nota>
+
+## Resumen
+
+- Una regex describe un patrón: clases (`\d`, `[a-z]`), cuantificadores (`+`, `{2,4}`), anclas (`^`, `$`, `\b`) y grupos.
+- `test`, `match`, `matchAll`, `replace`, `split`: los métodos de cada día.
+- Banderas: `g`, `i`, `m`, `s`, `u`, `v` (ES2024), `y` y `d` (ES2022).
+- Los **grupos con nombre** y `matchAll` hacen las regex mucho más legibles.
+- ES2025: **`RegExp.escape`**, **modificadores** `(?i:…)` y grupos con nombre repetidos.
+
+<Practica>
+
+<Autoevaluacion id={regexAuto.id} numero={1} titulo={regexAuto.titulo} preguntas={regexAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={regexOrden.id} numero={2} titulo={regexOrden.titulo} codigo={regexOrden.codigo} salida={regexOrden.salida} inicio={regexOrden.inicio} explicacion={regexOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un grupo con nombre, un punto con y sin escapar, y un modificador. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={regexDetective.id} numero={3} titulo={regexDetective.titulo} codigo={regexDetective.codigo} error={regexDetective.error} culpable={regexDetective.culpable} arreglos={regexDetective.arreglos} hallazgo={regexDetective.hallazgo} pista={regexDetective.pista}>
+  <div slot="enunciado">
+    <p>Un buscador falla con el texto que escribió el usuario. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={regexLab.id} numero={4} titulo={regexLab.titulo} inicial={regexLab.inicial} verificaciones={regexLab.verificaciones} pistas={regexLab.pistas} solucion={regexLab.solucion} explicacion={regexLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>extraerPrecios(texto)</code> con <code>matchAll</code> y un grupo con nombre.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

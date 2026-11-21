@@ -17,7 +17,7 @@ interface Props {
   seccion: Seccion;
   indice: number;
   disponibles: Set<string>;
-  pizarron?: { id: string; datos: DatosVisualizador; mostrarPila?: boolean; modo?: 'pila' | 'variables' };
+  pizarron?: { id: string; datos: DatosVisualizador; mostrarPila?: boolean; modo?: 'pila' | 'variables' | 'eventloop' };
   ejercicios: string[];
   encabezados: { depth: number; slug: string; text: string }[];
 }

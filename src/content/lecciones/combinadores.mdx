@@ -1,0 +1,139 @@
+---
+titulo: Combinadores de promesas
+seccion: asincronia
+tema: combinadores
+minutos: 10
+resumen: Cómo esperar varias promesas a la vez con Promise.all, allSettled, race y any (ES2021), y las dos herramientas más nuevas, Promise.withResolvers (ES2024) y Promise.try (ES2025).
+intro: 'Muchas veces no esperas una sola cosa, sino varias: los datos de tres secciones de un panel, la respuesta más rápida entre dos servidores, un pedido con un límite de tiempo. Los <u>combinadores</u> son funciones que reciben varias promesas y devuelven una sola, con distintas reglas para decidir cuándo y cómo se resuelve.'
+ejercicios: [comb-auto, comb-orden, comb-detective, comb-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { combAuto, combOrden, combDetective, combLab } from '../../data/ejercicios/asincronia';
+
+Para los ejemplos, una ayuda: una promesa que tarda `ms` y se cumple, o se rechaza, con un valor.
+
+```js
+const tras = (ms, valor, falla = false) =>
+  new Promise((ok, mal) => setTimeout(() => (falla ? mal(new Error(valor)) : ok(valor)), ms));
+
+console.log(await tras(50, "hola"));
+```
+
+## Los cuatro combinadores
+
+| Combinador | Se cumple cuando… | Se rechaza cuando… |
+|---|---|---|
+| `Promise.all` | **todas** se cumplen (con un array de valores, en orden) | **alguna** se rechaza (enseguida) |
+| `Promise.allSettled` | **todas** terminan, bien o mal (nunca se rechaza) | — |
+| `Promise.race` | la **primera** que termine se cumple | la **primera** que termine se rechaza |
+| `Promise.any` (ES2021) | la **primera** se cumple | **todas** se rechazan (`AggregateError`) |
+
+```js
+const tras = (ms, valor, falla = false) =>
+  new Promise((ok, mal) => setTimeout(() => (falla ? mal(new Error(valor)) : ok(valor)), ms));
+
+// all: todo o nada, en paralelo
+const [perfil, amigos] = await Promise.all([tras(50, "perfil"), tras(30, "amigos")]);
+console.log(perfil, amigos);
+
+// allSettled: el estado de cada una
+const estados = await Promise.allSettled([tras(10, "ok"), tras(10, "caído", true)]);
+console.log(estados.map((e) => e.status === "fulfilled" ? e.value : e.reason.message));
+
+// race: la primera que termine, bien o mal
+console.log(await Promise.race([tras(40, "servidor A"), tras(20, "servidor B")]));
+
+// any: la primera que se cumpla
+console.log(await Promise.any([tras(10, "falla", true), tras(30, "espejo")]));
+```
+
+Cuándo usar cada uno:
+
+- **`all`**: necesitas todos los resultados para seguir, y si uno falla no tiene sentido continuar.
+- **`allSettled`**: quieres mostrar lo que funcionó y avisar de lo que falló, por separado.
+- **`race`**: un límite de tiempo (compitiendo contra un temporizador que rechaza).
+- **`any`**: varias fuentes equivalentes, te sirve cualquiera que responda.
+
+```js
+try {
+  await Promise.any([Promise.reject(new Error("A")), Promise.reject(new Error("B"))]);
+} catch (e) {
+  console.log(e.name, e.errors.map((x) => x.message));
+}
+```
+
+## Promise.withResolvers (ES2024)
+
+A veces la promesa se crea en un lugar y se cumple en otro, lejos: en un evento, en un callback que llega después. `withResolvers` crea la promesa y te da sus funciones por separado:
+
+```js
+const { promise, resolve, reject } = Promise.withResolvers();
+
+// …en otra parte del programa, cuando algo ocurre:
+setTimeout(() => resolve("el usuario confirmó"), 50);
+
+console.log(await promise);
+```
+
+Antes había que sacar `resolve` del `new Promise` a una variable de afuera.
+
+## Promise.try (ES2025)
+
+`Promise.try(fn)` ejecuta `fn` y devuelve **siempre** una promesa: si `fn` devuelve un valor, la cumple; si lanza un error, aunque sea al momento, la rechaza.
+
+```js
+function leerConfig(texto) {
+  return JSON.parse(texto);  // puede lanzar al momento
+}
+
+Promise.try(() => leerConfig("{malo"))
+  .then((c) => console.log(c))
+  .catch((e) => console.log("atrapado:", e.name));
+```
+
+Sin `Promise.try`, el error síncrono de `JSON.parse` se escaparía antes de que existiera la cadena, y el `catch` no lo vería.
+
+<Nota tipo="ojo">
+  Ningún combinador **cancela** las promesas que "pierden". Con `race`, la promesa lenta sigue su curso aunque nadie use su resultado. Para cancelar de verdad, combina con `AbortController`.
+</Nota>
+
+## Resumen
+
+- `all`: todas o el primer error. `allSettled`: el estado de cada una.
+- `race`: la primera que termine. `any`: la primera que se cumpla, o `AggregateError`.
+- `Promise.withResolvers()` (ES2024) separa la promesa de sus funciones `resolve` y `reject`.
+- `Promise.try(fn)` (ES2025) convierte también los errores síncronos en rechazos.
+- Los combinadores no cancelan: solo deciden qué resultado te importa.
+
+<Practica>
+
+<Autoevaluacion id={combAuto.id} numero={1} titulo={combAuto.titulo} preguntas={combAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={combOrden.id} numero={2} titulo={combOrden.titulo} codigo={combOrden.codigo} salida={combOrden.salida} inicio={combOrden.inicio} explicacion={combOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Los cuatro combinadores, con promesas que tardan distinto. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={combDetective.id} numero={3} titulo={combDetective.titulo} codigo={combDetective.codigo} error={combDetective.error} culpable={combDetective.culpable} arreglos={combDetective.arreglos} hallazgo={combDetective.hallazgo} pista={combDetective.pista}>
+  <div slot="enunciado">
+    <p>Una sección del panel falla y no se ve ninguna. Encuentra la línea y elige el combinador correcto.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={combLab.id} numero={4} titulo={combLab.titulo} inicial={combLab.inicial} verificaciones={combLab.verificaciones} pistas={combLab.pistas} solucion={combLab.solucion} explicacion={combLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>conLimite(promesa, ms)</code> con <code>Promise.race</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

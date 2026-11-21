@@ -1,0 +1,150 @@
+---
+titulo: async/await
+seccion: asincronia
+tema: async-await
+minutos: 12
+resumen: Funciones async y la palabra await, cómo escribir código asíncrono que se lee como síncrono, manejar errores con try/catch, esperar en serie o en paralelo, await de nivel superior (ES2022) y los errores más comunes.
+intro: '<code>async</code> y <code>await</code> no reemplazan a las promesas: son una forma de <u>escribirlas</u> que se lee de arriba abajo, como el código síncrono. Por debajo, todo sigue siendo promesas y event loop, pero sin cadenas de <code>then</code>.'
+ejercicios: [async-auto, async-orden, async-detective, async-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { asyncAuto, asyncOrden, asyncDetective, asyncLab } from '../../data/ejercicios/asincronia';
+
+## Dos palabras
+
+- **`async`** delante de una función hace que **siempre devuelva una promesa**: si haces `return 5`, quien la llama recibe una promesa de 5.
+- **`await`** delante de una promesa **pausa la función** hasta que la promesa se cumpla, y te da su valor.
+
+```js
+const esperar = (ms, valor) => new Promise((r) => setTimeout(() => r(valor), ms));
+
+async function prepararDesayuno() {
+  const cafe = await esperar(50, "café");
+  const tostada = await esperar(50, "tostada");
+  return `${cafe} y ${tostada}`;
+}
+
+prepararDesayuno().then((d) => console.log("listo:", d));
+console.log("mientras, pongo la mesa");
+```
+
+`await` no bloquea el programa: mientras espera, la función sale de la pila, como un generador en un `yield`, y el event loop sigue con otras cosas. Cuando la promesa se cumple, la función **retoma** donde quedó, como una microtarea.
+
+## Errores con try/catch
+
+Si la promesa se rechaza, `await` **lanza** el error, y se atrapa como cualquier otro:
+
+```js
+const fallar = () => new Promise((_, mal) => setTimeout(() => mal(new Error("servidor caído")), 30));
+
+async function cargar() {
+  try {
+    const datos = await fallar();
+    console.log(datos);
+  } catch (e) {
+    console.log("no se pudo cargar:", e.message);
+  } finally {
+    console.log("ocultar el «cargando…»");
+  }
+}
+
+cargar();
+```
+
+## En serie o en paralelo
+
+Cada `await` espera a que termine lo anterior. Si las tareas **no dependen** una de otra, esperarlas en fila es perder tiempo:
+
+```js
+const esperar = (ms, valor) => new Promise((r) => setTimeout(() => r(valor), ms));
+
+// En serie: unos 200 ms
+let t = performance.now();
+const a = await esperar(100, "perfil");
+const b = await esperar(100, "amigos");
+console.log("en serie:", Math.round(performance.now() - t), "ms");
+
+// En paralelo: unos 100 ms
+t = performance.now();
+const [c, d] = await Promise.all([esperar(100, "perfil"), esperar(100, "amigos")]);
+console.log("en paralelo:", Math.round(performance.now() - t), "ms");
+```
+
+La regla: `await` en serie cuando un paso **necesita** el resultado del anterior; `Promise.all` cuando son independientes.
+
+## await de nivel superior (ES2022)
+
+En un **módulo** (los veremos en la próxima sección), puedes usar `await` fuera de cualquier función:
+
+```js
+// configuracion.js, cargado como módulo
+const respuesta = await fetch("/config.json");
+export const config = await respuesta.json();
+```
+
+Los módulos que importen `configuracion.js` esperan a que termine antes de ejecutarse. Los ejemplos de esta página también lo usan: corren como si fueran un módulo.
+
+## Errores comunes
+
+```js
+async function obtenerNumero() {
+  return 42;
+}
+
+// 1. Olvidar el await: obtienes la promesa, no el valor
+const sinAwait = obtenerNumero();
+console.log(sinAwait instanceof Promise);  // true
+
+// 2. await en un forEach: no espera a nadie (lo verás en Patrones)
+
+// 3. Llamar a una función async y no manejar su rechazo:
+//    si falla, es un rechazo no manejado
+const conAwait = await obtenerNumero();
+console.log(conAwait);
+```
+
+<Nota tipo="consejo">
+  Si una función usa `await`, tiene que ser `async`. Y si llamas a una función `async`, casi siempre quieres `await` delante (o un `.then`/`.catch`). Los editores modernos, y TypeScript, avisan cuando te olvidas una promesa sin esperar.
+</Nota>
+
+## Resumen
+
+- `async` hace que la función devuelva siempre una **promesa**.
+- `await` pausa la función, sin bloquear el programa, hasta que la promesa se cumpla.
+- Los rechazos se manejan con `try/catch/finally`.
+- `await` seguidos = **en serie**; `await Promise.all([...])` = **en paralelo**.
+- En los módulos hay **`await` de nivel superior** (ES2022).
+- El error más común: olvidar el `await` y trabajar con la promesa en lugar del valor.
+
+<Practica>
+
+<Autoevaluacion id={asyncAuto.id} numero={1} titulo={asyncAuto.titulo} preguntas={asyncAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={asyncOrden.id} numero={2} titulo={asyncOrden.titulo} codigo={asyncOrden.codigo} salida={asyncOrden.salida} inicio={asyncOrden.inicio} explicacion={asyncOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una función <code>async</code> con un solo <code>await</code>. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={asyncDetective.id} numero={3} titulo={asyncDetective.titulo} codigo={asyncDetective.codigo} error={asyncDetective.error} culpable={asyncDetective.culpable} arreglos={asyncDetective.arreglos} hallazgo={asyncDetective.hallazgo} pista={asyncDetective.pista}>
+  <div slot="enunciado">
+    <p>El usuario existe, pero su nombre no aparece. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={asyncLab.id} numero={4} titulo={asyncLab.titulo} inicial={asyncLab.inicial} verificaciones={asyncLab.verificaciones} pistas={asyncLab.pistas} solucion={asyncLab.solucion} explicacion={asyncLab.explicacion}>
+  <div slot="enunciado">
+    <p>Reescribe <code>cargarPerfil</code> con <code>async</code>, <code>await</code> y <code>try/catch</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

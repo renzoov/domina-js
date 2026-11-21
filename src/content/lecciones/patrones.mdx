@@ -1,0 +1,165 @@
+---
+titulo: Patrones asíncronos
+seccion: asincronia
+tema: patrones
+minutos: 12
+resumen: Recetas para problemas asíncronos reales (en serie o en paralelo, concurrencia limitada, reintentos con backoff, límites de tiempo, debounce y throttle) y el error de usar await dentro de forEach.
+intro: 'Con promesas, <code>async/await</code>, combinadores y cancelación ya tienes todas las piezas. Este tema las combina en <u>recetas</u> que vas a necesitar una y otra vez: no saturar un servidor, reintentar lo que falla, esperar a que el usuario termine de escribir.'
+ejercicios: [patrones-auto, patrones-orden, patrones-detective, patrones-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { patronesAuto, patronesOrden, patronesDetective, patronesLab } from '../../data/ejercicios/asincronia';
+
+## En serie, en paralelo y en un forEach
+
+```js
+const esperar = (ms, valor) => new Promise((r) => setTimeout(() => r(valor), ms));
+const ids = [1, 2, 3];
+
+// En serie: una tras otra (cuando cada paso necesita el anterior)
+const enSerie = [];
+for (const id of ids) {
+  enSerie.push(await esperar(20, id));
+}
+
+// En paralelo: todas a la vez
+const enParalelo = await Promise.all(ids.map((id) => esperar(20, id)));
+
+console.log(enSerie, enParalelo);
+```
+
+<Nota tipo="error">
+  `ids.forEach(async (id) => await algo(id))` **no espera a nada**: `forEach` ignora las promesas que devuelve el callback y termina enseguida. Usa `for...of` con `await` (en serie) o `Promise.all` con `map` (en paralelo).
+</Nota>
+
+## Concurrencia limitada
+
+`Promise.all` lanza **todo a la vez**. Con mil pedidos, eso puede saturar un servidor o el navegador. La solución: un número fijo de "trabajadores" que toman tareas de una fila común.
+
+```js
+const esperar = (ms, valor) => new Promise((r) => setTimeout(() => r(valor), ms));
+
+async function conLimite(tareas, maximo) {
+  const resultados = [];
+  let siguiente = 0;
+  let enCurso = 0;
+  let pico = 0;
+
+  async function trabajador() {
+    while (siguiente < tareas.length) {
+      const i = siguiente++;
+      enCurso++;
+      pico = Math.max(pico, enCurso);
+      resultados[i] = await tareas[i]();
+      enCurso--;
+    }
+  }
+
+  await Promise.all(Array.from({ length: maximo }, trabajador));
+  console.log("como máximo a la vez:", pico);
+  return resultados;
+}
+
+const tareas = [1, 2, 3, 4, 5, 6].map((n) => () => esperar(20, n * 10));
+console.log(await conLimite(tareas, 2));
+```
+
+Las tareas son **funciones** que devuelven promesas, no promesas: así no empiezan hasta que un trabajador las toma.
+
+## Reintentos con backoff
+
+Las operaciones de red fallan a veces por motivos pasajeros. Reintentar ayuda, pero sin martillar: entre intento e intento, se espera **cada vez más** (100 ms, 200, 400…). Lo vas a escribir en el laboratorio.
+
+## Límite de tiempo
+
+Ya lo viste con `Promise.race` y con `AbortSignal.timeout`. La segunda opción es mejor cuando la operación acepta una señal, como `fetch`, porque además la **cancela**:
+
+```js
+// Con race: deja de esperar, pero la operación sigue
+// Con una señal: deja de esperar y la operación se detiene
+fetch(url, { signal: AbortSignal.timeout(5000) });
+```
+
+## Debounce
+
+Un **debounce** retrasa la ejecución hasta que pasa un tiempo **sin** nuevas llamadas. Ideal para buscar mientras el usuario escribe:
+
+```js
+function debounce(fn, ms) {
+  let id;
+  return (...args) => {
+    clearTimeout(id);                         // cada llamada cancela la anterior…
+    id = setTimeout(() => fn(...args), ms);   // …y programa una nueva
+  };
+}
+
+const guardar = debounce((texto) => console.log("guardado:", texto), 50);
+guardar("h");
+guardar("ho");
+guardar("hola");  // solo esta se guarda
+```
+
+## Throttle
+
+Un **throttle** deja pasar como máximo una ejecución cada cierto tiempo, aunque lo llamen sin parar. Ideal para el scroll o el redimensionado de la ventana:
+
+```js
+function throttle(fn, ms) {
+  let ultimo = 0;
+  return (...args) => {
+    const ahora = performance.now();
+    if (ahora - ultimo >= ms) {
+      ultimo = ahora;
+      fn(...args);
+    }
+  };
+}
+
+const registrar = throttle((n) => console.log("posición", n), 30);
+let n = 0;
+const id = setInterval(() => {
+  registrar(++n);           // se llama cada 5 ms…
+  if (n === 20) clearInterval(id);
+}, 5);                      // …pero registra como mucho cada 30 ms
+```
+
+## Resumen
+
+- **En serie** con `for...of` y `await`; **en paralelo** con `Promise.all`. Nunca `await` dentro de `forEach`.
+- **Concurrencia limitada**: unos pocos trabajadores toman tareas de una fila común.
+- **Reintentos** con espera creciente (*backoff exponencial*).
+- **Límites de tiempo**: mejor con `AbortSignal.timeout`, que además cancela.
+- **Debounce**: una ejecución cuando las llamadas se detienen. **Throttle**: como máximo una cada cierto tiempo.
+
+<Practica>
+
+<Autoevaluacion id={patronesAuto.id} numero={1} titulo={patronesAuto.titulo} preguntas={patronesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={patronesOrden.id} numero={2} titulo={patronesOrden.titulo} codigo={patronesOrden.codigo} salida={patronesOrden.salida} inicio={patronesOrden.inicio} explicacion={patronesOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un buscador que recibe cuatro llamadas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={patronesDetective.id} numero={3} titulo={patronesDetective.titulo} codigo={patronesDetective.codigo} error={patronesDetective.error} culpable={patronesDetective.culpable} arreglos={patronesDetective.arreglos} hallazgo={patronesDetective.hallazgo} pista={patronesDetective.pista}>
+  <div slot="enunciado">
+    <p>Se cargan tres elementos, pero al usarlos no hay ninguno. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={patronesLab.id} numero={4} titulo={patronesLab.titulo} inicial={patronesLab.inicial} verificaciones={patronesLab.verificaciones} pistas={patronesLab.pistas} solucion={patronesLab.solucion} explicacion={patronesLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>reintentar(tarea, intentos)</code> con una espera creciente entre intento e intento.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

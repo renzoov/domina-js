@@ -2028,3 +2028,237 @@ console.log(gen.next().done);`,
     },
   ],
 };
+
+// Tarjeta del modo event loop: 'pila', 'api' (trabajo del runtime), 'tarea' o 'micro' (colas)
+const z = (tipo: 'pila' | 'api' | 'tarea' | 'micro' | 'objeto', nombre: string, nota?: string, destacar?: boolean) => ({
+  nombre,
+  nota,
+  tipo,
+  ...(destacar ? { destacar } : {}),
+});
+
+export const eventLoop: DatosVisualizador = {
+  codigo: `console.log("1. inicio");
+
+setTimeout(() => {
+  console.log("3. temporizador");
+}, 0);
+
+console.log("2. fin");`,
+  pasos: [
+    {
+      lineas: [1],
+      pila: [z('pila', 'programa principal', 'corre de arriba abajo', true)],
+      consola: ['1. inicio'],
+      evento: 'imprime',
+      anotacion: 'síncrono',
+      texto: 'El programa principal está en la pila y se ejecuta línea por línea. La primera imprime enseguida.',
+    },
+    {
+      lineas: [3],
+      pila: [z('pila', 'programa principal'), z('pila', 'setTimeout(…)', 'deja un encargo', true), z('api', 'temporizador de 0 ms', 'el runtime cuenta el tiempo')],
+      consola: ['1. inicio'],
+      evento: 'entra',
+      anotacion: 'encargo',
+      texto: '<code>setTimeout</code> no espera: le entrega el callback y el tiempo al <b>runtime</b> (las Web APIs del navegador, o el equivalente en Node.js) y sale de la pila enseguida.',
+    },
+    {
+      lineas: [3],
+      pila: [z('pila', 'programa principal', 'sigue ocupando la pila'), z('tarea', '() => console.log("3. …")', 'espera su turno', true)],
+      consola: ['1. inicio'],
+      evento: 'ejecuta',
+      anotacion: 'a la cola',
+      texto: 'Pasaron los 0 ms: el runtime pone el callback en la <b>cola de tareas</b>. Pero la pila no está vacía, porque el programa principal no terminó. El callback tiene que esperar.',
+      prediccion: {
+        pregunta: 'El tiempo ya pasó. ¿Se ejecuta ahora el callback?',
+        opciones: ['Sí, ya venció el temporizador', 'No, espera a que la pila quede vacía'],
+        correcta: 1,
+        explicacion: 'Nada interrumpe al código que está corriendo: run to completion.',
+      },
+    },
+    {
+      lineas: [7],
+      pila: [z('pila', 'programa principal', true), z('tarea', '() => console.log("3. …")', 'espera su turno')],
+      consola: ['1. inicio', '2. fin'],
+      evento: 'imprime',
+      texto: 'El programa principal sigue y llega a su última línea.',
+    },
+    {
+      lineas: [],
+      pila: [z('tarea', '() => console.log("3. …")', 'primera de la fila', true)],
+      consola: ['1. inicio', '2. fin'],
+      evento: 'sale',
+      anotacion: 'pila vacía',
+      texto: 'El programa principal terminó y la pila quedó <b>vacía</b>. Ahora actúa el <b>event loop</b>: mira la cola de tareas y encuentra el callback esperando.',
+    },
+    {
+      lineas: [4],
+      pila: [z('pila', 'callback del temporizador', 'llegó su turno', true)],
+      consola: ['1. inicio', '2. fin', '3. temporizador'],
+      evento: 'entra',
+      anotacion: 'event loop',
+      texto: 'El event loop pasa el callback de la cola a la pila, y se ejecuta. Por eso <code>3. temporizador</code> aparece al final, aunque el tiempo era 0.',
+    },
+    {
+      lineas: [],
+      pila: [],
+      consola: ['1. inicio', '2. fin', '3. temporizador'],
+      evento: 'fin',
+      texto: 'Pila vacía, cola vacía, sin temporizadores pendientes: el programa terminó. El event loop repite esto siempre: <b>¿pila vacía? Entonces, la siguiente tarea de la cola</b>.',
+    },
+  ],
+};
+
+export const promesaEstados: DatosVisualizador = {
+  codigo: `const pedido = new Promise((resolver) => {
+  setTimeout(() => resolver("pizza"), 100);
+});
+
+console.log("pedido hecho");
+
+pedido
+  .then((comida) => comida.toUpperCase())
+  .then((texto) => console.log(\`llegó: \${texto}\`));`,
+  pasos: [
+    {
+      lineas: [1, 2],
+      pila: [z('objeto', 'promesa #1', 'pendiente', true), z('api', 'temporizador de 100 ms', 'resolverá la promesa')],
+      consola: [],
+      evento: 'entra',
+      anotacion: 'pendiente',
+      texto: '<code>new Promise</code> ejecuta su función <b>en el momento</b>, que deja un temporizador. La promesa nace <b>pendiente</b>: todavía no tiene valor.',
+    },
+    {
+      lineas: [5],
+      pila: [z('objeto', 'promesa #1', 'pendiente'), z('api', 'temporizador de 100 ms', 'resolverá la promesa')],
+      consola: ['pedido hecho'],
+      evento: 'imprime',
+      texto: 'El programa no se detiene a esperar: sigue con la línea 5.',
+    },
+    {
+      lineas: [7, 8, 9],
+      pila: [z('objeto', 'promesa #1', 'pendiente · avisará a #2'), z('objeto', 'promesa #2', 'pendiente · avisará a #3', true), z('objeto', 'promesa #3', 'pendiente'), z('api', 'temporizador de 100 ms')],
+      consola: ['pedido hecho'],
+      evento: 'ejecuta',
+      anotacion: 'encadena',
+      texto: 'Cada <code>then</code> <b>registra</b> una función para cuando la promesa se cumpla, y devuelve una promesa <b>nueva</b>. Las funciones todavía no se ejecutaron.',
+      prediccion: {
+        pregunta: '¿Se ejecutó ya comida.toUpperCase()?',
+        opciones: ['Sí', 'No, then solo la dejó registrada'],
+        correcta: 1,
+        explicacion: 'then no espera ni ejecuta: anota qué hacer cuando llegue el valor.',
+      },
+    },
+    {
+      lineas: [2],
+      pila: [z('pila', 'callback del temporizador', 'resolver("pizza")', true), z('objeto', 'promesa #1', 'cumplida: "pizza"'), z('objeto', 'promesa #2', 'pendiente'), z('objeto', 'promesa #3', 'pendiente'), z('micro', '(comida) => comida.toUpperCase()', 'lista para correr')],
+      consola: ['pedido hecho'],
+      evento: 'entra',
+      anotacion: '100 ms',
+      texto: 'A los 100 ms, el callback del temporizador llama a <code>resolver("pizza")</code>: la promesa #1 pasa a <b>cumplida</b>, para siempre. Su reacción, la función del primer <code>then</code>, entra a la cola de <b>microtareas</b>.',
+    },
+    {
+      lineas: [8],
+      pila: [z('pila', '(comida) => …', 'devuelve "PIZZA"', true), z('objeto', 'promesa #1', 'cumplida: "pizza"'), z('objeto', 'promesa #2', 'cumplida: "PIZZA"'), z('objeto', 'promesa #3', 'pendiente'), z('micro', '(texto) => console.log(…)', 'lista para correr')],
+      consola: ['pedido hecho'],
+      evento: 'ejecuta',
+      anotacion: 'then',
+      texto: 'La función recibe <code>"pizza"</code> y devuelve <code>"PIZZA"</code>. Con ese valor se cumple la promesa #2, y su reacción entra a las microtareas.',
+    },
+    {
+      lineas: [9],
+      pila: [z('pila', '(texto) => console.log(…)', true), z('objeto', 'promesa #1', 'cumplida: "pizza"'), z('objeto', 'promesa #2', 'cumplida: "PIZZA"'), z('objeto', 'promesa #3', 'cumplida: undefined')],
+      consola: ['pedido hecho', 'llegó: PIZZA'],
+      evento: 'imprime',
+      anotacion: 'then',
+      texto: 'El último <code>then</code> recibe <code>"PIZZA"</code> y lo imprime. No devuelve nada, así que la promesa #3 se cumple con <code>undefined</code>.',
+    },
+    {
+      lineas: [],
+      pila: [z('objeto', 'promesa #1', 'cumplida: "pizza"'), z('objeto', 'promesa #2', 'cumplida: "PIZZA"'), z('objeto', 'promesa #3', 'cumplida: undefined')],
+      consola: ['pedido hecho', 'llegó: PIZZA'],
+      evento: 'fin',
+      texto: 'Una promesa es un <b>recipiente para un valor futuro</b>. <code>then</code> no espera: encadena funciones que el event loop ejecutará, como microtareas, cuando el valor llegue.',
+    },
+  ],
+};
+
+export const microtareas: DatosVisualizador = {
+  codigo: `console.log("1. síncrono");
+
+setTimeout(() => console.log("4. macrotarea"), 0);
+
+Promise.resolve().then(() => console.log("3. microtarea"));
+
+console.log("2. síncrono");`,
+  pasos: [
+    {
+      lineas: [1],
+      pila: [z('pila', 'programa principal', true)],
+      consola: ['1. síncrono'],
+      evento: 'imprime',
+      anotacion: 'síncrono',
+      texto: 'Lo síncrono corre primero, siempre.',
+    },
+    {
+      lineas: [3],
+      pila: [z('pila', 'programa principal'), z('tarea', '() => console.log("4. …")', 'temporizador de 0 ms vencido', true)],
+      consola: ['1. síncrono'],
+      evento: 'ejecuta',
+      anotacion: 'macrotarea',
+      texto: 'El temporizador de 0 ms vence enseguida y su callback va a la <b>cola de tareas</b> (también llamadas macrotareas).',
+    },
+    {
+      lineas: [5],
+      pila: [z('pila', 'programa principal'), z('micro', '() => console.log("3. …")', 'la promesa ya estaba cumplida', true), z('tarea', '() => console.log("4. …")', 'temporizador de 0 ms vencido')],
+      consola: ['1. síncrono'],
+      evento: 'ejecuta',
+      anotacion: 'microtarea',
+      texto: 'La promesa ya está cumplida, así que su <code>then</code> va directo a la otra cola: la de <b>microtareas</b>. Es una cola distinta, con prioridad.',
+    },
+    {
+      lineas: [7],
+      pila: [z('pila', 'programa principal', true), z('micro', '() => console.log("3. …")'), z('tarea', '() => console.log("4. …")')],
+      consola: ['1. síncrono', '2. síncrono'],
+      evento: 'imprime',
+      texto: 'Termina lo síncrono.',
+    },
+    {
+      lineas: [],
+      pila: [z('micro', '() => console.log("3. …")', 'espera', true), z('tarea', '() => console.log("4. …")', 'espera')],
+      consola: ['1. síncrono', '2. síncrono'],
+      evento: 'sale',
+      anotacion: 'pila vacía',
+      texto: 'La pila quedó vacía y hay algo esperando en <b>las dos</b> colas. ¿Cuál elige el event loop?',
+      prediccion: {
+        pregunta: '¿Qué corre primero?',
+        opciones: ['La macrotarea: el setTimeout se programó antes', 'La microtarea: esa cola se vacía primero'],
+        correcta: 1,
+        explicacion: 'Después de cada tarea, el event loop vacía todas las microtareas antes de tomar otra tarea.',
+      },
+    },
+    {
+      lineas: [5],
+      pila: [z('pila', 'microtarea', true), z('tarea', '() => console.log("4. …")', 'sigue esperando')],
+      consola: ['1. síncrono', '2. síncrono', '3. microtarea'],
+      evento: 'entra',
+      anotacion: 'micro primero',
+      texto: 'Las <b>microtareas</b> van primero, <b>todas</b>: si una agregara otra, también correría antes de la macrotarea.',
+    },
+    {
+      lineas: [3],
+      pila: [z('pila', 'macrotarea', true)],
+      consola: ['1. síncrono', '2. síncrono', '3. microtarea', '4. macrotarea'],
+      evento: 'entra',
+      anotacion: 'después',
+      texto: 'Recién con la cola de microtareas vacía, el event loop toma la siguiente <b>macrotarea</b>.',
+    },
+    {
+      lineas: [],
+      pila: [],
+      consola: ['1. síncrono', '2. síncrono', '3. microtarea', '4. macrotarea'],
+      evento: 'fin',
+      texto: 'El orden siempre es: <b>lo síncrono</b>, después <b>todas las microtareas</b> (promesas, <code>await</code>, <code>queueMicrotask</code>), después <b>una macrotarea</b> (temporizadores, eventos), y vuelta a empezar. En el navegador, entre una vuelta y otra, puede dibujarse la página.',
+    },
+  ],
+};

@@ -1,0 +1,117 @@
+---
+titulo: CommonJS frente a ESM
+seccion: modulos
+tema: commonjs-y-esm
+minutos: 10
+resumen: El sistema de módulos original de Node.js (require y module.exports), en qué se diferencia de ES Modules, cómo decide Node.js cuál usar, cómo convivir con los dos y require(esm) en Node.js moderno.
+intro: 'Node.js nació en 2009, seis años antes de que JavaScript tuviera módulos propios, así que inventó los suyos: <u>CommonJS</u>, con <code>require</code> y <code>module.exports</code>. Hoy el estándar es ESM, pero millones de paquetes y proyectos siguen usando CommonJS. Vas a encontrarte con los dos.'
+nota: 'Como el resto de la sección, estos ejemplos necesitan archivos: son para leer y copiar.'
+ejercicios: [cjs-auto, cjs-orden, cjs-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { cjsAuto, cjsOrden, cjsDetective } from '../../data/ejercicios/modulos';
+
+## CommonJS
+
+```js
+// saludos.cjs
+const prefijo = "Hola";
+
+function saludar(nombre) {
+  return `${prefijo}, ${nombre}`;
+}
+
+module.exports = { saludar };   // lo que se exporta es un objeto
+```
+
+```js
+// main.cjs
+const { saludar } = require("./saludos.cjs");
+const fs = require("node:fs");
+
+console.log(saludar("Ana"));
+console.log(__dirname);   // la carpeta de este archivo
+```
+
+## Las diferencias
+
+| | CommonJS | ES Modules |
+|---|---|---|
+| Sintaxis | `require()` y `module.exports` | `import` y `export` |
+| Carga | **Síncrona**, en el momento del `require` | Se analiza antes de ejecutar; admite `await` de nivel superior |
+| `require`/`import` | En cualquier lugar, incluso dentro de un `if` | `import` solo en el nivel superior; `import()` en cualquier lugar |
+| Lo exportado | Un objeto con **copias** de los valores | **Enlaces vivos** a las variables |
+| Modo estricto | Solo si lo pides | Siempre |
+| Datos del archivo | `__dirname`, `__filename` | `import.meta.dirname`, `import.meta.filename` |
+| En el navegador | No | Sí |
+
+## Cómo decide Node.js
+
+Para cada archivo:
+
+1. **`.mjs`** → siempre ESM. **`.cjs`** → siempre CommonJS.
+2. **`.js`** → mira el `package.json` más cercano: con `"type": "module"`, ESM; si no, CommonJS.
+
+```json
+{
+  "name": "mi-proyecto",
+  "type": "module"
+}
+```
+
+Para proyectos nuevos, la recomendación es clara: `"type": "module"` y ESM en todas partes.
+
+## Convivir
+
+**De ESM a CommonJS** funciona sin problemas: puedes importar paquetes CommonJS. Su `module.exports` llega como exportación por defecto, y Node.js intenta detectar también las exportaciones con nombre:
+
+```js
+// main.mjs
+import express from "express";          // un paquete CommonJS
+import { readFile } from "node:fs/promises";
+```
+
+**De CommonJS a ESM** fue durante años el lado difícil: `require` es síncrono y ESM puede no serlo, así que había que usar el `import()` dinámico. Desde **Node 22** (y 20.19) existe **`require(esm)`**: puedes hacer `require` de un módulo ESM, siempre que no use `await` de nivel superior.
+
+```js
+// legado.cjs
+const { formatear } = require("./util.mjs");   // funciona en Node 22+
+```
+
+<Nota tipo="consejo">
+  Si publicas una librería, el campo `"exports"` del `package.json` te deja ofrecer las dos versiones a la vez: `{ "exports": { "import": "./dist/index.js", "require": "./dist/index.cjs" } }`. Cada usuario recibe la que su proyecto necesita.
+</Nota>
+
+## Resumen
+
+- CommonJS es el sistema original de Node.js: `require()` y `module.exports`, carga síncrona.
+- ESM es el estándar: `import`/`export`, enlaces vivos, modo estricto, también en el navegador.
+- `.mjs` y `.cjs` deciden solos; los `.js` siguen el `"type"` del `package.json`.
+- ESM puede importar CommonJS; desde Node 22, CommonJS puede hacer `require` de ESM sin `await` de nivel superior.
+- En ESM no existen `require`, `module` ni `__dirname`: usa `import` e `import.meta`.
+
+<Practica>
+
+<Autoevaluacion id={cjsAuto.id} numero={1} titulo={cjsAuto.titulo} preguntas={cjsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={cjsOrden.id} numero={2} titulo={cjsOrden.titulo} codigo={cjsOrden.codigo} salida={cjsOrden.salida} inicio={cjsOrden.inicio} explicacion={cjsOrden.explicacion}>
+  <div slot="enunciado">
+    <p>El mismo contador en los dos sistemas. Se ejecuta primero <code>node main.cjs</code> y después <code>node main.mjs</code>. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={cjsDetective.id} numero={3} titulo={cjsDetective.titulo} codigo={cjsDetective.codigo} error={cjsDetective.error} culpable={cjsDetective.culpable} arreglos={cjsDetective.arreglos} hallazgo={cjsDetective.hallazgo} pista={cjsDetective.pista}>
+  <div slot="enunciado">
+    <p>Un servidor que funcionaba deja de arrancar después de un cambio en el <code>package.json</code>. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>
