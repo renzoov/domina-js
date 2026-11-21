@@ -1,0 +1,159 @@
+---
+titulo: Condicionales
+seccion: control-de-flujo
+tema: condicionales
+minutos: 11
+resumen: Cómo tomar decisiones en el código con if, else if y else, switch con sus case y break, el ternario, y cómo escribir condiciones claras con retornos tempranos.
+intro: 'Hasta ahora tus programas ejecutaban todas las líneas, de arriba hacia abajo. Con los <u>condicionales</u> el programa <u>decide</u>: ejecuta un bloque u otro según se cumpla o no una condición. Es la primera herramienta para que el código reaccione a los datos.'
+pizarron: condicional
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Sigue la línea subrayada: el motor evalúa las condiciones en orden y entra en <b>la primera</b> que se cumple. Fíjate en qué pasa con el <code>else</code> cuando ya se entró en otro bloque.'
+ejercicios: [condicionales-auto, condicionales-orden, condicionales-detective, condicionales-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { condicionalesAuto, condicionalesOrden, condicionalesDetective, condicionalesLab } from '../../data/ejercicios/control-de-flujo';
+
+## if
+
+`if (condición) { … }` ejecuta el bloque solo si la condición es truthy:
+
+```js
+const saldo = 120;
+
+if (saldo > 100) {
+  console.log("Tienes saldo de sobra");
+}
+console.log("Esto se ejecuta siempre");
+```
+
+Si el bloque tiene una sola línea, puedes omitir las llaves: `if (saldo > 100) console.log("…");`. Muchos equipos prefieren ponerlas siempre, porque al agregar una segunda línea es fácil olvidarlas.
+
+## else y else if
+
+`else` da un camino para cuando la condición **no** se cumple. Con `else if` encadenas varias condiciones:
+
+```js
+const hora = 15;
+
+if (hora < 12) {
+  console.log("Buenos días");
+} else if (hora < 20) {
+  console.log("Buenas tardes");
+} else {
+  console.log("Buenas noches");
+}
+```
+
+Como muestra el pizarrón, se ejecuta **solo el primer bloque** cuya condición se cumple. Por eso el orden importa: si la primera condición fuera `hora < 20`, nunca verías "Buenos días".
+
+## Combinar condiciones
+
+Usa `&&` y `||` dentro de la condición:
+
+```js
+const edad = 25;
+const tieneEntrada = true;
+
+if (edad >= 18 && tieneEntrada) {
+  console.log("Puede pasar");
+}
+
+const dia = "domingo";
+if (dia === "sábado" || dia === "domingo") {
+  console.log("Fin de semana");
+}
+```
+
+Para comprobar si un valor está en un rango, escribe las dos comparaciones: `edad >= 13 && edad <= 19`. La forma de las matemáticas, `13 <= edad <= 19`, **no** funciona en JavaScript: compara `true <= 19`.
+
+## switch
+
+Cuando comparas **un mismo valor** con varias opciones fijas, `switch` puede ser más claro que una cadena de `else if`:
+
+```js
+const fruta = "pera";
+
+switch (fruta) {
+  case "manzana":
+    console.log("Roja o verde");
+    break;
+  case "pera":
+  case "membrillo":
+    console.log("Amarilla");
+    break;
+  default:
+    console.log("No la conozco");
+}
+```
+
+- Cada `case` compara con `===`.
+- **`break`** sale del `switch`. Si lo olvidas, la ejecución sigue con el `case` siguiente.
+- Varios `case` seguidos y vacíos **comparten** el mismo código, como `"pera"` y `"membrillo"`.
+- `default` se ejecuta si ningún `case` coincide.
+
+<Nota>
+  Olvidar un `break` es el error clásico del `switch`: el código "cae" al siguiente caso sin avisar. Si tu `switch` hace algo raro, revisa primero los `break`.
+</Nota>
+
+## El ternario, para elegir un valor
+
+Cuando solo necesitas **elegir un valor** entre dos, el operador ternario es más corto que un `if`:
+
+```js
+const stock = 0;
+const mensaje = stock > 0 ? "Disponible" : "Agotado";
+console.log(mensaje);
+```
+
+Úsalo para valores, no para ejecutar acciones distintas: para eso, `if`.
+
+## Condiciones claras
+
+Algunas costumbres que hacen las decisiones más fáciles de leer:
+
+- **Ponle nombre a las condiciones complicadas**: `const puedeComprar = edad >= 18 && saldo >= precio;` y después `if (puedeComprar)`.
+- **Evita la doble negación**: `if (!noEsValido)` cuesta leerlo; escribe `if (esValido)`.
+- **Sal pronto**: dentro de una función, comprueba primero los casos que no sirven y termina con `return`. Así el caso normal no queda enterrado en varios niveles de llaves. Lo vas a practicar en la sección de Funciones.
+
+## Resumen
+
+- `if` ejecuta un bloque si la condición es truthy; `else` da el camino contrario.
+- En una cadena `if / else if / else` se ejecuta **solo el primer bloque** que se cumple. El orden importa.
+- Combina condiciones con `&&` y `||`; un rango se escribe `a >= x && a <= y`.
+- `switch` compara un valor con varios `case` usando `===`; no olvides el `break`.
+- El ternario elige **un valor**; `if` elige **qué código** ejecutar.
+
+<Practica>
+
+<Autoevaluacion id={condicionalesAuto.id} numero={1} titulo={condicionalesAuto.titulo} preguntas={condicionalesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={condicionalesOrden.id} numero={2} titulo={condicionalesOrden.titulo} codigo={condicionalesOrden.codigo} salida={condicionalesOrden.salida} inicio={condicionalesOrden.inicio} explicacion={condicionalesOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena las líneas que aparecerían en la consola. Fíjate en el <code>case</code> vacío y en el <code>if</code> del final.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={condicionalesDetective.id} numero={3} titulo={condicionalesDetective.titulo} codigo={condicionalesDetective.codigo} error={condicionalesDetective.error} culpable={condicionalesDetective.culpable} arreglos={condicionalesDetective.arreglos} hallazgo={condicionalesDetective.hallazgo} pista={condicionalesDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien que viene de otro lenguaje escribió este condicional, y no se ejecuta ninguna línea. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={condicionalesLab.id} numero={4} titulo={condicionalesLab.titulo} inicial={condicionalesLab.inicial} verificaciones={condicionalesLab.verificaciones} pistas={condicionalesLab.pistas} solucion={condicionalesLab.solucion} explicacion={condicionalesLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe un condicional que clasifique la temperatura. Las verificaciones van a probar tu código también con otras temperaturas, así que cuida los bordes: 30 y 15 grados.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

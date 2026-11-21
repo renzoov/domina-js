@@ -1,0 +1,130 @@
+---
+titulo: Contextos de ejecución y hoisting
+seccion: como-se-ejecuta-js
+tema: contextos-y-hoisting
+minutos: 12
+resumen: Qué es un contexto de ejecución, sus dos fases (creación y ejecución), por qué var vale undefined antes de su línea, qué es la zona muerta temporal de let y const, y cómo se elevan las funciones.
+intro: 'Antes de ejecutar la primera línea de tu programa, el motor ya hizo un trabajo invisible: recorrió el código y <u>preparó todas las variables y funciones</u>. Ese paso explica comportamientos que parecen magia, como usar una función antes de escribirla, o que una variable valga <code>undefined</code> "porque sí".'
+pizarron: hoisting
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'El paso 1 ocurre <b>antes</b> de la línea 1: es la fase de creación. Fíjate en cómo queda registrada cada declaración. Después mira qué pasa al usar <code>saludo</code> y <code>sumar</code> antes de sus líneas.'
+ejercicios: [hoisting-auto, hoisting-orden, hoisting-detective, hoisting-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { hoistingAuto, hoistingOrden, hoistingDetective, hoistingLab } from '../../data/ejercicios/por-dentro';
+
+## El contexto de ejecución
+
+Un **contexto de ejecución** es el "espacio de trabajo" donde corre un trozo de código. Contiene:
+
+- Las **variables y funciones** declaradas ahí.
+- Una referencia a su **entorno exterior**, para buscar lo que no encuentra dentro. Es la cadena de scopes, el próximo tema.
+- El valor de **`this`**, que verás en la sección de Funciones.
+
+Hay un **contexto global**, creado al empezar el programa, y **uno nuevo por cada llamada a función**. Esos contextos son los marcos que viste en la pila de llamadas: cada vez que se llama a una función, su contexto se apila; cuando termina, se desapila.
+
+## Dos fases: creación y ejecución
+
+Cada contexto pasa por dos fases:
+
+1. **Creación**: el motor recorre el código del contexto **sin ejecutarlo** y registra todas las declaraciones.
+2. **Ejecución**: recién ahora ejecuta las líneas, una por una.
+
+Lo que se registra en la creación, y cómo, depende del tipo de declaración:
+
+| Declaración | En la fase de creación queda… | Si la usas antes de su línea… |
+|---|---|---|
+| `var x = 5` | registrada con `undefined` | vale `undefined`, sin error |
+| `let x = 5` / `const x = 5` | registrada **sin inicializar** | `ReferenceError` |
+| `function f() {}` | registrada **completa**, con su cuerpo | funciona |
+| `const f = function () {}` | igual que `const` | `ReferenceError` |
+
+A este comportamiento se le llama **hoisting** ("elevación"), porque es *como si* las declaraciones subieran al principio. Pero nada se mueve: es la fase de creación la que las registra antes de ejecutar.
+
+## La zona muerta temporal
+
+Entre el inicio de su bloque y su propia línea, una variable `let` o `const` existe pero está **en la zona muerta temporal** (TDZ, *temporal dead zone*). Usarla ahí es un error:
+
+```js
+try {
+  console.log(color);
+  let color = "azul";
+} catch (error) {
+  console.log(error.message);
+}
+```
+
+Parece un fastidio, pero es una protección: con `var` el mismo código imprimiría `undefined` y el fallo pasaría desapercibido.
+
+## Funciones antes de declararlas
+
+Las **declaraciones de función** quedan completas en la fase de creación, así que puedes llamarlas antes de su línea. Eso permite escribir primero el programa principal y abajo los detalles:
+
+```js
+console.log(areaCirculo(2));
+
+function areaCirculo(radio) {
+  return Math.PI * radio ** 2;
+}
+```
+
+Las **expresiones de función** guardadas en una constante no tienen ese privilegio: siguen las reglas de `const`.
+
+```js
+try {
+  console.log(saludar("Ana"));
+} catch (error) {
+  console.log(error.message);
+}
+
+const saludar = function (nombre) {
+  return `Hola, ${nombre}`;
+};
+```
+
+<Nota>
+  Aunque el hoisting de funciones permita llamarlas antes, un orden claro se lee mejor. La costumbre más extendida: **declara arriba, usa abajo**. Con `let` y `const`, el motor te avisa si te equivocas.
+</Nota>
+
+## Resumen
+
+- Un **contexto de ejecución** guarda las variables de un trozo de código y su enlace al exterior. Hay uno global y uno por cada llamada a función.
+- Cada contexto tiene una fase de **creación**, que registra declaraciones, y una de **ejecución**.
+- `var` se registra con `undefined`; `let` y `const` quedan en la **zona muerta temporal** hasta su línea.
+- Las **declaraciones de función** se elevan completas; las funciones en constantes, no.
+- Declara antes de usar: el código se lee mejor y el motor te protege.
+
+<Practica>
+
+<Autoevaluacion id={hoistingAuto.id} numero={1} titulo={hoistingAuto.titulo} preguntas={hoistingAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={hoistingOrden.id} numero={2} titulo={hoistingOrden.titulo} codigo={hoistingOrden.codigo} salida={hoistingOrden.salida} inicio={hoistingOrden.inicio} explicacion={hoistingOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Piensa en la fase de creación antes de ordenar lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={hoistingDetective.id} numero={3} titulo={hoistingDetective.titulo} codigo={hoistingDetective.codigo} error={hoistingDetective.error} culpable={hoistingDetective.culpable} arreglos={hoistingDetective.arreglos} hallazgo={hoistingDetective.hallazgo} pista={hoistingDetective.pista}>
+  <div slot="enunciado">
+    <p>El error salta dentro de la función, pero la causa está en otro lado. Encuentra la línea que provoca el problema y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={hoistingLab.id} numero={4} titulo={hoistingLab.titulo} inicial={hoistingLab.inicial} verificaciones={hoistingLab.verificaciones} pistas={hoistingLab.pistas} solucion={hoistingLab.solucion} explicacion={hoistingLab.explicacion}>
+  <div slot="enunciado">
+    <p>Este código lanza un error de zona muerta temporal. Arréglalo sin usar <code>var</code>, para que imprima <code>Hola, Ana</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

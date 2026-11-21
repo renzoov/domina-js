@@ -1,0 +1,161 @@
+---
+titulo: 'this: cómo se decide su valor'
+seccion: funciones
+tema: this
+minutos: 13
+resumen: Qué es this, por qué depende de cómo se llama la función y no de dónde se escribió, las reglas (con punto, sin punto, call/apply/bind, new), por qué las flechas no tienen this propio y cómo no perderlo en callbacks.
+intro: '<code>this</code> tiene fama de confuso, pero sigue una regla simple: no importa <u>dónde</u> se escribió la función, sino <u>cómo se la llamó</u>. La misma función puede tener un <code>this</code> distinto en cada llamada. Cuando lo ves así, casi todos los misterios desaparecen.'
+pizarron: thisLlamada
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'La <b>misma</b> función se llama tres veces de formas distintas. En cada marco de la pila, fíjate qué vale <code>this</code> y de qué parte de la llamada sale.'
+ejercicios: [this-auto, this-orden, this-detective, this-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { thisAuto, thisOrden, thisDetective, thisLab } from '../../data/ejercicios/funciones';
+
+## Para qué sirve this
+
+`this` permite escribir **un** método que trabaje con **distintos** objetos. Dentro de la función, `this` es "el objeto con el que me llamaron":
+
+```js
+function describir() {
+  return `${this.nombre} (${this.edad})`;
+}
+
+const ana = { nombre: "Ana", edad: 31, describir };
+const luis = { nombre: "Luis", edad: 27, describir };
+
+console.log(ana.describir());
+console.log(luis.describir());
+```
+
+Es la misma función, guardada en dos objetos. Cada llamada usa los datos del objeto que la llamó.
+
+## Las reglas
+
+Para saber qué vale `this`, mira **la llamada**, en este orden:
+
+| Cómo se llama | `this` es |
+|---|---|
+| `new Funcion()` | El objeto nuevo que se está creando (lo verás en *Clases*) |
+| `f.call(obj)`, `f.apply(obj)` o una función hecha con `f.bind(obj)` | `obj` |
+| `objeto.metodo()`, con punto | `objeto`, lo que está antes del punto |
+| `f()`, sin punto | `undefined` en modo estricto; el objeto global fuera de él |
+
+El caso "sin punto" es el que da problemas: como muestra el pizarrón, sacar un método de su objeto lo deja **sin `this`**.
+
+## call, apply y bind
+
+Las tres te dejan elegir `this` a mano:
+
+```js
+function presentar(saludo, signo) {
+  return `${saludo}, soy ${this.nombre}${signo}`;
+}
+
+const eva = { nombre: "Eva" };
+
+console.log(presentar.call(eva, "Hola", "!"));     // this = eva, argumentos sueltos
+console.log(presentar.apply(eva, ["Hola", "?"]));  // this = eva, argumentos en array
+
+const presentarEva = presentar.bind(eva);           // función nueva, this fijado
+console.log(presentarEva("Buenas", "."));
+```
+
+`bind` es el más usado: sirve para pasar un método como callback sin que pierda su objeto.
+
+## Las flechas no tienen this propio
+
+Una función flecha **no** tiene `this`: usa el del lugar donde fue escrita, igual que usaría cualquier variable de afuera (scope léxico). Eso las hace perfectas para **callbacks dentro de métodos**:
+
+```js
+const curso = {
+  titulo: "JavaScript",
+  alumnos: ["Ana", "Luis"],
+  listar() {
+    // la flecha usa el this de listar(), que es curso
+    return this.alumnos.map((a) => `${a} estudia ${this.titulo}`);
+  },
+};
+
+console.log(curso.listar());
+```
+
+Y por lo mismo, **malas como métodos**: una flecha escrita directamente en el objeto toma el `this` de afuera del objeto, no el objeto.
+
+```js
+const mal = {
+  nombre: "Ana",
+  saludar: () => `Hola, ${this?.nombre}`,  // this NO es mal
+};
+
+console.log(mal.saludar());
+```
+
+<Nota tipo="consejo">
+  La regla que evita casi todos los problemas: escribe los **métodos** con la sintaxis normal (`saludar() { … }`) y los **callbacks dentro de ellos** con flechas.
+</Nota>
+
+## Perder this en un callback
+
+El error más común aparece al pasar un método como callback: la función que lo recibe lo llama **sin punto**.
+
+```js
+const reloj = {
+  segundos: 0,
+  avanzar() {
+    this.segundos++;
+    return this.segundos;
+  },
+};
+
+const pasos = [1, 2, 3];
+
+// pasos.forEach(reloj.avanzar);           // forEach lo llama sin punto: pierde this
+pasos.forEach(() => reloj.avanzar());      // solución 1: una flecha que lo llama con punto
+pasos.forEach(reloj.avanzar.bind(reloj));  // solución 2: bind
+
+console.log(reloj.segundos);
+```
+
+## Resumen
+
+- `this` se decide **al llamar** la función, no al escribirla.
+- Con punto, `this` es el objeto antes del punto. Sin punto, `undefined` (modo estricto) o el objeto global.
+- `call` y `apply` eligen `this` para una llamada; `bind` crea una función con `this` fijado.
+- Las **flechas** no tienen `this` propio: usan el de su entorno.
+- Métodos con sintaxis normal; callbacks dentro de ellos, con flechas.
+
+<Practica>
+
+<Autoevaluacion id={thisAuto.id} numero={1} titulo={thisAuto.titulo} preguntas={thisAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={thisOrden.id} numero={2} titulo={thisOrden.titulo} codigo={thisOrden.codigo} salida={thisOrden.salida} inicio={thisOrden.inicio} explicacion={thisOrden.explicacion}>
+  <div slot="enunciado">
+    <p>La misma función con <code>call</code>, <code>apply</code> y <code>bind</code>. Ojo con la última línea. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={thisDetective.id} numero={3} titulo={thisDetective.titulo} codigo={thisDetective.codigo} error={thisDetective.error} culpable={thisDetective.culpable} arreglos={thisDetective.arreglos} hallazgo={thisDetective.hallazgo} pista={thisDetective.pista}>
+  <div slot="enunciado">
+    <p>El error salta dentro del método, pero el problema está en cómo se lo llama. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={thisLab.id} numero={4} titulo={thisLab.titulo} inicial={thisLab.inicial} verificaciones={thisLab.verificaciones} pistas={thisLab.pistas} solucion={thisLab.solucion} explicacion={thisLab.explicacion}>
+  <div slot="enunciado">
+    <p>El contador debería terminar en 6, pero se queda en 0. Arregla el callback para que no pierda <code>this</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

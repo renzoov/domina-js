@@ -1,0 +1,144 @@
+---
+titulo: Inmutabilidad
+seccion: objetos
+tema: inmutabilidad
+minutos: 10
+resumen: Por qué conviene no modificar datos compartidos, la diferencia entre const y Object.freeze, freeze, seal y preventExtensions, el congelado superficial, el modo estricto, y los métodos de array que no mutan (ES2023).
+intro: 'Muchos errores difíciles nacen igual: una parte del programa <u>modifica un objeto</u> que otra parte estaba usando, y nadie se entera hasta que algo falla lejos de ahí. Trabajar con datos que no cambian, o que cambian creando copias, hace que el código sea mucho más predecible.'
+ejercicios: [inmut-auto, inmut-orden, inmut-detective, inmut-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { inmutAuto, inmutOrden, inmutDetective, inmutLab } from '../../data/ejercicios/objetos';
+
+## const no es inmutabilidad
+
+Ya lo viste en *Objetos literales*: `const` impide **reasignar** la variable, pero el objeto se puede cambiar.
+
+```js
+const carrito = { items: 2 };
+carrito.items = 5;          // permitido
+console.log(carrito.items);
+// carrito = {};            // esto sí: TypeError, no se puede reasignar
+```
+
+Para proteger el **contenido** del objeto, JavaScript tiene tres niveles.
+
+## Tres niveles de protección
+
+| Método | ¿Agregar? | ¿Borrar? | ¿Cambiar valores? |
+|---|---|---|---|
+| `Object.preventExtensions(obj)` | No | Sí | Sí |
+| `Object.seal(obj)` | No | No | Sí |
+| `Object.freeze(obj)` | No | No | No |
+
+```js
+const punto = Object.freeze({ x: 1, y: 2 });
+
+punto.x = 99;      // ignorado
+punto.z = 3;       // ignorado
+delete punto.y;    // ignorado
+
+console.log(punto);
+console.log(Object.isFrozen(punto));
+```
+
+## Silencio o error: el modo estricto
+
+En el ejemplo anterior nada lanzó un error: fuera del **modo estricto**, las asignaciones prohibidas se ignoran en silencio. En modo estricto, que es automático en los **módulos** y las **clases**, o con `"use strict"`, lanzan un `TypeError`:
+
+```js
+function cambiar() {
+  "use strict";
+  const punto = Object.freeze({ x: 1 });
+  try {
+    punto.x = 99;
+  } catch (error) {
+    console.log(error.name + ":", error.message);
+  }
+}
+
+cambiar();
+```
+
+El error es una ventaja: te avisa del fallo justo donde ocurre.
+
+## Congelado superficial
+
+`Object.freeze` congela **un solo nivel**, como la copia con spread. Los objetos de adentro siguen modificables:
+
+```js
+const config = Object.freeze({
+  nombre: "app",
+  colores: { fondo: "negro" },
+});
+
+config.colores.fondo = "blanco";  // ¡funciona! colores no está congelado
+console.log(config.colores.fondo);
+console.log(Object.isFrozen(config.colores));
+```
+
+Para congelar todos los niveles hay que recorrer el objeto. Lo vas a escribir en el laboratorio.
+
+## Cambiar sin mutar
+
+Muchas veces no hace falta congelar nada: basta con **no modificar** lo que recibes, y crear un valor nuevo con los cambios.
+
+```js
+const tarea = { titulo: "Leer", hecha: false };
+const lista = [3, 1, 2];
+
+// En lugar de modificar…
+const terminada = { ...tarea, hecha: true };  // objeto nuevo
+const ordenada = lista.toSorted();             // array nuevo (ES2023)
+const otra = lista.with(0, 10);                // copia con un elemento cambiado (ES2023)
+
+console.log(tarea.hecha, terminada.hecha);
+console.log(lista, ordenada, otra);
+```
+
+Desde ES2023, los arrays tienen versiones que no mutan de sus métodos clásicos: `toSorted` (de `sort`), `toReversed` (de `reverse`), `toSpliced` (de `splice`) y `with` (de `lista[i] = x`).
+
+<Nota tipo="consejo">
+  Una regla práctica: una función no debería modificar los objetos que recibe como argumento, salvo que su nombre lo diga claramente, como `agregarItem(carrito, item)`. Si devuelve uno nuevo, quien la llama decide qué hacer con el original.
+</Nota>
+
+## Resumen
+
+- `const` protege la variable; `Object.freeze` protege el objeto.
+- `preventExtensions` < `seal` < `freeze`: cada nivel prohíbe más.
+- Fuera del modo estricto, las asignaciones prohibidas se **ignoran en silencio**; en modo estricto, `TypeError`.
+- `freeze` es **superficial**: congela un solo nivel.
+- Para cambiar sin mutar: spread, `toSorted`, `toReversed`, `toSpliced` y `with` (ES2023).
+
+<Practica>
+
+<Autoevaluacion id={inmutAuto.id} numero={1} titulo={inmutAuto.titulo} preguntas={inmutAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={inmutOrden.id} numero={2} titulo={inmutOrden.titulo} codigo={inmutOrden.codigo} salida={inmutOrden.salida} inicio={inmutOrden.inicio} explicacion={inmutOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Este código no está en modo estricto. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={inmutDetective.id} numero={3} titulo={inmutDetective.titulo} codigo={inmutDetective.codigo} error={inmutDetective.error} culpable={inmutDetective.culpable} arreglos={inmutDetective.arreglos} hallazgo={inmutDetective.hallazgo} pista={inmutDetective.pista}>
+  <div slot="enunciado">
+    <p>Una función quiere mostrar montos sin decimales y choca con una configuración congelada. Encuentra la línea y elige el mejor arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={inmutLab.id} numero={4} titulo={inmutLab.titulo} inicial={inmutLab.inicial} verificaciones={inmutLab.verificaciones} pistas={inmutLab.pistas} solucion={inmutLab.solucion} explicacion={inmutLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>congelarProfundo(obj)</code>: congela el objeto y todos los objetos que tenga adentro, en cualquier nivel.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

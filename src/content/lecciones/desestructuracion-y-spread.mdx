@@ -1,0 +1,152 @@
+---
+titulo: Desestructuración y spread
+seccion: objetos
+tema: desestructuracion-y-spread
+minutos: 11
+resumen: Cómo sacar propiedades de un objeto a variables (desestructuración) con renombres, valores por defecto, anidamiento y rest; desestructurar parámetros y arrays; y combinar objetos con el operador spread.
+intro: 'Escribir <code>usuario.nombre</code>, <code>usuario.edad</code> y <code>usuario.email</code> una y otra vez cansa. La <u>desestructuración</u> saca varias propiedades a variables en una sola línea, y el <u>spread</u> hace lo contrario: junta objetos en uno nuevo. Son dos de las sintaxis más usadas del JavaScript moderno.'
+ejercicios: [desest-auto, desest-orden, desest-detective, desest-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { desestAuto, desestOrden, desestDetective, desestLab } from '../../data/ejercicios/objetos';
+
+## Desestructurar un objeto
+
+Pones a la izquierda del `=` un "molde" con las claves que quieres sacar:
+
+```js
+const usuario = { nombre: "Ana", edad: 31, email: "ana@mail.com" };
+
+const { nombre, edad } = usuario;  // igual que nombre = usuario.nombre, etc.
+
+console.log(nombre, edad);
+```
+
+El molde admite tres extras:
+
+```js
+const producto = { titulo: "Teclado", precio: 45 };
+
+const {
+  titulo: nombre,          // renombrar: guarda producto.titulo en nombre
+  stock = 0,               // por defecto: si stock es undefined
+  precio,
+} = producto;
+
+console.log(nombre, precio, stock);
+```
+
+## Anidada y con rest
+
+Puedes seguir la forma de un objeto anidado, y juntar "lo que sobra" con `...`:
+
+```js
+const pedido = {
+  id: 7,
+  cliente: { nombre: "Luis", ciudad: "Quito" },
+  total: 120,
+  pagado: true,
+};
+
+const { cliente: { ciudad }, id, ...resto } = pedido;
+
+console.log(ciudad);  // Quito
+console.log(id);      // 7
+console.log(resto);   // todo lo que no se nombró
+```
+
+## En los parámetros
+
+Donde más se usa: en los **parámetros** de una función que recibe un objeto de opciones. Así se lee qué espera la función y cada opción tiene su valor por defecto:
+
+```js
+function crearBoton({ texto, color = "amarillo", grande = false } = {}) {
+  return `[${texto}] ${color}${grande ? " grande" : ""}`;
+}
+
+console.log(crearBoton({ texto: "Enviar" }));
+console.log(crearBoton({ texto: "Borrar", color: "rojo", grande: true }));
+```
+
+El `= {}` del final es importante: sin él, llamar a `crearBoton()` sin argumentos sería un `TypeError`, porque intentaría desestructurar `undefined`.
+
+## Desestructurar arrays
+
+Con arrays el molde usa corchetes y va por **posición**:
+
+```js
+const [primero, segundo, ...otros] = ["oro", "plata", "bronce", "cuarto"];
+console.log(primero, segundo, otros);
+
+let a = 1;
+let b = 2;
+[a, b] = [b, a];  // intercambiar dos variables
+console.log(a, b);
+```
+
+## Spread: juntar objetos
+
+`...objeto` dentro de un literal copia todas sus propiedades al objeto nuevo. Si una clave se repite, **gana la última**:
+
+```js
+const base = { tema: "claro", letra: 14 };
+const usuario = { tema: "oscuro" };
+
+const preferencias = { ...base, ...usuario, idioma: "es" };
+console.log(preferencias);
+```
+
+Es la forma habitual de "cambiar" un objeto sin modificarlo: creas uno nuevo con los cambios.
+
+```js
+const tarea = { titulo: "Estudiar", hecha: false };
+const terminada = { ...tarea, hecha: true };
+
+console.log(tarea.hecha, terminada.hecha);  // false true
+```
+
+<Nota tipo="ojo">
+  El spread copia **un solo nivel**. Si una propiedad es un objeto o un array, la copia y el original lo comparten. Es el tema siguiente: *Copias superficiales y profundas*.
+</Nota>
+
+## Resumen
+
+- `const { a, b } = obj` saca propiedades a variables.
+- `{ clave: nombre }` renombra, `{ clave = valor }` da un valor por defecto (solo con `undefined`).
+- Se puede desestructurar en profundidad y juntar el resto con `...resto`.
+- En parámetros: `function f({ opcion = 1 } = {})`.
+- Los arrays se desestructuran por posición: `const [x, y] = lista`.
+- `{ ...a, ...b }` junta objetos en uno nuevo; gana la clave que aparece al final.
+
+<Practica>
+
+<Autoevaluacion id={desestAuto.id} numero={1} titulo={desestAuto.titulo} preguntas={desestAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={desestOrden.id} numero={2} titulo={desestOrden.titulo} codigo={desestOrden.codigo} salida={desestOrden.salida} inicio={desestOrden.inicio} explicacion={desestOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un valor por defecto, un renombre y dos spreads en distinto orden. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={desestDetective.id} numero={3} titulo={desestDetective.titulo} codigo={desestDetective.codigo} error={desestDetective.error} culpable={desestDetective.culpable} arreglos={desestDetective.arreglos} hallazgo={desestDetective.hallazgo} pista={desestDetective.pista}>
+  <div slot="enunciado">
+    <p>La función funciona con un objeto, pero se rompe cuando se la llama sin nada. Encuentra la línea que hay que arreglar y elige cómo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={desestLab.id} numero={4} titulo={desestLab.titulo} inicial={desestLab.inicial} verificaciones={desestLab.verificaciones} pistas={desestLab.pistas} solucion={desestLab.solucion} explicacion={desestLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>configurar(opciones)</code>: junta las opciones predeterminadas con las del usuario en un objeto nuevo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

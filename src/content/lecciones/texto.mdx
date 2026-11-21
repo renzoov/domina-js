@@ -1,0 +1,170 @@
+---
+titulo: Texto y template literals
+seccion: fundamentos
+tema: texto
+minutos: 13
+resumen: Cómo se escriben los strings, los template literals con huecos ${ }, los métodos más usados (con replaceAll de ES2021, at de ES2022 e isWellFormed de ES2024), y por qué un emoji puede medir 2.
+intro: 'Casi todo programa trabaja con <u>texto</u>: nombres, mensajes, direcciones, lo que escribe quien usa tu web. En JavaScript un texto es un <u>string</u>, y tiene una forma moderna de armarse con valores dentro: los <u>template literals</u>.'
+pizarron: plantillas
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Compara las dos formas de armar un texto con variables: pegando piezas con <code>+</code> y con un template literal. Fíjate en el paso 4: dentro de <code>${ }</code> el motor <b>calcula</b> antes de convertir a texto.'
+ejercicios: [texto-auto, texto-orden, texto-detective, texto-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { textoAuto, textoOrden, textoDetective, textoLab } from '../../data/ejercicios/fundamentos';
+
+## Tres tipos de comillas
+
+Un string se escribe entre comillas dobles, simples o invertidas:
+
+```js
+const a = "comillas dobles";
+const b = 'comillas simples';
+const c = `comillas invertidas`;
+console.log(a, b, c);
+```
+
+Las dobles y las simples son idénticas; elige una y úsala siempre (en este curso, dobles). Si el texto lleva comillas dentro, usa las otras para rodearlo, o "escápalas" con una barra invertida:
+
+```js
+console.log('Dijo "hola" y se fue');
+console.log("It's fine");
+console.log("Línea 1\nLínea 2");        // \n es un salto de línea
+console.log("Una barra: \\ y una comilla: \"");
+```
+
+## Template literals
+
+Las comillas invertidas tienen dos superpoderes. El primero: **huecos** con `${ }`, donde puedes poner cualquier expresión. El motor la calcula y pone el resultado en ese lugar:
+
+```js
+const producto = "café";
+const precio = 2.5;
+const cantidad = 3;
+
+console.log(`${cantidad} ${producto}s cuestan ${precio * cantidad} €`);
+```
+
+El segundo: pueden ocupar **varias líneas** tal cual, sin `\n`:
+
+```js
+const poema = `Caminante, no hay camino,
+se hace camino al andar.`;
+console.log(poema);
+```
+
+<Nota tipo="consejo">
+  Usa template literals siempre que mezcles texto con valores. Pegar piezas con `+` funciona, pero es fácil olvidar un espacio: `"Hola" + nombre` da `HolaAna`.
+</Nota>
+
+## Leer caracteres y medir
+
+Un string es una secuencia de caracteres numerados desde **0**:
+
+```js
+const palabra = "pizarra";
+
+console.log(palabra.length);   // 7
+console.log(palabra[0]);       // p
+console.log(palabra.at(-1));   // a (el último)
+console.log(palabra.at(-2));   // r (el penúltimo)
+```
+
+`at()` (ES2022) acepta índices negativos para contar desde el final. Antes había que escribir `palabra[palabra.length - 1]`.
+
+Los strings son **inmutables**, como todos los primitivos: `palabra[0] = "P"` no hace nada. Para "cambiar" un texto, creas uno nuevo.
+
+## Los métodos más usados
+
+Ninguno modifica el original: todos **devuelven un string nuevo** (o un dato sobre él).
+
+| Método | Qué hace | Ejemplo | Resultado |
+|---|---|---|---|
+| `toUpperCase()` / `toLowerCase()` | Mayúsculas / minúsculas | `"Hola".toUpperCase()` | `"HOLA"` |
+| `trim()` | Quita espacios de los extremos | `"  hola  ".trim()` | `"hola"` |
+| `includes(x)` | ¿Contiene `x`? | `"pizarra".includes("za")` | `true` |
+| `startsWith(x)` / `endsWith(x)` | ¿Empieza / termina con `x`? | `"index.html".endsWith(".html")` | `true` |
+| `indexOf(x)` | Posición de `x`, o `-1` | `"hola".indexOf("l")` | `2` |
+| `slice(desde, hasta)` | Un trozo (sin incluir `hasta`) | `"pizarra".slice(0, 3)` | `"piz"` |
+| `replace(a, b)` | Cambia la **primera** aparición | `"a-b-c".replace("-", "+")` | `"a+b-c"` |
+| `replaceAll(a, b)` | Cambia **todas** (ES2021) | `"a-b-c".replaceAll("-", "+")` | `"a+b+c"` |
+| `padStart(n, c)` | Rellena por la izquierda | `"7".padStart(3, "0")` | `"007"` |
+| `repeat(n)` | Repite | `"ja".repeat(3)` | `"jajaja"` |
+| `split(sep)` | Corta en un array | `"a,b,c".split(",")` | `[ 'a', 'b', 'c' ]` |
+
+Y se pueden **encadenar**, porque cada uno devuelve un string:
+
+```js
+const entrada = "   Hola Mundo   ";
+console.log(entrada.trim().toLowerCase().replaceAll(" ", "-"));  // hola-mundo
+```
+
+## Comparar textos
+
+`===` compara letra por letra y **distingue mayúsculas**: `"Ana" === "ana"` es `false`. Para comparar sin importar mayúsculas, pasa los dos a minúsculas primero.
+
+Para **ordenar** textos en español, con tildes y eñes, no uses `<` ni `>`: compara por el código de cada letra y pone "Ñandú" después de "Zorro". Usa `localeCompare`:
+
+```js
+console.log("Ñandú" < "Zorro");                       // false (orden de códigos)
+console.log("Ñandú".localeCompare("Zorro", "es") < 0); // true (orden del español)
+```
+
+## Unicode y emojis
+
+JavaScript guarda los strings en **UTF-16**, y `length` cuenta *unidades de código*, no letras. La mayoría de los caracteres ocupan una, pero muchos emojis ocupan dos:
+
+```js
+console.log("hola".length);    // 4
+console.log("👍".length);      // 2
+console.log([..."👍"].length); // 1: separa por caracteres reales
+
+const corrupto = "\uD83D";       // medio emoji suelto
+console.log(corrupto.isWellFormed());  // false (ES2024)
+```
+
+`isWellFormed()` (ES2024) detecta textos con "medio carácter" suelto, que pueden romper una URL o una petición. Para contar lo que una persona ve como una letra, incluidos emojis compuestos como 👨‍👩‍👧, existe `Intl.Segmenter`, que verás en la sección de Biblioteca estándar.
+
+## Resumen
+
+- Strings con `"…"`, `'…'` o `` `…` ``. Las dos primeras son iguales.
+- Los **template literals** (`` `…` ``) tienen huecos `${expresión}` y admiten varias líneas.
+- Los strings son **inmutables**: cada método devuelve uno nuevo, y se pueden encadenar.
+- `at(-1)` (ES2022) lee desde el final; `replaceAll` (ES2021) cambia todas las apariciones.
+- `===` distingue mayúsculas; para ordenar en español, `localeCompare`.
+- `length` cuenta unidades UTF-16: un emoji puede medir 2. `isWellFormed()` (ES2024) detecta texto roto.
+
+<Practica>
+
+<Autoevaluacion id={textoAuto.id} numero={1} titulo={textoAuto.titulo} preguntas={textoAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={textoOrden.id} numero={2} titulo={textoOrden.titulo} codigo={textoOrden.codigo} salida={textoOrden.salida} inicio={textoOrden.inicio} explicacion={textoOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena los resultados tal como aparecerían en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={textoDetective.id} numero={3} titulo={textoDetective.titulo} codigo={textoDetective.codigo} error={textoDetective.error} culpable={textoDetective.culpable} arreglos={textoDetective.arreglos} hallazgo={textoDetective.hallazgo} pista={textoDetective.pista}>
+  <div slot="enunciado">
+    <p>Este programa debería imprimir el nombre en mayúsculas, pero lanza un error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={textoLab.id} numero={4} titulo={textoLab.titulo} inicial={textoLab.inicial} verificaciones={textoLab.verificaciones} pistas={textoLab.pistas} solucion={textoLab.solucion} explicacion={textoLab.explicacion}>
+  <div slot="enunciado">
+    <p>Los datos vienen sucios: el nombre tiene espacios y todo está en minúsculas. Usa métodos de texto y un template literal para imprimir exactamente <code>ANA GARCÍA vive en Lima</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

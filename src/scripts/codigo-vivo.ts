@@ -30,7 +30,11 @@ export function iniciarCodigoVivo(raiz: ParentNode = document) {
     if (pre.closest('.codigo-vivo')) return;
     const lenguaje = pre.dataset.language || 'texto';
     const codigo = pre.innerText.replace(/\n$/, '');
-    const ejecutable = /^(js|javascript)$/.test(lenguaje) && /console\.log\s*\(/.test(codigo);
+    // Los ejemplos asíncronos imprimirían después de que el worker responde, y los módulos
+    // necesitan archivos que el sandbox no tiene: se dejan solo para copiar
+    const asincrono =
+      /\b(setTimeout|setInterval|fetch)\s*\(|\bawait\b/.test(codigo) || /^\s*(import|export)\s/m.test(codigo);
+    const ejecutable = /^(js|javascript)$/.test(lenguaje) && /console\.log\s*\(/.test(codigo) && !asincrono;
 
     const figura = document.createElement('figure');
     figura.className = `codigo-vivo lang-${lenguaje}`;

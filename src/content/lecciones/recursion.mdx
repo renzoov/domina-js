@@ -1,0 +1,135 @@
+---
+titulo: Recursión y stack overflow
+seccion: como-se-ejecuta-js
+tema: recursion
+minutos: 12
+resumen: Qué es una función recursiva, por qué necesita un caso base, cómo se ve en la pila de llamadas (bajar y subir), qué es un stack overflow y cuándo conviene la recursión frente a un bucle.
+intro: 'Una función <u>recursiva</u> es una función que se llama a sí misma. Parece un truco de magia, pero es una forma natural de resolver problemas que se repiten dentro de sí mismos, como recorrer carpetas dentro de carpetas. La clave para entenderla está en algo que ya conoces: <u>la pila de llamadas</u>.'
+pizarron: recursionFactorial
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'La pila crece mientras la función se llama a sí misma y se vacía cuando llega al <b>caso base</b>. Fíjate en la gráfica de profundidad: sube, toca techo y baja. Esa forma de montaña es la recursión.'
+ejercicios: [recursion-motor, recursion-auto, recursion-orden, recursion-detective, recursion-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import SeElMotor from '../../components/ejercicios/SeElMotor.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { recursionMotor, recursionAuto, recursionOrden, recursionDetective, recursionLab } from '../../data/ejercicios/por-dentro';
+
+## Las dos partes de una función recursiva
+
+Toda función recursiva tiene:
+
+1. **Un caso base**: una condición en la que devuelve un resultado **sin** volver a llamarse.
+2. **Un caso recursivo**: se llama a sí misma con un problema **más pequeño**, que se acerca al caso base.
+
+```js
+function cuentaAtras(n) {
+  if (n === 0) {                // caso base
+    console.log("¡Despegue!");
+    return;
+  }
+  console.log(n);
+  cuentaAtras(n - 1);           // caso recursivo: un problema más pequeño
+}
+
+cuentaAtras(3);
+```
+
+Si falta el caso base, o si el problema no se acerca a él, la función se llama para siempre.
+
+## Bajar y subir
+
+Como muestra el pizarrón, cada llamada **apila** un marco nuevo, con sus propias variables. La recursión tiene dos fases:
+
+- **Bajar**: cada llamada deja trabajo pendiente y apila la siguiente, hasta llegar al caso base.
+- **Subir**: el caso base devuelve su resultado, y cada llamada pendiente lo usa para terminar, de arriba hacia abajo.
+
+Lo que escribes **antes** de la llamada recursiva ocurre al bajar; lo que escribes **después**, al subir, en orden inverso. Lo vas a comprobar en el ejercicio "Ordena la salida".
+
+## Stack overflow
+
+La pila de llamadas tiene un tamaño máximo, del orden de miles de marcos según el motor. Si una recursión no termina, la pila se llena y el motor lanza:
+
+```
+RangeError: Maximum call stack size exceeded
+```
+
+Es el famoso **stack overflow** (desbordamiento de pila), el que viste con un pizarrón en el tema *La pila de llamadas*. Las causas casi siempre son dos: no hay caso base, o hay uno al que nunca se llega, por ejemplo uno que solo comprueba `n === 0` cuando `n` puede ser negativo.
+
+<Nota tipo="error">
+  Para que un caso base sea seguro, usa una condición amplia: `n <= 0` en lugar de `n === 0`. Así también cubre los valores que "se pasan de largo".
+</Nota>
+
+## Recursión o bucle
+
+Todo lo que hace una recursión se puede hacer con un bucle, y al revés. ¿Cuál elegir?
+
+- Para **repetir algo N veces** o recorrer una lista, un **bucle** es más simple y no tiene límite de profundidad.
+- Para **estructuras anidadas** (un árbol de carpetas, un menú con submenús, un JSON con niveles), la **recursión** refleja la forma de los datos y queda mucho más clara.
+
+```js
+const carpeta = {
+  nombre: "proyecto",
+  hijos: [
+    { nombre: "src", hijos: [{ nombre: "index.js", hijos: [] }] },
+    { nombre: "README.md", hijos: [] },
+  ],
+};
+
+function contarElementos(nodo) {
+  let total = 1;
+  for (const hijo of nodo.hijos) {
+    total += contarElementos(hijo);  // cada hijo es una carpeta más pequeña
+  }
+  return total;
+}
+
+console.log(contarElementos(carpeta));  // 4
+```
+
+## Resumen
+
+- Una función **recursiva** se llama a sí misma con un problema más pequeño.
+- Necesita un **caso base** alcanzable que devuelva sin volver a llamarse.
+- Cada llamada apila un **marco**: la recursión **baja** hasta el caso base y **sube** resolviendo lo pendiente.
+- Sin un caso base alcanzable: `RangeError: Maximum call stack size exceeded`.
+- Bucle para repetir; recursión para **estructuras anidadas**.
+
+<Practica>
+
+<SeElMotor id={recursionMotor.id} numero={1} titulo={recursionMotor.titulo} codigo={recursionMotor.codigo} funciones={recursionMotor.funciones} movimientos={recursionMotor.movimientos}>
+  <div slot="enunciado">
+    <p>Tú eres el motor: apila y desapila las llamadas de <code>factorial(3)</code> en el orden en que ocurren. No hace falta apilar <code>console.log</code>.</p>
+  </div>
+</SeElMotor>
+
+<Autoevaluacion id={recursionAuto.id} numero={2} titulo={recursionAuto.titulo} preguntas={recursionAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={recursionOrden.id} numero={3} titulo={recursionOrden.titulo} codigo={recursionOrden.codigo} salida={recursionOrden.salida} inicio={recursionOrden.inicio} explicacion={recursionOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Hay un <code>console.log</code> antes de la llamada recursiva y otro después. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={recursionDetective.id} numero={4} titulo={recursionDetective.titulo} codigo={recursionDetective.codigo} error={recursionDetective.error} culpable={recursionDetective.culpable} arreglos={recursionDetective.arreglos} hallazgo={recursionDetective.hallazgo} pista={recursionDetective.pista}>
+  <div slot="enunciado">
+    <p>La función funciona con 3, pero con -1 desborda la pila. El error salta en una línea, pero el fallo está en otra. Encuéntrala.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={recursionLab.id} numero={5} titulo={recursionLab.titulo} inicial={recursionLab.inicial} verificaciones={recursionLab.verificaciones} pistas={recursionLab.pistas} solucion={recursionLab.solucion} explicacion={recursionLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>potencia(base, exponente)</code> usando recursión, sin bucles ni el operador <code>**</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

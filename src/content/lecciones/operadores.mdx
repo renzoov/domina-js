@@ -1,0 +1,181 @@
+---
+titulo: Operadores
+seccion: fundamentos
+tema: operadores
+minutos: 14
+resumen: Operadores de comparación, lógicos y su cortocircuito, el ternario, ?? y ?. para datos que pueden faltar, la asignación lógica ??=, ||= y &&= (ES2021), incremento y la precedencia.
+intro: 'Los <u>operadores</u> son los símbolos que combinan valores: <code>+</code>, <code>===</code>, <code>&&</code>… Ya usaste varios. En este tema completas la caja de herramientas con los <u>operadores modernos</u> que hacen el código más corto y más seguro: <code>??</code>, <code>?.</code> y la asignación lógica.'
+pizarron: operadoresModernos
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'El protagonista es un <code>stock</code> que vale <code>0</code>. Compara qué hace <code>||</code> y qué hace <code>??</code> con ese cero, y mira cómo <code>?.</code> evita un error al leer algo que no existe.'
+ejercicios: [operadores-auto, operadores-orden, operadores-detective, operadores-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { operadoresAuto, operadoresOrden, operadoresDetective, operadoresLab } from '../../data/ejercicios/fundamentos';
+
+## Comparación
+
+| Operador | Significa | Ejemplo | Resultado |
+|---|---|---|---|
+| `===` | Igual (mismo tipo y valor) | `3 === 3` | `true` |
+| `!==` | Distinto | `3 !== "3"` | `true` |
+| `>` / `<` | Mayor / menor | `5 > 3` | `true` |
+| `>=` / `<=` | Mayor o igual / menor o igual | `5 <= 5` | `true` |
+
+Recuerda del tema anterior: usa siempre `===` y `!==`, nunca `==` ni `!=`.
+
+## Lógicos y cortocircuito
+
+`&&` (y), `||` (o) y `!` (no) combinan condiciones. Pero `&&` y `||` no devuelven siempre un booleano: devuelven **uno de los dos valores**, y dejan de evaluar en cuanto saben la respuesta. A eso se le llama **cortocircuito**.
+
+- `a && b`: si `a` es falsy, devuelve `a` y **ni mira** `b`. Si no, devuelve `b`.
+- `a || b`: si `a` es truthy, devuelve `a` y ni mira `b`. Si no, devuelve `b`.
+
+```js
+console.log(true && "sí");       // sí
+console.log(0 && "nunca llego");  // 0
+console.log("" || "por defecto"); // por defecto
+console.log("Ana" || "Anónimo");  // Ana
+
+const usuario = { nombre: "Ana" };
+usuario && console.log("Hay usuario");  // solo se ejecuta si usuario es truthy
+```
+
+## El ternario
+
+`condición ? valorSiVerdadero : valorSiFalso` elige entre dos valores en una sola expresión. Es ideal dentro de un template literal:
+
+```js
+const puntos = 72;
+const resultado = puntos >= 60 ? "aprobado" : "suspendido";
+console.log(`Has ${resultado} con ${puntos} puntos`);
+```
+
+No encadenes ternarios: si hay más de dos opciones, usa `if` o `switch` (sección de Control de flujo).
+
+## ?? : el valor por defecto correcto
+
+`a ?? b` (ES2020) devuelve `b` **solo si `a` es `null` o `undefined`**. A diferencia de `||`, respeta los valores falsy que son válidos: `0`, `""` y `false`.
+
+```js
+const cantidad = 0;
+console.log(cantidad || 1);   // 1: ¡perdimos el 0!
+console.log(cantidad ?? 1);   // 0: correcto
+
+const apodo = null;
+console.log(apodo ?? "Sin apodo");  // Sin apodo
+```
+
+<Nota tipo="consejo">
+  Regla práctica: para valores por defecto usa `??`. Reserva `||` para cuando de verdad quieres reemplazar cualquier valor falsy, como un texto vacío.
+</Nota>
+
+## ?. : leer sin romper
+
+El **encadenamiento opcional** `?.` (ES2020) lee una propiedad solo si lo que tiene a la izquierda existe. Si encuentra `null` o `undefined`, se detiene y devuelve `undefined` en lugar de lanzar un `TypeError`:
+
+```js
+const pedido = { cliente: { nombre: "Ana" } };
+
+console.log(pedido.cliente?.nombre);        // Ana
+console.log(pedido.envio?.direccion);       // undefined (sin error)
+console.log(pedido.envio?.direccion ?? "Retiro en tienda");
+
+const lista = null;
+console.log(lista?.[0]);                    // undefined: también con corchetes
+console.log(pedido.notificar?.());          // undefined: y con llamadas
+```
+
+`?.` y `??` se combinan muy bien: lee algo que puede faltar y pon un valor por defecto si falta.
+
+## Asignación lógica (ES2021)
+
+Tres atajos para asignar solo en ciertos casos:
+
+| Operador | Equivale a | Asigna cuando… |
+|---|---|---|
+| `a ??= b` | `a = a ?? b` | `a` es `null` o `undefined` |
+| <code>a &#124;&#124;= b</code> | <code>a = a &#124;&#124; b</code> | `a` es falsy |
+| `a &&= b` | `a = a && b` | `a` es truthy |
+
+```js
+const opciones = { tema: null, columnas: 0 };
+
+opciones.tema ??= "claro";       // estaba en null: se asigna
+opciones.columnas ??= 3;         // vale 0: se respeta
+console.log(opciones);
+```
+
+## Incremento y decremento
+
+`++` suma 1 y `--` resta 1. Si van **después** de la variable, la expresión devuelve el valor **anterior**; si van **antes**, el **nuevo**:
+
+```js
+let n = 5;
+console.log(n++);  // 5: devuelve el valor viejo y después suma
+console.log(n);    // 6
+console.log(++n);  // 7: suma primero y devuelve el nuevo
+```
+
+Para evitar confusiones, úsalos solos en su propia línea (`n++;`) o usa `n += 1`.
+
+## Otros operadores útiles
+
+- `typeof valor`: el tipo, como texto (lo viste en Primitivos y objetos).
+- `"clave" in objeto`: ¿tiene el objeto esa propiedad?
+- `objeto instanceof Clase`: ¿fue creado con esa clase? (sección de Clases)
+
+```js
+const coche = { marca: "Seat" };
+console.log("marca" in coche);   // true
+console.log("color" in coche);   // false
+```
+
+## Precedencia
+
+Cuando hay varios operadores, se aplican en un orden fijo, la **precedencia**. Los aritméticos van antes que las comparaciones, y las comparaciones antes que `&&`, que va antes que `||` y `??`. Pero no hace falta memorizar la tabla: **usa paréntesis** cuando haya dudas. Además, JavaScript no te deja mezclar `??` con `||` o `&&` sin paréntesis, justamente para evitar ambigüedades.
+
+## Resumen
+
+- Comparación con `===`, `!==`, `<`, `>`, `<=`, `>=`.
+- `&&` y `||` hacen **cortocircuito** y devuelven uno de los valores, no siempre un booleano.
+- El **ternario** `c ? a : b` elige entre dos valores.
+- `??` reemplaza solo `null` y `undefined`; respeta el `0` y el `""`.
+- `?.` lee propiedades, índices o llamadas sin lanzar error si algo falta.
+- `??=`, `||=` y `&&=` (ES2021) asignan solo en el caso que indica su operador.
+- `++` y `--` antes o después cambian lo que devuelve la expresión. Ante la duda, paréntesis.
+
+<Practica>
+
+<Autoevaluacion id={operadoresAuto.id} numero={1} titulo={operadoresAuto.titulo} preguntas={operadoresAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={operadoresOrden.id} numero={2} titulo={operadoresOrden.titulo} codigo={operadoresOrden.codigo} salida={operadoresOrden.salida} inicio={operadoresOrden.inicio} explicacion={operadoresOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena los resultados tal como aparecerían en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={operadoresDetective.id} numero={3} titulo={operadoresDetective.titulo} codigo={operadoresDetective.codigo} error={operadoresDetective.error} culpable={operadoresDetective.culpable} arreglos={operadoresDetective.arreglos} hallazgo={operadoresDetective.hallazgo} pista={operadoresDetective.pista}>
+  <div slot="enunciado">
+    <p>Algunos usuarios tienen un método <code>saludar</code> y otros no. Este programa se rompe con los que no lo tienen. Encuentra la línea y elige dónde va el <code>?.</code>.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={operadoresLab.id} numero={4} titulo={operadoresLab.titulo} inicial={operadoresLab.inicial} verificaciones={operadoresLab.verificaciones} pistas={operadoresLab.pistas} solucion={operadoresLab.solucion} explicacion={operadoresLab.explicacion}>
+  <div slot="enunciado">
+    <p>Este código tiene dos problemas: pierde el volumen 0 y se rompe porque <code>preferencias</code> no existe. Arréglalo con <code>??</code> y <code>?.</code> para que imprima <code>0 oscuro es</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,144 @@
+---
+titulo: Copias superficiales y profundas
+seccion: objetos
+tema: copias
+minutos: 11
+resumen: Por qué asignar un objeto no lo copia, qué copia el spread (un nivel) y qué copia structuredClone (todos), los límites del truco de JSON y cuándo hace falta cada tipo de copia.
+intro: 'Haces una copia de un objeto, la modificas… y el original también cambió. Es uno de los errores más comunes en JavaScript, y tiene una explicación concreta: copiar un objeto que tiene <u>otros objetos adentro</u> no es tan simple como parece.'
+pizarron: copias
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Sigue las flechas <code>→ array #…</code> dentro de cada objeto. Después del spread, el original y la copia apuntan al <b>mismo</b> array. Compáralo con lo que hace <code>structuredClone</code>.'
+ejercicios: [copias-auto, copias-orden, copias-detective, copias-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { copiasAuto, copiasOrden, copiasDetective, copiasLab } from '../../data/ejercicios/objetos';
+
+## Asignar no es copiar
+
+Como viste en *Valores primitivos y objetos*, una variable no guarda el objeto: guarda una **referencia**. Asignar copia la referencia, no el objeto:
+
+```js
+const a = { puntos: 10 };
+const b = a;        // b apunta al MISMO objeto
+
+b.puntos = 99;
+console.log(a.puntos);  // 99
+console.log(a === b);   // true
+```
+
+## Copia superficial
+
+Una copia **superficial** crea un objeto nuevo y copia cada propiedad del primer nivel. Hay tres formas equivalentes:
+
+```js
+const original = { nombre: "Ana", edad: 31 };
+
+const c1 = { ...original };
+const c2 = Object.assign({}, original);
+const lista = [1, 2, 3];
+const c3 = [...lista];  // con arrays, igual
+
+c1.nombre = "Eva";
+console.log(original.nombre);  // Ana: el primer nivel es independiente
+```
+
+El problema aparece con objetos **anidados**, como muestra el pizarrón: si una propiedad es un objeto o un array, se copia **la referencia**, y los dos objetos lo comparten.
+
+## Copia profunda con structuredClone
+
+`structuredClone` (disponible en todos los navegadores y en Node.js desde 2022) duplica el objeto **en todos los niveles**:
+
+```js
+const perfil = {
+  nombre: "Luis",
+  direccion: { ciudad: "Quito" },
+  etiquetas: new Set(["admin"]),
+};
+
+const copia = structuredClone(perfil);
+copia.direccion.ciudad = "Lima";
+copia.etiquetas.add("editor");
+
+console.log(perfil.direccion.ciudad);  // Quito
+console.log(perfil.etiquetas.size);    // 1
+```
+
+Conserva `Date`, `Map`, `Set`, arrays tipados e incluso las referencias circulares. Lo que **no** puede copiar:
+
+- **Funciones** y métodos: lanza `DataCloneError`.
+- **Elementos del DOM**.
+- **El prototipo** de las instancias de clases: devuelve objetos simples, sin sus métodos.
+
+## El viejo truco de JSON
+
+Antes de `structuredClone` se usaba `JSON.parse(JSON.stringify(obj))`. Todavía lo vas a ver, pero tiene trampas:
+
+```js
+const evento = {
+  titulo: "Charla",
+  fecha: new Date(2026, 10, 20),
+  nota: undefined,
+  mostrar() {},
+};
+
+const copia = JSON.parse(JSON.stringify(evento));
+console.log(typeof copia.fecha);  // string: ya no es una fecha
+console.log("nota" in copia);     // false: undefined desaparece
+console.log("mostrar" in copia);  // false: las funciones también
+```
+
+## ¿Cuál uso?
+
+| Situación | Copia |
+|---|---|
+| El objeto solo tiene valores primitivos | Superficial: `{ ...obj }` |
+| Vas a cambiar algo de primer nivel | Superficial con el cambio: `{ ...obj, hecha: true }` |
+| Hay objetos o arrays adentro y vas a modificarlos | Profunda: `structuredClone(obj)` |
+| Tiene métodos y datos anidados | Spread + `structuredClone` de lo anidado |
+
+<Nota tipo="consejo">
+  Una copia profunda de un objeto grande cuesta tiempo y memoria. Muchas veces alcanza con copiar solo la rama que vas a cambiar: `{ ...pedido, items: [...pedido.items, nuevo] }`.
+</Nota>
+
+## Resumen
+
+- `const b = a` **no copia**: las dos variables apuntan al mismo objeto.
+- `{ ...obj }`, `Object.assign` y `[...array]` hacen copias **superficiales**: un nivel.
+- Lo anidado queda **compartido** entre el original y la copia superficial.
+- `structuredClone` hace una copia **profunda**: conserva fechas, Map, Set y referencias circulares, pero no funciones.
+- `JSON.parse(JSON.stringify(...))` pierde fechas, `undefined` y funciones.
+
+<Practica>
+
+<Autoevaluacion id={copiasAuto.id} numero={1} titulo={copiasAuto.titulo} preguntas={copiasAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={copiasOrden.id} numero={2} titulo={copiasOrden.titulo} codigo={copiasOrden.codigo} salida={copiasOrden.salida} inicio={copiasOrden.inicio} explicacion={copiasOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una copia superficial y una profunda del mismo objeto. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={copiasDetective.id} numero={3} titulo={copiasDetective.titulo} codigo={copiasDetective.codigo} error={copiasDetective.error} culpable={copiasDetective.culpable} arreglos={copiasDetective.arreglos} hallazgo={copiasDetective.hallazgo} pista={copiasDetective.pista}>
+  <div slot="enunciado">
+    <p>Se quería una copia independiente del pedido para editarla. Encuentra la línea que falla y elige la copia correcta.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={copiasLab.id} numero={4} titulo={copiasLab.titulo} inicial={copiasLab.inicial} verificaciones={copiasLab.verificaciones} pistas={copiasLab.pistas} solucion={copiasLab.solucion} explicacion={copiasLab.explicacion}>
+  <div slot="enunciado">
+    <p>Al editar la copia, el carrito original también cambia. Arregla <code>duplicar</code> para que la copia sea independiente en todos los niveles.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

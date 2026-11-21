@@ -48,26 +48,26 @@ const lineas = resaltar(codigo);
 
 <style>
   .ordena { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 300px); gap: 20px; align-items: start; }
-  .codigo { margin: 0; padding: 10px 0; font: 400 0.82rem/1.5rem var(--mono); background: rgba(0, 0, 0, 0.14); overflow-x: auto; }
+  .codigo { margin: 0; padding: 10px 0; font: 400 0.82rem/1.5rem var(--mono); background: var(--pozo); overflow-x: auto; }
   .codigo code { display: block; min-width: max-content; }
   .l { display: block; white-space: pre; padding-right: 12px; }
   .l i { display: inline-block; width: 34px; padding-right: 12px; text-align: right; font-style: normal; color: var(--azul); opacity: 0.75; }
   .lado { display: flex; flex-direction: column; gap: 10px; }
   .tarjetas { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-  .tarjeta { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; font: 600 0.9rem var(--mono); cursor: grab; background: rgba(0, 0, 0, 0.1); transition: border-color 160ms var(--ease-out); }
+  .tarjeta { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; font: 600 0.9rem var(--mono); cursor: grab; background: var(--pozo); transition: border-color 160ms var(--ease-out); }
   .tarjeta.arrastrando { opacity: 0.5; }
   .tarjeta.bien { border-color: var(--ok); }
   .tarjeta.mal { border-color: var(--red); }
   .txt { flex: 1; }
   .mover { display: flex; gap: 2px; }
-  .mini { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; background: none; border: 0; color: var(--chalk-70); cursor: pointer; border-radius: 6px; }
+  .mini { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; background: none; border: 0; color: var(--chalk-70); cursor: pointer; border-radius: var(--r-suave); }
   .mini:hover { color: var(--chalk); background: var(--chalk-08); }
   .mini :global(svg) { width: 18px; height: 18px; }
   .comprobar { align-self: flex-start; }
-  .feedback { margin: 0; min-height: 1.5em; font-size: 0.95rem; color: var(--chalk-70); }
+  .feedback { margin: 0; min-height: 1.5em; font-size: 0.92rem; color: var(--chalk-70); }
   .feedback :global(.no) { color: var(--red); font-weight: 700; }
   .feedback :global(.ok) { color: var(--ok); font-weight: 700; }
-  .explica { margin: 0; font-size: 0.95rem; color: var(--chalk-70); line-height: 1.55; }
+  .explica { margin: 0; font-size: 0.92rem; color: var(--chalk-70); line-height: 1.55; }
   .explica :global(code) { font-family: var(--mono); color: var(--chalk); }
   @container (max-width: 620px) { .ordena { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .ordena { grid-template-columns: 1fr; } }

@@ -143,7 +143,7 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
     padding: 10px 0;
     font: 400 0.8rem/1.45rem var(--mono);
     color: var(--chalk);
-    background: rgba(0, 0, 0, 0.14);
+    background: var(--pozo);
     overflow-x: auto;
     border-color: var(--chalk-70);
   }
@@ -173,7 +173,7 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
     padding: 8px 12px;
     font: 600 0.88rem/1.25 var(--mono);
     border-color: var(--chalk-70);
-    background: rgba(0, 0, 0, 0.08);
+    background: var(--pozo);
     overflow-wrap: anywhere;
   }
   .marcos :global(.marco small) { display: block; font: 400 0.68rem/1.45 var(--mono); color: var(--azul); margin-top: 2px; }
@@ -192,7 +192,7 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
     from { filter: blur(0); opacity: 1; transform: translateX(0); }
     to { filter: blur(6px); opacity: 0; transform: translateX(14px); }
   }
-  .suelo { margin-top: 8px; height: 3px; background: repeating-linear-gradient(90deg, var(--chalk-70) 0 18px, transparent 18px 21px); border-radius: 2px; }
+  .suelo { margin-top: 8px; height: 3px; background: repeating-linear-gradient(90deg, var(--chalk-70) 0 18px, transparent 18px 21px); border-radius: var(--r-trazo); }
   .vacia { margin: 8px 0 0; font: 400 0.9rem var(--read); color: var(--chalk-70); }
 
   .consola { display: flex; gap: 16px; align-items: baseline; padding: 10px 14px; background: radial-gradient(ellipse 60% 120% at 60% 50%, var(--chalk-04), transparent 70%); }
@@ -211,7 +211,7 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
   .mano { font: 700 1.3rem/1 var(--hand); color: var(--chalk); margin-right: 6px; }
   .opciones { display: flex; flex-wrap: wrap; gap: 8px; }
   .opciones :global(button) { font: 700 0.92rem/1.3 var(--read); padding: 8px 12px; text-align: left; }
-  .resultado { margin: 10px 0 0; font-size: 0.95rem; color: var(--chalk-70); }
+  .resultado { margin: 10px 0 0; font-size: 0.92rem; color: var(--chalk-70); }
   .resultado:empty { display: none; }
 
   .tiempo { position: relative; }
@@ -221,7 +221,7 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
   .profundidad .trazo { stroke: var(--chalk); stroke-width: 2.5; }
   .profundidad circle { fill: var(--y); transition: cx var(--t-write) var(--ease-out), cy var(--t-write) var(--ease-out); }
   .profundidad rect { transition: width var(--t-write) var(--ease-out); }
-  .leyenda { margin: 0 0 4px; font-size: 0.62rem; color: var(--chalk-70); }
+  .leyenda { margin: 0 0 4px; font-size: 0.74rem; color: var(--chalk-70); }
 
   .linea { list-style: none; margin: 6px 0 0; padding: 0; display: flex; justify-content: space-between; gap: 4px; position: relative; }
   .linea::before { content: ''; position: absolute; left: 15px; right: 15px; top: 50%; height: 2px; background: repeating-linear-gradient(90deg, var(--chalk-15) 0 6px, transparent 6px 10px); }
@@ -284,7 +284,7 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
     .fila { grid-template-columns: 1fr; }
     .pila { min-height: 0; }
     .linea { gap: 2px; }
-    .punto { width: 26px; height: 26px; font-size: 0.68rem; }
+    .punto { width: 26px; height: 26px; font-size: 0.78rem; }
     .reiniciar { margin-left: 0; }
     .atajo { display: none; }
   }

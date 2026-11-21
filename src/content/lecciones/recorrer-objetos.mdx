@@ -1,0 +1,131 @@
+---
+titulo: Recorrer objetos
+seccion: objetos
+tema: recorrer-objetos
+minutos: 10
+resumen: Cómo recorrer las claves, valores y entradas de un objeto con Object.keys, values y entries, por qué for...of no funciona con objetos, el orden de las claves, Object.hasOwn (ES2022) y cómo transformar objetos con Object.fromEntries.
+intro: 'Un array se recorre con <code>for...of</code> sin pensarlo. Un objeto no: <u>no es iterable</u>. Para recorrerlo, primero le pides sus claves, sus valores o sus pares, y después recorres esa lista. Con tres métodos y un cuarto que hace el camino inverso, puedes transformar cualquier objeto.'
+ejercicios: [recorrer-auto, recorrer-orden, recorrer-detective, recorrer-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { recorrerAuto, recorrerOrden, recorrerDetective, recorrerLab } from '../../data/ejercicios/objetos';
+
+## Claves, valores y entradas
+
+Tres métodos convierten un objeto en un array que sí puedes recorrer:
+
+```js
+const stock = { manzanas: 12, peras: 0, uvas: 30 };
+
+console.log(Object.keys(stock));     // las claves
+console.log(Object.values(stock));   // los valores
+console.log(Object.entries(stock));  // los pares [clave, valor]
+```
+
+Con `entries` y la desestructuración (próximo tema) recorres los dos a la vez:
+
+```js
+const stock = { manzanas: 12, peras: 0, uvas: 30 };
+
+for (const [fruta, cantidad] of Object.entries(stock)) {
+  if (cantidad === 0) console.log(`Falta ${fruta}`);
+}
+```
+
+## for...in
+
+`for...in` recorre las **claves** de un objeto, incluidas las **heredadas** de su prototipo, si son enumerables. Con objetos literales no suele haber heredadas, pero por eso hoy se prefiere `Object.keys`, que solo devuelve las propias:
+
+```js
+const config = { tema: "oscuro", idioma: "es" };
+
+for (const clave in config) {
+  console.log(clave, "=", config[clave]);
+}
+```
+
+<Nota tipo="error">
+  No confundas `for...in` (claves de un objeto) con `for...of` (valores de un iterable). Y no uses `for...in` con arrays: recorre los índices como textos, `"0"`, `"1"`…, y puede incluir propiedades extra.
+</Nota>
+
+## El orden de las claves
+
+Las claves se recorren en un orden fijo:
+
+1. Primero, las que parecen **números enteros**, de menor a mayor.
+2. Después, las demás, en el **orden en que se crearon**.
+
+```js
+const mezcla = { z: 1, 10: "diez", a: 2, 2: "dos" };
+console.log(Object.keys(mezcla));
+```
+
+Si el orden te importa de verdad, con claves numéricas por ejemplo, considera un `Map`, que respeta siempre el orden de inserción.
+
+## Object.hasOwn (ES2022)
+
+Para saber si una propiedad es **propia** del objeto, sin contar las heredadas, usa `Object.hasOwn`. Reemplaza al viejo `obj.hasOwnProperty("x")`, que fallaba con objetos sin prototipo:
+
+```js
+const usuario = { nombre: "Ana" };
+
+console.log("nombre" in usuario);              // true
+console.log("toString" in usuario);            // true: heredada
+console.log(Object.hasOwn(usuario, "toString")); // false: no es propia
+```
+
+## Transformar con fromEntries
+
+`Object.fromEntries` hace lo contrario de `entries`: arma un objeto a partir de pares. Juntos forman el patrón para **transformar** un objeto entero:
+
+```js
+const precios = { cafe: 2, te: 1.5, jugo: 3 };
+
+const conIva = Object.fromEntries(
+  Object.entries(precios).map(([producto, precio]) => [producto, precio * 1.2])
+);
+
+console.log(conIva);
+console.log(precios);  // el original no cambió
+```
+
+## Resumen
+
+- Un objeto **no es iterable**: recorre `Object.keys`, `Object.values` u `Object.entries`.
+- `for...in` recorre claves, incluidas las heredadas enumerables; prefiere `Object.keys`.
+- Orden: primero las claves enteras, ascendentes; después las demás, por orden de creación.
+- `Object.hasOwn` (ES2022) pregunta por propiedades **propias**; `in` incluye las heredadas.
+- `entries` → `map` → `fromEntries` transforma un objeto en otro nuevo.
+
+<Practica>
+
+<Autoevaluacion id={recorrerAuto.id} numero={1} titulo={recorrerAuto.titulo} preguntas={recorrerAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={recorrerOrden.id} numero={2} titulo={recorrerOrden.titulo} codigo={recorrerOrden.codigo} salida={recorrerOrden.salida} inicio={recorrerOrden.inicio} explicacion={recorrerOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Claves numéricas mezcladas con texto, y una propiedad heredada. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={recorrerDetective.id} numero={3} titulo={recorrerDetective.titulo} codigo={recorrerDetective.codigo} error={recorrerDetective.error} culpable={recorrerDetective.culpable} arreglos={recorrerDetective.arreglos} hallazgo={recorrerDetective.hallazgo} pista={recorrerDetective.pista}>
+  <div slot="enunciado">
+    <p>Se quería imprimir cada nota. Encuentra la línea que falla y elige el arreglo que imprime las notas, no los nombres.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={recorrerLab.id} numero={4} titulo={recorrerLab.titulo} inicial={recorrerLab.inicial} verificaciones={recorrerLab.verificaciones} pistas={recorrerLab.pistas} solucion={recorrerLab.solucion} explicacion={recorrerLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>aplicarDescuento</code>: devuelve un objeto nuevo con todos los precios rebajados, sin tocar el original.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

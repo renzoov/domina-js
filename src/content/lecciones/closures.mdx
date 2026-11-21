@@ -1,0 +1,144 @@
+---
+titulo: Closures
+seccion: como-se-ejecuta-js
+tema: closures
+minutos: 12
+resumen: Qué es un closure, por qué una función puede seguir usando las variables de una función que ya terminó, y cómo se usan para datos privados, fábricas de funciones y callbacks.
+intro: 'Una función de JavaScript no solo es código: también <u>recuerda las variables del lugar donde nació</u>. Si la sacas de ahí, se lleva ese recuerdo consigo. A esa combinación de función y memoria se le llama <u>closure</u>, y es una de las ideas más poderosas del lenguaje.'
+pizarron: closureContador
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Los recuadros punteados son <b>entornos</b>: las variables de una llamada a <code>crearContador</code>. Fíjate en que el entorno #1 sigue vivo aunque <code>crearContador</code> ya terminó, y en que el segundo contador tiene su propio entorno.'
+ejercicios: [closures-auto, closures-orden, closures-detective, closures-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { closuresAuto, closuresOrden, closuresDetective, closuresLab } from '../../data/ejercicios/por-dentro';
+
+## De dónde salen
+
+Ya sabes dos cosas:
+
+1. Una función ve las variables del scope donde **fue escrita** (scope léxico).
+2. Cuando una función termina, su scope normalmente desaparece.
+
+Un closure aparece cuando las dos chocan: una función interna **sale** de la función que la creó (porque se devuelve, se guarda o se pasa a otra función) y sigue necesitando sus variables. El motor no las borra: la función interna **se las lleva**.
+
+```js
+function crearSaludo() {
+  const mensaje = "¡Hola!";
+  return function () {
+    console.log(mensaje);
+  };
+}
+
+const saludar = crearSaludo();  // crearSaludo ya terminó…
+saludar();                       // …pero saludar todavía recuerda mensaje
+```
+
+## Cada llamada, un entorno nuevo
+
+Como viste con los contadores del pizarrón, **cada** ejecución de la función externa crea variables nuevas, y cada función devuelta recuerda las suyas:
+
+```js
+function crearContador() {
+  let cuenta = 0;
+  return () => ++cuenta;
+}
+
+const a = crearContador();
+const b = crearContador();
+
+console.log(a(), a(), a());  // 1 2 3
+console.log(b());            // 1: b tiene su propia cuenta
+```
+
+## Para qué sirven
+
+**Datos privados.** Las variables del entorno no se pueden tocar desde afuera: solo a través de las funciones que las recuerdan.
+
+```js
+function crearCuenta(saldoInicial) {
+  let saldo = saldoInicial;
+  return {
+    depositar(monto) { saldo += monto; },
+    consultar() { return saldo; },
+  };
+}
+
+const cuenta = crearCuenta(100);
+cuenta.depositar(50);
+console.log(cuenta.consultar());  // 150
+console.log(cuenta.saldo);        // undefined: no hay forma de llegar a saldo
+```
+
+**Fábricas de funciones.** Una función que fabrica otras ya configuradas, como `crearMultiplicador(2)`, que vas a escribir en el laboratorio.
+
+**Callbacks.** Cada vez que pasas una función que usa variables de afuera (a un `setTimeout`, un `addEventListener`, un `map`…), esa función es un closure: recuerda esas variables para cuando la llamen, más tarde.
+
+```js
+function avisarEn(segundos, texto) {
+  setTimeout(() => {
+    console.log(`(${segundos} s después) ${texto}`);
+  }, segundos * 1000);
+}
+```
+
+## Closures en bucles
+
+Con `let`, cada vuelta de un `for` tiene su propia variable, así que cada función creada en el bucle recuerda un valor distinto:
+
+```js
+const funciones = [];
+for (let i = 0; i < 3; i++) {
+  funciones.push(() => i);
+}
+console.log(funciones[0](), funciones[1](), funciones[2]());  // 0 1 2
+```
+
+Con `var` habría **una sola** `i` compartida por todas las vueltas, y las tres funciones devolverían 3. Era un error clásico antes de 2015, y otra razón para no usar `var`.
+
+<Nota>
+  Un closure mantiene vivas las variables que recuerda mientras la función exista. Si guardas sin querer un closure que recuerda un objeto enorme, ese objeto no se libera. Lo vas a ver en el tema *Memoria y recolector de basura*.
+</Nota>
+
+## Resumen
+
+- Un **closure** es una función junto con las variables del entorno donde nació.
+- La función puede seguir usando esas variables aunque la función que las creó ya haya terminado.
+- **Cada llamada** a la función externa crea un entorno nuevo e independiente.
+- Sirven para **datos privados**, **fábricas de funciones** y **callbacks** que recuerdan estado.
+- Con `let`, cada vuelta de un bucle tiene su propia variable para los closures.
+
+<Practica>
+
+<Autoevaluacion id={closuresAuto.id} numero={1} titulo={closuresAuto.titulo} preguntas={closuresAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={closuresOrden.id} numero={2} titulo={closuresOrden.titulo} codigo={closuresOrden.codigo} salida={closuresOrden.salida} inicio={closuresOrden.inicio} explicacion={closuresOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos funciones fabricadas por la misma fábrica. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={closuresDetective.id} numero={3} titulo={closuresDetective.titulo} codigo={closuresDetective.codigo} error={closuresDetective.error} culpable={closuresDetective.culpable} arreglos={closuresDetective.arreglos} hallazgo={closuresDetective.hallazgo} pista={closuresDetective.pista}>
+  <div slot="enunciado">
+    <p>Este contador debería funcionar como el del pizarrón, pero lanza un error. Encuentra la línea donde falla y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={closuresLab.id} numero={4} titulo={closuresLab.titulo} inicial={closuresLab.inicial} verificaciones={closuresLab.verificaciones} pistas={closuresLab.pistas} solucion={closuresLab.solucion} explicacion={closuresLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe la función <code>crearMultiplicador</code>: recibe un factor y devuelve una función que multiplica por ese factor.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

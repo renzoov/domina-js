@@ -1,0 +1,155 @@
+---
+titulo: Bucles
+seccion: control-de-flujo
+tema: bucles
+minutos: 13
+resumen: Cómo repetir código con for, while y do…while, cómo recorrer arrays y textos con for…of y objetos con for…in, cuándo usar cada uno y cómo evitar los bucles infinitos y el error de una vuelta de más.
+intro: 'Un <u>bucle</u> repite un bloque de código mientras se cumpla una condición. Sirve para recorrer listas, contar, buscar o reintentar algo. JavaScript tiene varios tipos, y elegir el adecuado hace el código <u>más corto y con menos errores</u>.'
+pizarron: bucleFor
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Mira cómo cambian <code>i</code> y <code>total</code> en cada vuelta, y fíjate en el orden de las tres partes del <code>for</code>: el inicio una sola vez, y después comprobar, ejecutar e incrementar, en ese orden.'
+ejercicios: [bucles-auto, bucles-orden, bucles-detective, bucles-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { buclesAuto, buclesOrden, buclesDetective, buclesLab } from '../../data/ejercicios/control-de-flujo';
+
+## for: repetir un número de veces
+
+El `for` clásico tiene tres partes entre paréntesis, separadas por `;`:
+
+```js
+for (let i = 0; i < 5; i++) {
+  console.log(`Vuelta número ${i}`);
+}
+```
+
+1. **Inicio** (`let i = 0`): se ejecuta una sola vez, antes de empezar.
+2. **Condición** (`i < 5`): se comprueba **antes** de cada vuelta. Si es falsa, el bucle termina.
+3. **Paso** (`i++`): se ejecuta **después** de cada vuelta.
+
+Por convención, el contador se llama `i` y empieza en 0, porque los índices de los arrays empiezan en 0.
+
+## for…of: recorrer valores
+
+Para recorrer los elementos de un array, o las letras de un texto, `for…of` es más claro: te da directamente cada valor, sin índices.
+
+```js
+const compras = ["pan", "leche", "huevos"];
+
+for (const producto of compras) {
+  console.log(`Comprar ${producto}`);
+}
+
+for (const letra of "hola") {
+  console.log(letra);
+}
+```
+
+Usa `const` en `for…of`: en cada vuelta se crea una variable nueva, así que no hace falta `let`. Si además necesitas el índice, usa `compras.entries()`: `for (const [i, producto] of compras.entries())`.
+
+## for…in: recorrer las claves de un objeto
+
+`for…in` recorre las **claves** de un objeto:
+
+```js
+const precios = { pan: 1.2, leche: 0.9 };
+
+for (const producto in precios) {
+  console.log(`${producto}: ${precios[producto]} €`);
+}
+```
+
+<Nota>
+  No uses `for…in` con arrays: te da los índices como **texto** (`"0"`, `"1"`…) y puede incluir propiedades heredadas. Para arrays, `for…of`. Para objetos, también puedes usar `Object.entries(objeto)` con `for…of`, que verás en la sección de Objetos.
+</Nota>
+
+## while y do…while: repetir mientras
+
+`while` repite **mientras** una condición sea verdadera. Es útil cuando no sabes de antemano cuántas vueltas harán falta:
+
+```js
+let saldo = 100;
+let meses = 0;
+
+while (saldo < 200) {
+  saldo = saldo * 1.1;
+  meses++;
+}
+
+console.log(`El saldo se duplica en ${meses} meses`);
+```
+
+`do…while` es igual, pero comprueba la condición **al final**: el cuerpo se ejecuta al menos una vez.
+
+```js
+let intento = 0;
+do {
+  intento++;
+  console.log(`Intento ${intento}`);
+} while (intento < 3);
+```
+
+## Los dos errores clásicos
+
+**El bucle infinito.** Si la condición nunca se vuelve falsa, el bucle no termina y el programa se congela. Pasa cuando olvidas el paso (`i++`) o cuando la condición nunca puede cumplirse. Cada vuelta tiene que **acercarse** al final.
+
+**Una vuelta de más (*off-by-one*).** Un array de 3 elementos tiene índices 0, 1 y 2. Si la condición es `i <= array.length`, el bucle llega a `i = 3` y lee algo que no existe. La condición correcta es `i < array.length`. Con `for…of` este error desaparece.
+
+<Nota tipo="error">
+  Si tu programa se queda colgado, sospecha de un bucle infinito. En este sitio, el laboratorio y los ejemplos se detienen solos al poco tiempo. En el navegador o en Node, el proceso se queda bloqueado hasta que lo cierres.
+</Nota>
+
+## ¿Cuál elijo?
+
+| Quiero… | Usa |
+|---|---|
+| Recorrer los elementos de un array o las letras de un texto | `for…of` |
+| Repetir un número fijo de veces, o necesito el índice | `for` |
+| Repetir mientras algo sea cierto, sin saber cuántas veces | `while` |
+| Lo mismo, pero ejecutando al menos una vez | `do…while` |
+| Recorrer las claves de un objeto | `for…in` u `Object.keys()` |
+
+Para transformar o filtrar arrays existen métodos como `map` y `filter`, que suelen ser todavía más claros que un bucle. Los vas a ver en la sección de Colecciones.
+
+## Resumen
+
+- `for (inicio; condición; paso)` repite mientras se cumpla la condición; el paso se ejecuta al final de cada vuelta.
+- `for…of` recorre **valores** (arrays, textos); `for…in` recorre **claves** de objetos.
+- `while` repite mientras una condición sea cierta; `do…while` da al menos una vuelta.
+- Cada vuelta debe acercarse al final, o tendrás un **bucle infinito**.
+- Para arrays, `i < array.length`, no `<=`. O mejor, `for…of`.
+
+<Practica>
+
+<Autoevaluacion id={buclesAuto.id} numero={1} titulo={buclesAuto.titulo} preguntas={buclesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={buclesOrden.id} numero={2} titulo={buclesOrden.titulo} codigo={buclesOrden.codigo} salida={buclesOrden.salida} inicio={buclesOrden.inicio} explicacion={buclesOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena todas las líneas que aparecerían en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={buclesDetective.id} numero={3} titulo={buclesDetective.titulo} codigo={buclesDetective.codigo} error={buclesDetective.error} culpable={buclesDetective.culpable} arreglos={buclesDetective.arreglos} hallazgo={buclesDetective.hallazgo} pista={buclesDetective.pista}>
+  <div slot="enunciado">
+    <p>El programa imprime las tres frutas y después se rompe. El error salta en una línea, pero la causa está en otra. Encuéntrala.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={buclesLab.id} numero={4} titulo={buclesLab.titulo} inicial={buclesLab.inicial} verificaciones={buclesLab.verificaciones} pistas={buclesLab.pistas} solucion={buclesLab.solucion} explicacion={buclesLab.explicacion}>
+  <div slot="enunciado">
+    <p>El clásico de las entrevistas: imprime los números del 1 al 15, cambiando los múltiplos de 3 por <code>Fizz</code>, los de 5 por <code>Buzz</code> y los de los dos por <code>FizzBuzz</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

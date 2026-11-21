@@ -1,0 +1,154 @@
+---
+titulo: Estilo funcional
+seccion: funciones
+tema: estilo-funcional
+minutos: 11
+resumen: Funciones puras y efectos secundarios, por qué no mutar los datos, transformar listas con map, filter y reduce encadenados, componer funciones pequeñas y aplicación parcial.
+intro: 'El estilo funcional es una forma de escribir programas como una cadena de <u>transformaciones</u>: tomas datos, les aplicas funciones pequeñas que no cambian nada a su alrededor, y obtienes datos nuevos. No es una regla que haya que seguir siempre, sino una caja de herramientas que hace el código más <u>predecible y fácil de probar</u>.'
+ejercicios: [funcional-auto, funcional-orden, funcional-detective, funcional-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { funcionalAuto, funcionalOrden, funcionalDetective, funcionalLab } from '../../data/ejercicios/funciones';
+
+## Funciones puras
+
+Una función es **pura** si cumple dos condiciones:
+
+1. Con los **mismos argumentos**, devuelve **siempre lo mismo**.
+2. No tiene **efectos secundarios**: no modifica nada fuera de ella.
+
+```js
+// Pura: solo depende de sus argumentos
+const conDescuento = (precio, porcentaje) => precio * (1 - porcentaje / 100);
+
+// Impura: depende de una variable externa que puede cambiar
+let descuentoGlobal = 10;
+const conDescuentoGlobal = (precio) => precio * (1 - descuentoGlobal / 100);
+
+console.log(conDescuento(100, 10));
+console.log(conDescuentoGlobal(100));
+descuentoGlobal = 50;
+console.log(conDescuentoGlobal(100));  // mismo argumento, otro resultado
+```
+
+Los **efectos secundarios** son modificar argumentos o variables externas, imprimir, guardar datos, hacer peticiones… Un programa sin ellos no serviría para nada. La idea no es eliminarlos, sino **concentrarlos** en pocos lugares y mantener puro todo lo demás.
+
+## No mutar
+
+Una función pura no modifica lo que recibe: devuelve un valor nuevo.
+
+```js
+// Mutante: cambia el array de quien la llama
+function agregarMal(lista, item) {
+  lista.push(item);
+  return lista;
+}
+
+// Pura: devuelve un array nuevo
+const agregar = (lista, item) => [...lista, item];
+
+const original = ["pan"];
+const nueva = agregar(original, "leche");
+console.log(original, nueva);
+```
+
+## map, filter y reduce
+
+Los tres métodos estrella para transformar listas sin bucles ni mutaciones:
+
+- **`map(fn)`**: transforma cada elemento. Devuelve un array del **mismo largo**.
+- **`filter(fn)`**: se queda con los elementos para los que `fn` devuelve `true`.
+- **`reduce(fn, inicial)`**: combina todos los elementos en **un solo valor**.
+
+```js
+const productos = [
+  { nombre: "Teclado", precio: 45, stock: 3 },
+  { nombre: "Ratón", precio: 20, stock: 0 },
+  { nombre: "Monitor", precio: 180, stock: 5 },
+];
+
+const disponibles = productos
+  .filter((p) => p.stock > 0)
+  .map((p) => p.nombre);
+
+const valorInventario = productos.reduce((total, p) => total + p.precio * p.stock, 0);
+
+console.log(disponibles);
+console.log(valorInventario);
+```
+
+Cada paso devuelve un array nuevo, así que se pueden **encadenar**, y la cadena se lee de arriba abajo como una receta.
+
+<Nota tipo="error">
+  Dale siempre un valor inicial a `reduce`. Sin él, usa el primer elemento como acumulador, y con un array vacío lanza `TypeError: Reduce of empty array with no initial value`.
+</Nota>
+
+## Componer funciones
+
+**Componer** es unir funciones pequeñas para que la salida de una sea la entrada de la siguiente. Con una función auxiliar `pipe`, que aplica una lista de funciones en orden, quedan transformaciones muy legibles:
+
+```js
+const pipe = (...fns) => (valor) => fns.reduce((acum, fn) => fn(acum), valor);
+
+const limpiar = (t) => t.trim();
+const minusculas = (t) => t.toLowerCase();
+const aSlug = (t) => t.replaceAll(" ", "-");
+
+const crearSlug = pipe(limpiar, minusculas, aSlug);
+console.log(crearSlug("  Hola Mundo JS  "));
+```
+
+## Aplicación parcial
+
+Una función que devuelve otra te deja **fijar** algunos argumentos de antemano y completar el resto después. Es la idea de las fábricas que viste en *Closures*:
+
+```js
+const multiplicar = (a) => (b) => a * b;
+
+const doble = multiplicar(2);
+const triple = multiplicar(3);
+
+console.log([1, 2, 3].map(doble));
+console.log([1, 2, 3].map(triple));
+```
+
+## Resumen
+
+- Una función **pura** depende solo de sus argumentos y no cambia nada de afuera.
+- Concentra los **efectos secundarios** en pocos lugares; mantén puro el resto.
+- No mutes: devuelve valores nuevos con spread, `map`, `filter`, `toSorted`…
+- `map` transforma, `filter` selecciona, `reduce` combina. Siempre con valor inicial en `reduce`.
+- **Componer** y **aplicar parcialmente** construyen funciones complejas a partir de piezas simples.
+
+<Practica>
+
+<Autoevaluacion id={funcionalAuto.id} numero={1} titulo={funcionalAuto.titulo} preguntas={funcionalAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={funcionalOrden.id} numero={2} titulo={funcionalOrden.titulo} codigo={funcionalOrden.codigo} salida={funcionalOrden.salida} inicio={funcionalOrden.inicio} explicacion={funcionalOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una cadena de transformaciones, una suma y una composición. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={funcionalDetective.id} numero={3} titulo={funcionalDetective.titulo} codigo={funcionalDetective.codigo} error={funcionalDetective.error} culpable={funcionalDetective.culpable} arreglos={funcionalDetective.arreglos} hallazgo={funcionalDetective.hallazgo} pista={funcionalDetective.pista}>
+  <div slot="enunciado">
+    <p>El total funciona con un carrito lleno, pero no con uno vacío. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={funcionalLab.id} numero={4} titulo={funcionalLab.titulo} inicial={funcionalLab.inicial} verificaciones={funcionalLab.verificaciones} pistas={funcionalLab.pistas} solucion={funcionalLab.solucion} explicacion={funcionalLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>totalCobrado</code> encadenando <code>filter</code>, <code>map</code> y <code>reduce</code>, sin bucles.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

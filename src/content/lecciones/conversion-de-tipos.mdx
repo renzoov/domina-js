@@ -1,0 +1,143 @@
+---
+titulo: Conversión de tipos
+seccion: fundamentos
+tema: conversion-de-tipos
+minutos: 12
+resumen: Cuándo convierte JavaScript los tipos por su cuenta (coerción), la trampa del operador +, cómo convertir explícitamente con Number, String, Boolean y parseInt, y por qué usar === en lugar de ==.
+intro: 'JavaScript es un lenguaje <u>flexible con los tipos</u>: si una operación espera un número y le das un texto, intenta convertirlo por su cuenta. A veces eso ayuda, y a veces produce resultados absurdos como <code>"5" + 2 = "52"</code>. Entender cuándo pasa te da el control.'
+pizarron: coercion
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Los dos valores son <code>"5"</code> (texto) y <code>2</code> (número). Mira cómo cambia el resultado según el operador: <code>+</code> se comporta distinto que todos los demás.'
+ejercicios: [conversion-auto, conversion-orden, conversion-detective, conversion-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { conversionAuto, conversionOrden, conversionDetective, conversionLab } from '../../data/ejercicios/fundamentos';
+
+## Implícita y explícita
+
+Hay dos formas de convertir un valor de un tipo a otro:
+
+- **Implícita** (o *coerción*): el motor la hace solo, cuando una operación necesita otro tipo. No la ves en el código.
+- **Explícita**: la escribes tú, con `Number()`, `String()` o `Boolean()`. Queda claro qué pasa.
+
+La regla de oro: **convierte explícitamente**. El código se lee mejor y no depende de que recuerdes las reglas de la coerción.
+
+## A número
+
+```js
+console.log(Number("42"));       // 42
+console.log(Number("3.5"));      // 3.5
+console.log(Number("12px"));     // NaN: todo el texto debe ser un número
+console.log(Number(""));         // 0 (¡ojo!)
+console.log(Number(true));       // 1
+console.log(Number(null));       // 0
+console.log(Number(undefined));  // NaN
+```
+
+Para leer un número **al principio** de un texto, como `"12px"` o `"3.5 kg"`, usa `parseInt` (enteros) o `parseFloat` (decimales). Leen desde el inicio y se detienen en el primer carácter que no entienden:
+
+```js
+console.log(parseInt("12px"));        // 12
+console.log(parseFloat("3.5 kg"));    // 3.5
+console.log(parseInt("ff", 16));      // 255: el segundo argumento es la base
+console.log(parseInt("hola"));        // NaN
+```
+
+El `+` delante de un valor (*+ unario*) también convierte a número: `+"42"` da `42`. Es corto, pero menos legible que `Number()`.
+
+## A texto y a booleano
+
+```js
+console.log(String(42));          // "42"
+console.log(String(null));        // "null"
+console.log(String([1, 2, 3]));   // "1,2,3"
+console.log((255).toString(16));  // "ff"
+
+console.log(Boolean("hola"));     // true
+console.log(Boolean(0));          // false
+```
+
+Para booleanos se aplica la regla de truthy y falsy que viste en el tema anterior.
+
+## La trampa del +
+
+Es lo que muestra el pizarrón. `+` tiene dos trabajos: **sumar** números y **concatenar** textos. Si **cualquiera** de los dos lados es un texto, concatena:
+
+```js
+console.log("5" + 2);        // 52
+console.log(1 + 2 + "3");    // 33: primero 1 + 2 = 3, después "3" + "3"
+console.log("1" + 2 + 3);    // 123: desde el principio es texto
+```
+
+Los demás operadores aritméticos (`-`, `*`, `/`, `%`) solo trabajan con números, así que **convierten** los textos:
+
+```js
+console.log("10" - 4);   // 6
+console.log("10" * "2"); // 20
+console.log("a" * 2);    // NaN: "a" no se puede convertir
+```
+
+<Nota tipo="error">
+  El error más común de coerción: sumar datos de un formulario. `campo1.value + campo2.value` concatena, porque los campos siempre devuelven texto. Convierte cada valor con `Number()` en cuanto lo leas.
+</Nota>
+
+## == frente a ===
+
+JavaScript tiene dos operadores de igualdad:
+
+- **`===`** (igualdad estricta): si los tipos son distintos, da `false` sin convertir nada.
+- **`==`** (igualdad amplia): **convierte** antes de comparar, con reglas difíciles de recordar.
+
+```js
+console.log(0 === "");        // false
+console.log(0 == "");         // true
+console.log("1" == 1);        // true
+console.log(false == "0");    // true
+console.log(null == undefined); // true
+console.log(null == 0);       // false
+```
+
+Por resultados como estos, **usa siempre `===` y `!==`**. Muchos equipos tienen una regla en su linter que prohíbe `==`. La única excepción que vas a ver en código ajeno es `valor == null`, un atajo para preguntar "¿es `null` o `undefined`?" a la vez.
+
+## Resumen
+
+- La conversión **implícita** la hace el motor solo; la **explícita** la escribes tú. Prefiere la explícita.
+- `Number()` convierte el texto entero (o da `NaN`); `parseInt` y `parseFloat` leen el número del principio.
+- Ojo: `Number("")` da `0`, no `NaN`.
+- Con un texto de por medio, `+` **concatena**; `-`, `*`, `/` y `%` **convierten** a número.
+- Usa siempre `===` y `!==`: `==` convierte antes de comparar y da sorpresas.
+
+<Practica>
+
+<Autoevaluacion id={conversionAuto.id} numero={1} titulo={conversionAuto.titulo} preguntas={conversionAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={conversionOrden.id} numero={2} titulo={conversionOrden.titulo} codigo={conversionOrden.codigo} salida={conversionOrden.salida} inicio={conversionOrden.inicio} explicacion={conversionOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena los resultados tal como aparecerían en la consola. Fíjate en qué valores son textos.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={conversionDetective.id} numero={3} titulo={conversionDetective.titulo} codigo={conversionDetective.codigo} error={conversionDetective.error} culpable={conversionDetective.culpable} arreglos={conversionDetective.arreglos} hallazgo={conversionDetective.hallazgo} pista={conversionDetective.pista}>
+  <div slot="enunciado">
+    <p>Este programa quiere mostrar un precio con dos decimales, pero se rompe. Encuentra la línea y elige el arreglo que no pierde los decimales.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={conversionLab.id} numero={4} titulo={conversionLab.titulo} inicial={conversionLab.inicial} verificaciones={conversionLab.verificaciones} pistas={conversionLab.pistas} solucion={conversionLab.solucion} explicacion={conversionLab.explicacion}>
+  <div slot="enunciado">
+    <p>Los dos valores vienen de un formulario y deberían sumarse, pero el programa imprime <code>105</code>. Arréglalo para que imprima la suma.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

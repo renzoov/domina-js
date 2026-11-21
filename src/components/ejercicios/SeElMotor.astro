@@ -42,7 +42,7 @@ const lineas = resaltar(codigo);
 
 <style>
   .motor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 280px); gap: 20px; align-items: start; }
-  .codigo { margin: 0; padding: 10px 0; font: 400 0.82rem/1.5rem var(--mono); background: rgba(0, 0, 0, 0.14); overflow-x: auto; }
+  .codigo { margin: 0; padding: 10px 0; font: 400 0.82rem/1.5rem var(--mono); background: var(--pozo); overflow-x: auto; }
   .codigo code { display: block; min-width: max-content; }
   .l { display: block; white-space: pre; padding-right: 12px; }
   .l i { display: inline-block; width: 34px; padding-right: 12px; text-align: right; font-style: normal; color: var(--azul); opacity: 0.75; }
@@ -60,7 +60,7 @@ const lineas = resaltar(codigo);
   .cima { display: inline-flex; align-items: center; gap: 4px; }
   .cima :global(svg) { width: 14px; height: 14px; filter: url(#tiza); }
   .cima :global(svg path) { stroke-width: 2.8; }
-  .feedback { margin: 0; min-height: 1.5em; font-size: 0.95rem; color: var(--chalk-70); }
+  .feedback { margin: 0; min-height: 1.5em; font-size: 0.92rem; color: var(--chalk-70); }
   .feedback :global(.no) { color: var(--red); font-weight: 700; }
   .feedback :global(.ok) { color: var(--ok); font-weight: 700; }
   [data-reiniciar] { align-self: flex-start; padding-left: 0; }

@@ -1,0 +1,157 @@
+---
+titulo: Objetos literales
+seccion: objetos
+tema: objetos-literales
+minutos: 11
+resumen: Cómo crear objetos con llaves, leer y escribir propiedades con punto y corchetes, la forma abreviada, las claves calculadas, los métodos, delete, el operador in y el encadenamiento opcional.
+intro: 'Un objeto agrupa datos relacionados bajo un solo nombre: un usuario con su nombre, su edad y su correo; un producto con su precio y su stock. Casi todo en JavaScript es un objeto o se comporta como uno, así que esta es la estructura que <u>más vas a usar</u>.'
+pizarron: objetoLiteral
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'El recuadro punteado es el objeto, y <code>libro</code> solo apunta a él. Fíjate en cómo el mismo objeto gana, cambia y pierde propiedades, aunque <code>libro</code> sea <code>const</code>.'
+ejercicios: [literales-auto, literales-orden, literales-detective, literales-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { literalesAuto, literalesOrden, literalesDetective, literalesLab } from '../../data/ejercicios/objetos';
+
+## Crear un objeto
+
+La forma más directa es un **literal**: llaves con pares `clave: valor` separados por comas.
+
+```js
+const usuario = {
+  nombre: "Ana",
+  edad: 31,
+  activo: true,
+  "color favorito": "verde",  // con espacios, la clave va entre comillas
+};
+
+console.log(usuario);
+```
+
+Las claves son textos (o símbolos); los valores pueden ser cualquier cosa, incluidos otros objetos, arrays y funciones. La coma después de la última propiedad es opcional y se recomienda: hace más limpios los cambios.
+
+## Leer y escribir propiedades
+
+Hay dos formas de acceder a una propiedad:
+
+- **Punto**: `usuario.nombre`. La más común, para claves que son nombres válidos.
+- **Corchetes**: `usuario["color favorito"]`. Para claves con espacios o símbolos, y para cuando la clave está **en una variable**.
+
+```js
+const usuario = { nombre: "Ana", edad: 31 };
+const campo = "edad";
+
+console.log(usuario.nombre);   // Ana
+console.log(usuario[campo]);   // 31: usa el valor de campo
+console.log(usuario.campo);    // undefined: busca una propiedad llamada "campo"
+
+usuario.edad = 32;             // cambia una propiedad
+usuario.ciudad = "Lima";       // crea una nueva
+delete usuario.edad;           // la elimina
+
+console.log(usuario);
+```
+
+Leer una propiedad que no existe no es un error: da `undefined`. Para saber si una clave existe, usa `"clave" in objeto`.
+
+## Atajos modernos
+
+**Forma abreviada.** Si la variable y la clave se llaman igual, escríbela una sola vez:
+
+```js
+const nombre = "Luis";
+const edad = 27;
+
+const persona = { nombre, edad };  // igual que { nombre: nombre, edad: edad }
+console.log(persona);
+```
+
+**Claves calculadas.** Entre corchetes, dentro del literal, la clave sale de una expresión:
+
+```js
+const idioma = "es";
+const saludos = {
+  [idioma]: "hola",
+  [`${idioma}_formal`]: "buenos días",
+};
+console.log(saludos);
+```
+
+## Métodos
+
+Una propiedad cuyo valor es una función se llama **método**. Dentro de un método, `this` es el objeto desde el que se llamó:
+
+```js
+const contador = {
+  valor: 0,
+  sumar() {
+    this.valor++;
+    return this.valor;
+  },
+};
+
+contador.sumar();
+console.log(contador.sumar());  // 2
+```
+
+`this` tiene sus trampas, y las vas a ver en la sección de Funciones. Por ahora, la regla es simple: en `objeto.metodo()`, `this` es `objeto`.
+
+## Propiedades que pueden faltar
+
+Leer una propiedad **de** algo que es `undefined` sí es un error: `TypeError: Cannot read properties of undefined`. Con datos que vienen de afuera, usa el **encadenamiento opcional** `?.` que viste en *Operadores*:
+
+```js
+const pedido = { cliente: { nombre: "Eva" } };
+
+console.log(pedido.cliente?.nombre);                    // Eva
+console.log(pedido.envio?.direccion);                   // undefined, sin error
+console.log(pedido.envio?.direccion ?? "sin dirección");
+```
+
+<Nota tipo="ojo">
+  `const` no hace que el objeto sea de solo lectura: impide reasignar la variable (`usuario = otroObjeto`), pero puedes cambiar sus propiedades tanto como quieras.
+</Nota>
+
+## Resumen
+
+- Un **literal** `{ clave: valor }` crea un objeto nuevo.
+- Se accede con **punto** (`obj.clave`) o **corchetes** (`obj["clave"]`, `obj[variable]`).
+- Asignar crea o cambia propiedades; `delete` las elimina; `in` pregunta si existen.
+- **Forma abreviada** `{ nombre }` y **claves calculadas** `{ [expr]: valor }`.
+- Los **métodos** son funciones dentro del objeto; `this` es el objeto que los llama.
+- `?.` evita el error al leer propiedades que pueden no existir.
+
+<Practica>
+
+<Autoevaluacion id={literalesAuto.id} numero={1} titulo={literalesAuto.titulo} preguntas={literalesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={literalesOrden.id} numero={2} titulo={literalesOrden.titulo} codigo={literalesOrden.codigo} salida={literalesOrden.salida} inicio={literalesOrden.inicio} explicacion={literalesOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una clave calculada, una con ñ y una que no existe. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={literalesDetective.id} numero={3} titulo={literalesDetective.titulo} codigo={literalesDetective.codigo} error={literalesDetective.error} culpable={literalesDetective.culpable} arreglos={literalesDetective.arreglos} hallazgo={literalesDetective.hallazgo} pista={literalesDetective.pista}>
+  <div slot="enunciado">
+    <p>El perfil se imprime a medias y después se rompe. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={literalesLab.id} numero={4} titulo={literalesLab.titulo} inicial={literalesLab.inicial} verificaciones={literalesLab.verificaciones} pistas={literalesLab.pistas} solucion={literalesLab.solucion} explicacion={literalesLab.explicacion}>
+  <div slot="enunciado">
+    <p>Crea el objeto <code>producto</code> con la forma abreviada y un método <code>describir()</code> que use <code>this</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

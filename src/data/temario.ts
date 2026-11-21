@@ -208,7 +208,7 @@ const crudo: { titulo: string; slug: string; descripcion: string; temas: TemaCru
       ['Navegación e historial', 'nuevo', 'navegacion'],
       ['Web Workers y mensajería', '', 'web-workers'],
       ['Service Workers y PWA', 'nuevo', 'service-workers'],
-      ['Web Components', 'nuevo', 'web-components'],
+      ['Web Components', '', 'web-components'],
       ['Gráficos: Canvas y SVG', '', 'canvas-y-svg'],
       ['Seguridad en el navegador', 'nuevo', 'seguridad'],
     ],

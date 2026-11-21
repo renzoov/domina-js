@@ -1,0 +1,123 @@
+---
+titulo: Prototipos y la cadena de prototipos
+seccion: objetos
+tema: prototipos
+minutos: 12
+resumen: Qué es el prototipo de un objeto, cómo busca el motor una propiedad subiendo por la cadena de prototipos, Object.create, propiedades propias y heredadas, los prototipos de los tipos nativos y por qué no hay que modificarlos.
+intro: 'Creas un objeto vacío y ya tiene <code>toString</code>. Creas un array y ya tiene <code>map</code>, <code>filter</code> y <code>push</code>. ¿De dónde salen? De su <u>prototipo</u>: un objeto oculto al que cada objeto está enlazado, y donde el motor busca lo que el objeto no tiene. Es el mecanismo de herencia de JavaScript, y lo que las clases usan por debajo.'
+pizarron: cadenaPrototipos
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Cada objeto indica cuál es su prototipo. En las líneas 8 a 10, fíjate en qué eslabón de la cadena encuentra el motor cada propiedad, y qué pasa cuando no está en ninguno.'
+ejercicios: [proto-auto, proto-orden, proto-detective, proto-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { protoAuto, protoOrden, protoDetective, protoLab } from '../../data/ejercicios/objetos';
+
+## El prototipo
+
+Todo objeto tiene un enlace interno, que la especificación llama `[[Prototype]]`, a otro objeto: su **prototipo**. Puedes verlo con `Object.getPrototypeOf`:
+
+```js
+const vacio = {};
+console.log(Object.getPrototypeOf(vacio) === Object.prototype);  // true
+console.log(vacio.toString());  // [object Object]: heredado
+
+const lista = [1, 2];
+console.log(Object.getPrototypeOf(lista) === Array.prototype);   // true
+```
+
+## La cadena de prototipos
+
+Cuando lees una propiedad, el motor:
+
+1. La busca en el **propio** objeto.
+2. Si no está, la busca en su **prototipo**.
+3. Después, en el prototipo del prototipo, y así **hacia arriba**.
+4. Si llega a `null` sin encontrarla, devuelve `undefined`.
+
+Es la misma idea que la cadena de scopes del tema *Scope*, pero con objetos en lugar de variables. Un array, por ejemplo, tiene esta cadena:
+
+```
+lista  →  Array.prototype  →  Object.prototype  →  null
+          (map, filter…)      (toString, hasOwnProperty…)
+```
+
+Por eso un array tiene a la vez `map` y `toString`: los dos están en su cadena.
+
+## Object.create
+
+`Object.create(proto)` crea un objeto vacío con el prototipo que elijas. Es la forma más directa de ver la herencia en acción:
+
+```js
+const vehiculo = {
+  ruedas: 4,
+  describir() {
+    return `Tengo ${this.ruedas} ruedas`;
+  },
+};
+
+const moto = Object.create(vehiculo);
+moto.ruedas = 2;  // propia: tapa a la heredada
+
+console.log(moto.describir());  // usa el método heredado con el dato propio
+console.log(Object.hasOwn(moto, "ruedas"));     // true
+console.log(Object.hasOwn(moto, "describir"));  // false: heredado
+```
+
+**Escribir** no sube por la cadena: `moto.ruedas = 2` crea una propiedad propia en `moto`, aunque `vehiculo` ya tenga `ruedas`. La propia tapa a la heredada, y `vehiculo` no cambia.
+
+`Object.create(null)` crea un objeto **sin** prototipo: no hereda nada, ni siquiera `toString`. Se usa a veces como diccionario "limpio".
+
+## Por qué importa
+
+- **Los métodos se comparten.** Un método en el prototipo existe una sola vez, aunque haya un millón de objetos que lo usen.
+- **`this` es quien llama.** El método vive en el prototipo, pero `this` es el objeto desde el que se lo llamó, así que trabaja con sus datos.
+- **Así funcionan las clases.** `class` es una sintaxis más cómoda sobre este mismo mecanismo: los métodos van al prototipo y los datos, a cada instancia. Lo vas a ver en la próxima sección.
+
+<Nota tipo="error">
+  No modifiques los prototipos nativos (`Array.prototype.miMetodo = …`). Afecta a todos los objetos del programa, puede chocar con métodos que el lenguaje agregue en el futuro y rompe librerías. Pasó de verdad: por culpa de esto, un método de ES2019 tuvo que cambiar de nombre.
+</Nota>
+
+## Resumen
+
+- Todo objeto tiene un **prototipo** (`Object.getPrototypeOf`), salvo los creados con `Object.create(null)`.
+- Para leer una propiedad, el motor sube por la **cadena de prototipos** hasta encontrarla o llegar a `null`.
+- Escribir crea siempre una propiedad **propia**, que tapa a la heredada.
+- `Object.create(proto)` crea un objeto enlazado a `proto`.
+- Los métodos de los nativos (`map`, `toString`…) viven en sus prototipos y se comparten.
+- No modifiques los prototipos nativos.
+
+<Practica>
+
+<Autoevaluacion id={protoAuto.id} numero={1} titulo={protoAuto.titulo} preguntas={protoAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={protoOrden.id} numero={2} titulo={protoOrden.titulo} codigo={protoOrden.codigo} salida={protoOrden.salida} inicio={protoOrden.inicio} explicacion={protoOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un objeto hijo con una propiedad que también tiene su prototipo. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={protoDetective.id} numero={3} titulo={protoDetective.titulo} codigo={protoDetective.codigo} error={protoDetective.error} culpable={protoDetective.culpable} arreglos={protoDetective.arreglos} hallazgo={protoDetective.hallazgo} pista={protoDetective.pista}>
+  <div slot="enunciado">
+    <p>Una respuesta que parece una lista no tiene <code>map</code>. Encuentra la línea que falla y elige el arreglo correcto.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={protoLab.id} numero={4} titulo={protoLab.titulo} inicial={protoLab.inicial} verificaciones={protoLab.verificaciones} pistas={protoLab.pistas} solucion={protoLab.solucion} explicacion={protoLab.explicacion}>
+  <div slot="enunciado">
+    <p>Crea <code>michi</code> enlazado a <code>animal</code>, con sus propios datos, para que use el método <code>presentarse</code> sin copiarlo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

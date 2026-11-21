@@ -1,0 +1,176 @@
+---
+titulo: Errores y excepciones
+seccion: control-de-flujo
+tema: errores-y-excepciones
+minutos: 14
+resumen: Los tipos de error de JavaScript, cómo atraparlos con try, catch y finally, cómo lanzar los tuyos con throw, y las novedades error.cause (ES2022), AggregateError (ES2021) y Error.isError (ES2026).
+intro: 'Los errores no son el enemigo: son <u>avisos</u> de que algo no salió como se esperaba. Un dato que no llegó, un número que no es número, una red caída. Saber <u>atraparlos y lanzarlos</u> es lo que separa un programa que se rompe de uno que reacciona.'
+pizarron: tryCatch
+mostrarPila: false
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Sigue el camino del error: dónde se lanza, qué líneas se saltan y adónde salta. Y fíjate en el último bloque, que se ejecuta pase lo que pase.'
+ejercicios: [errores-auto, errores-orden, errores-detective, errores-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { erroresAuto, erroresOrden, erroresDetective, erroresLab } from '../../data/ejercicios/control-de-flujo';
+
+## Los errores que ya conoces
+
+Un error en JavaScript es un **objeto** con tres datos principales: `name` (el tipo), `message` (qué pasó) y `stack` (dónde pasó). Ya te cruzaste con los tipos más comunes:
+
+| Tipo | Cuándo aparece | Ejemplo |
+|---|---|---|
+| `SyntaxError` | El código está mal escrito; no llega a ejecutarse | `console.log("hola` |
+| `ReferenceError` | Usas un nombre que no existe | `console.log(nombreQueNoExiste)` |
+| `TypeError` | Usas un valor de una forma que su tipo no permite | `null.x`, `"a".toFixed()` |
+| `RangeError` | Un número está fuera del rango permitido | `new Array(-1)`, recursión infinita |
+
+Cuando un error no se atrapa, el programa **se detiene** en esa línea y la consola lo muestra en rojo.
+
+## try, catch y finally
+
+Para que un error no detenga el programa, envuelve el código que puede fallar en un `try` y decide qué hacer en el `catch`:
+
+```js
+try {
+  const lista = null;
+  console.log(lista.length);  // TypeError
+} catch (error) {
+  console.log("Algo salió mal:", error.message);
+  console.log("Tipo:", error.name);
+} finally {
+  console.log("Esto se ejecuta siempre");
+}
+console.log("El programa sigue");
+```
+
+- **`try`**: el código que puede fallar.
+- **`catch (error)`**: se ejecuta solo si hubo un error, que llega en la variable. Si no lo necesitas, puedes omitirla: `catch { … }`.
+- **`finally`**: se ejecuta **siempre**, con o sin error. Ideal para limpiar.
+
+<Nota>
+  `try/catch` solo atrapa errores **en ejecución**. Un `SyntaxError` en tu propio código impide que el programa empiece, así que no hay `try` que lo atrape. La excepción es `JSON.parse`: lee texto en ejecución y sí lanza un `SyntaxError` que puedes atrapar.
+</Nota>
+
+## throw: lanzar tus propios errores
+
+Con `throw` señalas que algo está mal en **tus** reglas, aunque para JavaScript sea válido:
+
+```js
+function crearUsuario(edad) {
+  if (edad < 0) {
+    throw new RangeError("La edad no puede ser negativa");
+  }
+  return { edad };
+}
+
+try {
+  crearUsuario(-5);
+} catch (error) {
+  console.log(`${error.name}: ${error.message}`);
+}
+```
+
+Lanza siempre un objeto `Error` (o uno de sus tipos), nunca un texto suelto: solo el objeto guarda el *stack trace* que te dice dónde ocurrió.
+
+Cuando tu aplicación crezca, vas a crear tus propios tipos de error con clases, como `class ValidacionError extends Error {}`, para distinguirlos en el `catch`. Lo verás en la sección de Clases.
+
+## Encadenar errores con cause (ES2022)
+
+Muchas veces atrapas un error técnico y quieres lanzar uno más claro para tu programa, sin perder el original. Para eso está la opción **`cause`**:
+
+```js
+function leerPerfil(texto) {
+  try {
+    return JSON.parse(texto);
+  } catch (error) {
+    throw new Error("No se pudo leer el perfil", { cause: error });
+  }
+}
+
+try {
+  leerPerfil("{esto no es JSON}");
+} catch (error) {
+  console.log(error.message);         // el mensaje claro
+  console.log(error.cause.name);      // el error original: SyntaxError
+}
+```
+
+## Varios errores a la vez: AggregateError (ES2021)
+
+`AggregateError` agrupa **varios errores** en uno solo, en su propiedad `errors`. Lo vas a encontrar sobre todo con `Promise.any`, en la sección de Asincronía, cuando fallan todas las opciones:
+
+```js
+const error = new AggregateError(
+  [new Error("Servidor A caído"), new Error("Servidor B caído")],
+  "Ningún servidor respondió"
+);
+
+console.log(error.message);
+console.log(error.errors.length);
+console.log(error.errors[0].message);
+```
+
+## ¿Es un error? Error.isError (ES2026)
+
+Para comprobar si un valor es un error se usaba `valor instanceof Error`, pero falla con errores que vienen de otro contexto, como un `<iframe>` o un worker. **`Error.isError(valor)`** (ES2026) lo comprueba de forma fiable:
+
+```js
+const e = new TypeError("algo");
+
+if (typeof Error.isError === "function") {
+  console.log(Error.isError(e));        // true
+  console.log(Error.isError("algo"));   // false: un texto no es un error
+} else {
+  console.log("Tu navegador todavía no tiene Error.isError");
+}
+```
+
+## Buenas prácticas
+
+- **Atrapa solo lo que puedes resolver.** Si no sabes qué hacer con un error, deja que suba o vuelve a lanzarlo.
+- **Nunca dejes un `catch` vacío**: el problema sigue ahí, pero ya no te enteras. Como mínimo, `console.error(error)`.
+- **Usa `throw` para tus reglas** (datos inválidos, estados imposibles) y deja que quien llama decida.
+- **Lee el error completo**: tipo, mensaje y la línea del *stack trace*. Casi siempre dicen exactamente qué pasó.
+
+## Resumen
+
+- Un error es un objeto con `name`, `message` y `stack`. Los tipos comunes son `SyntaxError`, `ReferenceError`, `TypeError` y `RangeError`.
+- `try` ejecuta, `catch` atrapa el error y `finally` se ejecuta siempre.
+- `throw new Error("…")` lanza tus propios errores. Lanza siempre objetos `Error`.
+- `cause` (ES2022) encadena un error nuevo con el original.
+- `AggregateError` (ES2021) agrupa varios errores; `Error.isError` (ES2026) detecta errores de forma fiable.
+
+<Practica>
+
+<Autoevaluacion id={erroresAuto.id} numero={1} titulo={erroresAuto.titulo} preguntas={erroresAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={erroresOrden.id} numero={2} titulo={erroresOrden.titulo} codigo={erroresOrden.codigo} salida={erroresOrden.salida} inicio={erroresOrden.inicio} explicacion={erroresOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Sigue el camino del error y ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={erroresDetective.id} numero={3} titulo={erroresDetective.titulo} codigo={erroresDetective.codigo} error={erroresDetective.error} culpable={erroresDetective.culpable} arreglos={erroresDetective.arreglos} hallazgo={erroresDetective.hallazgo} pista={erroresDetective.pista}>
+  <div slot="enunciado">
+    <p>Este programa intenta leer unos datos en formato JSON y se rompe. Encuentra la línea donde salta el error y elige el arreglo correcto. Cuidado: dos de las opciones son peligrosas.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={erroresLab.id} numero={4} titulo={erroresLab.titulo} inicial={erroresLab.inicial} verificaciones={erroresLab.verificaciones} pistas={erroresLab.pistas} solucion={erroresLab.solucion} explicacion={erroresLab.explicacion}>
+  <div slot="enunciado">
+    <p>Completa la función para que lance un <code>Error</code> si no hay saldo suficiente, y llámala dentro de un <code>try/catch</code> que muestre el mensaje.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -157,7 +157,7 @@ const publicados = disponibles.size;
     list-style: none;
     color: var(--chalk);
     font-weight: 700;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     line-height: 1.3;
   }
   summary::-webkit-details-marker { display: none; }
@@ -184,9 +184,9 @@ const publicados = disponibles.size;
   .temas li:not(.hay) { padding: 4px 0; }
   .hecho { display: inline-grid; color: var(--ok); }
   .esta { position: relative; }
-  .esta::before { content: ''; position: absolute; left: -14px; top: 6px; height: 1.2em; width: 3px; background: var(--y); border-radius: 2px; }
+  .esta::before { content: ''; position: absolute; left: -14px; top: 6px; height: 1.2em; width: 3px; background: var(--y); border-radius: var(--r-trazo); }
   .apartados { list-style: none; margin: 4px 0 6px; padding: 0 0 0 12px; border-left: 2px solid var(--chalk-15); display: grid; gap: 2px; }
-  .apartados a { display: block; padding: 3px 0; font-size: 0.84rem; line-height: 1.35; color: var(--chalk-70); text-decoration: none; }
+  .apartados a { display: block; padding: 3px 0; font-size: 0.92rem; line-height: 1.35; color: var(--chalk-70); text-decoration: none; }
   .apartados a:hover { color: var(--chalk); }
   .apartados :global(a.leyendo) { color: var(--chalk); font-weight: 700; position: relative; }
   .apartados :global(a.leyendo)::before { content: ''; position: absolute; left: -16px; top: 0.55em; width: 8px; height: 8px; border-radius: 50%; background: var(--azul); }
@@ -203,6 +203,6 @@ const publicados = disponibles.size;
     .menu.abierto .panel { display: block; }
   }
   .rayas { display: grid; gap: 3px; width: 16px; }
-  .rayas i { display: block; height: 2px; background: currentColor; border-radius: 2px; }
+  .rayas i { display: block; height: 2px; background: currentColor; border-radius: var(--r-trazo); }
   .rayas i:nth-child(2) { width: 75%; }
 </style>

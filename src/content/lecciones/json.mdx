@@ -1,0 +1,168 @@
+---
+titulo: JSON
+seccion: objetos
+tema: json
+minutos: 10
+resumen: Qué es JSON y sus reglas, cómo convertir con JSON.stringify y JSON.parse, qué valores se pierden, cómo formatear, el reviver para recuperar fechas, toJSON, cómo leer JSON sin romperse y los módulos JSON de ES2025.
+intro: 'Cuando un programa guarda datos en un archivo, los envía a un servidor o los recibe de una API, casi siempre viajan como <u>JSON</u>: texto con la forma de un objeto de JavaScript. Es el idioma común de la web, y JavaScript lo trae incorporado.'
+ejercicios: [json-auto, json-orden, json-detective, json-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { jsonAuto, jsonOrden, jsonDetective, jsonLab } from '../../data/ejercicios/objetos';
+
+## Las reglas de JSON
+
+JSON (*JavaScript Object Notation*) se parece a un objeto literal, pero es más estricto:
+
+- Las claves van **siempre** entre comillas **dobles**: `"nombre"`.
+- Los textos, también con comillas dobles. Nada de comillas simples ni template literals.
+- Valores permitidos: textos, números, `true`, `false`, `null`, arrays y objetos. **No** hay `undefined`, funciones, fechas, `NaN` ni `Infinity`.
+- Sin comas al final ni comentarios.
+
+```json
+{
+  "nombre": "Ana",
+  "edad": 31,
+  "lenguajes": ["JavaScript", "Python"],
+  "jefe": null
+}
+```
+
+## De objeto a texto y de vuelta
+
+```js
+const usuario = { nombre: "Ana", edad: 31, activo: true };
+
+const texto = JSON.stringify(usuario);   // objeto → texto
+console.log(texto);
+console.log(typeof texto);
+
+const deVuelta = JSON.parse(texto);      // texto → objeto nuevo
+console.log(deVuelta.nombre);
+```
+
+`JSON.parse` devuelve un objeto **nuevo**: por eso el viejo truco `JSON.parse(JSON.stringify(obj))` servía para copiar, con las pérdidas que viste en *Copias superficiales y profundas*.
+
+Para que el texto sea legible por humanos, pasa la sangría como tercer argumento:
+
+```js
+const config = { tema: "oscuro", atajos: { guardar: "Ctrl+S" } };
+console.log(JSON.stringify(config, null, 2));
+```
+
+## Lo que se pierde
+
+Al convertir a texto, lo que JSON no sabe representar se adapta o desaparece:
+
+| Valor | En un objeto | En un array |
+|---|---|---|
+| `undefined`, funciones, símbolos | La propiedad desaparece | `null` |
+| `NaN`, `Infinity` | `null` | `null` |
+| `Date` | Texto ISO (`"2026-11-20T…"`) | Texto ISO |
+| `Map`, `Set` | `{}` vacío | `{}` vacío |
+
+## Recuperar fechas y personalizar
+
+`JSON.parse` acepta una función **reviver** que recibe cada clave y valor y puede transformarlos. Es la forma de recuperar fechas:
+
+```js
+const texto = '{"evento":"Charla","fecha":"2026-11-20T18:00:00.000Z"}';
+
+const datos = JSON.parse(texto, (clave, valor) =>
+  clave === "fecha" ? new Date(valor) : valor
+);
+
+console.log(datos.fecha instanceof Date);  // true
+console.log(datos.fecha.getUTCHours());    // 18
+```
+
+Al revés, si un objeto tiene un método **`toJSON`**, `stringify` usa lo que devuelve:
+
+```js
+const cuenta = {
+  usuario: "ana",
+  clave: "secreta",
+  toJSON() {
+    return { usuario: this.usuario };  // nunca exportes la clave
+  },
+};
+
+console.log(JSON.stringify(cuenta));
+```
+
+## Leer JSON sin romperse
+
+`JSON.parse` lanza un `SyntaxError` si el texto no es JSON válido. Con datos que vienen de afuera (un archivo, `localStorage`, una red), **siempre** pueden llegar rotos:
+
+```js
+function leer(texto) {
+  try {
+    return JSON.parse(texto);
+  } catch (error) {
+    console.log("JSON inválido:", error.name);
+    return null;
+  }
+}
+
+console.log(leer('{"ok": true}'));
+console.log(leer("{ok: true}"));
+```
+
+<Nota tipo="error">
+  Nunca uses `eval` para leer JSON. Ejecuta cualquier código que venga en el texto, y si los datos vienen de afuera, alguien podría ejecutar lo que quiera en tu programa.
+</Nota>
+
+## Módulos JSON (ES2025)
+
+Desde ES2025 puedes **importar** un archivo JSON directamente, ya convertido en objeto. El atributo `with { type: "json" }` le dice al runtime que el archivo es JSON y no código:
+
+```js
+// config.json: { "version": "2.1", "debug": false }
+import config from "./config.json" with { type: "json" };
+
+console.log(config.version);
+```
+
+Funciona en los navegadores modernos, Node.js, Deno y Bun. Antes había que leer el archivo y pasarlo por `JSON.parse`, o usar `fetch`.
+
+## Resumen
+
+- JSON es **texto** con forma de objeto: comillas dobles, sin funciones ni `undefined`.
+- `JSON.stringify` convierte a texto; `JSON.parse`, de texto a un valor nuevo.
+- Se pierden `undefined` y funciones; las fechas pasan a texto. Recupéralas con un **reviver**.
+- `toJSON` decide cómo se exporta un objeto.
+- Envuelve `JSON.parse` en `try/catch` cuando los datos vienen de afuera.
+- ES2025: `import datos from "./datos.json" with { type: "json" }`.
+
+<Practica>
+
+<Autoevaluacion id={jsonAuto.id} numero={1} titulo={jsonAuto.titulo} preguntas={jsonAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={jsonOrden.id} numero={2} titulo={jsonOrden.titulo} codigo={jsonOrden.codigo} salida={jsonOrden.salida} inicio={jsonOrden.inicio} explicacion={jsonOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un objeto con valores que JSON no sabe guardar. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={jsonDetective.id} numero={3} titulo={jsonDetective.titulo} codigo={jsonDetective.codigo} error={jsonDetective.error} culpable={jsonDetective.culpable} arreglos={jsonDetective.arreglos} hallazgo={jsonDetective.hallazgo} pista={jsonDetective.pista}>
+  <div slot="enunciado">
+    <p><code>JSON.parse</code> se queja, pero el problema no está en esa línea. Encuentra la culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={jsonLab.id} numero={4} titulo={jsonLab.titulo} inicial={jsonLab.inicial} verificaciones={jsonLab.verificaciones} pistas={jsonLab.pistas} solucion={jsonLab.solucion} explicacion={jsonLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>leerConfig(texto)</code>: si el texto es JSON válido, devuelve el objeto; si no, un objeto vacío, sin lanzar errores.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

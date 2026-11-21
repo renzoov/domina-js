@@ -1,0 +1,122 @@
+---
+titulo: break, continue y etiquetas
+seccion: control-de-flujo
+tema: break-continue-etiquetas
+minutos: 8
+resumen: Cómo salir de un bucle antes de tiempo con break, cómo saltar una vuelta con continue, y cómo usar etiquetas para controlar bucles anidados.
+intro: 'A veces no hace falta recorrer todo: ya encontraste lo que buscabas, o un elemento no sirve y quieres pasar al siguiente. <code>break</code> y <code>continue</code> te dejan <u>cambiar el ritmo de un bucle</u> desde adentro.'
+pizarron: saltos
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'El bucle recorre <code>[4, -1, 7, 0, 9]</code>. Fíjate en dos momentos: qué pasa con el <code>-1</code> (<code>continue</code>) y qué pasa al llegar al <code>0</code> (<code>break</code>). ¿Se llega a ver el 9?'
+ejercicios: [saltos-auto, saltos-orden, saltos-detective, saltos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { saltosAuto, saltosOrden, saltosDetective, saltosLab } from '../../data/ejercicios/control-de-flujo';
+
+## break: salir del bucle
+
+`break` **termina el bucle** en el acto, aunque queden vueltas. El programa sigue con la línea de después del bucle. Es útil cuando ya encontraste lo que buscabas:
+
+```js
+const invitados = ["Ana", "Luis", "Marta", "Pedro"];
+
+for (const nombre of invitados) {
+  if (nombre === "Marta") {
+    console.log("¡Marta está invitada!");
+    break;  // no hace falta seguir mirando
+  }
+  console.log(`${nombre} no es Marta`);
+}
+```
+
+## continue: saltar a la siguiente vuelta
+
+`continue` **abandona solo la vuelta actual** y pasa a la siguiente. Sirve para ignorar los elementos que no te interesan sin meter el resto del código dentro de un `if`:
+
+```js
+const temperaturas = [22, -999, 25, 19, -999, 30];  // -999 = sensor sin dato
+
+for (const t of temperaturas) {
+  if (t === -999) continue;  // ignora los datos inválidos
+  console.log(`${t} °C`);
+}
+```
+
+En un `for` clásico, `continue` igual ejecuta el paso (`i++`) antes de la siguiente vuelta, así que no se queda trabado.
+
+## Bucles anidados y etiquetas
+
+Con un bucle dentro de otro, `break` y `continue` afectan solo al **más cercano**. Para controlar el de afuera, ponle una **etiqueta**: un nombre seguido de dos puntos, justo delante del bucle.
+
+```js
+const tablero = [
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9],
+];
+
+buscar: for (const fila of tablero) {
+  for (const celda of fila) {
+    if (celda === 5) {
+      console.log("Encontré el 5");
+      break buscar;  // sale de los DOS bucles
+    }
+  }
+}
+console.log("Búsqueda terminada");
+```
+
+Sin la etiqueta, el `break` solo saldría del bucle de adentro, y el de afuera seguiría con la fila siguiente.
+
+<Nota tipo="consejo">
+  Las etiquetas casi no se usan en código moderno. Cuando las necesites, piensa si no quedaría más claro meter los bucles en una **función** y usar `return` para salir de todo. Lo vas a ver en la sección de Funciones.
+</Nota>
+
+## Dónde no van
+
+- `break` solo funciona dentro de un **bucle** o de un **`switch`**.
+- `continue` solo funciona dentro de un **bucle**.
+- Dentro de un `if` suelto, cualquiera de los dos es un error de sintaxis: el bloque del `if` termina solo.
+- Para dejar de ejecutar una función, lo que buscas es `return`.
+
+## Resumen
+
+- `break` termina el bucle (o el `switch`) y el programa sigue después.
+- `continue` salta el resto de la vuelta actual y pasa a la siguiente.
+- En bucles anidados, actúan sobre el bucle **más cercano**. Con una **etiqueta** (`afuera:`) puedes apuntar a uno exterior.
+- Fuera de un bucle o `switch` son un error. Para salir de una función, `return`.
+
+<Practica>
+
+<Autoevaluacion id={saltosAuto.id} numero={1} titulo={saltosAuto.titulo} preguntas={saltosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={saltosOrden.id} numero={2} titulo={saltosOrden.titulo} codigo={saltosOrden.codigo} salida={saltosOrden.salida} inicio={saltosOrden.inicio} explicacion={saltosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos bucles anidados, un <code>continue</code> y un <code>break</code> con etiqueta. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={saltosDetective.id} numero={3} titulo={saltosDetective.titulo} codigo={saltosDetective.codigo} error={saltosDetective.error} culpable={saltosDetective.culpable} arreglos={saltosDetective.arreglos} hallazgo={saltosDetective.hallazgo} pista={saltosDetective.pista}>
+  <div slot="enunciado">
+    <p>Este programa no se ejecuta: el motor lo rechaza antes de empezar. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={saltosLab.id} numero={4} titulo={saltosLab.titulo} inicial={saltosLab.inicial} verificaciones={saltosLab.verificaciones} pistas={saltosLab.pistas} solucion={saltosLab.solucion} explicacion={saltosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Busca en la lista el primer número positivo que sea múltiplo de 7, imprímelo y deja de buscar. Las verificaciones van a probar tu código también con otra lista.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

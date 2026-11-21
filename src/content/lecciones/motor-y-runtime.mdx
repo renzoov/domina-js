@@ -1,0 +1,94 @@
+---
+titulo: Motor y runtime
+seccion: como-se-ejecuta-js
+tema: motor-y-runtime
+minutos: 9
+resumen: Qué hace el motor de JavaScript con tu código (análisis, intérprete y compilación JIT), qué aporta el runtime (navegador, Node.js), y por qué JavaScript tiene un solo hilo pero no se congela.
+intro: 'Cuando escribes <code>console.log("hola")</code> y lo ejecutas, pasan muchas cosas entre tu texto y la palabra en pantalla. Las hacen dos piezas: el <u>motor</u>, que entiende el lenguaje, y el <u>runtime</u>, que lo conecta con el mundo. Conocerlas te ayuda a entender todo lo que viene en esta sección.'
+nota: 'Esta sección, <b>Cómo se ejecuta JS por dentro</b>, es la que más te va a servir para entender errores raros. Cada tema tiene un pizarrón que muestra lo que hace el motor paso a paso.'
+ejercicios: [motor-auto, motor-orden, motor-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { motorAuto, motorOrden, motorDetective } from '../../data/ejercicios/por-dentro';
+
+## El motor: de texto a ejecución
+
+El **motor** es el programa que entiende JavaScript. Los más conocidos son **V8** (Chrome, Edge, Node.js, Deno), **SpiderMonkey** (Firefox) y **JavaScriptCore** (Safari, Bun). Todos siguen, a grandes rasgos, el mismo camino:
+
+1. **Análisis** (*parsing*): lee tu código y comprueba que esté bien escrito. Aquí aparecen los `SyntaxError`, antes de ejecutar nada.
+2. **Árbol de sintaxis** (AST): convierte el texto en una estructura que describe el programa: "una declaración de constante, con este nombre y esta expresión".
+3. **Intérprete**: traduce ese árbol a *bytecode*, instrucciones simples, y empieza a ejecutarlas enseguida.
+4. **Compilación JIT** (*just-in-time*): mientras el programa corre, el motor detecta el código que se repite mucho y lo compila a **código máquina optimizado**. Si después ese código se usa de otra forma, puede deshacer la optimización.
+
+Por eso JavaScript, que nació como un lenguaje "lento", hoy es rápido: el motor aprende de cómo se usa tu código.
+
+<Nota tipo="consejo">
+  Una consecuencia práctica de la compilación JIT: el código **predecible** es más rápido. Si una función siempre recibe números, el motor la optimiza para números; si un día le pasas un texto, tiene que volver atrás.
+</Nota>
+
+## Un solo hilo
+
+El motor ejecuta tu código en **un solo hilo**: una sola línea de trabajo, una cosa a la vez. Para no perderse cuando una función llama a otra, usa la **pila de llamadas**, que vas a ver en el tema siguiente, y guarda los objetos en una zona de memoria llamada **heap** (montículo).
+
+Que haya un solo hilo tiene una ventaja enorme: nunca dos partes de tu código tocan la misma variable a la vez. Y una desventaja: si una función tarda mucho, todo lo demás espera.
+
+## El runtime: lo que rodea al motor
+
+El motor solo sabe JavaScript: variables, funciones, objetos, `Math`, `JSON`… No sabe dibujar una página, leer un archivo ni esperar un segundo. Eso lo aporta el **runtime**, el entorno donde corre el motor:
+
+| Runtime | Aporta, por ejemplo |
+|---|---|
+| Navegador | `document` (la página), `fetch`, `setTimeout`, `localStorage`, eventos |
+| Node.js | Archivos (`node:fs`), `process`, servidores HTTP, `setTimeout` |
+| Deno y Bun | Lo mismo que Node.js, con otras decisiones de diseño |
+
+```js
+// Esto es del lenguaje: funciona en cualquier runtime
+console.log(Math.max(3, 9));
+console.log(JSON.stringify({ ok: true }));
+
+// Esto depende del runtime
+console.log(typeof setTimeout);  // function: casi todos lo tienen
+console.log(typeof document);    // undefined aquí: este código corre en un worker, sin página
+```
+
+`globalThis` es el objeto global de cualquier runtime: en el navegador es `window`, en Node.js es `global` y en un worker es `self`.
+
+## Cómo no se congela
+
+Si hay un solo hilo, ¿cómo descarga el navegador un archivo mientras tu código sigue funcionando? Porque **no lo hace tu hilo**: el runtime hace el trabajo pesado (red, temporizadores, disco) por su cuenta, con sus propios hilos, y cuando termina deja un aviso en una cola. El **event loop** pasa esos avisos a tu código cuando la pila de llamadas queda libre.
+
+Es el puente entre esta sección y la de **Asincronía**, donde lo vas a ver con un pizarrón.
+
+## Resumen
+
+- El **motor** (V8, SpiderMonkey, JavaScriptCore) analiza, interpreta y compila tu código con un compilador **JIT**.
+- Tu código corre en **un solo hilo**, con una pila de llamadas y un heap para los objetos.
+- El **runtime** (navegador, Node.js, Deno, Bun) aporta todo lo que no es el lenguaje: la página, la red, los archivos, los temporizadores.
+- El runtime hace el trabajo lento por su cuenta y avisa a tu código a través del **event loop**.
+
+<Practica>
+
+<Autoevaluacion id={motorAuto.id} numero={1} titulo={motorAuto.titulo} preguntas={motorAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={motorOrden.id} numero={2} titulo={motorOrden.titulo} codigo={motorOrden.codigo} salida={motorOrden.salida} inicio={motorOrden.inicio} explicacion={motorOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Este código corre en un <em>worker</em>, un hilo aparte del navegador sin página. Ordena lo que imprimiría.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={motorDetective.id} numero={3} titulo={motorDetective.titulo} codigo={motorDetective.codigo} error={motorDetective.error} culpable={motorDetective.culpable} arreglos={motorDetective.arreglos} hallazgo={motorDetective.hallazgo} pista={motorDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien ejecutó este archivo con <code>node app.js</code> y obtuvo este error. Encuentra la línea y elige la solución.</p>
+  </div>
+</Detective>
+
+</Practica>

@@ -1,0 +1,128 @@
+---
+titulo: Symbols
+seccion: fundamentos
+tema: symbols
+minutos: 9
+resumen: El primitivo symbol, un valor único e irrepetible que sirve como clave de propiedad sin chocar con otras, el registro global Symbol.for y los símbolos conocidos del lenguaje.
+intro: 'El <u>symbol</u> es el primitivo menos conocido de JavaScript. No es un texto ni un número: es un <u>valor único</u>, garantizado distinto de cualquier otro. Casi no vas a crearlos a diario, pero el propio lenguaje los usa para funcionar por dentro.'
+pizarron: simbolos
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Fíjate en dos cosas: dos símbolos con la misma descripción <b>no</b> son iguales, y una propiedad con clave símbolo existe pero <b>no aparece</b> al listar las claves del objeto.'
+ejercicios: [symbols-auto, symbols-orden, symbols-detective, symbols-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { symbolsAuto, symbolsOrden, symbolsDetective, symbolsLab } from '../../data/ejercicios/fundamentos';
+
+## Crear un símbolo
+
+Un símbolo se crea llamando a `Symbol()`, **sin `new`**. Puedes darle una descripción, que solo sirve para reconocerlo al depurar:
+
+```js
+const id = Symbol("id");
+
+console.log(typeof id);        // symbol
+console.log(id.description);   // id
+console.log(id.toString());    // Symbol(id)
+```
+
+Lo que lo hace especial es que **cada símbolo es único**. Dos símbolos con la misma descripción siguen siendo distintos:
+
+```js
+console.log(Symbol("id") === Symbol("id"));  // false
+```
+
+## Símbolos como claves de propiedad
+
+El uso principal de un símbolo es servir de **clave** en un objeto. Se escribe entre corchetes:
+
+```js
+const visto = Symbol("visto");
+
+const articulo = {
+  titulo: "Aprende JS",
+  [visto]: true,
+};
+
+console.log(articulo[visto]);       // true
+console.log(Object.keys(articulo)); // [ 'titulo' ]
+console.log(JSON.stringify(articulo)); // {"titulo":"Aprende JS"}
+```
+
+Una propiedad con clave símbolo tiene dos ventajas:
+
+- **No choca** con ninguna otra: aunque el objeto tenga otra propiedad llamada `visto`, tu símbolo es otra clave.
+- **No aparece** en `Object.keys`, en los bucles `for…in` ni en `JSON.stringify`. El objeto se ve y se guarda igual que antes.
+
+Por eso las librerías los usan para guardar datos propios en objetos que no les pertenecen, sin riesgo de pisar nada.
+
+<Nota>
+  Un símbolo no es un mecanismo de seguridad. `Object.getOwnPropertySymbols(objeto)` lista las claves símbolo, y cualquiera que tenga el símbolo puede leer la propiedad. Para datos privados de verdad existen los campos `#privados` de las clases (sección de Clases).
+</Nota>
+
+## El registro global: Symbol.for
+
+A veces quieres que distintas partes del programa compartan **el mismo** símbolo. Para eso existe un registro global: `Symbol.for(clave)` busca un símbolo con esa clave y, si no existe, lo crea:
+
+```js
+const a = Symbol.for("app.usuario");
+const b = Symbol.for("app.usuario");
+
+console.log(a === b);              // true: es el mismo
+console.log(Symbol.keyFor(a));     // app.usuario
+```
+
+Usa una clave con un prefijo propio, como `"app."`, para no coincidir con el registro de otra librería.
+
+## Los símbolos que usa el propio lenguaje
+
+JavaScript define varios **símbolos conocidos** (*well-known symbols*) que le permiten a tus objetos engancharse a comportamientos del lenguaje. El más famoso es `Symbol.iterator`: si un objeto tiene un método con esa clave, se puede recorrer con `for…of`.
+
+```js
+console.log(typeof Symbol.iterator);              // symbol
+console.log(typeof "hola"[Symbol.iterator]);      // function: los strings son recorribles
+```
+
+Los vas a usar en las secciones de *Iteradores y generadores* y *Metaprogramación*. Por ahora basta con saber que existen y que son símbolos.
+
+## Resumen
+
+- `Symbol("descripción")` crea un **valor único**, sin `new`. Dos símbolos nunca son iguales.
+- Sirven como **claves de propiedad** que no chocan con otras y quedan fuera de `Object.keys`, `for…in` y JSON.
+- No son seguridad: se pueden listar con `Object.getOwnPropertySymbols`.
+- `Symbol.for(clave)` comparte un mismo símbolo en todo el programa.
+- El lenguaje usa **símbolos conocidos**, como `Symbol.iterator`, para comportamientos como `for…of`.
+
+<Practica>
+
+<Autoevaluacion id={symbolsAuto.id} numero={1} titulo={symbolsAuto.titulo} preguntas={symbolsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={symbolsOrden.id} numero={2} titulo={symbolsOrden.titulo} codigo={symbolsOrden.codigo} salida={symbolsOrden.salida} inicio={symbolsOrden.inicio} explicacion={symbolsOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena los resultados tal como aparecerían en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={symbolsDetective.id} numero={3} titulo={symbolsDetective.titulo} codigo={symbolsDetective.codigo} error={symbolsDetective.error} culpable={symbolsDetective.culpable} arreglos={symbolsDetective.arreglos} hallazgo={symbolsDetective.hallazgo} pista={symbolsDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien intentó crear un símbolo y obtuvo este error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={symbolsLab.id} numero={4} titulo={symbolsLab.titulo} inicial={symbolsLab.inicial} verificaciones={symbolsLab.verificaciones} pistas={symbolsLab.pistas} solucion={symbolsLab.solucion} explicacion={symbolsLab.explicacion}>
+  <div slot="enunciado">
+    <p>Tienes que agregarle una marca interna a un objeto que no es tuyo, pero el código actual pisa su <code>id</code>. Usa un símbolo para que la marca conviva con el <code>id</code> original.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

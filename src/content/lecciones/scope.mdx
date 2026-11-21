@@ -1,0 +1,132 @@
+---
+titulo: Scope y cadena de scopes
+seccion: como-se-ejecuta-js
+tema: scope
+minutos: 11
+resumen: Qué es el scope de una variable (global, de función y de bloque), cómo busca el motor un nombre subiendo por la cadena de scopes, qué es el sombreado y por qué JavaScript usa scope léxico.
+intro: 'Cada variable vive en una zona del código desde donde se la puede ver: su <u>scope</u> (alcance). Cuando usas un nombre, el motor lo busca <u>de adentro hacia afuera</u>, y se queda con el primero que encuentra. Entender ese recorrido explica la mayoría de los <code>ReferenceError</code>.'
+pizarron: cadenaScopes
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Cada tarjeta indica en qué scope vive la variable. En la línea 8 se imprimen tres variables: fíjate dónde encuentra el motor cada una y hacia dónde busca.'
+ejercicios: [scope-auto, scope-orden, scope-detective, scope-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { scopeAuto, scopeOrden, scopeDetective, scopeLab } from '../../data/ejercicios/por-dentro';
+
+## Tres tipos de scope
+
+- **Global**: lo que se declara fuera de toda función y bloque. Se ve desde cualquier parte del programa.
+- **De función**: cada función crea el suyo. Sus parámetros y variables solo existen dentro.
+- **De bloque**: con `let` y `const`, cada par de llaves `{ }` (un `if`, un `for`, un bloque suelto) crea uno.
+
+```js
+const app = "domina-js";          // global
+
+function iniciar() {
+  const version = 2;              // scope de iniciar()
+  if (version > 1) {
+    const mensaje = "moderna";    // scope del bloque if
+    console.log(app, version, mensaje);
+  }
+  // console.log(mensaje);        // ReferenceError: no se ve fuera del if
+}
+
+iniciar();
+```
+
+## La cadena de scopes
+
+Como muestra el pizarrón, cuando usas un nombre el motor lo busca:
+
+1. En el scope **actual**.
+2. Si no está, en el scope que lo **rodea**.
+3. Y así, **hacia afuera**, hasta el global.
+4. Si tampoco está en el global: `ReferenceError: x is not defined`.
+
+Esa secuencia de scopes anidados es la **cadena de scopes**. La búsqueda va siempre **hacia afuera**: desde dentro de una función se ven las variables de fuera, pero nunca al revés.
+
+## Sombreado
+
+Si un scope interior declara una variable con el mismo nombre que una exterior, la interior **tapa** a la exterior dentro de ese scope. Se llama *shadowing* (sombreado):
+
+```js
+const color = "azul";
+
+function pintar() {
+  const color = "rojo";   // tapa a la de afuera
+  console.log(color);     // rojo
+}
+
+pintar();
+console.log(color);       // azul: la de afuera no cambió
+```
+
+Es legal, pero puede confundir. Si te pasa sin querer, cambia uno de los nombres.
+
+## Scope léxico
+
+El scope de una función se decide por **dónde está escrita** en el código, no por desde dónde se la llama. A eso se le llama **scope léxico** (de "léxico", lo escrito):
+
+```js
+const saludo = "Hola desde el global";
+
+function mostrar() {
+  console.log(saludo);
+}
+
+function otra() {
+  const saludo = "Hola desde otra";
+  mostrar();  // mostrar() fue escrita en el global: ve el saludo global
+}
+
+otra();
+```
+
+`mostrar` se llama desde `otra`, pero está escrita en el global, así que busca `saludo` en el global. Esta regla es la base de los **closures**, el siguiente tema.
+
+<Nota tipo="consejo">
+  Usa el scope más pequeño posible. Declara cada variable dentro del bloque o la función donde se usa, y evita las globales: cualquier parte del programa podría cambiarlas, y encontrar quién lo hizo es difícil.
+</Nota>
+
+## Resumen
+
+- Hay scope **global**, **de función** y **de bloque** (este último, solo para `let` y `const`).
+- El motor busca un nombre en el scope actual y **sube** hacia afuera hasta encontrarlo; si no, `ReferenceError`.
+- Desde adentro se ve hacia afuera, nunca al revés.
+- Una variable interior con el mismo nombre **tapa** a la exterior (sombreado).
+- El scope es **léxico**: depende de dónde se escribió la función, no de quién la llama.
+
+<Practica>
+
+<Autoevaluacion id={scopeAuto.id} numero={1} titulo={scopeAuto.titulo} preguntas={scopeAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={scopeOrden.id} numero={2} titulo={scopeOrden.titulo} codigo={scopeOrden.codigo} salida={scopeOrden.salida} inicio={scopeOrden.inicio} explicacion={scopeOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Hay dos variables <code>x</code>. Ojo con <code>b</code>: se llama desde dentro de <code>a</code>, pero ¿dónde está escrita? Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={scopeDetective.id} numero={3} titulo={scopeDetective.titulo} codigo={scopeDetective.codigo} error={scopeDetective.error} culpable={scopeDetective.culpable} arreglos={scopeDetective.arreglos} hallazgo={scopeDetective.hallazgo} pista={scopeDetective.pista}>
+  <div slot="enunciado">
+    <p>La función calcula un resultado, pero no hay forma de verlo desde afuera. Encuentra la línea que falla y elige la forma correcta de sacar el valor.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={scopeLab.id} numero={4} titulo={scopeLab.titulo} inicial={scopeLab.inicial} verificaciones={scopeLab.verificaciones} pistas={scopeLab.pistas} solucion={scopeLab.solucion} explicacion={scopeLab.explicacion}>
+  <div slot="enunciado">
+    <p>Esta función funciona, pero escribe en una variable global. Cámbiala para que <b>devuelva</b> el resultado y no toque nada de afuera.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

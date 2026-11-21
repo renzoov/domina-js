@@ -25,6 +25,8 @@ colors:
   chalk-lime: "#c4ec8c"
   chalk-red: "#f08a7e"
   sage: "#8fb7a1"
+  well: "rgba(0, 0, 0, 0.14)"
+  well-deep: "rgba(0, 0, 0, 0.18)"
 typography:
   display:
     fontFamily: "Cabin Sketch, Atkinson Hyperlegible, cursive"
@@ -61,6 +63,16 @@ typography:
     fontSize: "1.0625rem"
     fontWeight: 400
     lineHeight: 1.65
+  ui:
+    fontFamily: "Atkinson Hyperlegible, system-ui, sans-serif"
+    fontSize: "1rem"
+    fontWeight: 400
+    lineHeight: 1.55
+  small:
+    fontFamily: "Atkinson Hyperlegible, system-ui, sans-serif"
+    fontSize: "0.92rem"
+    fontWeight: 400
+    lineHeight: 1.5
   label:
     fontFamily: "Atkinson Hyperlegible, system-ui, sans-serif"
     fontSize: "0.74rem"
@@ -93,6 +105,8 @@ rounded:
   practice-frame: "12px"
   pill: "999px"
   key: "4px"
+  stroke: "3px"
+  soft: "8px"
 spacing:
   gutter: "clamp(16px, 3vw, 36px)"
   measure: "66ch"

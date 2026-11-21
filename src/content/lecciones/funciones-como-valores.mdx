@@ -1,0 +1,143 @@
+---
+titulo: Funciones como valores
+seccion: funciones
+tema: funciones-como-valores
+minutos: 10
+resumen: Qué significa que las funciones sean de primera clase, la diferencia entre pasar una función y llamarla, callbacks, funciones de orden superior que reciben o devuelven funciones, y funciones guardadas en objetos.
+intro: 'En JavaScript, una función es un <u>valor</u>, como un número o un texto: se puede guardar en una variable, meter en un array, pasar a otra función o devolver desde otra. Esta idea, que suena abstracta, está detrás de <code>map</code>, de los eventos, de los temporizadores y de casi todo el JavaScript moderno.'
+ejercicios: [valores-auto, valores-orden, valores-detective, valores-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { valoresAuto, valoresOrden, valoresDetective, valoresLab } from '../../data/ejercicios/funciones';
+
+## La función y su resultado
+
+Fíjate en la diferencia entre el nombre de una función y el nombre seguido de paréntesis:
+
+```js
+function saludar() {
+  return "¡Hola!";
+}
+
+console.log(typeof saludar);    // function: la función misma
+console.log(saludar());         // ¡Hola!: lo que devuelve al ejecutarla
+
+const otroNombre = saludar;     // la misma función, con otro nombre
+console.log(otroNombre());
+```
+
+Los paréntesis **ejecutan**. Sin ellos, hablas de la función como un objeto más, sin ejecutarla. Esta distinción es la clave de todo el tema.
+
+## Callbacks: pasar una función a otra
+
+Un **callback** es una función que le pasas a otra para que **ella** la llame cuando corresponda:
+
+```js
+const precios = [10, 25, 8];
+
+const conIva = precios.map((p) => p * 1.2);     // map llama al callback con cada precio
+const caros = precios.filter((p) => p > 9);     // filter decide qué se queda
+
+console.log(conIva);
+console.log(caros);
+```
+
+Lo mismo con un temporizador o un evento: le das la función y el runtime la llamará más tarde.
+
+```js
+function avisar() {
+  console.log("¡Tiempo!");
+}
+
+setTimeout(avisar, 1000);       // bien: pasas la función
+// setTimeout(avisar(), 1000);  // mal: la ejecutas ahora y pasas undefined
+```
+
+## Funciones de orden superior
+
+Una función que **recibe** o **devuelve** funciones se llama de **orden superior**. Puedes escribir las tuyas:
+
+```js
+function repetir(veces, accion) {
+  for (let i = 1; i <= veces; i++) {
+    accion(i);
+  }
+}
+
+repetir(3, (n) => console.log(`Vuelta ${n}`));
+```
+
+Y una función que **devuelve** otra es una fábrica, como las que viste en *Closures*:
+
+```js
+const crearValidador = (minimo) => (texto) => texto.length >= minimo;
+
+const claveSegura = crearValidador(8);
+console.log(claveSegura("abc"));
+console.log(claveSegura("unaclavelarga"));
+```
+
+## Funciones guardadas en estructuras
+
+Como son valores, puedes guardarlas en objetos y arrays. Un objeto de funciones reemplaza a menudo un `switch` largo:
+
+```js
+const formatos = {
+  mayus: (t) => t.toUpperCase(),
+  minus: (t) => t.toLowerCase(),
+  titulo: (t) => t[0].toUpperCase() + t.slice(1).toLowerCase(),
+};
+
+function formatear(texto, estilo) {
+  const fn = formatos[estilo] ?? ((t) => t);
+  return fn(texto);
+}
+
+console.log(formatear("hOLA mUNDO", "titulo"));
+console.log(formatear("hola", "desconocido"));
+```
+
+<Nota tipo="consejo">
+  Si un callback solo pasa su argumento a otra función, puedes pasar esa función directamente: `nombres.map((n) => mayus(n))` es lo mismo que `nombres.map(mayus)`. Pero ojo: `map` pasa tres argumentos (elemento, índice y array), y algunas funciones, como `parseInt`, usan el segundo.
+</Nota>
+
+## Resumen
+
+- Las funciones son **valores**: se guardan, se pasan y se devuelven.
+- `f` es la función; `f()` la **ejecuta**. Para pasarla, va sin paréntesis.
+- Un **callback** es una función que otra función llama por ti.
+- Las funciones de **orden superior** reciben o devuelven funciones.
+- Un objeto de funciones es una alternativa clara a un `switch` largo.
+
+<Practica>
+
+<Autoevaluacion id={valoresAuto.id} numero={1} titulo={valoresAuto.titulo} preguntas={valoresAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={valoresOrden.id} numero={2} titulo={valoresOrden.titulo} codigo={valoresOrden.codigo} salida={valoresOrden.salida} inicio={valoresOrden.inicio} explicacion={valoresOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Funciones guardadas en un objeto y una función que devuelve otra. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={valoresDetective.id} numero={3} titulo={valoresDetective.titulo} codigo={valoresDetective.codigo} error={valoresDetective.error} culpable={valoresDetective.culpable} arreglos={valoresDetective.arreglos} hallazgo={valoresDetective.hallazgo} pista={valoresDetective.pista}>
+  <div slot="enunciado">
+    <p>Un <code>map</code> que se queja de recibir <code>NaN</code>. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={valoresLab.id} numero={4} titulo={valoresLab.titulo} inicial={valoresLab.inicial} verificaciones={valoresLab.verificaciones} pistas={valoresLab.pistas} solucion={valoresLab.solucion} explicacion={valoresLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>aplicarDosVeces(fn, valor)</code>, una función de orden superior que recibe otra función y la aplica dos veces.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

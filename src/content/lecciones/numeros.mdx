@@ -1,0 +1,175 @@
+---
+titulo: Números
+seccion: fundamentos
+tema: numeros
+minutos: 13
+resumen: Cómo representa JavaScript los números, por qué 0.1 + 0.2 no da 0.3, operadores y redondeos, Infinity y NaN, BigInt, separadores numéricos (ES2021) y Math.sumPrecise (ES2026).
+intro: 'JavaScript tiene un solo tipo para casi todos los números: <code>number</code>. Sirve para enteros y decimales, positivos y negativos. Es cómodo, pero tiene una consecuencia que sorprende a todo el mundo la primera vez: <u>0.1 + 0.2 no da 0.3</u>.'
+pizarron: decimales
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Cada tarjeta muestra el valor de la variable y, entre paréntesis, cómo se guarda de verdad en binario. Pulsa <b>Siguiente</b> y fíjate de dónde sale el famoso <code>0.30000000000000004</code>, y cómo lo evita la versión en céntimos.'
+ejercicios: [numeros-auto, numeros-orden, numeros-detective, numeros-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { numerosAuto, numerosOrden, numerosDetective, numerosLab } from '../../data/ejercicios/fundamentos';
+
+## Escribir números
+
+Un número se escribe tal cual, sin comillas. JavaScript acepta varias formas:
+
+```js
+console.log(42);          // entero
+console.log(-3.75);       // decimal (con punto, nunca con coma)
+console.log(1.5e6);       // notación científica: 1.5 × 10⁶ = 1500000
+console.log(0xff);        // hexadecimal: 255
+console.log(0b1010);      // binario: 10
+console.log(1_000_000);   // separadores numéricos: un millón
+```
+
+Los **separadores numéricos** (`_`) llegaron en ES2021. El motor los ignora; solo sirven para que las personas lean cifras largas sin contar ceros.
+
+## Operadores aritméticos
+
+| Operador | Qué hace | Ejemplo | Resultado |
+|---|---|---|---|
+| `+` | Suma | `7 + 2` | `9` |
+| `-` | Resta | `7 - 2` | `5` |
+| `*` | Multiplicación | `7 * 2` | `14` |
+| `/` | División (siempre con decimales) | `7 / 2` | `3.5` |
+| `%` | Resto de la división | `7 % 2` | `1` |
+| `**` | Potencia | `7 ** 2` | `49` |
+
+Igual que en matemáticas, `*`, `/` y `%` se calculan antes que `+` y `-`, y `**` antes que todos. Si dudas, usa paréntesis: `(2 + 3) * 4` da `20`.
+
+El resto `%` es más útil de lo que parece: `n % 2 === 0` te dice si un número es par.
+
+## Por qué 0.1 + 0.2 no da 0.3
+
+Es lo que muestra el pizarrón. Los números se guardan en **binario**, en un formato estándar llamado IEEE 754, que usan casi todos los lenguajes. Muchos decimales "redondos" no tienen una representación exacta en binario, así que se guarda el valor más cercano posible. Al operar, esos pequeños errores pueden asomar:
+
+```js
+console.log(0.1 + 0.2);          // 0.30000000000000004
+console.log(1.1 + 2.2);          // 3.3000000000000003
+console.log(0.1 + 0.2 === 0.3);  // false
+```
+
+Los **enteros**, en cambio, se guardan exactos hasta un límite muy grande. Por eso las tres reglas prácticas son:
+
+- **Dinero: trabaja en céntimos** (enteros) y divide entre 100 solo para mostrar.
+- **Para mostrar decimales, redondea al final**: `total.toFixed(2)` devuelve un *texto* con dos decimales.
+- **Nunca compares decimales con `===`**. Compara si la diferencia es muy pequeña: `Math.abs(a - b) < Number.EPSILON`.
+
+## Redondear y la caja de herramientas Math
+
+`Math` reúne las operaciones más comunes:
+
+```js
+console.log(Math.round(4.5));   // 5: al entero más cercano
+console.log(Math.floor(4.9));   // 4: siempre hacia abajo
+console.log(Math.ceil(4.1));    // 5: siempre hacia arriba
+console.log(Math.trunc(-4.9));  // -4: quita los decimales
+console.log(Math.max(3, 9, 2)); // 9
+console.log(Math.min(3, 9, 2)); // 2
+console.log(Math.abs(-7));      // 7
+console.log(Math.sqrt(81));     // 9
+```
+
+`Math.random()` devuelve un decimal al azar entre 0 (incluido) y 1 (excluido). Para un entero del 1 al 6, como un dado: `Math.floor(Math.random() * 6) + 1`.
+
+## Sumar muchos decimales: Math.sumPrecise
+
+Cuando sumas muchos números de uno en uno, cada suma intermedia se redondea y los errores se acumulan. **`Math.sumPrecise`** (ES2026) recibe la lista completa, calcula la suma exacta y redondea **una sola vez**, al final:
+
+```js
+const valores = [1e20, 0.1, -1e20];
+
+let total = 0;
+total = total + valores[0];
+total = total + valores[1];
+total = total + valores[2];
+console.log(total);  // 0: el 0.1 se perdió por el camino
+
+if (typeof Math.sumPrecise === "function") {
+  console.log(Math.sumPrecise(valores));  // 0.1
+} else {
+  console.log("Tu navegador todavía no tiene Math.sumPrecise");
+}
+```
+
+Ojo: no hace magia con `0.1 + 0.2`. Esos dos valores ya están guardados como aproximaciones, y su suma exacta también se redondea a `0.30000000000000004`. Para dinero, la regla de los céntimos sigue siendo la mejor.
+
+## Infinity y NaN
+
+Dos valores especiales de tipo `number`:
+
+- **`Infinity`**: lo que da dividir entre cero, o superar el número más grande posible. Dividir entre cero **no** lanza un error.
+- **`NaN`** (*Not a Number*): el resultado de una operación numérica sin sentido.
+
+```js
+console.log(10 / 0);              // Infinity
+console.log(0 / 0);               // NaN
+console.log(Number("hola"));      // NaN
+console.log(NaN === NaN);         // false: NaN no es igual ni a sí mismo
+console.log(Number.isNaN(0 / 0)); // true: así se comprueba
+```
+
+<Nota tipo="error">
+  Un `NaN` "contagia" todo lo que toca: `NaN + 5` también es `NaN`. Si un cálculo te da `NaN`, busca hacia atrás el primer valor que no era un número de verdad, casi siempre un texto mal convertido.
+</Nota>
+
+## Enteros enormes: BigInt
+
+Un `number` representa exactos todos los enteros hasta `Number.MAX_SAFE_INTEGER`, que vale `9007199254740991` (2⁵³ − 1). Por encima empieza a saltarse valores:
+
+```js
+console.log(Number.MAX_SAFE_INTEGER);  // 9007199254740991
+console.log(9007199254740993);         // 9007199254740992 (¡se comió una unidad!)
+console.log(9007199254740993n);        // 9007199254740993n (exacto)
+console.log(2n ** 64n);                // 18446744073709551616n
+```
+
+Para esos casos existe **`BigInt`**: se escribe con una `n` al final y no tiene límite de tamaño. Lo vas a necesitar para identificadores enormes, criptografía o cálculos financieros muy grandes. Dos reglas: no puedes mezclarlo con `number` en una operación (es un `TypeError`), y no admite decimales.
+
+## Resumen
+
+- `number` sirve para enteros y decimales. Admite separadores `1_000_000` (ES2021).
+- Operadores: `+ - * / % **`, con la precedencia de las matemáticas.
+- Los decimales son **aproximaciones binarias**: `0.1 + 0.2` da `0.30000000000000004`. Para dinero, usa céntimos.
+- `Math` tiene redondeos (`round`, `floor`, `ceil`, `trunc`) y más. `Math.sumPrecise` (ES2026) suma listas sin acumular errores.
+- Dividir entre cero da `Infinity`; las operaciones sin sentido dan `NaN`, que se comprueba con `Number.isNaN`.
+- Para enteros más allá de 2⁵³ − 1, **`BigInt`**, que no se mezcla con `number`.
+
+<Practica>
+
+<Autoevaluacion id={numerosAuto.id} numero={1} titulo={numerosAuto.titulo} preguntas={numerosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={numerosOrden.id} numero={2} titulo={numerosOrden.titulo} codigo={numerosOrden.codigo} salida={numerosOrden.salida} inicio={numerosOrden.inicio} explicacion={numerosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena los resultados tal como aparecerían en la consola. Calcula cada uno antes de mover las tarjetas.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={numerosDetective.id} numero={3} titulo={numerosDetective.titulo} codigo={numerosDetective.codigo} error={numerosDetective.error} culpable={numerosDetective.culpable} arreglos={numerosDetective.arreglos} hallazgo={numerosDetective.hallazgo} pista={numerosDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien quiso sumarle 1 a un número enorme y obtuvo este error. Encuentra la línea y elige el arreglo que da un resultado exacto.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={numerosLab.id} numero={4} titulo={numerosLab.titulo} inicial={numerosLab.inicial} verificaciones={numerosLab.verificaciones} pistas={numerosLab.pistas} solucion={numerosLab.solucion} explicacion={numerosLab.explicacion}>
+  <div slot="enunciado">
+    <p>El pan cuesta 1.10 y la leche 2.20, pero el total sale <code>3.3000000000000003</code>. Arréglalo sumando en céntimos para que imprima <code>3.3</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

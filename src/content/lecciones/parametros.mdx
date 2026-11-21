@@ -1,0 +1,147 @@
+---
+titulo: Parámetros
+seccion: funciones
+tema: parametros
+minutos: 10
+resumen: Parámetros y argumentos, qué pasa cuando faltan o sobran, valores por defecto, el parámetro rest, objetos de opciones con desestructuración, el viejo arguments y cómo se pasan los objetos (por referencia compartida).
+intro: 'Los <u>parámetros</u> son los nombres que una función usa para los datos que recibe; los <u>argumentos</u>, los valores que le pasas al llamarla. JavaScript es muy flexible aquí: no comprueba cuántos argumentos llegan ni de qué tipo. Esa libertad es cómoda, pero tiene reglas que conviene conocer.'
+ejercicios: [params-auto, params-orden, params-detective, params-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { paramsAuto, paramsOrden, paramsDetective, paramsLab } from '../../data/ejercicios/funciones';
+
+## Argumentos que faltan o sobran
+
+```js
+function presentar(nombre, ciudad) {
+  return `${nombre} vive en ${ciudad}`;
+}
+
+console.log(presentar("Ana", "Lima"));          // normal
+console.log(presentar("Ana"));                  // falta uno: undefined
+console.log(presentar("Ana", "Lima", "Perú"));  // sobra uno: se ignora
+```
+
+No hay error en ningún caso: los parámetros sin argumento valen `undefined` y los argumentos de más se descartan.
+
+## Valores por defecto
+
+Un `=` después del parámetro le da un valor para cuando llegue `undefined`:
+
+```js
+function saludar(nombre = "visitante", signo = "!") {
+  return `Hola, ${nombre}${signo}`;
+}
+
+console.log(saludar());
+console.log(saludar("Eva"));
+console.log(saludar("Eva", "?"));
+console.log(saludar(undefined, "?"));  // undefined usa el valor por defecto
+console.log(saludar(null));            // null no: es un valor
+```
+
+El valor por defecto se calcula **en cada llamada**, y puede usar los parámetros anteriores: `function crear(ancho, alto = ancho)`.
+
+## El parámetro rest
+
+`...nombre` como último parámetro junta todos los argumentos restantes en un **array**:
+
+```js
+function sumarTodo(...numeros) {
+  let total = 0;
+  for (const n of numeros) total += n;
+  return total;
+}
+
+console.log(sumarTodo(1, 2, 3, 4));
+console.log(sumarTodo());
+
+function etiquetar(etiqueta, ...items) {
+  return items.map((i) => `${etiqueta}: ${i}`);
+}
+console.log(etiquetar("fruta", "pera", "uva"));
+```
+
+Es lo contrario del **spread** al llamar: `Math.max(...lista)` reparte un array en argumentos.
+
+<Nota>
+  En código antiguo verás `arguments`, un objeto con todos los argumentos que existe dentro de las funciones normales. Parece un array pero no lo es, y las flechas no lo tienen. El rest lo reemplaza con ventaja.
+</Nota>
+
+## Objetos de opciones
+
+Cuando una función tiene muchos parámetros opcionales, el orden se vuelve un problema: `crearVentana(400, 300, true, false, "oscuro")` no se entiende. La solución moderna es recibir **un objeto** y desestructurarlo, como viste en *Desestructuración y spread*:
+
+```js
+function crearVentana({ ancho = 400, alto = 300, tema = "claro", modal = false } = {}) {
+  return `${ancho}×${alto} · ${tema}${modal ? " · modal" : ""}`;
+}
+
+console.log(crearVentana({ tema: "oscuro", modal: true }));
+console.log(crearVentana());
+```
+
+Cada opción tiene nombre, el orden no importa y las que no pasas toman su valor por defecto.
+
+## Cómo se pasan los argumentos
+
+Pasar un argumento funciona como una **asignación**: el parámetro recibe una copia del valor. Con primitivos, una copia independiente; con objetos, una copia de la **referencia**, así que la función puede modificar el objeto original:
+
+```js
+function renombrar(usuario) {
+  usuario.nombre = "Cambiado";   // modifica el objeto de afuera
+}
+
+function reemplazar(usuario) {
+  usuario = { nombre: "Nuevo" }; // solo cambia la variable local
+}
+
+const ana = { nombre: "Ana" };
+reemplazar(ana);
+console.log(ana.nombre);  // Ana
+renombrar(ana);
+console.log(ana.nombre);  // Cambiado
+```
+
+Por eso es buena práctica que las funciones **no modifiquen** los objetos que reciben: si necesitan cambiar algo, que devuelvan uno nuevo.
+
+## Resumen
+
+- Los argumentos que faltan valen `undefined`; los que sobran se ignoran.
+- `param = valor` da un valor por defecto, que se usa solo con `undefined`.
+- `...resto`, siempre al final, junta los argumentos sobrantes en un array.
+- Con muchas opciones, recibe un **objeto** y desestructúralo con valores por defecto.
+- Los objetos se pasan por **referencia compartida**: la función puede modificarlos.
+
+<Practica>
+
+<Autoevaluacion id={paramsAuto.id} numero={1} titulo={paramsAuto.titulo} preguntas={paramsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={paramsOrden.id} numero={2} titulo={paramsOrden.titulo} codigo={paramsOrden.codigo} salida={paramsOrden.salida} inicio={paramsOrden.inicio} explicacion={paramsOrden.explicacion}>
+  <div slot="enunciado">
+    <p><code>undefined</code>, <code>null</code> y un array como argumento. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={paramsDetective.id} numero={3} titulo={paramsDetective.titulo} codigo={paramsDetective.codigo} error={paramsDetective.error} culpable={paramsDetective.culpable} arreglos={paramsDetective.arreglos} hallazgo={paramsDetective.hallazgo} pista={paramsDetective.pista}>
+  <div slot="enunciado">
+    <p>Este programa ni siquiera arranca. Encuentra la línea y elige el arreglo que mantiene la función útil.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={paramsLab.id} numero={4} titulo={paramsLab.titulo} inicial={paramsLab.inicial} verificaciones={paramsLab.verificaciones} pistas={paramsLab.pistas} solucion={paramsLab.solucion} explicacion={paramsLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>promedio</code> con un parámetro rest: recibe cualquier cantidad de números y, sin ninguno, devuelve 0.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

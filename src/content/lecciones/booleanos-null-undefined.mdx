@@ -1,0 +1,148 @@
+---
+titulo: Booleanos, truthy/falsy, null y undefined
+seccion: fundamentos
+tema: booleanos-null-undefined
+minutos: 11
+resumen: Los valores true y false, qué valores cuentan como verdaderos o falsos en una condición (truthy y falsy), y la diferencia entre undefined y null.
+intro: 'Un <u>booleano</u> solo puede valer <code>true</code> o <code>false</code>: es la respuesta a una pregunta de sí o no. Pero en JavaScript <u>cualquier valor</u> puede usarse como condición, y el lenguaje decide si "cuenta como verdadero". Saber esa regla te ahorra muchos errores.'
+pizarron: truthyFalsy
+mostrarPila: false
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Cada línea prueba un valor distinto en una condición <code>if (…)</code>: solo se imprime si el valor cuenta como verdadero. Antes de algunos pasos tendrás que adivinar. Ojo: hay sorpresas.'
+ejercicios: [booleanos-auto, booleanos-orden, booleanos-detective, booleanos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { booleanosAuto, booleanosOrden, booleanosDetective, booleanosLab } from '../../data/ejercicios/fundamentos';
+
+## true y false
+
+Los booleanos son los valores `true` (verdadero) y `false` (falso). Casi nunca los escribes a mano: los obtienes al **comparar**.
+
+```js
+const edad = 20;
+console.log(edad >= 18);      // true
+console.log(edad === 15);     // false
+console.log("a" !== "b");     // true
+
+const esMayor = edad >= 18;
+console.log(typeof esMayor);  // boolean
+```
+
+Para combinarlos hay tres operadores lógicos: `&&` (y), `||` (o) y `!` (no). Los vas a ver a fondo en el tema de Operadores.
+
+```js
+const tieneEntrada = true;
+const esVip = false;
+console.log(tieneEntrada && esVip);  // false: hacen falta las dos
+console.log(tieneEntrada || esVip);  // true: basta con una
+console.log(!esVip);                 // true: lo contrario
+```
+
+## Truthy y falsy
+
+Una condición como `if (…)` no exige un booleano: acepta cualquier valor y lo trata como verdadero o falso. Por eso decimos que un valor es **truthy** (cuenta como verdadero) o **falsy** (cuenta como falso).
+
+La regla es corta: **hay 8 valores falsy y todo lo demás es truthy**.
+
+| Valor falsy | Qué es |
+|---|---|
+| `false` | El booleano falso |
+| `0` y `-0` | El cero (y su versión negativa) |
+| `0n` | El cero de BigInt |
+| `""` | El texto vacío |
+| `null` | Vacío a propósito |
+| `undefined` | Sin valor |
+| `NaN` | "No es un número" |
+
+Lo que sorprende es lo que **no** está en la lista: `"0"`, `"false"`, `" "` (un espacio), `[]` y `{}` son **truthy**. Un texto con algo dentro y cualquier objeto, aunque esté vacío, cuentan como verdaderos.
+
+Para ver si un valor es truthy, conviértelo con `Boolean()` o con doble negación `!!`:
+
+```js
+console.log(Boolean(""));       // false
+console.log(Boolean("0"));      // true
+console.log(!![]);              // true
+console.log(!!0);               // false
+```
+
+## El valor por defecto con ||
+
+`||` no devuelve siempre `true` o `false`: devuelve **el primer valor truthy** que encuentra o, si no hay ninguno, el último. Eso permite un truco muy usado para poner un valor por defecto:
+
+```js
+const apodo = "";
+const mostrar = apodo || "Sin apodo";
+console.log(mostrar);  // Sin apodo
+```
+
+<Nota>
+  El truco con `||` tiene un costo: también reemplaza valores que sí son válidos pero falsy, como `0`. Si `stock` vale `0`, entonces `stock || 10` da `10`. Para eso existe `??`, que solo reemplaza `null` y `undefined`. Lo vas a ver en Operadores.
+</Nota>
+
+## undefined y null
+
+Los dos significan "no hay valor", pero con intenciones distintas:
+
+- **`undefined`** lo pone **JavaScript**: "esto todavía no tiene valor".
+- **`null`** lo pones **tú**: "aquí no hay nada, a propósito".
+
+Vas a encontrar `undefined` en estos casos:
+
+```js
+let sinAsignar;
+console.log(sinAsignar);          // undefined: variable sin valor
+
+const persona = { nombre: "Ana" };
+console.log(persona.edad);        // undefined: propiedad que no existe
+
+function saludar() {}
+console.log(saludar());           // undefined: función sin return
+```
+
+Y usas `null` cuando quieres dejar claro que algo está vacío, por ejemplo `let usuarioActual = null;` mientras nadie inició sesión.
+
+<Nota tipo="error">
+  El error más común con estos valores: pedirle una propiedad a algo que es `undefined` o `null`. `persona.direccion.calle` lanza `TypeError: Cannot read properties of undefined` si `persona.direccion` no existe. Comprueba antes, o usa `?.`, que verás en Operadores.
+</Nota>
+
+## Resumen
+
+- Los booleanos son `true` y `false`; salen de comparar y se combinan con `&&`, `||` y `!`.
+- **8 valores falsy**: `false`, `0`, `-0`, `0n`, `""`, `null`, `undefined` y `NaN`. **Todo lo demás es truthy**, incluidos `"0"`, `[]` y `{}`.
+- `Boolean(x)` o `!!x` convierten cualquier valor a booleano.
+- `a || b` devuelve el primer truthy: sirve para valores por defecto, con cuidado con el `0`.
+- `undefined` lo pone JavaScript ("sin valor"); `null` lo pones tú ("vacío a propósito").
+
+<Practica>
+
+<Autoevaluacion id={booleanosAuto.id} numero={1} titulo={booleanosAuto.titulo} preguntas={booleanosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={booleanosOrden.id} numero={2} titulo={booleanosOrden.titulo} codigo={booleanosOrden.codigo} salida={booleanosOrden.salida} inicio={booleanosOrden.inicio} explicacion={booleanosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena los resultados tal como aparecerían en la consola. Cada línea indica qué está evaluando.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={booleanosDetective.id} numero={3} titulo={booleanosDetective.titulo} codigo={booleanosDetective.codigo} error={booleanosDetective.error} culpable={booleanosDetective.culpable} arreglos={booleanosDetective.arreglos} hallazgo={booleanosDetective.hallazgo} pista={booleanosDetective.pista}>
+  <div slot="enunciado">
+    <p>El programa imprime el nombre y después se rompe. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={booleanosLab.id} numero={4} titulo={booleanosLab.titulo} inicial={booleanosLab.inicial} verificaciones={booleanosLab.verificaciones} pistas={booleanosLab.pistas} solucion={booleanosLab.solucion} explicacion={booleanosLab.explicacion}>
+  <div slot="enunciado">
+    <p>La persona dejó el campo del nombre con espacios en blanco. Haz que el saludo use <code>"Anónimo"</code> cuando no escribió nada, usando lo que aprendiste de truthy y falsy.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

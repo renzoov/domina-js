@@ -78,7 +78,7 @@ const solucionHtml = resaltar(solucion);
   .lado { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .marco { border: 2px solid color-mix(in srgb, var(--lila) 45%, transparent); border-radius: var(--r-chalk); background: var(--board-lo); overflow: hidden; min-width: 0; box-shadow: 0 0 0 4px color-mix(in srgb, var(--lila) 8%, transparent); }
   .vivo { margin-left: auto; font: 400 0.75rem var(--read); color: var(--lila); }
-  .editor { min-height: 240px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
+  .editor { min-height: 240px; background: var(--pozo); overflow: hidden; }
   .editor textarea {
     width: 100%; min-height: 240px; resize: vertical;
     padding: 12px 14px; border: 0; background: transparent;
@@ -87,24 +87,24 @@ const solucionHtml = resaltar(solucion);
   .editor textarea:focus-visible { outline: none; }
   .lado { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
   .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-  .checks li { display: flex; gap: 10px; align-items: baseline; font-size: 0.95rem; line-height: 1.45; color: var(--chalk-70); }
+  .checks li { display: flex; gap: 10px; align-items: baseline; font-size: 0.92rem; line-height: 1.45; color: var(--chalk-70); }
   .checks li :global(code) { font: 400 0.9em var(--mono); color: var(--chalk); }
   .marca { flex: none; width: 16px; height: 16px; translate: 0 3px; border: 2px solid var(--chalk-45); border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%; transition: background-color 200ms var(--ease-out), border-color 200ms var(--ease-out); }
   .checks li[data-estado='ok'] { color: var(--chalk); }
   .checks li[data-estado='ok'] .marca { background: var(--ok); border-color: var(--ok); }
   .checks li[data-estado='mal'] .marca { border-color: var(--red); }
-  .salida { padding: 10px 14px 12px; border-top: 2px dashed var(--chalk-08); background: rgba(0, 0, 0, 0.18); }
+  .salida { padding: 10px 14px 12px; border-top: 2px dashed var(--chalk-08); background: var(--pozo-hondo); }
   .salida .cv-prompt { margin: 0; font: 400 0.8rem var(--mono); }
   .salida output { display: block; margin-top: 4px; min-height: 3.2em; font: 400 0.8rem/1.55 var(--mono); color: var(--chalk); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 9.5em; overflow-y: auto; }
   .salida output.error { color: var(--red); }
   .botones { display: flex; flex-wrap: wrap; gap: 8px; }
   .botones small { font: 400 0.8rem var(--read); color: var(--azul); }
-  .pistas { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; color: var(--chalk-70); font-size: 0.95rem; line-height: 1.5; }
+  .pistas { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; color: var(--chalk-70); font-size: 0.92rem; line-height: 1.5; }
   .pistas:empty { display: none; }
   .pistas :global(li::marker) { color: var(--azul); font-weight: 700; }
   .pistas :global(code) { font-family: var(--mono); color: var(--chalk); }
   .solucion { grid-column: 1 / -1; display: grid; gap: 10px; }
-  .solucion pre { margin: 0; padding: 10px 0; font: 400 0.82rem/1.5rem var(--mono); background: rgba(0, 0, 0, 0.14); overflow-x: auto; }
+  .solucion pre { margin: 0; padding: 10px 0; font: 400 0.82rem/1.5rem var(--mono); background: var(--pozo); overflow-x: auto; }
   .solucion code { display: block; min-width: max-content; }
   .solucion .l { display: block; white-space: pre; padding-right: 12px; }
   .solucion .l i { display: inline-block; width: 34px; padding-right: 12px; text-align: right; font-style: normal; color: var(--azul); opacity: 0.75; }

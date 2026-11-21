@@ -1,0 +1,123 @@
+---
+titulo: Memoria y recolector de basura
+seccion: como-se-ejecuta-js
+tema: memoria
+minutos: 12
+resumen: Dónde guarda JavaScript los datos (pila y heap), cómo decide el recolector de basura qué liberar (alcanzabilidad), las fugas de memoria más comunes, WeakMap y WeakSet, y WeakRef y FinalizationRegistry (ES2021).
+intro: 'En JavaScript no reservas ni liberas memoria a mano: el motor lo hace por ti con un <u>recolector de basura</u>. Pero "automático" no significa "mágico". Si tu programa sigue apuntando a datos que ya no necesita, el recolector no puede liberarlos, y la memoria <u>crece sin parar</u>.'
+pizarron: recolector
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Fíjate en la nota del objeto: cuántas referencias le quedan. Un objeto sigue vivo mientras quede <b>algún camino</b> hasta él. Mira cuándo pasa a ser inalcanzable y qué hace el recolector entonces.'
+ejercicios: [memoria-auto, memoria-orden, memoria-detective, memoria-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { memoriaAuto, memoriaOrden, memoriaDetective, memoriaLab } from '../../data/ejercicios/por-dentro';
+
+## Pila y heap
+
+El motor usa dos zonas de memoria:
+
+- **La pila** (*stack*): los marcos de las llamadas a funciones, con sus valores simples. Es pequeña y rapidísima, y se libera sola cuando cada función termina.
+- **El heap** (montículo): los **objetos**, arrays y funciones. Es grande, y es lo que administra el recolector.
+
+Cuando haces `const usuario = { nombre: "Ana" }`, el objeto vive en el heap y la variable guarda una **referencia** a él, como viste en *Valores primitivos y objetos*.
+
+## Alcanzabilidad
+
+El recolector no cuenta referencias una a una: se pregunta si un objeto es **alcanzable**. Parte de unas **raíces** (las variables globales y las de las funciones que se están ejecutando) y sigue todas las referencias, marcando lo que encuentra. Lo que no marcó es inalcanzable: basura que puede liberar. A este método se le llama **marcar y barrer** (*mark-and-sweep*).
+
+Una consecuencia importante: dos objetos que se apuntan entre sí, pero a los que nadie más llega, **sí** se liberan. Lo que importa es si se puede llegar a ellos desde las raíces.
+
+<Nota>
+  No puedes decidir cuándo pasa el recolector: lo decide el motor, en el momento que le parece mejor. Tu trabajo no es liberar memoria, sino **no retener** referencias que ya no necesitas.
+</Nota>
+
+## Fugas de memoria comunes
+
+Una **fuga** es memoria que tu programa ya no usa pero que sigue alcanzable, así que nunca se libera:
+
+- **Cachés que solo crecen**: un `Map` o un array donde guardas resultados y nunca borras nada.
+- **Temporizadores olvidados**: un `setInterval` que nunca se detiene sigue manteniendo vivo todo lo que usa su función.
+- **Listeners sin quitar**: un `addEventListener` sobre un elemento que ya sacaste de la página.
+- **Closures que recuerdan de más**: una función guardada que recuerda un objeto enorme, aunque solo use un dato.
+- **Variables globales** que acumulan datos durante toda la vida de la página.
+
+Para encontrarlas, las DevTools tienen la pestaña **Memory**, que toma "fotos" del heap y te deja compararlas.
+
+## WeakMap y WeakSet
+
+Una `WeakMap` es como un `Map` cuyas **claves no retienen** a los objetos: si nadie más apunta al objeto clave, el recolector puede liberarlo y la entrada desaparece sola. Es perfecta para asociar datos extra a objetos que no controlas:
+
+```js
+const vistas = new WeakMap();
+
+let articulo = { titulo: "Closures" };
+vistas.set(articulo, 1);
+console.log(vistas.get(articulo));  // 1
+
+articulo = null;  // el objeto ya no es alcanzable…
+// …y su entrada en la WeakMap puede liberarse junto con él
+```
+
+A cambio tiene límites: las claves solo pueden ser **objetos** (o símbolos no registrados, desde ES2023), y no se puede recorrer ni preguntar su tamaño, porque sus entradas pueden desaparecer en cualquier momento. `WeakSet` es lo mismo para conjuntos.
+
+## WeakRef y FinalizationRegistry (ES2021)
+
+ES2021 sumó dos herramientas de bajo nivel:
+
+- **`WeakRef`**: una referencia que **no** mantiene vivo al objeto. Con `ref.deref()` obtienes el objeto, o `undefined` si ya fue liberado.
+- **`FinalizationRegistry`**: te deja registrar una función que se ejecutará en algún momento **después** de que un objeto sea liberado.
+
+```js
+let grande = { datos: "muchos datos" };
+const ref = new WeakRef(grande);
+
+console.log(ref.deref()?.datos);  // muchos datos (mientras siga vivo)
+```
+
+<Nota tipo="error">
+  Úsalas solo si de verdad las necesitas, por ejemplo en cachés avanzadas. El momento de la recolección es impredecible y cambia entre motores, así que un programa que **depende** de ella para funcionar bien es frágil.
+</Nota>
+
+## Resumen
+
+- Los objetos viven en el **heap**; las variables guardan referencias a ellos.
+- El recolector libera lo que **no es alcanzable** desde las raíces (*mark-and-sweep*). No controlas cuándo.
+- Las **fugas** vienen de referencias que olvidaste soltar: cachés, temporizadores, listeners, globales.
+- **`WeakMap`** y **`WeakSet`** no retienen sus claves: ideales para datos extra sobre objetos.
+- **`WeakRef`** y **`FinalizationRegistry`** (ES2021) existen, pero son para casos avanzados.
+
+<Practica>
+
+<Autoevaluacion id={memoriaAuto.id} numero={1} titulo={memoriaAuto.titulo} preguntas={memoriaAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={memoriaOrden.id} numero={2} titulo={memoriaOrden.titulo} codigo={memoriaOrden.codigo} salida={memoriaOrden.salida} inicio={memoriaOrden.inicio} explicacion={memoriaOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Ordena lo que aparecería en la consola. Ojo con la última línea: ¿es el mismo objeto?</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={memoriaDetective.id} numero={3} titulo={memoriaDetective.titulo} codigo={memoriaDetective.codigo} error={memoriaDetective.error} culpable={memoriaDetective.culpable} arreglos={memoriaDetective.arreglos} hallazgo={memoriaDetective.hallazgo} pista={memoriaDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien quiso contar visitas por nombre con una <code>WeakMap</code>. Encuentra la línea que falla y elige la estructura correcta.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={memoriaLab.id} numero={4} titulo={memoriaLab.titulo} inicial={memoriaLab.inicial} verificaciones={memoriaLab.verificaciones} pistas={memoriaLab.pistas} solucion={memoriaLab.solucion} explicacion={memoriaLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>medir(obj)</code> con una caché en una <code>WeakMap</code>: la segunda vez que se mide el mismo objeto no se debe recalcular, y la caché no debe retener los objetos.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

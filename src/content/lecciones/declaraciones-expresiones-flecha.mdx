@@ -1,0 +1,131 @@
+---
+titulo: Declaraciones, expresiones y funciones flecha
+seccion: funciones
+tema: declaraciones-expresiones-flecha
+minutos: 10
+resumen: Las tres formas de crear una función (declaración, expresión y flecha), en qué se diferencian, el retorno implícito de las flechas, cómo devolver un objeto y qué devuelve una función sin return.
+intro: 'Una función es un trozo de código con nombre que puedes ejecutar cuando quieras, tantas veces como quieras, con datos distintos cada vez. JavaScript tiene <u>tres formas de escribirlas</u>, y cada una tiene sus pequeñas diferencias. Saber cuál usar, y por qué, te va a ahorrar errores.'
+nota: 'Esta sección asume que ya viste <b>La pila de llamadas</b> y <b>Scope</b>, en la sección 4: ahí está lo que pasa por dentro cuando llamas a una función.'
+ejercicios: [formas-auto, formas-orden, formas-detective, formas-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { formasAuto, formasOrden, formasDetective, formasLab } from '../../data/ejercicios/funciones';
+
+## Declaración
+
+La forma clásica: la palabra `function`, un nombre, los parámetros entre paréntesis y el cuerpo entre llaves.
+
+```js
+function areaRectangulo(base, altura) {
+  return base * altura;
+}
+
+console.log(areaRectangulo(3, 4));
+```
+
+`return` termina la función y entrega un valor a quien la llamó. Las declaraciones se **elevan completas** (lo viste en *Contextos de ejecución y hoisting*): puedes llamarlas antes de la línea donde están escritas.
+
+## Expresión de función
+
+Una función también es un **valor**, así que puedes crearla en medio de una expresión y guardarla en una variable:
+
+```js
+const areaCirculo = function (radio) {
+  return Math.PI * radio ** 2;
+};
+
+console.log(areaCirculo(1).toFixed(2));
+```
+
+Funciona igual, pero sigue las reglas de `const`: no se puede usar antes de su línea. La expresión puede tener nombre propio (`function calcular(…)`), útil para que aparezca en la pila de llamadas al depurar.
+
+## Funciones flecha
+
+Desde ES2015, la forma más corta: sin la palabra `function`, con una flecha `=>` entre los parámetros y el cuerpo.
+
+```js
+const cuadrado = (n) => n * n;          // un parámetro, una expresión
+const sumar = (a, b) => a + b;           // dos parámetros
+const saludar = () => "¡Hola!";          // sin parámetros
+const describir = (nombre, edad) => {    // varias instrucciones: con llaves
+  const etapa = edad >= 18 ? "adulto" : "menor";
+  return `${nombre} es ${etapa}`;
+};
+
+console.log(cuadrado(5), sumar(2, 3), saludar());
+console.log(describir("Ana", 31));
+```
+
+Las reglas del cuerpo:
+
+- **Sin llaves**: el resultado de la expresión se devuelve solo. Es el **retorno implícito**.
+- **Con llaves**: es un bloque normal y necesita `return`.
+- **Para devolver un objeto** sin `return`, envuélvelo en paréntesis: `() => ({ ok: true })`. Si no, las llaves se leen como un bloque.
+
+## Sin return
+
+Una función que termina sin `return`, o con un `return` vacío, devuelve `undefined`:
+
+```js
+function avisar(texto) {
+  console.log("Aviso:", texto);
+}
+
+const resultado = avisar("guardado");
+console.log(resultado);
+```
+
+<Nota tipo="error">
+  El error más común con las flechas: agregar llaves a una flecha de una línea y olvidar el `return`. `(n) => { n * 2 }` devuelve `undefined`.
+</Nota>
+
+## ¿Cuál uso?
+
+| Forma | Úsala para |
+|---|---|
+| `function nombre() {}` | Funciones principales de un archivo, con nombre propio |
+| `const f = () => …` | Funciones cortas y callbacks (`map`, `filter`, eventos) |
+| `function` dentro de un objeto | Métodos que usan `this`; las flechas no sirven ahí (lo verás en *this*) |
+
+Hay una diferencia más, importante: las flechas **no tienen `this` propio**. Lo vas a ver en el tema *this: cómo se decide su valor*.
+
+## Resumen
+
+- Tres formas: **declaración**, **expresión** y **flecha**. Las tres crean un valor de tipo `function`.
+- Solo las declaraciones se pueden llamar antes de su línea.
+- Las flechas sin llaves tienen **retorno implícito**; con llaves, necesitan `return`.
+- Para devolver un objeto desde una flecha: `() => ({ … })`.
+- Sin `return`, una función devuelve `undefined`.
+
+<Practica>
+
+<Autoevaluacion id={formasAuto.id} numero={1} titulo={formasAuto.titulo} preguntas={formasAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={formasOrden.id} numero={2} titulo={formasOrden.titulo} codigo={formasOrden.codigo} salida={formasOrden.salida} inicio={formasOrden.inicio} explicacion={formasOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Cuatro funciones, con y sin llaves. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={formasDetective.id} numero={3} titulo={formasDetective.titulo} codigo={formasDetective.codigo} error={formasDetective.error} culpable={formasDetective.culpable} arreglos={formasDetective.arreglos} hallazgo={formasDetective.hallazgo} pista={formasDetective.pista}>
+  <div slot="enunciado">
+    <p>El error salta al usar el resultado, pero la causa está en la función. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={formasLab.id} numero={4} titulo={formasLab.titulo} inicial={formasLab.inicial} verificaciones={formasLab.verificaciones} pistas={formasLab.pistas} solucion={formasLab.solucion} explicacion={formasLab.explicacion}>
+  <div slot="enunciado">
+    <p>Reescribe las dos funciones como flechas de una línea, con retorno implícito.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

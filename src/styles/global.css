@@ -40,6 +40,14 @@
   --read: 'Atkinson Hyperlegible', system-ui, sans-serif;
   --mono: 'Fira Code', ui-monospace, monospace;
 
+  /* Fondos hundidos de los paneles de código y consolas */
+  --pozo: rgba(0, 0, 0, 0.14);
+  --pozo-hondo: rgba(0, 0, 0, 0.18);
+
+  /* Radios regulares: trazos finos (rayas, tizas de la bandeja) y superficies suaves (botones mínimos) */
+  --r-trazo: 3px;
+  --r-suave: 8px;
+
   /* bordes de tiza: radios irregulares */
   --r-chalk: 5px 9px 4px 8px / 8px 4px 9px 5px;
   --r-chalk-2: 4px 8px 5px 7px / 7px 5px 8px 4px;
@@ -78,7 +86,7 @@ body { margin: 0; min-height: 100vh; background: var(--edge); }
 }
 ::-webkit-scrollbar { width: 12px; height: 12px; }
 ::-webkit-scrollbar-track { background: var(--edge); }
-::-webkit-scrollbar-thumb { background: var(--chalk-45); border-radius: 8px; border: 3px solid var(--edge); }
+::-webkit-scrollbar-thumb { background: var(--chalk-45); border-radius: var(--r-suave); border: 3px solid var(--edge); }
 
 a { color: inherit; text-underline-offset: 0.22em; text-decoration-thickness: 1px; }
 img, svg { display: block; max-width: 100%; }
@@ -89,7 +97,7 @@ button { font: inherit; color: inherit; }
   position: relative;
   margin: 12px;
   min-height: calc(100vh - 24px);
-  border-radius: 6px;
+  border-radius: var(--r-suave);
   overflow: clip;
   background:
     radial-gradient(ellipse 520px 160px at 78% 4%, var(--chalk-04), transparent 70%),
@@ -144,7 +152,7 @@ button { font: inherit; color: inherit; }
   position: absolute; left: -1.25em; top: 0.72em;
   width: 0.85em; height: 4px;
   background: var(--naranja);
-  border-radius: 3px;
+  border-radius: var(--r-trazo);
   transform: rotate(-8deg);
 }
 .prosa > ul > li:nth-child(3n + 2)::before { background: var(--azul); }
@@ -178,7 +186,7 @@ button { font: inherit; color: inherit; }
   font: 400 0.875rem/1.6 var(--mono);
   padding: 14px 18px;
   margin: 0 0 1.4em;
-  background: rgba(0, 0, 0, 0.18) !important;
+  background: var(--pozo-hondo) !important;
   border: 2px solid var(--chalk-15);
   border-radius: var(--r-chalk);
   overflow-x: auto;
@@ -290,7 +298,7 @@ button { font: inherit; color: inherit; }
   padding: 6px 10px;
   font: 700 0.82rem/1 var(--read);
   color: var(--chalk-70);
-  background: none; border: 0; border-radius: 6px;
+  background: none; border: 0; border-radius: var(--r-suave);
   cursor: pointer;
 }
 .cv-btn:hover { color: var(--chalk); background: var(--chalk-08); }
