@@ -1,0 +1,171 @@
+---
+titulo: Campos públicos y privados
+seccion: clases
+tema: campos-privados
+minutos: 10
+resumen: Campos de clase públicos, campos y métodos privados con # (ES2022), el operador #campo in obj, campos y bloques static, y el patrón campo privado + getter para datos de solo lectura.
+intro: 'Hasta 2022, en JavaScript no había forma de esconder de verdad un dato dentro de un objeto: todo lo que estaba en <code>this</code> se podía leer y cambiar desde afuera. Los <u>campos privados</u>, marcados con <code>#</code>, lo resolvieron: ahora una clase puede decidir qué expone y qué protege.'
+ejercicios: [campos-auto, campos-orden, campos-detective, campos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { camposAuto, camposOrden, camposDetective, camposLab } from '../../data/ejercicios/clases';
+
+## Campos públicos
+
+Un **campo** declarado en el cuerpo de la clase se crea en cada instancia con su valor inicial, sin necesidad de escribirlo en el constructor:
+
+```js
+class Tarea {
+  hecha = false;
+  etiquetas = [];
+
+  constructor(titulo) {
+    this.titulo = titulo;
+  }
+}
+
+const t = new Tarea("Estudiar clases");
+console.log(t);
+```
+
+Cada instancia recibe su **propio** array `etiquetas`: el inicializador se evalúa en cada `new`.
+
+## Campos y métodos privados (ES2022)
+
+Con `#` delante del nombre, el campo es **privado**: solo el código escrito dentro de la clase puede usarlo.
+
+```js
+class Cronometro {
+  #inicio = null;
+  #vueltas = [];
+
+  iniciar() {
+    this.#inicio = 0;
+  }
+
+  vuelta(segundos) {
+    this.#vueltas.push(segundos);
+    return this.#formatear(segundos);
+  }
+
+  #formatear(s) {           // método privado
+    return `vuelta ${this.#vueltas.length}: ${s} s`;
+  }
+}
+
+const c = new Cronometro();
+c.iniciar();
+console.log(c.vuelta(42));
+console.log(Object.keys(c));  // los privados no aparecen
+```
+
+Intentar usar `c.#vueltas` fuera de la clase ni siquiera llega a ejecutarse: es un `SyntaxError` al analizar el código.
+
+<Nota>
+  `#vueltas` y `vueltas` son nombres **distintos**: el `#` es parte del nombre. Y no se puede acceder con corchetes: `c["#vueltas"]` busca una propiedad pública que no existe.
+</Nota>
+
+## Solo lectura hacia afuera
+
+El patrón más común: el dato es privado y un **getter** lo expone para leerlo, sin setter. La única forma de cambiarlo es a través de los métodos de la clase, donde pones las validaciones:
+
+```js
+class Inventario {
+  #stock = 0;
+
+  get stock() {
+    return this.#stock;
+  }
+
+  agregar(n) {
+    if (n <= 0) throw new RangeError("La cantidad debe ser positiva");
+    this.#stock += n;
+  }
+}
+
+const inv = new Inventario();
+inv.agregar(5);
+console.log(inv.stock);
+```
+
+## ¿Es de mi clase? `#campo in obj`
+
+Dentro de la clase, `#campo in obj` comprueba si un objeto tiene ese campo privado, es decir, si fue creado por esta clase:
+
+```js
+class Moneda {
+  #codigo;
+  constructor(codigo) { this.#codigo = codigo; }
+
+  static esMoneda(x) {
+    return #codigo in x;
+  }
+}
+
+console.log(Moneda.esMoneda(new Moneda("PEN")));
+console.log(Moneda.esMoneda({ codigo: "PEN" }));
+```
+
+## Campos y bloques static
+
+Los campos `static` pertenecen a la clase y se comparten. Un bloque `static { … }` se ejecuta **una sola vez**, al definir la clase, para inicializaciones más complejas:
+
+```js
+class Config {
+  static entorno = "producción";
+  static #claves = new Map();
+
+  static {
+    Config.#claves.set("api", "https://api.ejemplo.com");
+    Config.#claves.set("cdn", "https://cdn.ejemplo.com");
+  }
+
+  static url(nombre) {
+    return Config.#claves.get(nombre);
+  }
+}
+
+console.log(Config.entorno, Config.url("api"));
+```
+
+## Resumen
+
+- Los **campos** declarados en la clase se crean en cada instancia.
+- `#nombre` es **privado**: solo existe dentro de la clase; usarlo afuera es un `SyntaxError`.
+- También hay **métodos** privados: `#ayudante() {…}`.
+- Privado + **getter** = dato de solo lectura hacia afuera.
+- `#campo in obj` comprueba si un objeto es de tu clase.
+- `static` para lo que es de la clase; `static { }` para inicializarla.
+
+<Practica>
+
+<Autoevaluacion id={camposAuto.id} numero={1} titulo={camposAuto.titulo} preguntas={camposAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={camposOrden.id} numero={2} titulo={camposOrden.titulo} codigo={camposOrden.codigo} salida={camposOrden.salida} inicio={camposOrden.inicio} explicacion={camposOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un campo privado por instancia y uno estático compartido. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={camposDetective.id} numero={3} titulo={camposDetective.titulo} codigo={camposDetective.codigo} error={camposDetective.error} culpable={camposDetective.culpable} arreglos={camposDetective.arreglos} hallazgo={camposDetective.hallazgo} pista={camposDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien quiere ver cuánto queda en la billetera. Encuentra la línea que falla y elige la forma correcta de leer el saldo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={camposLab.id} numero={4} titulo={camposLab.titulo} inicial={camposLab.inicial} verificaciones={camposLab.verificaciones} pistas={camposLab.pistas} solucion={camposLab.solucion} explicacion={camposLab.explicacion}>
+  <div slot="enunciado">
+    <p>Haz que el saldo sea privado y de solo lectura: que se pueda consultar, pero cambiar solo con <code>depositar</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

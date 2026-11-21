@@ -1,0 +1,151 @@
+---
+titulo: La sintaxis class
+seccion: clases
+tema: sintaxis-class
+minutos: 11
+resumen: Cómo definir una clase con constructor y métodos, crear instancias con new, getters y setters, métodos estáticos, y qué es una clase por debajo (una función con un prototipo).
+intro: 'Cuando necesitas muchos objetos con la misma forma y el mismo comportamiento (usuarios, productos, cuentas), escribirlos uno por uno no escala. Una <u>clase</u> es un molde: defines una vez qué datos tiene cada objeto y qué sabe hacer, y después fabricas los que quieras con <code>new</code>.'
+nota: 'Esta sección se apoya en <b>Prototipos y la cadena de prototipos</b> (sección 5) y en <b>this</b> (sección 3). Las clases son una sintaxis más cómoda sobre esos dos mecanismos.'
+ejercicios: [clase-auto, clase-orden, clase-detective, clase-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { claseAuto, claseOrden, claseDetective, claseLab } from '../../data/ejercicios/clases';
+
+## Una clase y sus instancias
+
+```js
+class Producto {
+  constructor(nombre, precio) {
+    this.nombre = nombre;
+    this.precio = precio;
+  }
+
+  conIva() {
+    return this.precio * 1.21;
+  }
+
+  describir() {
+    return `${this.nombre}: ${this.precio}`;
+  }
+}
+
+const mate = new Producto("Mate", 100);
+const termo = new Producto("Termo", 250);
+
+console.log(mate.describir());
+console.log(termo.conIva());
+console.log(mate);
+```
+
+- El **constructor** se ejecuta en cada `new`, con los argumentos que pases. Ahí guardas los datos en `this`, que es el objeto nuevo.
+- Los **métodos** se escriben sin `function` ni comas entre ellos.
+- Cada objeto creado con `new` es una **instancia** de la clase.
+
+## Qué es una clase por debajo
+
+Una clase no es un tipo nuevo de cosa: es una **función** con un **prototipo**. Los métodos no se copian en cada instancia, viven una sola vez en `Clase.prototype`, como viste en *Prototipos*:
+
+```js
+class Saludo {
+  hola() { return "hola"; }
+}
+
+const s = new Saludo();
+console.log(typeof Saludo);
+console.log(Object.getPrototypeOf(s) === Saludo.prototype);
+console.log(Object.hasOwn(s, "hola"));  // false: lo hereda
+```
+
+`new` hace cuatro cosas: crea un objeto vacío, lo enlaza a `Clase.prototype`, ejecuta el constructor con `this` apuntando a él y lo devuelve.
+
+## Getters y setters
+
+Un **getter** se lee como una propiedad, pero se calcula en cada lectura. Un **setter** se ejecuta al asignar, y sirve para validar:
+
+```js
+class Temperatura {
+  constructor(celsius) {
+    this.celsius = celsius;
+  }
+
+  get fahrenheit() {
+    return this.celsius * 9 / 5 + 32;
+  }
+
+  set fahrenheit(valor) {
+    this.celsius = (valor - 32) * 5 / 9;
+  }
+}
+
+const t = new Temperatura(25);
+console.log(t.fahrenheit);   // sin paréntesis
+t.fahrenheit = 212;
+console.log(t.celsius);
+```
+
+## Métodos estáticos
+
+Un método `static` es de la **clase**, no de las instancias. Se usa para utilidades y para "fábricas" que crean instancias de formas especiales:
+
+```js
+class Color {
+  constructor(r, g, b) {
+    Object.assign(this, { r, g, b });
+  }
+
+  static desdeHex(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return new Color(n >> 16, (n >> 8) & 255, n & 255);
+  }
+}
+
+console.log(Color.desdeHex("#F7DF1E"));
+```
+
+Ya conoces varios: `Array.from`, `Object.keys`, `Number.isInteger`.
+
+<Nota tipo="ojo">
+  Dos diferencias con las funciones normales: las clases **no se elevan** (están en la zona muerta temporal hasta su línea) y su código corre siempre en **modo estricto**.
+</Nota>
+
+## Resumen
+
+- `class Nombre { constructor() {…} metodo() {…} }` define un molde; `new Nombre()` crea instancias.
+- El **constructor** prepara cada instancia guardando datos en `this`.
+- Los **métodos** viven en el prototipo y se comparten.
+- **Getters** y **setters** se usan como propiedades, pero ejecutan código.
+- Los métodos **static** son de la clase: `Clase.metodo()`.
+- Una clase es una función: no se eleva, corre en modo estricto y exige `new`.
+
+<Practica>
+
+<Autoevaluacion id={claseAuto.id} numero={1} titulo={claseAuto.titulo} preguntas={claseAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={claseOrden.id} numero={2} titulo={claseOrden.titulo} codigo={claseOrden.codigo} salida={claseOrden.salida} inicio={claseOrden.inicio} explicacion={claseOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una clase con un método normal y uno estático. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={claseDetective.id} numero={3} titulo={claseDetective.titulo} codigo={claseDetective.codigo} error={claseDetective.error} culpable={claseDetective.culpable} arreglos={claseDetective.arreglos} hallazgo={claseDetective.hallazgo} pista={claseDetective.pista}>
+  <div slot="enunciado">
+    <p>La cuenta nunca llega a crearse. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={claseLab.id} numero={4} titulo={claseLab.titulo} inicial={claseLab.inicial} verificaciones={claseLab.verificaciones} pistas={claseLab.pistas} solucion={claseLab.solucion} explicacion={claseLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe la clase <code>Rectangulo</code> con un constructor, un método <code>area()</code> y un getter <code>perimetro</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

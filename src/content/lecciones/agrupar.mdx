@@ -1,0 +1,140 @@
+---
+titulo: Agrupar datos
+seccion: colecciones
+tema: agrupar
+minutos: 8
+resumen: Cómo agrupar los elementos de una lista con Object.groupBy y Map.groupBy (ES2024), qué devuelven, cuándo usar cada uno, cómo se hacía antes con reduce y cómo resumir cada grupo.
+intro: 'Ventas por mes, tareas por estado, alumnos por curso: agrupar una lista según una característica es de lo más común al trabajar con datos. Hasta 2024 había que escribirlo a mano con <code>reduce</code>. Ahora es <u>una sola línea</u>.'
+ejercicios: [agrupar-auto, agrupar-orden, agrupar-detective, agrupar-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { agruparAuto, agruparOrden, agruparDetective, agruparLab } from '../../data/ejercicios/colecciones';
+
+## Object.groupBy
+
+Recibe la lista y una función que, para cada elemento, devuelve **el nombre de su grupo**. Devuelve un objeto con un array por grupo:
+
+```js
+const tareas = [
+  { titulo: "Diseñar logo", estado: "hecha" },
+  { titulo: "Escribir textos", estado: "pendiente" },
+  { titulo: "Publicar", estado: "pendiente" },
+];
+
+const porEstado = Object.groupBy(tareas, (t) => t.estado);
+
+console.log(Object.keys(porEstado));
+console.log(porEstado.pendiente.map((t) => t.titulo));
+console.log(porEstado.bloqueada ?? []);  // los grupos vacíos no existen
+```
+
+La función puede calcular el grupo como quieras:
+
+```js
+const edades = [12, 35, 70, 17, 44];
+const etapas = Object.groupBy(edades, (e) => (e < 18 ? "menor" : e < 65 ? "adulto" : "mayor"));
+console.log(etapas);
+```
+
+El objeto que devuelve no tiene prototipo, como uno creado con `Object.create(null)`: no hereda `toString` ni nada más, así que ningún grupo choca con una propiedad heredada.
+
+## Map.groupBy
+
+Igual, pero devuelve un `Map`. Úsalo cuando la clave del grupo **no es un texto**, por ejemplo un objeto:
+
+```js
+const ana = { nombre: "Ana" };
+const luis = { nombre: "Luis" };
+
+const comentarios = [
+  { autor: ana, texto: "¡Genial!" },
+  { autor: luis, texto: "Gracias" },
+  { autor: ana, texto: "Otra cosa" },
+];
+
+const porAutor = Map.groupBy(comentarios, (c) => c.autor);
+console.log(porAutor.get(ana).length);
+```
+
+Con `Object.groupBy`, las dos personas se convertirían en el mismo texto, `"[object Object]"`.
+
+## Antes de 2024
+
+Lo vas a ver en código existente: agrupar con `reduce`.
+
+```js
+const palabras = ["sol", "mar", "sal"];
+
+const porInicial = palabras.reduce((grupos, p) => {
+  (grupos[p[0]] ??= []).push(p);
+  return grupos;
+}, {});
+
+console.log(porInicial);
+```
+
+Hace lo mismo, pero hay que leerlo dos veces para entenderlo. `Object.groupBy(palabras, (p) => p[0])` lo dice directamente.
+
+<Nota>
+  ¿Por qué es `Object.groupBy(lista, …)` y no `lista.groupBy(…)`? Se intentó como método de array, pero chocaba con una librería antigua que ya agregaba un `groupBy` a todos los arrays, y rompía páginas existentes.
+</Nota>
+
+## Resumir cada grupo
+
+Agrupar suele ser el primer paso. Después, cada grupo se resume: contar, sumar, quedarse con el mayor…
+
+```js
+const ventas = [
+  { mes: "ene", monto: 100 },
+  { mes: "feb", monto: 80 },
+  { mes: "ene", monto: 50 },
+];
+
+const porMes = Object.groupBy(ventas, (v) => v.mes);
+const totales = Object.fromEntries(
+  Object.entries(porMes).map(([mes, lista]) => [mes, lista.reduce((s, v) => s + v.monto, 0)])
+);
+
+console.log(totales);
+```
+
+## Resumen
+
+- `Object.groupBy(lista, fn)` (ES2024) agrupa en un objeto: una clave por grupo, con un array de elementos.
+- `Map.groupBy` hace lo mismo con un `Map`, para claves que no son texto.
+- Solo existen los grupos con elementos: usa `?? []` al leerlos.
+- Son estáticos: `Object.groupBy(lista, …)`, no `lista.groupBy(…)`.
+- Agrupar y después resumir cada grupo es un patrón muy común.
+
+<Practica>
+
+<Autoevaluacion id={agruparAuto.id} numero={1} titulo={agruparAuto.titulo} preguntas={agruparAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={agruparOrden.id} numero={2} titulo={agruparOrden.titulo} codigo={agruparOrden.codigo} salida={agruparOrden.salida} inicio={agruparOrden.inicio} explicacion={agruparOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Las mismas ventas, agrupadas de dos formas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={agruparDetective.id} numero={3} titulo={agruparDetective.titulo} codigo={agruparDetective.codigo} error={agruparDetective.error} culpable={agruparDetective.culpable} arreglos={agruparDetective.arreglos} hallazgo={agruparDetective.hallazgo} pista={agruparDetective.pista}>
+  <div slot="enunciado">
+    <p>Se querían separar las notas aprobadas de las desaprobadas. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={agruparLab.id} numero={4} titulo={agruparLab.titulo} inicial={agruparLab.inicial} verificaciones={agruparLab.verificaciones} pistas={agruparLab.pistas} solucion={agruparLab.solucion} explicacion={agruparLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>contarPorInicial</code>: agrupa las palabras por su primera letra y cuenta cuántas hay en cada grupo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

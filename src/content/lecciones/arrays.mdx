@@ -1,0 +1,127 @@
+---
+titulo: Arrays
+seccion: colecciones
+tema: arrays
+minutos: 10
+resumen: Qué es un array, cómo crearlo, leer y escribir por índice, length, at() con índices negativos (ES2022), agregar y quitar con push, pop, shift y unshift, buscar con includes e indexOf, los huecos y Array.from.
+intro: 'Un array es una <u>lista ordenada</u> de valores: los productos de un carrito, los mensajes de un chat, los puntos de un gráfico. Es la estructura de datos que más vas a usar después de los objetos, y JavaScript le da una enorme cantidad de herramientas.'
+ejercicios: [arrays-auto, arrays-orden, arrays-detective, arrays-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { arraysAuto, arraysOrden, arraysDetective, arraysLab } from '../../data/ejercicios/colecciones';
+
+## Crear y leer
+
+Un array se escribe entre corchetes. Cada elemento tiene un **índice**, que empieza en 0:
+
+```js
+const frutas = ["manzana", "pera", "uva"];
+
+console.log(frutas[0]);        // manzana
+console.log(frutas.length);    // 3
+console.log(frutas[frutas.length - 1]);  // el último
+console.log(frutas.at(-1));    // el último, con at (ES2022)
+console.log(frutas[10]);       // undefined: no existe
+```
+
+Un array puede guardar valores de cualquier tipo, mezclados, incluso otros arrays. Pero en la práctica, una lista suele tener elementos **del mismo tipo**, y así es más fácil trabajar con ella.
+
+## Cambiar elementos
+
+```js
+const tareas = ["leer", "escribir"];
+
+tareas[1] = "practicar";    // reemplaza
+tareas.push("descansar");   // agrega al final
+tareas.unshift("despertar"); // agrega al principio
+console.log(tareas);
+
+const ultima = tareas.pop();     // quita del final y la devuelve
+const primera = tareas.shift();  // quita del principio
+console.log(ultima, primera, tareas);
+```
+
+Igual que con los objetos, `const` no impide cambiar el contenido: solo reasignar la variable.
+
+## Buscar
+
+```js
+const colores = ["rojo", "verde", "azul", "verde"];
+
+console.log(colores.includes("azul"));     // ¿está?
+console.log(colores.indexOf("verde"));     // primer índice
+console.log(colores.lastIndexOf("verde")); // último índice
+console.log(colores.indexOf("negro"));     // -1: no está
+```
+
+Para buscar con una condición, como "el primer número mayor que 10", están `find` y `findIndex`, en el próximo tema.
+
+## Recorrer
+
+```js
+const notas = [8, 6, 9];
+
+for (const nota of notas) {
+  console.log(nota);
+}
+
+for (const [i, nota] of notas.entries()) {
+  console.log(`nota ${i + 1}: ${nota}`);
+}
+```
+
+## Crear arrays de otras formas
+
+```js
+console.log(Array.from("hola"));                     // de un iterable
+console.log(Array.from({ length: 3 }, (_, i) => i * 10)); // con una función
+console.log(Array.of(7));                            // un array con el 7
+console.log(new Array(3).fill(0));                   // tres ceros
+console.log([..."abc", ...[1, 2]]);                  // con spread
+```
+
+<Nota tipo="ojo">
+  Asignar más allá del final crea **huecos**: `lista[10] = "x"` en un array de 3 elementos deja los índices 3 a 9 vacíos y `length` en 11. Los métodos tratan los huecos de forma distinta entre sí. Evítalos: usa `push`.
+</Nota>
+
+## Resumen
+
+- Un array es una lista ordenada; los índices van de `0` a `length - 1`.
+- `at(-1)` lee desde el final (ES2022).
+- `push`/`pop` trabajan al final; `unshift`/`shift`, al principio.
+- `includes` e `indexOf` buscan valores; `for...of` recorre.
+- `Array.from`, `Array.of`, `fill` y spread crean arrays.
+- `typeof []` es `"object"`: usa `Array.isArray`.
+
+<Practica>
+
+<Autoevaluacion id={arraysAuto.id} numero={1} titulo={arraysAuto.titulo} preguntas={arraysAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={arraysOrden.id} numero={2} titulo={arraysOrden.titulo} codigo={arraysOrden.codigo} salida={arraysOrden.salida} inicio={arraysOrden.inicio} explicacion={arraysOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una asignación que deja huecos. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={arraysDetective.id} numero={3} titulo={arraysDetective.titulo} codigo={arraysDetective.codigo} error={arraysDetective.error} culpable={arraysDetective.culpable} arreglos={arraysDetective.arreglos} hallazgo={arraysDetective.hallazgo} pista={arraysDetective.pista}>
+  <div slot="enunciado">
+    <p>Los tres nombres se imprimen bien, pero después el programa falla. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={arraysLab.id} numero={4} titulo={arraysLab.titulo} inicial={arraysLab.inicial} verificaciones={arraysLab.verificaciones} pistas={arraysLab.pistas} solucion={arraysLab.solucion} explicacion={arraysLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>rotar(lista)</code>: el primero pasa al final, en un array nuevo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,154 @@
+---
+titulo: Datos binarios
+seccion: colecciones
+tema: datos-binarios
+minutos: 12
+resumen: ArrayBuffer, arrays tipados (Uint8Array, Float32Array…) y DataView, cómo se desbordan los valores, buffers redimensionables y transfer (ES2024), Float16Array (ES2025) y la conversión a base64 y hexadecimal en Uint8Array (ES2026).
+intro: 'Imágenes, audio, archivos, mensajes de red, criptografía: por debajo, todo son <u>bytes</u>. Para trabajar con ellos de forma eficiente, JavaScript tiene un conjunto de herramientas propio: un bloque de memoria cruda y distintas "lentes" para leerlo como números de distintos tamaños.'
+ejercicios: [binarios-auto, binarios-orden, binarios-detective, binarios-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { binariosAuto, binariosOrden, binariosDetective, binariosLab } from '../../data/ejercicios/colecciones';
+
+## Buffer y vistas
+
+Un **`ArrayBuffer`** es un bloque de bytes de tamaño fijo. No se puede leer directamente: necesitas una **vista** que diga cómo interpretar esos bytes.
+
+```js
+const buffer = new ArrayBuffer(8);     // 8 bytes, todos en 0
+
+const bytes = new Uint8Array(buffer);  // vista de 8 números de 0 a 255
+bytes[0] = 255;
+bytes[1] = 1;
+
+const pares = new Uint16Array(buffer); // los mismos bytes, de a 2
+console.log(bytes.length, pares.length);
+console.log(pares[0]);                 // 255 + 1 × 256 = 511
+```
+
+Las dos vistas miran **la misma memoria**: cambiar una cambia lo que ve la otra.
+
+## Arrays tipados
+
+Cada tipo fija cuántos bytes ocupa cada elemento y qué valores admite:
+
+| Tipo | Bytes | Valores |
+|---|---|---|
+| `Uint8Array` | 1 | 0 a 255 |
+| `Int8Array` | 1 | -128 a 127 |
+| `Uint8ClampedArray` | 1 | 0 a 255, sin dar la vuelta (para imágenes) |
+| `Int16Array`, `Uint16Array` | 2 | Enteros de 16 bits |
+| `Int32Array`, `Uint32Array` | 4 | Enteros de 32 bits |
+| `Float16Array` (ES2025) | 2 | Decimales de media precisión |
+| `Float32Array`, `Float64Array` | 4 y 8 | Decimales |
+| `BigInt64Array`, `BigUint64Array` | 8 | Enteros de 64 bits, como BigInt |
+
+Se pueden crear sin un buffer explícito, y se usan casi como arrays: tienen `map`, `filter`, `at`, `slice`…, pero su **largo es fijo**: no hay `push` ni `pop`.
+
+```js
+const muestras = new Float32Array([0.25, 0.5, -1.5]);
+console.log(muestras.map((x) => x * 2));
+
+const enteros = new Uint8Array([250, 10]);
+enteros[0] += 10;   // 260 no cabe: da la vuelta a 4
+console.log(enteros);
+
+const limitados = new Uint8ClampedArray([250]);
+limitados[0] += 10; // se queda en 255
+console.log(limitados);
+```
+
+`Float16Array` (ES2025) ocupa la mitad que `Float32Array` con menos precisión. Se usa en gráficos y en modelos de aprendizaje automático, donde la memoria importa más que los decimales.
+
+## DataView
+
+Cuando un formato mezcla tipos (un archivo con un entero de 2 bytes, después uno de 4…), `DataView` lee y escribe cualquier tipo en cualquier posición:
+
+```js
+const datos = new DataView(new ArrayBuffer(6));
+
+datos.setUint16(0, 2026);       // 2 bytes en la posición 0
+datos.setFloat32(2, 1.5);       // 4 bytes en la posición 2
+
+console.log(datos.getUint16(0), datos.getFloat32(2));
+```
+
+## Buffers que crecen (ES2024)
+
+Un buffer puede crearse **redimensionable**, con un tamaño máximo:
+
+```js
+const buffer = new ArrayBuffer(4, { maxByteLength: 16 });
+const vista = new Uint8Array(buffer);  // sin largo fijo: sigue al buffer
+
+console.log(buffer.resizable, vista.length);
+buffer.resize(12);
+console.log(vista.length);
+
+const movido = buffer.transfer();      // traspasa la memoria a un buffer nuevo
+console.log(buffer.detached, movido.byteLength);
+```
+
+`transfer` mueve la memoria sin copiarla y deja el buffer original **inutilizable** (`detached`). Es útil para pasar datos grandes a otra parte del programa, o a un worker, sin duplicarlos.
+
+## Base64 y hexadecimal (ES2026)
+
+Para enviar bytes donde solo se admite texto (JSON, una URL, un correo), se codifican en **base64** o en **hexadecimal**. Desde ES2026, `Uint8Array` lo hace directamente:
+
+```js
+const texto = "¡Hola!";
+const bytes = new TextEncoder().encode(texto);  // texto → bytes UTF-8
+
+console.log(bytes.toBase64());
+console.log(bytes.toHex());
+
+const deVuelta = Uint8Array.fromBase64(bytes.toBase64());
+console.log(new TextDecoder().decode(deVuelta));
+console.log(Uint8Array.fromHex("4a53"));
+```
+
+<Nota tipo="ojo">
+  La forma antigua, `btoa` y `atob`, trabaja con textos y no con bytes: falla o rompe los caracteres fuera del inglés, como `¡` o `ñ`. Con bytes, usa los métodos nuevos.
+</Nota>
+
+## Resumen
+
+- `ArrayBuffer` guarda bytes; las **vistas** (arrays tipados, `DataView`) los interpretan.
+- Los arrays tipados tienen largo fijo y sus valores **dan la vuelta** al salirse de rango (salvo `Uint8ClampedArray`).
+- `DataView` lee y escribe tipos mezclados en cualquier posición.
+- ES2024: buffers redimensionables (`resize`) y `transfer`.
+- ES2025: `Float16Array`. ES2026: `toBase64`, `fromBase64`, `toHex` y `fromHex`.
+- `TextEncoder` y `TextDecoder` convierten entre texto y bytes UTF-8.
+
+<Practica>
+
+<Autoevaluacion id={binariosAuto.id} numero={1} titulo={binariosAuto.titulo} preguntas={binariosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={binariosOrden.id} numero={2} titulo={binariosOrden.titulo} codigo={binariosOrden.codigo} salida={binariosOrden.salida} inicio={binariosOrden.inicio} explicacion={binariosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un byte que se desborda, dos vistas del mismo buffer y dos conversiones. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={binariosDetective.id} numero={3} titulo={binariosDetective.titulo} codigo={binariosDetective.codigo} error={binariosDetective.error} culpable={binariosDetective.culpable} arreglos={binariosDetective.arreglos} hallazgo={binariosDetective.hallazgo} pista={binariosDetective.pista}>
+  <div slot="enunciado">
+    <p>Se quería guardar una muestra de audio. Encuentra la línea que falla y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={binariosLab.id} numero={4} titulo={binariosLab.titulo} inicial={binariosLab.inicial} verificaciones={binariosLab.verificaciones} pistas={binariosLab.pistas} solucion={binariosLab.solucion} explicacion={binariosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>decodificar(texto64)</code>: de base64 a bytes, y de bytes a texto.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,136 @@
+---
+titulo: Iteración asíncrona
+seccion: iteradores
+tema: iteracion-asincrona
+minutos: 10
+resumen: Cómo recorrer valores que llegan con el tiempo con for await...of, generadores asíncronos (async function*), el protocolo Symbol.asyncIterator y Array.fromAsync (ES2026).
+intro: 'Algunos datos no están todos listos al empezar: llegan <u>de a poco</u>. Las páginas de una API, las líneas de un archivo enorme, los mensajes de un chat. La iteración asíncrona junta dos ideas, el recorrido de los iteradores y la espera de las promesas, para recorrer esos datos como si fueran una lista.'
+nota: 'Este tema usa <code>async</code>, <code>await</code> y promesas, que se explican a fondo en la sección <b>Asincronía</b>. Si todavía no las viste, quédate con la idea general y vuelve después. Por la misma razón, los ejemplos son para leer y copiar: el sandbox de esta página todavía no ejecuta código asíncrono.'
+ejercicios: [asinc-auto, asinc-orden, asinc-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { asincAuto, asincOrden, asincDetective } from '../../data/ejercicios/iteradores';
+
+## for await...of
+
+`for await` funciona como `for...of`, pero **espera** cada valor antes de seguir. Se usa dentro de una función `async` o en el nivel superior de un módulo:
+
+```js
+const pedidos = [
+  fetch("/api/pedido/1"),
+  fetch("/api/pedido/2"),
+];
+
+for await (const respuesta of pedidos) {
+  console.log(respuesta.status);
+}
+```
+
+Recorre un iterable de **promesas** y te da cada resultado cuando está listo, en orden.
+
+## Generadores asíncronos
+
+`async function*` es un generador que además puede usar `await`. Es la forma natural de producir datos que llegan de a poco:
+
+```js
+async function* paginasDeUsuarios() {
+  let pagina = 1;
+  while (true) {
+    const respuesta = await fetch(`/api/usuarios?pagina=${pagina}`);
+    const { usuarios, hayMas } = await respuesta.json();
+    yield* usuarios;            // entrega cada usuario de esta página
+    if (!hayMas) return;
+    pagina++;
+  }
+}
+
+for await (const usuario of paginasDeUsuarios()) {
+  console.log(usuario.nombre);
+  if (usuario.nombre === "Eva") break;  // y deja de pedir páginas
+}
+```
+
+Quien recorre no sabe nada de páginas: ve una sola secuencia de usuarios. Y como el generador es perezoso, solo se piden las páginas necesarias. El `break` detiene el generador, que ya no hace más peticiones.
+
+## Array.fromAsync (ES2026)
+
+Cuando quieres **todos** los valores en un array, `Array.fromAsync` es el equivalente asíncrono de `Array.from`. Devuelve una promesa:
+
+```js
+async function* numerosLentos() {
+  for (let i = 1; i <= 3; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+    yield i;
+  }
+}
+
+const todos = await Array.fromAsync(numerosLentos());
+console.log(todos);  // [ 1, 2, 3 ], unos 300 ms después
+
+const dobles = await Array.fromAsync(numerosLentos(), (n) => n * 2);
+console.log(dobles);
+```
+
+Igual que `Array.from`, acepta una función para transformar cada valor.
+
+## El protocolo por dentro
+
+Un iterable asíncrono tiene un método bajo `Symbol.asyncIterator` (en lugar de `Symbol.iterator`), y el `next()` de su iterador devuelve una **promesa** de `{ value, done }`:
+
+```js
+const tresTics = {
+  [Symbol.asyncIterator]() {
+    let n = 0;
+    return {
+      next() {
+        n++;
+        return new Promise((resolver) => {
+          setTimeout(() => resolver({ value: `tic ${n}`, done: n > 3 }), 100);
+        });
+      },
+    };
+  },
+};
+
+for await (const t of tresTics) console.log(t);
+```
+
+En la práctica, casi nunca lo escribirás a mano: un `async function*` lo hace por ti, igual que un generador normal reemplaza al protocolo iterable escrito a mano.
+
+<Nota>
+  Muchas APIs modernas ya son iterables asíncronos: los `ReadableStream` de `fetch` en los navegadores modernos, los archivos y los streams de Node.js (`for await (const linea of archivo.readLines())`), los mensajes de algunos websockets…
+</Nota>
+
+## Resumen
+
+- `for await...of` recorre valores asíncronos y espera cada uno.
+- `async function*` produce valores con `yield` y puede esperar con `await`.
+- Ideal para datos paginados o que llegan de a poco: se piden solo los necesarios.
+- `Array.fromAsync` (ES2026) junta todos los valores en un array.
+- El protocolo usa `Symbol.asyncIterator` y un `next()` que devuelve promesas.
+
+<Practica>
+
+<Autoevaluacion id={asincAuto.id} numero={1} titulo={asincAuto.titulo} preguntas={asincAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={asincOrden.id} numero={2} titulo={asincOrden.titulo} codigo={asincOrden.codigo} salida={asincOrden.salida} inicio={asincOrden.inicio} explicacion={asincOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un generador que tarda 100 ms en cada valor. Ojo con la última línea del archivo. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={asincDetective.id} numero={3} titulo={asincDetective.titulo} codigo={asincDetective.codigo} error={asincDetective.error} culpable={asincDetective.culpable} arreglos={asincDetective.arreglos} hallazgo={asincDetective.hallazgo} pista={asincDetective.pista}>
+  <div slot="enunciado">
+    <p>Se querían mostrar las páginas de una API a medida que llegan. Encuentra la línea que falla y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

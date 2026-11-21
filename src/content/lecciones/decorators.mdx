@@ -1,0 +1,128 @@
+---
+titulo: Decorators
+seccion: clases
+tema: decorators
+minutos: 9
+resumen: Qué son los decorators, en qué estado está la propuesta de TC39, cómo se escriben (una función que recibe el valor y un contexto), la diferencia con los decorators antiguos de TypeScript y cómo conseguir lo mismo hoy con funciones de orden superior.
+intro: 'Si trabajas con Angular, NestJS o algunas librerías de TypeScript, ya viste líneas como <code>@Component</code> o <code>@Injectable</code> encima de una clase. Son <u>decorators</u>: funciones que modifican clases y métodos de forma declarativa. Todavía no son parte del estándar, pero conviene entender qué hacen y en qué estado están.'
+nota: 'Los decorators son una <b>propuesta</b> de TC39 en Stage 2.7: el diseño está casi cerrado, pero ningún navegador ni Node.js los ejecuta sin herramientas. Los ejemplos de esta lección necesitan TypeScript o Babel, salvo el del laboratorio.'
+ejercicios: [decorators-auto, decorators-orden, decorators-detective, decorators-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { decoratorsAuto, decoratorsOrden, decoratorsDetective, decoratorsLab } from '../../data/ejercicios/clases';
+
+## La idea
+
+Un decorator es una **función** que se aplica a una clase o a uno de sus miembros con `@nombre`. Recibe lo que decora y puede devolver un reemplazo:
+
+```js
+class Pedido {
+  @registrar
+  confirmar(id) {
+    return `pedido ${id} confirmado`;
+  }
+}
+```
+
+Es una forma declarativa de escribir algo que ya sabes hacer: **envolver** una función con otra, como en *Funciones como valores*. Sin la sintaxis nueva, sería:
+
+```js
+function registrar(metodo) {
+  return function (...args) {
+    console.log(`llamando con ${args.join(", ")}`);
+    return metodo.apply(this, args);
+  };
+}
+
+class Pedido {
+  confirmar(id) {
+    return `pedido ${id} confirmado`;
+  }
+}
+
+Pedido.prototype.confirmar = registrar(Pedido.prototype.confirmar);
+console.log(new Pedido().confirmar(7));
+```
+
+## Cómo se escribe uno
+
+En la propuesta actual, un decorator recibe dos argumentos: el **valor** decorado (el método, la clase, el campo…) y un objeto **contexto** con información sobre él:
+
+```js
+function soloLectura(valor, contexto) {
+  // contexto.kind: "method", "field", "class", "getter", "setter", "accessor"
+  // contexto.name: el nombre del miembro
+  if (contexto.kind === "field") {
+    return function (inicial) {
+      return Object.freeze(inicial);
+    };
+  }
+}
+
+class Ajustes {
+  @soloLectura
+  colores = { fondo: "negro" };
+}
+```
+
+Para un método, devolver una función la reemplaza; para un campo, devolver una función transforma su valor inicial. Si no devuelve nada, el miembro queda como estaba.
+
+La propuesta también agrega `accessor`, una palabra clave para crear un getter y un setter automáticos que los decorators pueden interceptar:
+
+```js
+class Formulario {
+  @validarEmail
+  accessor email = "";
+}
+```
+
+## Dos versiones: la antigua y la de la propuesta
+
+Los frameworks que usan decorators desde hace años (Angular, NestJS, TypeORM) nacieron con una **versión antigua**, que TypeScript activa con `experimentalDecorators: true`. Tiene otra firma: recibe el prototipo, el nombre y un descriptor de la propiedad.
+
+Desde TypeScript 5.0, sin esa opción, se usan los decorators de la **propuesta actual**, los de esta lección. Si empiezas un proyecto nuevo, usa estos. Si trabajas con un framework que pide la versión antigua, sigue su documentación.
+
+<Nota tipo="ojo">
+  Que TypeScript los acepte no significa que JavaScript los tenga: TypeScript los **transforma** en código normal al compilar. Hasta que la propuesta llegue a Stage 4 y los navegadores la implementen, la `@` en un archivo `.js` es un `SyntaxError`.
+</Nota>
+
+## Resumen
+
+- Un **decorator** es una función aplicada con `@nombre` a una clase o a sus miembros.
+- Recibe el **valor** decorado y un **contexto** (`kind`, `name`…), y puede devolver un reemplazo.
+- Está en **Stage 2.7**: hoy se usa con TypeScript o Babel.
+- `experimentalDecorators` de TypeScript es la versión **antigua**; la de la propuesta es la recomendada para proyectos nuevos.
+- Sin herramientas, consigues lo mismo envolviendo el método con una **función de orden superior**.
+
+<Practica>
+
+<Autoevaluacion id={decoratorsAuto.id} numero={1} titulo={decoratorsAuto.titulo} preguntas={decoratorsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={decoratorsOrden.id} numero={2} titulo={decoratorsOrden.titulo} codigo={decoratorsOrden.codigo} salida={decoratorsOrden.salida} inicio={decoratorsOrden.inicio} explicacion={decoratorsOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Imagina este código compilado con TypeScript. Ordena lo que aparecería en la consola al ejecutarlo.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={decoratorsDetective.id} numero={3} titulo={decoratorsDetective.titulo} codigo={decoratorsDetective.codigo} error={decoratorsDetective.error} culpable={decoratorsDetective.culpable} arreglos={decoratorsDetective.arreglos} hallazgo={decoratorsDetective.hallazgo} pista={decoratorsDetective.pista}>
+  <div slot="enunciado">
+    <p>Este archivo funciona en un proyecto con TypeScript, pero alguien lo abrió directamente en el navegador. Encuentra la línea y elige el arreglo que funciona hoy, sin herramientas.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={decoratorsLab.id} numero={4} titulo={decoratorsLab.titulo} inicial={decoratorsLab.inicial} verificaciones={decoratorsLab.verificaciones} pistas={decoratorsLab.pistas} solucion={decoratorsLab.solucion} explicacion={decoratorsLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>registrar(fn)</code>: un decorator "a mano" que envuelve una función para imprimir sus argumentos.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

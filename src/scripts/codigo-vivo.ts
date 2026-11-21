@@ -33,7 +33,11 @@ export function iniciarCodigoVivo(raiz: ParentNode = document) {
     // Los ejemplos asíncronos imprimirían después de que el worker responde, y los módulos
     // necesitan archivos que el sandbox no tiene: se dejan solo para copiar
     const asincrono =
-      /\b(setTimeout|setInterval|fetch)\s*\(|\bawait\b/.test(codigo) || /^\s*(import|export)\s/m.test(codigo);
+      /\b(setTimeout|setInterval|fetch)\s*\(|\bawait\b/.test(codigo) ||
+      /^\s*(import|export)\s/m.test(codigo) ||
+      // Propuestas que los navegadores todavía no ejecutan: decorators y chunking de iteradores
+      /^\s*@\w/m.test(codigo) ||
+      /\.(chunks|windows)\s*\(/.test(codigo);
     const ejecutable = /^(js|javascript)$/.test(lenguaje) && /console\.log\s*\(/.test(codigo) && !asincrono;
 
     const figura = document.createElement('figure');

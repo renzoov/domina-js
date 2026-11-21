@@ -1,0 +1,119 @@
+---
+titulo: Cambiar sin mutar
+seccion: colecciones
+tema: cambiar-sin-mutar
+minutos: 9
+resumen: Los métodos de ES2023 que devuelven una copia en lugar de modificar el array (toSorted, toReversed, toSpliced, with), por qué importa no mutar datos compartidos y cómo actualizar listas de objetos.
+intro: '<code>sort</code>, <code>reverse</code> y <code>splice</code> modifican el array sobre el que los llamas. Durante años, la única forma de ordenar sin tocar el original era copiarlo antes: <code>[...lista].sort()</code>. Desde ES2023, cada uno tiene una <u>versión que devuelve una copia</u>, y el código queda más claro y más seguro.'
+ejercicios: [sin-mutar-auto, sin-mutar-orden, sin-mutar-detective, sin-mutar-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { sinMutarAuto, sinMutarOrden, sinMutarDetective, sinMutarLab } from '../../data/ejercicios/colecciones';
+
+## El problema
+
+```js
+const ranking = [70, 95, 80];
+
+function top(lista) {
+  return lista.sort((a, b) => b - a)[0];
+}
+
+console.log(top(ranking));
+console.log(ranking);  // ¡reordenado! top modificó los datos de quien la llamó
+```
+
+`top` solo quería leer, pero `sort` reordenó el array original. Cualquier otra parte del programa que usara `ranking` ve ahora otro orden.
+
+## Cuatro métodos nuevos (ES2023)
+
+| Modifica | Devuelve una copia |
+|---|---|
+| `lista.sort(fn)` | `lista.toSorted(fn)` |
+| `lista.reverse()` | `lista.toReversed()` |
+| `lista.splice(i, n, ...nuevos)` | `lista.toSpliced(i, n, ...nuevos)` |
+| `lista[i] = valor` | `lista.with(i, valor)` |
+
+```js
+const letras = ["c", "a", "d", "b"];
+
+console.log(letras.toSorted());
+console.log(letras.toReversed());
+console.log(letras.toSpliced(1, 2, "X"));  // quita 2 desde el índice 1 y pone "X"
+console.log(letras.with(0, "Z"));
+console.log(letras.with(-1, "Ω"));         // acepta índices negativos
+console.log(letras);                        // intacto
+```
+
+## Listas de objetos
+
+Copiar el array no copia los objetos que tiene adentro: es una copia **superficial**, como viste en *Copias*. Para "cambiar" un objeto de la lista sin mutarlo, crea uno nuevo para ese lugar:
+
+```js
+const carrito = [
+  { producto: "té", cantidad: 1 },
+  { producto: "pan", cantidad: 2 },
+];
+
+// Cambiar la cantidad del pan, sin tocar carrito ni sus objetos
+const actualizado = carrito.with(1, { ...carrito[1], cantidad: 3 });
+
+console.log(actualizado[1].cantidad, carrito[1].cantidad);
+console.log(actualizado[0] === carrito[0]);  // el té se comparte: no cambió
+```
+
+Las operaciones habituales con este estilo:
+
+```js
+const lista = [{ id: 1, hecha: false }, { id: 2, hecha: false }];
+
+const agregada = [...lista, { id: 3, hecha: false }];             // agregar
+const sinLaDos = lista.filter((t) => t.id !== 2);                  // quitar
+const marcada = lista.map((t) => (t.id === 1 ? { ...t, hecha: true } : t)); // cambiar uno
+
+console.log(agregada.length, sinLaDos.length, marcada[0].hecha, lista[0].hecha);
+```
+
+<Nota>
+  React, Vue, Redux y muchas otras librerías detectan los cambios comparando **referencias**: si mutas un array, sigue siendo "el mismo" y no se enteran. Por eso en esos entornos se trabaja siempre así.
+</Nota>
+
+## Resumen
+
+- `sort`, `reverse` y `splice` **modifican** el array; también `lista[i] = x`.
+- ES2023 agregó `toSorted`, `toReversed`, `toSpliced` y `with`, que devuelven **copias**.
+- Las copias son superficiales: para cambiar un objeto de la lista, crea uno nuevo con spread.
+- Agregar con spread, quitar con `filter`, cambiar con `map` o `with`.
+
+<Practica>
+
+<Autoevaluacion id={sinMutarAuto.id} numero={1} titulo={sinMutarAuto.titulo} preguntas={sinMutarAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={sinMutarOrden.id} numero={2} titulo={sinMutarOrden.titulo} codigo={sinMutarOrden.codigo} salida={sinMutarOrden.salida} inicio={sinMutarOrden.inicio} explicacion={sinMutarOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Los métodos viejos y los nuevos, uno al lado del otro. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={sinMutarDetective.id} numero={3} titulo={sinMutarDetective.titulo} codigo={sinMutarDetective.codigo} error={sinMutarDetective.error} culpable={sinMutarDetective.culpable} arreglos={sinMutarDetective.arreglos} hallazgo={sinMutarDetective.hallazgo} pista={sinMutarDetective.pista}>
+  <div slot="enunciado">
+    <p>Una función que solo quería leer los mejores puntajes choca con una lista congelada. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={sinMutarLab.id} numero={4} titulo={sinMutarLab.titulo} inicial={sinMutarLab.inicial} verificaciones={sinMutarLab.verificaciones} pistas={sinMutarLab.pistas} solucion={sinMutarLab.solucion} explicacion={sinMutarLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>marcarHecha(lista, indice)</code> con <code>with</code>, sin modificar ni el array ni sus objetos.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

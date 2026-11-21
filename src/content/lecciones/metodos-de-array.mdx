@@ -1,0 +1,146 @@
+---
+titulo: Métodos de array
+seccion: colecciones
+tema: metodos-de-array
+minutos: 13
+resumen: Los métodos que más se usan para trabajar con arrays (map, filter, reduce, find, findLast, some, every, flat, flatMap, sort, slice, join), cuáles modifican el original y cómo encadenarlos.
+intro: 'Casi todo lo que harías con un bucle sobre un array (transformar, filtrar, buscar, sumar, ordenar) ya tiene un <u>método</u> que lo hace en una línea, y que dice con su nombre lo que hace. Conocerlos es la diferencia entre leer código y descifrarlo.'
+pizarron: metodosArray
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Cada método de la cadena recibe un array y entrega su resultado al siguiente. Fíjate en que aparecen arrays <b>nuevos</b> en cada paso y en que <code>precios</code> nunca cambia.'
+ejercicios: [metodos-auto, metodos-orden, metodos-detective, metodos-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { metodosAuto, metodosOrden, metodosDetective, metodosLab } from '../../data/ejercicios/colecciones';
+
+## Transformar, filtrar, combinar
+
+Los tres de la cadena del pizarrón, que ya usaste en *Estilo funcional*:
+
+```js
+const alumnos = [
+  { nombre: "Ana", nota: 9 },
+  { nombre: "Luis", nota: 5 },
+  { nombre: "Eva", nota: 7 },
+];
+
+const nombres = alumnos.map((a) => a.nombre);           // transforma cada uno
+const aprobados = alumnos.filter((a) => a.nota >= 6);   // se queda con algunos
+const promedio = alumnos.reduce((s, a) => s + a.nota, 0) / alumnos.length;
+
+console.log(nombres);
+console.log(aprobados.length, promedio);
+```
+
+Los callbacks reciben tres argumentos: el **elemento**, su **índice** y el **array** entero. Casi siempre basta con el primero.
+
+## Buscar con una condición
+
+```js
+const pedidos = [
+  { id: 1, estado: "enviado" },
+  { id: 2, estado: "pendiente" },
+  { id: 3, estado: "pendiente" },
+];
+
+console.log(pedidos.find((p) => p.estado === "pendiente"));      // el primero
+console.log(pedidos.findIndex((p) => p.estado === "pendiente")); // su índice
+console.log(pedidos.findLast((p) => p.estado === "pendiente"));  // el último (ES2023)
+console.log(pedidos.some((p) => p.estado === "enviado"));        // ¿alguno?
+console.log(pedidos.every((p) => p.id > 0));                     // ¿todos?
+```
+
+`find` y `findLast` devuelven `undefined` si nadie cumple; `findIndex` y `findLastIndex`, `-1`.
+
+## Aplanar
+
+```js
+const capitulos = [["intro", "historia"], ["sintaxis"], []];
+console.log(capitulos.flat());
+
+const frases = ["hola mundo", "adiós amigos"];
+console.log(frases.flatMap((f) => f.split(" ")));  // map + flat en un paso
+```
+
+## Ordenar
+
+`sort` ordena **el propio array** (lo modifica) y, sin argumentos, compara como **texto**. Casi siempre necesitas un **comparador**: una función que recibe dos elementos y devuelve un número negativo si el primero va antes, positivo si va después, o 0 si da igual.
+
+```js
+const nums = [10, 1, 5, 100];
+console.log([...nums].sort());                  // como texto: 1, 10, 100, 5
+console.log([...nums].sort((a, b) => a - b));   // números, de menor a mayor
+console.log([...nums].sort((a, b) => b - a));   // de mayor a menor
+
+const nombres = ["Óscar", "ana", "Eva"];
+console.log([...nombres].sort((a, b) => a.localeCompare(b, "es")));
+```
+
+Para textos con acentos y mayúsculas, usa `localeCompare`, que sigue las reglas del idioma.
+
+## Cortar y unir
+
+```js
+const letras = ["a", "b", "c", "d", "e"];
+
+console.log(letras.slice(1, 3));   // copia de una parte: [ 'b', 'c' ]
+console.log(letras.slice(-2));     // los dos últimos
+console.log(letras.join("-"));     // a texto
+console.log(letras.concat(["f"])); // array nuevo, unido
+```
+
+<Nota tipo="error">
+  Cuidado con los nombres parecidos: `slice` **copia** una parte; `splice` **modifica** el array, quitando o insertando elementos. En el próximo tema verás las versiones que no mutan de `splice`, `sort` y `reverse`.
+</Nota>
+
+## Cuáles modifican el original
+
+| Modifican el array | Devuelven algo nuevo |
+|---|---|
+| `push`, `pop`, `shift`, `unshift` | `map`, `filter`, `slice`, `concat` |
+| `sort`, `reverse`, `splice`, `fill` | `flat`, `flatMap`, `toSorted`, `toReversed` |
+| | `find`, `some`, `every`, `reduce`, `join` (otro tipo de valor) |
+
+## Resumen
+
+- `map` transforma, `filter` selecciona, `reduce` combina en un valor.
+- `find`/`findLast` buscan un elemento; `some`/`every` responden sí o no.
+- `flat` y `flatMap` aplanan arrays anidados.
+- `sort` modifica y compara como texto: pásale un comparador.
+- `slice` copia; `splice` modifica.
+- `forEach` solo recorre: siempre devuelve `undefined`.
+
+<Practica>
+
+<Autoevaluacion id={metodosAuto.id} numero={1} titulo={metodosAuto.titulo} preguntas={metodosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={metodosOrden.id} numero={2} titulo={metodosOrden.titulo} codigo={metodosOrden.codigo} salida={metodosOrden.salida} inicio={metodosOrden.inicio} explicacion={metodosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos formas de ordenar, dos de buscar y una de aplanar. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={metodosDetective.id} numero={3} titulo={metodosDetective.titulo} codigo={metodosDetective.codigo} error={metodosDetective.error} culpable={metodosDetective.culpable} arreglos={metodosDetective.arreglos} hallazgo={metodosDetective.hallazgo} pista={metodosDetective.pista}>
+  <div slot="enunciado">
+    <p>Se esperaba un array con los dobles. Encuentra la línea y elige el método correcto.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={metodosLab.id} numero={4} titulo={metodosLab.titulo} inicial={metodosLab.inicial} verificaciones={metodosLab.verificaciones} pistas={metodosLab.pistas} solucion={metodosLab.solucion} explicacion={metodosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>nombresBaratos</code> encadenando <code>filter</code> y <code>map</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

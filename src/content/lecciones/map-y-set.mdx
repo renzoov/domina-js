@@ -1,0 +1,162 @@
+---
+titulo: Map y Set
+seccion: colecciones
+tema: map-y-set
+minutos: 12
+resumen: Map para pares clave-valor con cualquier tipo de clave, Set para valores únicos, cuándo preferirlos a objetos y arrays, las operaciones de conjuntos de ES2025 (union, intersection, difference…) y getOrInsert / getOrInsertComputed de ES2026.
+intro: 'Los objetos sirven como diccionarios y los arrays como listas, pero no fueron pensados para eso. <code>Map</code> es un diccionario <u>de verdad</u>, con cualquier tipo de clave, y <code>Set</code> es una colección donde cada valor aparece <u>una sola vez</u>. Las dos estructuras recibieron métodos nuevos en 2025 y 2026.'
+ejercicios: [map-set-auto, map-set-orden, map-set-detective, map-set-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { mapSetAuto, mapSetOrden, mapSetDetective, mapSetLab } from '../../data/ejercicios/colecciones';
+
+## Map
+
+```js
+const stock = new Map();
+
+stock.set("manzanas", 12);
+stock.set("peras", 0);
+
+console.log(stock.get("manzanas"));   // 12
+console.log(stock.has("uvas"));       // false
+console.log(stock.size);              // 2
+
+stock.delete("peras");
+
+for (const [fruta, cantidad] of stock) {
+  console.log(fruta, cantidad);
+}
+```
+
+También se puede crear a partir de pares: `new Map([["a", 1], ["b", 2]])`, o de un objeto: `new Map(Object.entries(obj))`.
+
+## ¿Map u objeto?
+
+| | Objeto | `Map` |
+|---|---|---|
+| Claves | Textos y símbolos | **Cualquier valor**: objetos, números, funciones… |
+| Tamaño | `Object.keys(obj).length` | `mapa.size` |
+| Recorrer | `Object.entries(obj)` | Directamente con `for...of` |
+| Claves heredadas | Sí, del prototipo | No |
+| Ideal para | Datos con forma fija (un usuario) | Colecciones que crecen y cambian |
+
+```js
+const visitas = new Map();
+const usuario = { nombre: "Ana" };
+
+visitas.set(usuario, 3);        // un objeto como clave
+console.log(visitas.get(usuario));
+```
+
+## getOrInsert (ES2026)
+
+Un patrón muy repetido es "si la clave no existe, créala con un valor inicial". ES2026 lo convirtió en un método:
+
+```js
+const porCategoria = new Map();
+
+function agregar(categoria, producto) {
+  porCategoria.getOrInsert(categoria, []).push(producto);
+}
+
+agregar("frutas", "pera");
+agregar("frutas", "uva");
+agregar("verduras", "zanahoria");
+
+console.log(porCategoria);
+```
+
+`getOrInsertComputed(clave, fn)` hace lo mismo, pero calcula el valor con una función, que solo se ejecuta si la clave **no** existe. Úsalo cuando crear el valor cuesta:
+
+```js
+const cache = new Map();
+
+function cuadrado(n) {
+  return cache.getOrInsertComputed(n, (clave) => {
+    console.log(`calculando ${clave}…`);
+    return clave * clave;
+  });
+}
+
+console.log(cuadrado(4));
+console.log(cuadrado(4));  // ya estaba: no vuelve a calcular
+```
+
+## Set
+
+Un `Set` guarda valores **únicos**: agregar uno que ya está no hace nada.
+
+```js
+const etiquetas = new Set(["js", "css", "js", "html"]);
+
+etiquetas.add("css");
+console.log(etiquetas.size);          // 3
+console.log(etiquetas.has("html"));   // true, y mucho más rápido que includes con listas grandes
+
+const sinRepetidos = [...new Set([3, 1, 3, 2, 1])];
+console.log(sinRepetidos);
+```
+
+## Operaciones de conjuntos (ES2025)
+
+Los conjuntos de matemáticas, ahora como métodos:
+
+```js
+const frontend = new Set(["js", "css", "html"]);
+const backend = new Set(["js", "sql", "node"]);
+
+console.log(frontend.union(backend));               // en cualquiera
+console.log(frontend.intersection(backend));        // en los dos
+console.log(frontend.difference(backend));          // solo en frontend
+console.log(frontend.symmetricDifference(backend)); // en uno solo
+console.log(new Set(["js"]).isSubsetOf(frontend));  // ¿todo está en frontend?
+console.log(frontend.isDisjointFrom(new Set(["go"]))); // ¿nada en común?
+```
+
+Todos devuelven un `Set` **nuevo** y no modifican los originales.
+
+<Nota tipo="ojo">
+  `Set` y `Map` comparan las claves por **identidad**, como `===` (salvo que consideran iguales a dos `NaN`). Dos objetos con el mismo contenido son claves distintas: `new Set([{ a: 1 }, { a: 1 }]).size` es 2.
+</Nota>
+
+## Resumen
+
+- `Map`: pares clave-valor con **cualquier** tipo de clave, `size` y recorrido directo.
+- `set`, `get`, `has` y `delete`; nunca corchetes.
+- `getOrInsert` y `getOrInsertComputed` (ES2026) crean la entrada si falta.
+- `Set`: valores únicos. `[...new Set(lista)]` quita duplicados.
+- ES2025: `union`, `intersection`, `difference`, `symmetricDifference`, `isSubsetOf`, `isSupersetOf` e `isDisjointFrom`.
+
+<Practica>
+
+<Autoevaluacion id={mapSetAuto.id} numero={1} titulo={mapSetAuto.titulo} preguntas={mapSetAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={mapSetOrden.id} numero={2} titulo={mapSetOrden.titulo} codigo={mapSetOrden.codigo} salida={mapSetOrden.salida} inicio={mapSetOrden.inicio} explicacion={mapSetOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Tres operaciones de conjuntos y un contador con <code>getOrInsert</code>. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={mapSetDetective.id} numero={3} titulo={mapSetDetective.titulo} codigo={mapSetDetective.codigo} error={mapSetDetective.error} culpable={mapSetDetective.culpable} arreglos={mapSetDetective.arreglos} hallazgo={mapSetDetective.hallazgo} pista={mapSetDetective.pista}>
+  <div slot="enunciado">
+    <p>El precio se "guardó", pero el mapa dice que está vacío. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={mapSetLab.id} numero={4} titulo={mapSetLab.titulo} inicial={mapSetLab.inicial} verificaciones={mapSetLab.verificaciones} pistas={mapSetLab.pistas} solucion={mapSetLab.solucion} explicacion={mapSetLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>enComun(a, b)</code> con <code>Set</code> e <code>intersection</code>.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

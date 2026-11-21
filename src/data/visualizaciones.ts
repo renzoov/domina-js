@@ -1807,3 +1807,224 @@ console.log(atada());`,
     },
   ],
 };
+
+export const metodosArray: DatosVisualizador = {
+  codigo: `const precios = [12, 5, 30];
+
+const total = precios
+  .filter((p) => p >= 10)
+  .map((p) => p * 2)
+  .reduce((acum, p) => acum + p, 0);
+
+console.log(total);
+console.log(precios);`,
+  pasos: [
+    {
+      lineas: [1],
+      pila: [m('precios', '→ array #1', true), obj('array #1', '[ 12, 5, 30 ]')],
+      consola: [],
+      evento: 'entra',
+      anotacion: 'datos',
+      texto: 'Tres precios. Vas a ver una <b>cadena</b> de tres métodos: cada uno recibe un array, aplica una función a cada elemento y entrega su resultado al siguiente.',
+    },
+    {
+      lineas: [4],
+      pila: [m('precios', '→ array #1'), obj('array #1', '[ 12, 5, 30 ]'), m('filter', '12 ✓ · 5 ✗ · 30 ✓', true), obj('array #2', '[ 12, 30 ]', true)],
+      consola: [],
+      evento: 'ejecuta',
+      anotacion: 'filter',
+      texto: '<code>filter</code> llama a la función con cada precio y se queda con los que dan <code>true</code>. El 5 no pasa. Devuelve un array <b>nuevo</b> (#2), más corto.',
+      prediccion: {
+        pregunta: '¿Qué array devuelve filter?',
+        opciones: ['[ 12, 5, 30 ]', '[ 12, 30 ]', '[ 5 ]'],
+        correcta: 1,
+        explicacion: 'Solo quedan los que cumplen p >= 10.',
+      },
+    },
+    {
+      lineas: [5],
+      pila: [m('precios', '→ array #1'), obj('array #1', '[ 12, 5, 30 ]'), m('map', '12 → 24 · 30 → 60', true), obj('array #3', '[ 24, 60 ]', true)],
+      consola: [],
+      evento: 'ejecuta',
+      anotacion: 'map',
+      texto: '<code>map</code> recibe el array #2 y <b>transforma</b> cada elemento. Devuelve otro array nuevo (#3), del <b>mismo largo</b> que el que recibió.',
+    },
+    {
+      lineas: [6],
+      pila: [m('precios', '→ array #1'), obj('array #1', '[ 12, 5, 30 ]'), m('reduce', 'acum: 0 → 0 + 24 = 24', true), obj('array #3', '[ 24, 60 ]')],
+      consola: [],
+      evento: 'ejecuta',
+      anotacion: 'reduce',
+      texto: '<code>reduce</code> arranca con el acumulador en <code>0</code>, el valor inicial. Con el primer elemento, la función devuelve <code>0 + 24</code>, y eso pasa a ser el nuevo acumulador.',
+    },
+    {
+      lineas: [6],
+      pila: [m('precios', '→ array #1'), obj('array #1', '[ 12, 5, 30 ]'), m('reduce', 'acum: 24 → 24 + 60 = 84', true), obj('array #3', '[ 24, 60 ]')],
+      consola: [],
+      evento: 'ejecuta',
+      anotacion: 'acumula',
+      texto: 'Con el segundo: <code>24 + 60 = 84</code>. Ya no quedan elementos: <code>reduce</code> devuelve el acumulador final. No devuelve un array, sino <b>un solo valor</b>.',
+      prediccion: {
+        pregunta: '¿Qué valor guarda total?',
+        opciones: ['84', '[ 24, 60 ]', '47'],
+        correcta: 0,
+        explicacion: '(12 + 30) * 2 = 84.',
+      },
+    },
+    {
+      lineas: [8, 9],
+      pila: [m('precios', '→ array #1'), obj('array #1', '[ 12, 5, 30 ]', true), m('total', '84', true)],
+      consola: ['84', '[ 12, 5, 30 ]'],
+      evento: 'fin',
+      texto: 'Los arrays intermedios ya no hacen falta y el recolector los libera. Y lo más importante: <code>precios</code> <b>no cambió</b>. <code>filter</code>, <code>map</code> y <code>reduce</code> nunca modifican el array original.',
+    },
+  ],
+};
+
+export const protocoloIterable: DatosVisualizador = {
+  codigo: `const colores = ["rojo", "verde"];
+const it = colores[Symbol.iterator]();
+
+console.log(it.next());
+console.log(it.next());
+console.log(it.next());`,
+  pasos: [
+    {
+      lineas: [1],
+      pila: [m('colores', '→ array #1', true), obj('array #1', "[ 'rojo', 'verde' ]")],
+      consola: [],
+      evento: 'entra',
+      anotacion: 'iterable',
+      texto: 'Un array es <b>iterable</b>: tiene un método especial, guardado bajo la clave <code>Symbol.iterator</code>, que sabe fabricar un recorrido.',
+    },
+    {
+      lineas: [2],
+      pila: [m('colores', '→ array #1'), obj('array #1', "[ 'rojo', 'verde' ]"), m('it', '→ iterador #2', true), obj('iterador #2', 'posición: 0 · next()', true)],
+      consola: [],
+      evento: 'entra',
+      anotacion: 'iterador',
+      texto: 'Llamar a ese método devuelve un <b>iterador</b>: un objeto aparte, con un método <code>next()</code> y que recuerda <b>por dónde va</b>. El array no cambia.',
+    },
+    {
+      lineas: [4],
+      pila: [m('colores', '→ array #1'), obj('array #1', "[ 'rojo', 'verde' ]"), m('it', '→ iterador #2'), obj('iterador #2', 'posición: 1 · next()', true)],
+      consola: ["{ value: 'rojo', done: false }"],
+      evento: 'imprime',
+      anotacion: 'next',
+      texto: 'Cada <code>next()</code> devuelve un objeto con dos datos: <code>value</code>, el elemento, y <code>done</code>, si ya terminó. El iterador avanza una posición.',
+    },
+    {
+      lineas: [5],
+      pila: [m('colores', '→ array #1'), obj('array #1', "[ 'rojo', 'verde' ]"), m('it', '→ iterador #2'), obj('iterador #2', 'posición: 2 · next()', true)],
+      consola: ["{ value: 'rojo', done: false }", "{ value: 'verde', done: false }"],
+      evento: 'imprime',
+      anotacion: 'next',
+      texto: 'Segundo elemento. Todavía <code>done: false</code>: el iterador no sabe que no hay más hasta que lo intenta.',
+      prediccion: {
+        pregunta: '¿Qué devolverá el tercer next()?',
+        opciones: ["{ value: 'rojo', done: false }, vuelve a empezar", '{ value: undefined, done: true }', 'Un error'],
+        correcta: 1,
+        explicacion: 'Un iterador no reinicia: cuando se acaban los elementos, avisa con done: true.',
+      },
+    },
+    {
+      lineas: [6],
+      pila: [m('colores', '→ array #1'), obj('array #1', "[ 'rojo', 'verde' ]"), m('it', '→ iterador #2'), obj('iterador #2', 'terminado', true)],
+      consola: ["{ value: 'rojo', done: false }", "{ value: 'verde', done: false }", '{ value: undefined, done: true }'],
+      evento: 'fin',
+      texto: '<code>done: true</code>: el recorrido terminó, y este iterador ya no sirve. Eso es <b>exactamente</b> lo que hace <code>for...of</code> por dentro: pide el iterador, llama a <code>next()</code> hasta ver <code>done: true</code> y te pasa cada <code>value</code>.',
+    },
+  ],
+};
+
+export const generadorPausa: DatosVisualizador = {
+  codigo: `function* contar() {
+  console.log("arranca");
+  yield 1;
+  console.log("sigue");
+  yield 2;
+  console.log("termina");
+}
+
+const gen = contar();
+console.log(gen.next().value);
+console.log(gen.next().value);
+console.log(gen.next().done);`,
+  pasos: [
+    {
+      lineas: [9],
+      pila: [],
+      consola: [],
+      evento: 'ejecuta',
+      anotacion: 'sin ejecutar',
+      texto: 'Llamar a una función generadora <b>no ejecuta su cuerpo</b>: devuelve un objeto generador, en pausa antes de la primera línea. La pila sigue vacía.',
+      prediccion: {
+        pregunta: '¿Se imprime "arranca" al ejecutar la línea 9?',
+        opciones: ['Sí', 'No, todavía no se ejecutó nada del cuerpo'],
+        correcta: 1,
+        explicacion: 'El cuerpo arranca recién con el primer next().',
+      },
+    },
+    {
+      lineas: [10, 2],
+      pila: [m('contar()', 'se ejecuta', true)],
+      consola: ['arranca'],
+      evento: 'entra',
+      anotacion: 'next',
+      texto: 'El primer <code>next()</code> pone el generador en la pila y ejecuta su cuerpo desde el principio.',
+    },
+    {
+      lineas: [3],
+      pila: [m('contar()', 'yield 1: se pausa', true)],
+      consola: ['arranca'],
+      evento: 'ejecuta',
+      anotacion: 'yield',
+      texto: '<code>yield 1</code> entrega el valor 1 y <b>pausa</b> el generador justo ahí.',
+    },
+    {
+      lineas: [10],
+      pila: [],
+      consola: ['arranca', '1'],
+      evento: 'sale',
+      anotacion: 'en pausa',
+      texto: 'El generador sale de la pila, pero no termina: su contexto, con sus variables y la línea donde quedó, se <b>guarda aparte</b>. <code>next()</code> devuelve <code>{ value: 1, done: false }</code>.',
+    },
+    {
+      lineas: [11, 4],
+      pila: [m('contar()', 'retoma después del yield 1', true)],
+      consola: ['arranca', '1', 'sigue'],
+      evento: 'entra',
+      anotacion: 'retoma',
+      texto: 'El segundo <code>next()</code> vuelve a poner el generador en la pila y lo <b>retoma</b> donde quedó, en la línea 4, no desde el principio.',
+      prediccion: {
+        pregunta: '¿Desde dónde sigue el generador?',
+        opciones: ['Desde la línea 2, otra vez', 'Desde la línea 4, justo después del yield 1'],
+        correcta: 1,
+        explicacion: 'Un generador recuerda dónde se pausó.',
+      },
+    },
+    {
+      lineas: [5, 11],
+      pila: [],
+      consola: ['arranca', '1', 'sigue', '2'],
+      evento: 'sale',
+      anotacion: 'yield',
+      texto: '<code>yield 2</code>: entrega el 2 y vuelve a pausarse.',
+    },
+    {
+      lineas: [12, 6],
+      pila: [m('contar()', 'llega al final', true)],
+      consola: ['arranca', '1', 'sigue', '2', 'termina'],
+      evento: 'entra',
+      anotacion: 'retoma',
+      texto: 'El tercer <code>next()</code> retoma en la línea 6. Ya no hay más <code>yield</code>: la función llega al final.',
+    },
+    {
+      lineas: [12],
+      pila: [],
+      consola: ['arranca', '1', 'sigue', '2', 'termina', 'true'],
+      evento: 'fin',
+      texto: 'Terminó de verdad: <code>next()</code> devuelve <code>{ value: undefined, done: true }</code>. Un generador es una función que se puede <b>pausar y retomar</b>, y produce valores de a uno, solo cuando se los piden.',
+    },
+  ],
+};

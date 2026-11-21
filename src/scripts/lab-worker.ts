@@ -6,7 +6,10 @@ function inspeccionar(v: unknown, profundidad = 0, vistos = new WeakSet<object>(
   if (typeof v === 'string') return profundidad === 0 ? v : `'${v}'`;
   if (typeof v === 'bigint') return `${v}n`;
   if (typeof v === 'symbol') return v.toString();
-  if (typeof v === 'function') return v.name ? `[Function: ${v.name}]` : '[Function (anonymous)]';
+  if (typeof v === 'function') {
+    if (/^class[\s{]/.test(Function.prototype.toString.call(v))) return v.name ? `[class ${v.name}]` : '[class (anonymous)]';
+    return v.name ? `[Function: ${v.name}]` : '[Function (anonymous)]';
+  }
   if (v === null || typeof v !== 'object') return String(v);
   if (vistos.has(v)) return '[Circular]';
   if (profundidad > 2) return Array.isArray(v) ? '[Array]' : '[Object]';
@@ -21,6 +24,11 @@ function inspeccionar(v: unknown, profundidad = 0, vistos = new WeakSet<object>(
     if (v instanceof Set) {
       const items = [...v].map((x) => inspeccionar(x, profundidad + 1, vistos));
       return `Set(${v.size}) {${items.length ? ` ${items.join(', ')} ` : ''}}`;
+    }
+    if (ArrayBuffer.isView(v) && !(v instanceof DataView)) {
+      const t = v as unknown as ArrayLike<number | bigint>;
+      const items = Array.from(t, (x) => inspeccionar(x, profundidad + 1, vistos));
+      return `${v.constructor.name}(${t.length}) [${items.length ? ` ${items.join(', ')} ` : ''}]`;
     }
     if (Array.isArray(v)) {
       const items = v.map((x) => inspeccionar(x, profundidad + 1, vistos));

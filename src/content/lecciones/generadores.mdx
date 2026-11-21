@@ -1,0 +1,174 @@
+---
+titulo: Generadores y yield
+seccion: iteradores
+tema: generadores
+minutos: 12
+resumen: Qué es una función generadora, cómo yield pausa y retoma la ejecución, por qué los generadores son iteradores, secuencias infinitas, yield* para delegar y return dentro de un generador.
+intro: 'Escribir un iterador a mano, con su <code>next()</code> y su <code>{ value, done }</code>, es mucho código para algo simple. Un <u>generador</u> lo hace por ti: es una función que puede <u>pausarse</u> en medio, entregar un valor y retomar después desde ese mismo punto, con todas sus variables intactas.'
+pizarron: generadorPausa
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'Fíjate en cuándo entra y sale el generador de la pila. En cada <code>yield</code> sale <b>sin terminar</b>, y en cada <code>next()</code> vuelve a entrar en el punto donde quedó.'
+ejercicios: [generadores-auto, generadores-orden, generadores-detective, generadores-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { generadoresAuto, generadoresOrden, generadoresDetective, generadoresLab } from '../../data/ejercicios/iteradores';
+
+## function* y yield
+
+Una función generadora se escribe con un asterisco. Dentro, `yield` entrega un valor y pausa:
+
+```js
+function* semaforo() {
+  yield "verde";
+  yield "amarillo";
+  yield "rojo";
+}
+
+const s = semaforo();
+console.log(s.next());
+console.log(s.next().value);
+
+for (const luz of semaforo()) {
+  console.log(luz);
+}
+```
+
+Llamar a `semaforo()` no ejecuta nada: devuelve un **generador**, que es a la vez un **iterador** (tiene `next()`) y un **iterable** (funciona con `for...of`). Como viste en el pizarrón, el cuerpo avanza solo hasta el siguiente `yield` cada vez que alguien pide un valor.
+
+## Lo que ahorra
+
+El rango del tema anterior, con un generador:
+
+```js
+function* rango(desde, hasta) {
+  for (let n = desde; n <= hasta; n++) {
+    yield n;
+  }
+}
+
+console.log([...rango(1, 5)]);
+```
+
+Y como método iterable de un objeto, con la sintaxis `*[Symbol.iterator]()`:
+
+```js
+const playlist = {
+  canciones: ["Intro", "Tema 1", "Final"],
+  *[Symbol.iterator]() {
+    for (const c of this.canciones) yield `♪ ${c}`;
+  },
+};
+
+console.log([...playlist]);
+```
+
+## Secuencias infinitas
+
+Como un generador solo avanza cuando le piden un valor, puede describir secuencias **sin fin**:
+
+```js
+function* fibonacci() {
+  let [a, b] = [0, 1];
+  while (true) {
+    yield a;
+    [a, b] = [b, a + b];
+  }
+}
+
+const fib = fibonacci();
+const primeros = [];
+for (let i = 0; i < 10; i++) primeros.push(fib.next().value);
+console.log(primeros);
+```
+
+<Nota tipo="error">
+  Nunca consumas entero un generador infinito: `[...fibonacci()]` o `for (const x of fibonacci())` sin un `break` no terminan nunca. En el próximo tema, `take` lo resuelve con elegancia.
+</Nota>
+
+## yield* para delegar
+
+`yield*` entrega, uno por uno, todos los valores de otro iterable o generador:
+
+```js
+function* vocales() {
+  yield* "aeiou";
+}
+
+function* abecedarioCorto() {
+  yield "inicio";
+  yield* vocales();
+  yield* [1, 2];
+  yield "fin";
+}
+
+console.log([...abecedarioCorto()].join(" "));
+```
+
+Es útil para recorrer estructuras recursivas, como un árbol:
+
+```js
+function* recorrer(nodo) {
+  yield nodo.nombre;
+  for (const hijo of nodo.hijos) yield* recorrer(hijo);
+}
+
+const carpeta = { nombre: "src", hijos: [{ nombre: "app.js", hijos: [] }, { nombre: "lib", hijos: [{ nombre: "util.js", hijos: [] }] }] };
+console.log([...recorrer(carpeta)]);
+```
+
+## return en un generador
+
+Un `return` termina el generador. Su valor aparece en el último `next()`, con `done: true`, pero `for...of` y el spread lo **ignoran**:
+
+```js
+function* corto() {
+  yield 1;
+  return 99;
+}
+
+const g = corto();
+console.log(g.next(), g.next());
+console.log([...corto()]);
+```
+
+## Resumen
+
+- `function*` define un generador; llamarlo no ejecuta nada.
+- `yield valor` entrega el valor y **pausa**; `next()` **retoma** donde quedó.
+- Un generador es iterador e iterable a la vez, y de **un solo uso**.
+- Pueden ser infinitos: solo avanzan cuando les piden valores.
+- `yield*` delega en otro iterable; `return` termina, y su valor no se recorre.
+
+<Practica>
+
+<Autoevaluacion id={generadoresAuto.id} numero={1} titulo={generadoresAuto.titulo} preguntas={generadoresAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={generadoresOrden.id} numero={2} titulo={generadoresOrden.titulo} codigo={generadoresOrden.codigo} salida={generadoresOrden.salida} inicio={generadoresOrden.inicio} explicacion={generadoresOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un generador consumido de a poco y uno nuevo. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={generadoresDetective.id} numero={3} titulo={generadoresDetective.titulo} codigo={generadoresDetective.codigo} error={generadoresDetective.error} culpable={generadoresDetective.culpable} arreglos={generadoresDetective.arreglos} hallazgo={generadoresDetective.hallazgo} pista={generadoresDetective.pista}>
+  <div slot="enunciado">
+    <p>El largo se imprime bien, pero el primer número desaparece. Encuentra la línea que provoca el problema y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={generadoresLab.id} numero={4} titulo={generadoresLab.titulo} inicial={generadoresLab.inicial} verificaciones={generadoresLab.verificaciones} pistas={generadoresLab.pistas} solucion={generadoresLab.solucion} explicacion={generadoresLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe el generador <code>idsUnicos(prefijo)</code>: una secuencia infinita de identificadores.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

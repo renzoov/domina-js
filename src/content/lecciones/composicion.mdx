@@ -1,0 +1,119 @@
+---
+titulo: Composición frente a herencia
+seccion: clases
+tema: composicion
+minutos: 10
+resumen: Los límites de la herencia (jerarquías rígidas, clase base frágil, un solo padre), la composición como alternativa (tener en lugar de ser), funciones que agregan capacidades y delegar en objetos internos.
+intro: 'La herencia es tentadora: escribes una clase base y todas las demás la reutilizan. Pero la realidad no siempre cabe en un árbol. ¿Un pato es un ave o un animal acuático? ¿Un pingüino es un ave que no vuela? Cuando la jerarquía empieza a mentir, la <u>composición</u> ofrece otra forma de reutilizar: armar los objetos por piezas.'
+ejercicios: [composicion-auto, composicion-orden, composicion-detective, composicion-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { composicionAuto, composicionOrden, composicionDetective, composicionLab } from '../../data/ejercicios/clases';
+
+## Dónde falla la herencia
+
+La herencia modela relaciones **"es un"**. Funciona bien mientras la relación se cumple siempre, pero tiene tres problemas conocidos:
+
+- **Un solo padre.** `extends` acepta una clase. Si un objeto necesita capacidades de dos jerarquías, no hay forma limpia.
+- **Clase base frágil.** Un cambio en la clase de arriba afecta a todas las de abajo, incluso a las que no pensabas tocar.
+- **Promesas que no se cumplen.** Si la hija tiene que anular un método del padre para que "no haga nada" o lance un error, la jerarquía está mintiendo. Lo vas a ver con el pingüino del detective.
+
+## Tener en lugar de ser
+
+La **composición** modela relaciones **"tiene un"**: un objeto se arma con piezas independientes y les **delega** el trabajo.
+
+```js
+class Motor {
+  arrancar() { return "motor en marcha"; }
+}
+
+class Radio {
+  encender() { return "sonando música"; }
+}
+
+class Auto {
+  #motor = new Motor();
+  #radio = new Radio();
+
+  viajar() {
+    return `${this.#motor.arrancar()}, ${this.#radio.encender()}`;
+  }
+}
+
+console.log(new Auto().viajar());
+```
+
+Un auto no **es** un motor: **tiene** uno. Puedes cambiar el motor por uno eléctrico sin tocar `Radio` ni reorganizar ninguna jerarquía.
+
+## Capacidades como funciones
+
+En JavaScript, la forma más liviana de componer son funciones que **agregan una capacidad** a un objeto:
+
+```js
+const conNombre = (nombre) => ({ nombre });
+const puedeCaminar = (obj) => ({ ...obj, caminar: () => `${obj.nombre} camina` });
+const puedeNadar = (obj) => ({ ...obj, nadar: () => `${obj.nombre} nada` });
+const puedeVolar = (obj) => ({ ...obj, volar: () => `${obj.nombre} vuela` });
+
+const pato = puedeVolar(puedeNadar(puedeCaminar(conNombre("Pato"))));
+const pinguino = puedeNadar(puedeCaminar(conNombre("Pingüino")));
+
+console.log(pato.volar(), "·", pato.nadar());
+console.log(pinguino.nadar(), "·", "volar" in pinguino);
+```
+
+Cada objeto tiene exactamente las capacidades que le corresponden. El pingüino no tiene `volar`, en lugar de tener uno que miente.
+
+<Nota tipo="consejo">
+  No es todo o nada. Un buen punto de partida: clases para las entidades del programa, **composición** para combinar comportamientos y **herencia** solo para relaciones "es un" claras y estables, como un error propio que extiende `Error`.
+</Nota>
+
+## Cómo elegir
+
+| Pregunta | Si la respuesta es sí… |
+|---|---|
+| ¿La hija **es** siempre un tipo del padre, sin excepciones? | Herencia |
+| ¿Necesitas combinar capacidades de varios lados? | Composición |
+| ¿Tendrías que anular métodos del padre para desactivarlos? | Composición |
+| ¿Quieres poder cambiar una pieza sin tocar las demás? | Composición |
+
+## Resumen
+
+- La herencia modela **"es un"**; la composición, **"tiene un"**.
+- La herencia tiene límites: un solo padre, clase base frágil y jerarquías que no encajan con la realidad.
+- Componer es armar objetos con piezas y **delegarles** el trabajo.
+- Funciones como `puedeVolar(obj)` agregan capacidades sin jerarquías.
+- Regla práctica: composición por defecto, herencia cuando la relación "es un" es clara.
+
+<Practica>
+
+<Autoevaluacion id={composicionAuto.id} numero={1} titulo={composicionAuto.titulo} preguntas={composicionAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={composicionOrden.id} numero={2} titulo={composicionOrden.titulo} codigo={composicionOrden.codigo} salida={composicionOrden.salida} inicio={composicionOrden.inicio} explicacion={composicionOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos animales armados con capacidades. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={composicionDetective.id} numero={3} titulo={composicionDetective.titulo} codigo={composicionDetective.codigo} error={composicionDetective.error} culpable={composicionDetective.culpable} arreglos={composicionDetective.arreglos} hallazgo={composicionDetective.hallazgo} pista={composicionDetective.pista}>
+  <div slot="enunciado">
+    <p>El error salta en un método, pero el problema es de diseño. Encuentra la línea donde empieza y elige la mejor solución.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={composicionLab.id} numero={4} titulo={composicionLab.titulo} inicial={composicionLab.inicial} verificaciones={composicionLab.verificaciones} pistas={composicionLab.pistas} solucion={composicionLab.solucion} explicacion={composicionLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe la capacidad <code>conAtaque</code> para armar un guerrero por piezas, sin clases.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

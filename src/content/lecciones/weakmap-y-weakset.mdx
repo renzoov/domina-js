@@ -1,0 +1,115 @@
+---
+titulo: WeakMap y WeakSet
+seccion: colecciones
+tema: weakmap-y-weakset
+minutos: 8
+resumen: Para qué sirven WeakMap y WeakSet en la práctica (datos asociados a objetos, marcas, cachés), qué no pueden hacer (recorrer, size, claves primitivas) y cómo elegir entre ellas y Map o Set.
+intro: 'Ya viste en <b>Memoria y recolector de basura</b> que una <code>WeakMap</code> no retiene sus claves. Aquí la mirada es práctica: <u>cuándo</u> usar las colecciones débiles, qué problemas resuelven mejor que <code>Map</code> y <code>Set</code>, y qué tienes que dejar a cambio.'
+ejercicios: [debiles-auto, debiles-orden, debiles-detective, debiles-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { debilesAuto, debilesOrden, debilesDetective, debilesLab } from '../../data/ejercicios/colecciones';
+
+## La regla en una frase
+
+Una colección débil **recuerda algo sobre un objeto mientras ese objeto exista**, y lo olvida sola cuando el objeto deja de usarse. No tienes que limpiar nada.
+
+## Caso 1: datos asociados a objetos ajenos
+
+Quieres guardar información extra sobre objetos que no son tuyos (elementos de la página, objetos de una librería) sin agregarles propiedades:
+
+```js
+const clics = new WeakMap();
+
+function registrarClic(elemento) {
+  clics.set(elemento, (clics.get(elemento) ?? 0) + 1);
+  return clics.get(elemento);
+}
+
+const boton = { id: "enviar" };  // imagina un botón de la página
+registrarClic(boton);
+console.log(registrarClic(boton));
+```
+
+Si el botón desaparece de la página y nadie más lo referencia, su contador se va con él.
+
+## Caso 2: marcar objetos
+
+Una `WeakSet` responde una sola pregunta: "¿ya vi este objeto?". Es perfecta para evitar procesar algo dos veces o para detectar ciclos al recorrer estructuras:
+
+```js
+function contarNodos(nodo, vistos = new WeakSet()) {
+  if (vistos.has(nodo)) return 0;  // ya pasamos por aquí: hay un ciclo
+  vistos.add(nodo);
+  let total = 1;
+  for (const hijo of nodo.hijos) total += contarNodos(hijo, vistos);
+  return total;
+}
+
+const a = { hijos: [] };
+const b = { hijos: [a] };
+a.hijos.push(b);  // a → b → a: un ciclo
+
+console.log(contarNodos(a));  // 2, sin quedarse en un bucle infinito
+```
+
+## Caso 3: cachés por objeto
+
+Como el laboratorio de *Memoria*: guardar un resultado caro calculado a partir de un objeto, sin que la caché impida liberarlo.
+
+## Lo que no pueden hacer
+
+| | `Map` / `Set` | `WeakMap` / `WeakSet` |
+|---|---|---|
+| Claves | Cualquier valor | Solo objetos (y símbolos no registrados) |
+| `size` | Sí | No |
+| Recorrer (`for...of`, `forEach`, `keys`…) | Sí | No |
+| `clear()` | Sí | No |
+| Retiene las claves | Sí | No |
+
+Todo lo que falta tiene la misma razón: el contenido puede cambiar **en cualquier momento**, cuando pasa el recolector, así que no hay una lista estable que contar ni recorrer.
+
+<Nota tipo="consejo">
+  Para elegir, pregúntate: ¿necesito recorrer la colección o saber cuántos elementos tiene? Si la respuesta es sí, usa `Map` o `Set` y bórralos cuando ya no sirvan. Si solo necesitas consultar por un objeto concreto, la versión débil te ahorra esa limpieza.
+</Nota>
+
+## Resumen
+
+- Las colecciones débiles recuerdan datos **mientras el objeto exista**.
+- `WeakMap`: datos extra sobre objetos ajenos y cachés por objeto.
+- `WeakSet`: marcar objetos ya vistos o procesados, y detectar ciclos.
+- No tienen `size`, no se recorren y solo aceptan objetos como claves.
+- ¿Hay que recorrer? `Map`/`Set`. ¿Solo consultar por objeto? La versión débil.
+
+<Practica>
+
+<Autoevaluacion id={debilesAuto.id} numero={1} titulo={debilesAuto.titulo} preguntas={debilesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={debilesOrden.id} numero={2} titulo={debilesOrden.titulo} codigo={debilesOrden.codigo} salida={debilesOrden.salida} inicio={debilesOrden.inicio} explicacion={debilesOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una <code>WeakSet</code> que marca y una <code>WeakMap</code> que guarda datos. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={debilesDetective.id} numero={3} titulo={debilesDetective.titulo} codigo={debilesDetective.codigo} error={debilesDetective.error} culpable={debilesDetective.culpable} arreglos={debilesDetective.arreglos} hallazgo={debilesDetective.hallazgo} pista={debilesDetective.pista}>
+  <div slot="enunciado">
+    <p>Alguien quiere listar todo lo que hay en la caché. Encuentra la línea que falla y elige la solución.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={debilesLab.id} numero={4} titulo={debilesLab.titulo} inicial={debilesLab.inicial} verificaciones={debilesLab.verificaciones} pistas={debilesLab.pistas} solucion={debilesLab.solucion} explicacion={debilesLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>procesarUnaVez(obj)</code> con una <code>WeakSet</code> que recuerde los objetos ya procesados.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -1,0 +1,166 @@
+---
+titulo: 'Herencia: extends y super'
+seccion: clases
+tema: herencia
+minutos: 11
+resumen: Cómo crear una clase hija con extends, llamar al constructor del padre con super(), sobrescribir y extender métodos con super.metodo(), instanceof, la cadena de prototipos de las clases y cómo extender clases nativas como Error.
+intro: 'A veces una clase es una versión más específica de otra: un <code>Administrador</code> es un <code>Usuario</code> con permisos extra; un <code>ErrorDeRed</code> es un <code>Error</code> con más datos. La <u>herencia</u> permite escribir solo lo que cambia y reutilizar todo lo demás.'
+ejercicios: [herencia-auto, herencia-orden, herencia-detective, herencia-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { herenciaAuto, herenciaOrden, herenciaDetective, herenciaLab } from '../../data/ejercicios/clases';
+
+## extends
+
+`class Hija extends Padre` crea una clase que hereda todos los métodos de `Padre`:
+
+```js
+class Usuario {
+  constructor(nombre) {
+    this.nombre = nombre;
+  }
+  saludar() {
+    return `Hola, soy ${this.nombre}`;
+  }
+}
+
+class Admin extends Usuario {
+  borrar(cosa) {
+    return `${this.nombre} borró ${cosa}`;
+  }
+}
+
+const eva = new Admin("Eva");
+console.log(eva.saludar());   // heredado
+console.log(eva.borrar("un comentario"));
+```
+
+`Admin` no tiene constructor, así que usa automáticamente el de `Usuario`.
+
+## super() en el constructor
+
+Si la hija tiene constructor propio, **tiene que** llamar a `super(...)`, el constructor del padre, **antes** de usar `this`. El objeto lo crea el padre: hasta entonces, `this` no existe.
+
+```js
+class Usuario {
+  constructor(nombre) {
+    this.nombre = nombre;
+  }
+}
+
+class Admin extends Usuario {
+  constructor(nombre, nivel) {
+    super(nombre);        // primero el padre
+    this.nivel = nivel;   // después lo propio
+  }
+}
+
+console.log(new Admin("Eva", 3));
+```
+
+## Sobrescribir y extender métodos
+
+Si la hija define un método con el mismo nombre, **tapa** al del padre (lo sobrescribe). Con `super.metodo()` puede llamar a la versión del padre y **extenderla**:
+
+```js
+class Notificacion {
+  texto() {
+    return "Tienes un mensaje";
+  }
+}
+
+class Urgente extends Notificacion {
+  texto() {
+    return `⚠ ${super.texto().toUpperCase()}`;
+  }
+}
+
+console.log(new Notificacion().texto());
+console.log(new Urgente().texto());
+```
+
+## La cadena por debajo
+
+`extends` arma la cadena de prototipos que ya conoces:
+
+```
+admin  →  Admin.prototype  →  Usuario.prototype  →  Object.prototype  →  null
+```
+
+Por eso funciona `instanceof`: recorre la cadena buscando el `prototype` de la clase.
+
+```js
+class Figura {}
+class Circulo extends Figura {}
+
+const c = new Circulo();
+console.log(c instanceof Circulo, c instanceof Figura, c instanceof Object);
+console.log(Object.getPrototypeOf(Circulo.prototype) === Figura.prototype);
+```
+
+## Extender clases nativas
+
+Puedes extender `Error`, `Array`, `Map` y otras clases del lenguaje. El caso más útil son los **errores propios**, que llevan datos extra y se distinguen con `instanceof`:
+
+```js
+class ErrorHttp extends Error {
+  constructor(estado, mensaje) {
+    super(mensaje);
+    this.name = "ErrorHttp";
+    this.estado = estado;
+  }
+}
+
+try {
+  throw new ErrorHttp(404, "No encontrado");
+} catch (error) {
+  if (error instanceof ErrorHttp) {
+    console.log(error.estado, error.message);
+  }
+}
+```
+
+<Nota tipo="consejo">
+  La herencia une mucho a las dos clases: un cambio en el padre afecta a todas las hijas. Úsala cuando la hija **es** de verdad un tipo del padre. Para el resto, el próximo tema: *Composición frente a herencia*.
+</Nota>
+
+## Resumen
+
+- `class Hija extends Padre` hereda los métodos del padre.
+- En un constructor hijo, `super(...)` va **antes** de usar `this`.
+- Un método con el mismo nombre **sobrescribe**; `super.metodo()` llama al del padre.
+- `extends` enlaza los prototipos; `instanceof` recorre esa cadena.
+- Extender `Error` es la forma de crear errores propios con datos extra.
+
+<Practica>
+
+<Autoevaluacion id={herenciaAuto.id} numero={1} titulo={herenciaAuto.titulo} preguntas={herenciaAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={herenciaOrden.id} numero={2} titulo={herenciaOrden.titulo} codigo={herenciaOrden.codigo} salida={herenciaOrden.salida} inicio={herenciaOrden.inicio} explicacion={herenciaOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un perro que extiende el sonido de un animal. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={herenciaDetective.id} numero={3} titulo={herenciaDetective.titulo} codigo={herenciaDetective.codigo} error={herenciaDetective.error} culpable={herenciaDetective.culpable} arreglos={herenciaDetective.arreglos} hallazgo={herenciaDetective.hallazgo} pista={herenciaDetective.pista}>
+  <div slot="enunciado">
+    <p>La moto nunca llega a crearse. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={herenciaLab.id} numero={4} titulo={herenciaLab.titulo} inicial={herenciaLab.inicial} verificaciones={herenciaLab.verificaciones} pistas={herenciaLab.pistas} solucion={herenciaLab.solucion} explicacion={herenciaLab.explicacion}>
+  <div slot="enunciado">
+    <p>Crea <code>ErrorDeValidacion</code> extendiendo <code>Error</code>, con un dato extra: el campo que falló.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

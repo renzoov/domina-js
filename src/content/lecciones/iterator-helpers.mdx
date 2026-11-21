@@ -1,0 +1,153 @@
+---
+titulo: Iterator helpers
+seccion: iteradores
+tema: iterator-helpers
+minutos: 11
+resumen: Los métodos de iteradores de ES2025 (map, filter, take, drop, flatMap, reduce, toArray, some, every, find, forEach), Iterator.from, la evaluación perezosa, Iterator.concat de ES2026 y lo que llega en ES2027 (zip, includes, join y chunking).
+intro: 'Con arrays, encadenar <code>filter</code> y <code>map</code> es natural. Con iteradores y generadores, hasta 2025 no había nada parecido: había que convertirlos en arrays primero, y con una secuencia infinita eso era imposible. Los <u>iterator helpers</u> traen esos métodos a cualquier iterador, y con una ventaja: son <u>perezosos</u>.'
+ejercicios: [helpers-auto, helpers-orden, helpers-detective, helpers-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { helpersAuto, helpersOrden, helpersDetective, helpersLab } from '../../data/ejercicios/iteradores';
+
+## Los métodos (ES2025)
+
+Todos los iteradores del lenguaje, incluidos los generadores, tienen ahora estos métodos:
+
+```js
+function* naturales() {
+  let n = 1;
+  while (true) yield n++;
+}
+
+const cuadradosPares = naturales()
+  .filter((n) => n % 2 === 0)  // solo pares
+  .map((n) => n * n)           // al cuadrado
+  .drop(1)                     // saltea el primero
+  .take(3)                     // se queda con tres
+  .toArray();                  // a array
+
+console.log(cuadradosPares);
+```
+
+| Devuelven otro iterador (perezosos) | Consumen el iterador |
+|---|---|
+| `map`, `filter`, `flatMap` | `toArray`, `reduce`, `forEach` |
+| `take(n)`, `drop(n)` | `some`, `every`, `find` |
+
+## Perezosos
+
+Un método perezoso no hace nada hasta que alguien pide valores, y entonces procesa **solo los necesarios**, de a uno, a lo largo de toda la cadena:
+
+```js
+const registro = [];
+const resultado = Iterator.from([1, 2, 3, 4, 5])
+  .map((n) => {
+    registro.push(n);
+    return n * 10;
+  })
+  .take(2)
+  .toArray();
+
+console.log(resultado);
+console.log(registro);  // solo se procesaron dos
+```
+
+Con un array, `map` habría transformado los cinco elementos antes de que alguien recortara. Con listas enormes, archivos o secuencias infinitas, la diferencia es enorme.
+
+## Iterator.from
+
+Los arrays, `Map` y `Set` son iterables, pero no tienen `take` ni `drop`. `Iterator.from` convierte cualquier iterable en un iterador con todos los helpers:
+
+```js
+const tareas = new Set(["leer", "escribir", "practicar", "repasar"]);
+
+const siguientes = Iterator.from(tareas).drop(1).take(2).toArray();
+console.log(siguientes);
+
+const mapa = new Map([["ana", 31], ["luis", 27], ["eva", 35]]);
+console.log(mapa.entries().filter(([, edad]) => edad > 30).map(([n]) => n).toArray());
+```
+
+Los iteradores de `entries()`, `keys()` y `values()` ya tienen los helpers sin necesidad de `Iterator.from`.
+
+## Unir iteradores (ES2026)
+
+`Iterator.concat` recorre varios iterables, uno detrás de otro, sin crear arrays intermedios:
+
+```js
+const manana = ["café", "tostadas"];
+const tarde = new Set(["té"]);
+
+console.log(Iterator.concat(manana, tarde).toArray());
+```
+
+## Lo que llega en ES2027
+
+Ya terminados en TC39 y llegando a los navegadores:
+
+```js
+// Recorrer varios iteradores a la vez, emparejando sus valores
+const nombres = ["Ana", "Luis"];
+const edades = [31, 27];
+console.log(Iterator.zip([nombres, edades]).toArray());
+
+// includes y join, como en los arrays
+console.log(Iterator.from(["a", "b", "c"]).includes("b"));
+console.log(Iterator.from(["a", "b", "c"]).join("-"));
+```
+
+Y el *chunking*, para partir un iterador en bloques de un tamaño fijo, o en ventanas que se deslizan:
+
+```js
+const lecturas = Iterator.from([1, 2, 3, 4, 5]);
+console.log(lecturas.chunks(2).toArray());   // [ [1, 2], [3, 4], [5] ]
+
+const temperaturas = Iterator.from([20, 22, 21, 25]);
+console.log(temperaturas.windows(2).toArray()); // [ [20, 22], [22, 21], [21, 25] ]
+```
+
+<Nota tipo="ojo">
+  Que una característica esté terminada no significa que esté en todos los navegadores. Antes de usar las de ES2027 en producción, comprueba su soporte en MDN o en la tabla **Baseline**. Los ejemplos de *chunking* de este tema se pueden copiar, pero no ejecutar aquí todavía.
+</Nota>
+
+## Resumen
+
+- ES2025: `map`, `filter`, `flatMap`, `take`, `drop`, `reduce`, `toArray`, `forEach`, `some`, `every` y `find` en todos los iteradores.
+- Son **perezosos**: procesan solo los valores que se piden, así que funcionan con secuencias infinitas.
+- Devuelven iteradores: termina con `toArray()` si necesitas un array.
+- `Iterator.from` da los helpers a cualquier iterable.
+- ES2026: `Iterator.concat`. ES2027: `Iterator.zip`, `includes`, `join`, `chunks` y `windows`.
+
+<Practica>
+
+<Autoevaluacion id={helpersAuto.id} numero={1} titulo={helpersAuto.titulo} preguntas={helpersAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={helpersOrden.id} numero={2} titulo={helpersOrden.titulo} codigo={helpersOrden.codigo} salida={helpersOrden.salida} inicio={helpersOrden.inicio} explicacion={helpersOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un generador infinito que avisa cada vez que produce un número. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={helpersDetective.id} numero={3} titulo={helpersDetective.titulo} codigo={helpersDetective.codigo} error={helpersDetective.error} culpable={helpersDetective.culpable} arreglos={helpersDetective.arreglos} hallazgo={helpersDetective.hallazgo} pista={helpersDetective.pista}>
+  <div slot="enunciado">
+    <p>Se esperaba poder leer el primer nombre. Encuentra la línea donde está el malentendido y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={helpersLab.id} numero={4} titulo={helpersLab.titulo} inicial={helpersLab.inicial} verificaciones={helpersLab.verificaciones} pistas={helpersLab.pistas} solucion={helpersLab.solucion} explicacion={helpersLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>primerosPares</code> con iterator helpers, para que funcione incluso con una secuencia infinita.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

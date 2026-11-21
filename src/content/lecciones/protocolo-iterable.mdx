@@ -1,0 +1,135 @@
+---
+titulo: El protocolo iterable
+seccion: iteradores
+tema: protocolo-iterable
+minutos: 11
+resumen: Qué es un iterable y qué es un iterador, el método Symbol.iterator, next() y el objeto { value, done }, todo lo que usa el protocolo (for...of, spread, desestructuración, Array.from), y cómo hacer iterables tus propios objetos.
+intro: '<code>for...of</code> recorre arrays, textos, <code>Map</code> y <code>Set</code> sin importar cómo guarda cada uno sus datos. ¿Cómo lo hace? Porque todos cumplen un mismo <u>acuerdo</u>, el protocolo iterable. Si tu objeto lo cumple, funciona con <code>for...of</code>, spread y todo lo demás, como uno más.'
+pizarron: protocoloIterable
+modoPizarron: variables
+guia:
+  titulo: Qué mirar en el pizarrón
+  texto: 'El array y su iterador son dos objetos distintos. Fíjate en que el iterador recuerda su posición y en qué devuelve cada <code>next()</code>, sobre todo el último.'
+ejercicios: [iterable-auto, iterable-orden, iterable-detective, iterable-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { iterableAuto, iterableOrden, iterableDetective, iterableLab } from '../../data/ejercicios/iteradores';
+
+## Dos piezas
+
+El protocolo tiene dos partes, como muestra el pizarrón:
+
+- Un **iterable** es un objeto que tiene un método bajo la clave `Symbol.iterator`. Ese método fabrica un iterador.
+- Un **iterador** es un objeto con un método `next()`. Cada llamada devuelve `{ value, done }`: el siguiente valor, y si ya se terminó.
+
+```js
+const texto = "ok";
+const it = texto[Symbol.iterator]();
+
+console.log(it.next());
+console.log(it.next());
+console.log(it.next());
+```
+
+`Symbol.iterator` es uno de los **símbolos conocidos** que viste en *Symbols*: una clave especial que el lenguaje usa para pedirle algo a un objeto.
+
+## Quién usa el protocolo
+
+Todas estas herramientas piden un iterador y llaman a `next()` hasta ver `done: true`:
+
+```js
+const conjunto = new Set(["a", "b", "c"]);
+
+for (const x of conjunto) console.log(x);    // for...of
+console.log([...conjunto]);                  // spread
+const [primero, segundo] = conjunto;         // desestructuración de arrays
+console.log(primero, segundo);
+console.log(Array.from(conjunto));           // Array.from
+console.log(new Map([["k", 1]]).get("k"));   // el constructor de Map recibe un iterable
+console.log(Math.max(...new Set([3, 9, 4]))); // spread en argumentos
+```
+
+Son iterables los arrays, los textos (por caracteres), `Map`, `Set`, los arrays tipados, `arguments` y los resultados de `entries()`, `keys()` y `values()`. Los objetos literales **no** lo son.
+
+## Hacer iterable un objeto
+
+Basta con darle un método `[Symbol.iterator]` que devuelva un iterador:
+
+```js
+const playlist = {
+  canciones: ["Intro", "Tema 1", "Final"],
+  [Symbol.iterator]() {
+    let i = 0;
+    const lista = this.canciones;
+    return {
+      next() {
+        if (i < lista.length) {
+          return { value: `♪ ${lista[i++]}`, done: false };
+        }
+        return { value: undefined, done: true };
+      },
+    };
+  },
+};
+
+for (const c of playlist) console.log(c);
+console.log([...playlist].length);
+```
+
+La posición (`i`) se crea **dentro** del método, así que cada recorrido empieza desde el principio.
+
+<Nota tipo="ojo">
+  Un **iterable** se puede recorrer muchas veces: cada vez fabrica un iterador nuevo. Un **iterador** es un recorrido de un solo uso: cuando llega a `done: true`, ya no da más valores. Esta diferencia va a importar mucho con los generadores.
+</Nota>
+
+## Iteradores que también son iterables
+
+Los iteradores del lenguaje (los de `entries()`, `keys()`, `values()`…) tienen también un `[Symbol.iterator]` que se devuelve a sí mismo. Por eso puedes recorrerlos con `for...of`, aunque solo una vez:
+
+```js
+const it = ["x", "y"].values();
+
+console.log([...it]);  // [ 'x', 'y' ]
+console.log([...it]);  // []: ya se consumió
+```
+
+## Resumen
+
+- Un **iterable** tiene `[Symbol.iterator]()`, que devuelve un **iterador**.
+- Un iterador tiene `next()`, que devuelve `{ value, done }`.
+- `for...of`, spread, desestructuración, `Array.from` y `new Map/Set` usan el protocolo.
+- Tus objetos son iterables si implementan `[Symbol.iterator]`.
+- Un iterable se recorre muchas veces; un iterador, una sola.
+
+<Practica>
+
+<Autoevaluacion id={iterableAuto.id} numero={1} titulo={iterableAuto.titulo} preguntas={iterableAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={iterableOrden.id} numero={2} titulo={iterableOrden.titulo} codigo={iterableOrden.codigo} salida={iterableOrden.salida} inicio={iterableOrden.inicio} explicacion={iterableOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un objeto propio que cumple el protocolo, usado de cuatro formas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={iterableDetective.id} numero={3} titulo={iterableDetective.titulo} codigo={iterableDetective.codigo} error={iterableDetective.error} culpable={iterableDetective.culpable} arreglos={iterableDetective.arreglos} hallazgo={iterableDetective.hallazgo} pista={iterableDetective.pista}>
+  <div slot="enunciado">
+    <p>Los tres números se imprimen y después todo falla. Encuentra la línea del iterador que hay que arreglar.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={iterableLab.id} numero={4} titulo={iterableLab.titulo} inicial={iterableLab.inicial} verificaciones={iterableLab.verificaciones} pistas={iterableLab.pistas} solucion={iterableLab.solucion} explicacion={iterableLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe <code>cuentaRegresiva(desde)</code>, que devuelva un objeto iterable, implementando el protocolo a mano.</p>
+  </div>
+</Laboratorio>
+
+</Practica>
