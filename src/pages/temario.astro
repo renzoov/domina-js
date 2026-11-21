@@ -35,7 +35,7 @@ const disponibles = new Set(lecciones.map((l) => `${l.data.seccion}/${l.data.tem
             const hay = disponibles.has(`${s.slug}/${t.slug}`);
             return (
               <li class:list={{ hay }}>
-                {hay ? <a href={`/${s.slug}/${t.slug}`} style={`view-transition-name: vt-${s.slug}-${t.slug}`}>{t.titulo}</a> : <span class="titulo">{t.titulo}</span>}
+                {hay ? <a href={`/${s.slug}/${t.slug}`}>{t.titulo}</a> : <span class="titulo">{t.titulo}</span>}
                 <span class="marcas">
                   {t.visualizador && <span class="ojo" title="Lleva visualizador"><Icono nombre="ojo" titulo="Lleva visualizador" /></span>}
                   {t.ediciones.map((e) => <span class="ed">{e}</span>)}
@@ -90,7 +90,7 @@ const disponibles = new Set(lecciones.map((l) => `${l.data.seccion}/${l.data.tem
   }
   .temas li::before { content: counter(t); font: 400 0.75rem var(--mono); color: var(--azul); min-width: 1.6em; }
   .titulo { flex: 1; color: var(--chalk-70); }
-  .temas a { view-transition-class: titulo; flex: 1; font-weight: 700; color: var(--chalk); text-decoration: none; background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); width: fit-content; }
+  .temas a { flex: 1; font-weight: 700; color: var(--chalk); text-decoration: none; background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); width: fit-content; }
   .temas a:hover { color: var(--y); }
   .marcas { display: flex; align-items: center; gap: 6px; flex: none; }
   .pronto { font: 400 0.64rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--chalk-45); }

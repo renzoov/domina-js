@@ -16,7 +16,7 @@ export async function getStaticPaths() {
 const { leccion, disponiblesLista } = Astro.props;
 const encontrado = buscarTema(leccion.data.seccion, leccion.data.tema);
 if (!encontrado) throw new Error(`El tema ${leccion.data.seccion}/${leccion.data.tema} no existe en src/data/temario.ts`);
-const { Content, headings } = await render(leccion);
+const { Content } = await render(leccion);
 const datos = leccion.data.pizarron
   ? (visualizaciones as Record<string, DatosVisualizador>)[leccion.data.pizarron]
   : undefined;
@@ -34,7 +34,6 @@ if (leccion.data.pizarron && !datos) throw new Error(`No existe la visualizació
   disponibles={new Set(disponiblesLista)}
   pizarron={datos && { id: 'pizarron', datos, mostrarPila: leccion.data.mostrarPila, modo: leccion.data.modoPizarron }}
   ejercicios={leccion.data.ejercicios}
-  encabezados={headings}
 >
   <Content />
 </LessonLayout>

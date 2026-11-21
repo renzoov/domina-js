@@ -7,10 +7,8 @@ import { temario, totalTemas } from '../data/temario';
 interface Props {
   /** Tema que se está viendo, para marcarlo */
   actual?: { seccion: string; tema: string };
-  /** Apartados de la lección actual */
-  indice?: { slug: string; texto: string }[];
 }
-const { actual, indice = [] } = Astro.props;
+const { actual } = Astro.props;
 const lecciones = await getCollection('lecciones');
 const disponibles = new Set(lecciones.map((l) => `${l.data.seccion}/${l.data.tema}`));
 const ejerciciosPorTema = Object.fromEntries(lecciones.map((l) => [`${l.data.seccion}/${l.data.tema}`, l.data.ejercicios]));
@@ -56,11 +54,6 @@ const publicados = disponibles.size;
                       ) : (
                         <span class="txt">{t.titulo}<span class="sr-only"> (próximamente)</span></span>
                       )}
-                      {esta && indice.length > 0 && (
-                        <ol class="apartados" aria-label="En esta lección">
-                          {indice.map((h) => <li><a href={`#${h.slug}`}>{h.texto}</a></li>)}
-                        </ol>
-                      )}
                     </li>
                   );
                 })}
@@ -87,12 +80,14 @@ const publicados = disponibles.size;
       total += ids.length;
       hechos += resueltos;
       const marca = a.querySelector<HTMLElement>('[data-hecho]');
-      if (marca) marca.hidden = !(ids.length && resueltos === ids.length);
+      const oculta = !(ids.length && resueltos === ids.length);
+      if (marca && marca.hidden !== oculta) marca.hidden = oculta;
     });
     const p = document.querySelector<HTMLElement>('[data-menu] [data-progreso]');
-    if (p && hechos) {
+    const texto = `Llevas ${hechos} de ${total} ejercicios resueltos`;
+    if (p && hechos && (p.hidden || p.textContent !== texto)) {
       p.hidden = false;
-      p.textContent = `Llevas ${hechos} de ${total} ejercicios resueltos`;
+      p.textContent = texto;
     }
   }
 
@@ -104,35 +99,10 @@ const publicados = disponibles.size;
       menu.classList.toggle('abierto', !abierto);
     });
   });
-  pintarProgreso();
+  // El primer pintado lo hace el script en línea de BaseLayout, antes de que se dibuje la página;
+  // aquí solo se actualiza cuando resuelves un ejercicio
   document.addEventListener('domina:progreso', pintarProgreso);
 
-  // Al abrir una lección, la barra lateral se desplaza hasta el tema actual
-  const temaActual = document.querySelector<HTMLElement>('[data-menu] a[aria-current="page"]');
-  const barra = temaActual?.closest<HTMLElement>('.lado-fijo');
-  if (temaActual && barra && barra.scrollHeight > barra.clientHeight) {
-    const delta = temaActual.getBoundingClientRect().top - barra.getBoundingClientRect().top;
-    barra.scrollTop += delta - barra.clientHeight / 3;
-  }
-
-  // Resalta en el menú el apartado de la lección que se está leyendo
-  const apartados = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-menu] .apartados a'));
-  const destinos = apartados.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1))));
-  let pendiente = false;
-  function marcarLectura() {
-    pendiente = false;
-    let actual = -1;
-    destinos.forEach((d, i) => {
-      if (d && d.getBoundingClientRect().top < window.innerHeight * 0.3) actual = i;
-    });
-    apartados.forEach((a, i) => a.classList.toggle('leyendo', i === actual));
-  }
-  if (apartados.length) {
-    window.addEventListener('scroll', () => {
-      if (!pendiente) { pendiente = true; requestAnimationFrame(marcarLectura); }
-    }, { passive: true });
-    marcarLectura();
-  }
 </script>
 
 <style>
@@ -174,22 +144,30 @@ const publicados = disponibles.size;
   .flecha :global(svg) { width: 16px; height: 16px; }
   details[open] .flecha { transform: rotate(180deg); }
 
-  .temas { padding: 0 0 12px 36px; display: grid; gap: 2px; }
+  .temas { padding: 0 0 12px 30px; display: grid; gap: 3px; }
   .temas li { font-size: 0.9rem; line-height: 1.35; }
   .temas .txt { color: var(--chalk-70); }
-  .temas a { display: flex; align-items: center; gap: 6px; padding: 4px 0; color: var(--chalk); text-decoration: none; }
-  .temas a .txt { color: var(--chalk); font-weight: 700; background: linear-gradient(transparent 82%, var(--chalk-45) 82% 92%, transparent 92%); }
-  .temas a:hover .txt { background: linear-gradient(transparent 82%, var(--chalk-70) 82% 92%, transparent 92%); }
-  .temas a[aria-current='page'] .txt { background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); }
-  .temas li:not(.hay) { padding: 4px 0; }
-  .hecho { display: inline-grid; color: var(--ok); }
-  .esta { position: relative; }
-  .esta::before { content: ''; position: absolute; left: -14px; top: 6px; height: 1.2em; width: 3px; background: var(--y); border-radius: var(--r-trazo); }
-  .apartados { list-style: none; margin: 4px 0 6px; padding: 0 0 0 12px; border-left: 2px solid var(--chalk-15); display: grid; gap: 2px; }
-  .apartados a { display: block; padding: 3px 0; font-size: 0.92rem; line-height: 1.35; color: var(--chalk-70); text-decoration: none; }
-  .apartados a:hover { color: var(--chalk); }
-  .apartados :global(a.leyendo) { color: var(--chalk); font-weight: 700; position: relative; }
-  .apartados :global(a.leyendo)::before { content: ''; position: absolute; left: -16px; top: 0.55em; width: 8px; height: 8px; border-radius: 50%; background: var(--azul); }
+
+  /* Cada tema lleva un guion de tiza; el texto queda con sangría, así la segunda línea se alinea con la primera */
+  .temas a,
+  .temas li:not(.hay) > .txt { position: relative; display: flex; align-items: flex-start; gap: 6px; padding: 4px 8px 4px 18px; text-decoration: none; border-radius: 4px 7px 5px 6px; }
+  .temas a::before,
+  .temas li:not(.hay) > .txt::before {
+    content: ''; position: absolute; left: 4px; top: calc(4px + 0.66em);
+    width: 8px; height: 2px; border-radius: var(--r-trazo);
+    background: var(--chalk-45); transform: rotate(-4deg);
+    transition: background 150ms var(--ease-out), width 150ms var(--ease-out);
+  }
+  .temas a .txt { color: var(--chalk); font-weight: 700; transition: color 150ms var(--ease-out); }
+  .temas a:hover::before { background: var(--chalk); }
+  .temas a:hover .txt { color: #fff; }
+
+  /* El tema que se está leyendo: tiza amarilla, con un poco de polvo alrededor */
+  .temas a[aria-current='page'] { background: var(--y-06); box-shadow: inset 0 0 0 1px var(--y-12); }
+  .temas a[aria-current='page']::before { background: var(--y); width: 10px; }
+  .temas a[aria-current='page'] .txt { color: var(--y); text-shadow: 0 0 6px rgba(247, 223, 30, 0.35); }
+
+  .hecho { display: inline-grid; color: var(--ok); margin-top: 1px; }
   .hecho :global(svg) { width: 15px; height: 15px; }
 
   .todo { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; font-weight: 700; font-size: 0.9rem; color: var(--chalk-70); text-decoration: none; }

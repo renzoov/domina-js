@@ -2,16 +2,35 @@
 import '../styles/global.css';
 import Logo from '../components/Logo.astro';
 import MenuTemario from '../components/MenuTemario.astro';
+import cabin400 from '@fontsource/cabin-sketch/files/cabin-sketch-latin-400-normal.woff2?url';
+import cabin700 from '@fontsource/cabin-sketch/files/cabin-sketch-latin-700-normal.woff2?url';
+import atkinson400 from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2?url';
+import atkinson700 from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2?url';
+import fira400 from '@fontsource/fira-code/files/fira-code-latin-400-normal.woff2?url';
+
+// Las fuentes principales se precargan y usan font-display: optional. Chromium espera hasta 100 ms a que estén
+// listas antes de pintar; como quedan en caché, siempre llegan y nunca hay un cambio de fuente a la vista
+// (antes, a veces la página aparecía con la fuente de respaldo y al instante se repintaba con Cabin Sketch).
+// Si en la primera visita no llegan a tiempo, quedan de respaldo las reglas de fontsource de global.css.
+const LATIN = 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD';
+const fuentes: [string, number, string][] = [
+  ['Cabin Sketch', 700, cabin700],
+  ['Cabin Sketch', 400, cabin400],
+  ['Atkinson Hyperlegible', 400, atkinson400],
+  ['Atkinson Hyperlegible', 700, atkinson700],
+  ['Fira Code', 400, fira400],
+];
+const carasFuentes = fuentes
+  .map(([familia, peso, url]) => `@font-face{font-family:'${familia}';font-style:normal;font-weight:${peso};font-display:optional;src:url(${url}) format('woff2');unicode-range:${LATIN}}`)
+  .join('\n');
 
 interface Props {
   titulo: string;
   descripcion?: string;
   /** Tema que se está viendo, para marcarlo en el menú */
   actual?: { seccion: string; tema: string };
-  /** Apartados de la lección actual, se muestran bajo el tema en el menú */
-  indice?: { slug: string; texto: string }[];
 }
-const { titulo, descripcion = 'Aprende JavaScript en español, paso a paso, viendo lo que hace el motor por dentro.', actual, indice } = Astro.props;
+const { titulo, descripcion = 'Aprende JavaScript en español, paso a paso, viendo lo que hace el motor por dentro.', actual } = Astro.props;
 const ruta = Astro.url.pathname.replace(/\/$/, '');
 ---
 <!doctype html>
@@ -23,8 +42,14 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
     <meta name="theme-color" content="#1b2a23" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{titulo}</title>
+    <!-- No pintar hasta que la barra lateral tenga su progreso y su scroll (ver el script tras .lado-fijo);
+         si no, Chromium la muestra un instante a medio armar al navegar entre temas -->
+    <link rel="expect" href="#barra-lista" blocking="render" />
+    {fuentes.map(([, , url]) => <link rel="preload" href={url} as="font" type="font/woff2" crossorigin />)}
   </head>
   <body>
+    <!-- En el body, para que vaya después de las hojas de Astro y estas caras tengan prioridad -->
+    <style is:inline set:html={carasFuentes}></style>
     <a class="saltar" href="#contenido">Saltar al contenido</a>
     <svg class="filtros" width="0" height="0" aria-hidden="true" focusable="false">
       <filter id="tiza" x="-15%" y="-15%" width="130%" height="130%">
@@ -40,8 +65,53 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
       <aside class="lado">
         <div class="lado-fijo">
           <Logo />
-          <MenuTemario actual={actual} indice={indice} />
+          <MenuTemario actual={actual} />
         </div>
+        <script is:inline>
+          // Corre antes de que se pinte la página, para que la barra lateral no salte al navegar:
+          // 1. pinta el progreso (marcas ✓ y "Llevas…"), que cambia la altura de los temas;
+          // 2. la devuelve a la posición en que la dejaste. Solo se mueve si el tema actual quedó fuera de la vista.
+          // El mismo cálculo del progreso está en MenuTemario.astro, que lo repite cuando resuelves un ejercicio.
+          (() => {
+            const barra = document.currentScript.previousElementSibling;
+            let resueltos = {};
+            try { resueltos = JSON.parse(localStorage.getItem('domina-js:progreso:v1') || '{}').ejercicios || {}; } catch {}
+            let hechos = 0;
+            let total = 0;
+            barra.querySelectorAll('[data-menu] a[data-tema]').forEach((a) => {
+              const ids = (a.dataset.ejercicios || '').split(',').filter(Boolean);
+              const bien = ids.filter((id) => resueltos[id]).length;
+              total += ids.length;
+              hechos += bien;
+              const marca = a.querySelector('[data-hecho]');
+              if (marca) marca.hidden = !(ids.length && bien === ids.length);
+            });
+            const progreso = barra.querySelector('[data-menu] [data-progreso]');
+            if (progreso && hechos) {
+              progreso.hidden = false;
+              progreso.textContent = `Llevas ${hechos} de ${total} ejercicios resueltos`;
+            }
+
+            const clave = 'domina:barra-scroll';
+            let guardado = null;
+            try { guardado = sessionStorage.getItem(clave); } catch {}
+            if (guardado !== null) barra.scrollTop = Number(guardado);
+            const actual = barra.querySelector('a[aria-current="page"]');
+            if (actual && barra.scrollHeight > barra.clientHeight) {
+              const t = actual.getBoundingClientRect();
+              const b = barra.getBoundingClientRect();
+              if (t.top < b.top || t.bottom > b.bottom) barra.scrollTop += t.top - b.top - barra.clientHeight / 3;
+            }
+            // Se guarda al hacer scroll, pero también al hacer click y al salir de la página:
+            // el evento scroll llega un cuadro tarde y un click rápido navegaría con la posición vieja
+            const guardar = () => { try { sessionStorage.setItem(clave, String(barra.scrollTop)); } catch {} };
+            barra.addEventListener('scroll', guardar, { passive: true });
+            barra.addEventListener('click', guardar, true);
+            addEventListener('pagehide', guardar);
+            guardar();
+          })();
+        </script>
+        <span id="barra-lista" hidden></span>
       </aside>
 
       <div class="area">
@@ -95,7 +165,8 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
     border-right: 2px dashed var(--chalk-08);
     border-radius: 6px 0 0 6px;
     z-index: 5;
-    view-transition-name: barra-lateral;
+    /* La posición la controla el script de la barra; el anclaje automático la corría 1px al terminar de cargar */
+    overflow-anchor: none;
   }
 
   .area { min-width: 0; display: flex; flex-direction: column; min-height: calc(100vh - 24px); }

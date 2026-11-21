@@ -19,9 +19,8 @@ interface Props {
   disponibles: Set<string>;
   pizarron?: { id: string; datos: DatosVisualizador; mostrarPila?: boolean; modo?: 'pila' | 'variables' | 'eventloop' };
   ejercicios: string[];
-  encabezados: { depth: number; slug: string; text: string }[];
 }
-const { titulo, resumen, minutos, intro, guia, nota, seccion, indice, disponibles, pizarron, ejercicios, encabezados } = Astro.props;
+const { titulo, resumen, minutos, intro, guia, nota, seccion, indice, disponibles, pizarron, ejercicios } = Astro.props;
 const total = seccion.temas.length;
 // Recorrido de todo el temario, para pasar de una sección a la siguiente
 const recorrido = temario.flatMap((s) => s.temas.map((t) => ({ clave: `${s.slug}/${t.slug}`, titulo: t.titulo, seccion: s })));
@@ -29,15 +28,14 @@ const posicion = recorrido.findIndex((r) => r.clave === `${seccion.slug}/${secci
 const anterior = recorrido[posicion - 1];
 const siguiente = recorrido[posicion + 1];
 const hay = (r?: { clave: string }) => !!r && disponibles.has(r.clave);
-const h2 = encabezados.filter((h) => h.depth === 2);
 ---
-<BaseLayout titulo={`${titulo} · domina-js`} descripcion={resumen} actual={{ seccion: seccion.slug, tema: seccion.temas[indice].slug }} indice={[...(pizarron ? [{ slug: pizarron.id, texto: 'En el pizarrón' }] : []), ...h2.map((h) => ({ slug: h.slug, texto: h.text })), ...(ejercicios.length ? [{ slug: 'practica', texto: '¡A practicar!' }] : [])]}>
+<BaseLayout titulo={`${titulo} · domina-js`} descripcion={resumen} actual={{ seccion: seccion.slug, tema: seccion.temas[indice].slug }}>
   <a class="esquina" slot="esquina" href={`/temario#${seccion.slug}`}>{seccion.titulo}</a>
 
   <div class:list={['leccion', { 'con-tablero': pizarron, 'sin-tablero': !pizarron }]}>
       <div class:list={['apertura', { 'sin-tablero': !pizarron }]}>
         <div class="titulo">
-          <h1 style={`view-transition-name: vt-${seccion.slug}-${seccion.temas[indice].slug}`}>{titulo}</h1>
+          <h1>{titulo}</h1>
           <Subrayado />
           <p class="meta">Lección {indice + 1} de {total}<i aria-hidden="true">·</i>{minutos} min<i aria-hidden="true">·</i><span data-hechos data-ids={ejercicios.join(',')}>{ejercicios.length} {ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}</span></p>
         </div>
@@ -70,7 +68,7 @@ const h2 = encabezados.filter((h) => h.depth === 2);
           <a class="sigue" href={`/${siguiente.clave}`}>
             <span class="sigue-txt">
               <span class="sigue-pre">Continúa con</span>
-              <span class="sigue-tit" style={`view-transition-name: vt-${siguiente.clave.replace('/', '-')}`}>{siguiente.titulo}</span>
+              <span class="sigue-tit">{siguiente.titulo}</span>
               {siguiente.seccion.slug !== seccion.slug && <span class="sigue-sec">Sección {siguiente.seccion.numero} · {siguiente.seccion.titulo}</span>}
             </span>
             <span class="sigue-flecha" aria-hidden="true"><Icono nombre="der" /></span>
@@ -179,7 +177,6 @@ const h2 = encabezados.filter((h) => h.depth === 2);
   /* Sin pizarrón: una sola columna de lectura */
   .apertura.sin-tablero { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'titulo' 'intro' 'apoyo'; grid-template-rows: none; max-width: var(--measure); }
   h1 {
-    view-transition-class: titulo;
     margin: 0;
     font: 700 clamp(2.6rem, 5.2vw, 4.5rem) / 1 var(--hand);
     color: var(--chalk);
@@ -222,7 +219,7 @@ const h2 = encabezados.filter((h) => h.depth === 2);
   a.sigue:hover { background: var(--y-12); transform: translateX(4px); }
   .sigue-txt { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
   .sigue-pre { font: 700 1.1rem/1 var(--hand); color: var(--y); }
-  .sigue-tit { view-transition-class: titulo; width: fit-content; font: 700 clamp(1.6rem, 2.4vw, 2rem) / 1.1 var(--hand); color: var(--chalk); text-wrap: balance; }
+  .sigue-tit { width: fit-content; font: 700 clamp(1.6rem, 2.4vw, 2rem) / 1.1 var(--hand); color: var(--chalk); text-wrap: balance; }
   .sigue-sec { font-size: 0.9rem; color: var(--azul); font-weight: 700; }
   .sigue-flecha {
     flex: none;

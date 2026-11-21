@@ -48,7 +48,7 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
       {primera && primeraTema && (
         <section class="empieza" aria-labelledby="empieza-titulo">
           <h2 id="empieza-titulo">Por dónde empezar</h2>
-          <h3><a href={primeraUrl} style={`view-transition-name: vt-${primera.data.seccion}-${primera.data.tema}`}>{primera.data.titulo}</a></h3>
+          <h3><a href={primeraUrl}>{primera.data.titulo}</a></h3>
           <p>{primera.data.resumen}</p>
           <p class="detalle">Sección {primeraTema.seccion.numero}, {primeraTema.seccion.titulo} · {primera.data.minutos} min · {primera.data.ejercicios.length} ejercicios</p>
           <a class="btn btn--y" href={primeraUrl}>Abrir la lección<Icono nombre="der" /></a>
@@ -105,7 +105,7 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
   .empieza { padding-top: 120px; max-width: 62ch; }
   .empieza h2 { margin-bottom: 18px; }
   .empieza h3 { margin: 0 0 10px; font: 700 clamp(1.7rem, 2.6vw, 2.2rem) / 1.1 var(--hand); }
-  .empieza h3 a { view-transition-class: titulo; color: var(--chalk); text-decoration: none; background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); }
+  .empieza h3 a { color: var(--chalk); text-decoration: none; background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); }
   .empieza h3 a:hover { color: var(--y); }
   .empieza p { margin: 0 0 12px; font-size: 1.05rem; line-height: 1.6; color: var(--chalk-70); }
   .empieza .detalle { font-size: 0.92rem; color: var(--azul); margin-bottom: 20px; }

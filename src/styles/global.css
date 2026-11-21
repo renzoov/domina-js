@@ -321,20 +321,8 @@ button { font: inherit; color: inherit; }
 .cv-prompt { color: var(--azul); }
 
 /* ── View Transitions ─────────────────────────────────────────
-   Entre páginas (nativo, sin router): el contenido se borra y se escribe como tiza.
-   Toda página que use BaseLayout las hereda. */
-@view-transition { navigation: auto; }
-
-::view-transition-old(root) { animation: vt-borrar 200ms ease-in both; }
-::view-transition-new(root) { animation: vt-escribir 340ms var(--ease-out) both; }
-
-/* La barra lateral no se mueve al navegar */
-::view-transition-group(barra-lateral),
-::view-transition-old(barra-lateral),
-::view-transition-new(barra-lateral) { animation: none; }
-
-/* Títulos que viajan de una página a otra (tarjeta «Continúa con», temario, portada → título de la lección) */
-::view-transition-group(*.titulo) { animation-duration: 420ms; animation-timing-function: var(--ease-out); }
+   Solo dentro de la página. Entre páginas no hay animación: durante la transición Chromium
+   muestra una imagen de la barra lateral en vez de la barra real, y al elegir un tema el menú parpadeaba. */
 
 /* El pizarrón de práctica: borrar el reto viejo, escribir el nuevo */
 ::view-transition-old(practica) { animation: vt-borrar 180ms ease-in both; }
