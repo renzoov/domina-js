@@ -1,0 +1,5 @@
+# domina-js: todo el sitio se puede indexar
+User-agent: *
+Allow: /
+
+Sitemap: https://domina-js.pages.dev/sitemap.xml

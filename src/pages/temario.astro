@@ -3,6 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Subrayado from '../components/Subrayado.astro';
 import Icono from '../components/Icono.astro';
+import MiProgreso from '../components/MiProgreso.astro';
 import { temario, totalTemas, claveReto, TITULO_RETO } from '../data/temario';
 
 const lecciones = await getCollection('lecciones');
@@ -20,6 +21,7 @@ const retos = new Set((await getCollection('retos')).map((r) => r.data.seccion))
         <li><span class="ed">ES2025</span>trae novedades de esa edición</li>
         <li><span class="ed prop">propuesta</span>todavía no es estándar</li>
       </ul>
+      <MiProgreso />
     </header>
 
     {temario.map((s) => (

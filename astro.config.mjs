@@ -6,6 +6,8 @@ import { temaTiza } from './src/lib/tema-tiza.mjs';
 
 // https://astro.build/config
 export default defineConfig({
+  // Dirección pública: la usan la URL canónica, las vistas previas al compartir y el sitemap
+  site: 'https://domina-js.pages.dev',
   integrations: [mdx()],
   markdown: {
     shikiConfig: { theme: temaTiza },

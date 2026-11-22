@@ -32,9 +32,14 @@ interface Props {
   descripcion?: string;
   /** Tema que se está viendo, para marcarlo en el menú */
   actual?: { seccion: string; tema: string };
+  /** La página no debe aparecer en buscadores (la 404) */
+  noindex?: boolean;
 }
-const { titulo, descripcion = 'Aprende JavaScript en español, paso a paso, viendo lo que hace el motor por dentro.', actual } = Astro.props;
+const { titulo, descripcion = 'Aprende JavaScript en español, paso a paso, viendo lo que hace el motor por dentro.', actual, noindex = false } = Astro.props;
 const ruta = Astro.url.pathname.replace(/\/$/, '');
+// Dirección canónica (sin .html, como la sirve Cloudflare Pages) e imagen para las vistas previas al compartir
+const canonica = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/'), Astro.site).href;
+const imagenCompartir = new URL('/og.jpg', Astro.site).href;
 ---
 <!doctype html>
 <html lang="es">
@@ -45,6 +50,23 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
     <meta name="theme-color" content="#1b2a23" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{titulo}</title>
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonica} />}
+    <!-- Vista previa al compartir el enlace (WhatsApp, Discord, redes) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="domina-js" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:title" content={titulo} />
+    <meta property="og:description" content={descripcion} />
+    <meta property="og:url" content={canonica} />
+    <meta property="og:image" content={imagenCompartir} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="domina-js: Aprende JavaScript viendo lo que hace el motor. Un pizarrón con la pila de llamadas." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={titulo} />
+    <meta name="twitter:description" content={descripcion} />
+    <meta name="twitter:image" content={imagenCompartir} />
+    <link rel="sitemap" href="/sitemap.xml" />
     <!-- No pintar hasta que la barra lateral tenga su progreso y su scroll (ver el script tras .lado-fijo);
          si no, Chromium la muestra un instante a medio armar al navegar entre temas -->
     <link rel="expect" href="#barra-lista" blocking="render" />

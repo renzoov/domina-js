@@ -1,0 +1,93 @@
+---
+// «Tu progreso»: cuánto llevas, y una copia en un archivo para no perderlo o llevarlo a otro navegador.
+import { getCollection } from 'astro:content';
+import Icono from './Icono.astro';
+import { desafios } from '../data/rayos-x';
+
+const ejercicios = [
+  ...(await getCollection('lecciones')).flatMap((l) => l.data.ejercicios),
+  ...(await getCollection('retos')).flatMap((r) => r.data.ejercicios),
+];
+const idsDesafios = desafios.map((d) => d.id);
+---
+<section class="mi-progreso caja" aria-labelledby="mi-progreso-t" data-mi-progreso data-ejercicios={ejercicios.join(',')} data-desafios={idsDesafios.join(',')}>
+  <h2 id="mi-progreso-t">Tu progreso</h2>
+  <p class="resumen" data-resumen>Todavía no resolviste ningún ejercicio.</p>
+  <p class="nota">Se guarda solo en este navegador. Descarga una copia para no perderlo si se borran los datos del sitio, o para seguir en otro navegador o equipo.</p>
+  <div class="acciones">
+    <button type="button" class="btn" data-descargar><Icono nombre="bajar" />Descargar copia</button>
+    <label class="btn cargar">
+      <Icono nombre="subir" />Cargar copia
+      <input type="file" accept="application/json,.json" data-cargar />
+    </label>
+  </div>
+  <p class="aviso" data-aviso aria-live="polite"></p>
+</section>
+
+<script>
+  import { resumen, exportarProgreso, importarProgreso } from '../scripts/progreso';
+
+  const el = document.querySelector<HTMLElement>('[data-mi-progreso]');
+  if (el) {
+    const ids = (el.dataset.ejercicios || '').split(',').filter(Boolean);
+    const idsDesafios = (el.dataset.desafios || '').split(',').filter(Boolean);
+    const texto = el.querySelector<HTMLElement>('[data-resumen]')!;
+    const aviso = el.querySelector<HTMLElement>('[data-aviso]')!;
+    const archivo = el.querySelector<HTMLInputElement>('[data-cargar]')!;
+
+    const pintar = () => {
+      const { ejercicios } = resumen();
+      const hechos = ids.filter((id) => ejercicios[id]).length;
+      const desafiosHechos = idsDesafios.filter((id) => ejercicios[id]).length;
+      texto.innerHTML = hechos || desafiosHechos
+        ? `Llevas <b>${hechos} de ${ids.length}</b> ejercicios resueltos${desafiosHechos ? ` y <b>${desafiosHechos} de ${idsDesafios.length}</b> desafíos de Rayos X` : ''}.`
+        : 'Todavía no resolviste ningún ejercicio.';
+    };
+    pintar();
+    document.addEventListener('domina:progreso', pintar);
+
+    el.querySelector('[data-descargar]')!.addEventListener('click', () => {
+      const blob = new Blob([exportarProgreso()], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `domina-js-progreso-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      aviso.textContent = 'Listo: se descargó la copia de tu progreso.';
+      aviso.className = 'aviso bien';
+    });
+
+    archivo.addEventListener('change', async () => {
+      const f = archivo.files?.[0];
+      archivo.value = '';
+      if (!f) return;
+      try {
+        const { nuevos } = importarProgreso(await f.text());
+        aviso.textContent = nuevos
+          ? `Copia cargada: se sumaron ${nuevos} ${nuevos === 1 ? 'ejercicio resuelto' : 'ejercicios resueltos'}.`
+          : 'Copia cargada: ya tenías todo lo que traía.';
+        aviso.className = 'aviso bien';
+      } catch (e) {
+        aviso.textContent = (e as Error).message;
+        aviso.className = 'aviso mal';
+      }
+    });
+  }
+</script>
+
+<style>
+  .mi-progreso { display: grid; gap: 8px; max-width: 640px; margin-top: 26px; padding: 18px 20px; background: var(--board-lo); }
+  h2 { margin: 0; font: 700 1.5rem/1.1 var(--hand); }
+  .resumen { margin: 0; font-size: 1.02rem; color: var(--chalk); }
+  .resumen :global(b) { color: var(--ok); }
+  .nota { margin: 0; font-size: 0.9rem; line-height: 1.55; color: var(--chalk-70); }
+  .acciones { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .cargar { position: relative; cursor: pointer; }
+  /* El input de archivo queda oculto pero accesible: el label es el botón y recibe el foco */
+  .cargar input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .cargar:focus-within { outline: 2px solid var(--y); outline-offset: 2px; }
+  .aviso { margin: 0; min-height: 1.4em; font-size: 0.92rem; color: var(--chalk-70); }
+  .aviso:global(.bien) { color: var(--ok); }
+  .aviso:global(.mal) { color: var(--red); }
+</style>
