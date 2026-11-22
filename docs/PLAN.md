@@ -348,7 +348,7 @@ Cada lección mezcla los formatos que tienen sentido para su tema:
    - el formato Rómpelo.
 9. **Después:**
    - buscador (Pagefind),
-   - glosario,
+   - glosario (hecho: `/glosario`, datos en `src/data/glosario.ts`),
    - páginas de novedades,
    - "Reto del motor" por sección,
    - despliegue en Cloudflare Pages,

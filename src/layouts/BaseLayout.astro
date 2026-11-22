@@ -2,20 +2,20 @@
 import '../styles/global.css';
 import Logo from '../components/Logo.astro';
 import MenuTemario from '../components/MenuTemario.astro';
-import cabin400 from '@fontsource/cabin-sketch/files/cabin-sketch-latin-400-normal.woff2?url';
-import cabin700 from '@fontsource/cabin-sketch/files/cabin-sketch-latin-700-normal.woff2?url';
+import tiza400 from '../fuentes/tiza-domina-400.woff2?url';
+import tiza700 from '../fuentes/tiza-domina-700.woff2?url';
 import atkinson400 from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2?url';
 import atkinson700 from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2?url';
 import fira400 from '@fontsource/fira-code/files/fira-code-latin-400-normal.woff2?url';
 
 // Las fuentes principales se precargan y usan font-display: optional. Chromium espera hasta 100 ms a que estén
 // listas antes de pintar; como quedan en caché, siempre llegan y nunca hay un cambio de fuente a la vista
-// (antes, a veces la página aparecía con la fuente de respaldo y al instante se repintaba con Cabin Sketch).
+// (antes, a veces la página aparecía con la fuente de respaldo y al instante se repintaba con la letra de tiza).
 // Si en la primera visita no llegan a tiempo, quedan de respaldo las reglas de fontsource de global.css.
 const LATIN = 'U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD';
 const fuentes: [string, number, string][] = [
-  ['Cabin Sketch', 700, cabin700],
-  ['Cabin Sketch', 400, cabin400],
+  ['Tiza Domina', 700, tiza700],
+  ['Tiza Domina', 400, tiza400],
   ['Atkinson Hyperlegible', 400, atkinson400],
   ['Atkinson Hyperlegible', 700, atkinson700],
   ['Fira Code', 400, fira400],
@@ -93,10 +93,18 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
             }
 
             const clave = 'domina:barra-scroll';
+            const claveClick = 'domina:barra-click';
             let guardado = null;
-            try { guardado = sessionStorage.getItem(clave); } catch {}
+            let desdeBarra = false;
+            try {
+              guardado = sessionStorage.getItem(clave);
+              desdeBarra = sessionStorage.getItem(claveClick) === location.pathname;
+              sessionStorage.removeItem(claveClick);
+            } catch {}
             if (guardado !== null) barra.scrollTop = Number(guardado);
-            const actual = barra.querySelector('a[aria-current="page"]');
+            // Si llegaste con un click en la barra, el tema estaba a la vista: no hace falta medirlo
+            // (medir obliga a armar la página antes de tiempo)
+            const actual = !desdeBarra && barra.querySelector('a[aria-current="page"]');
             if (actual && barra.scrollHeight > barra.clientHeight) {
               const t = actual.getBoundingClientRect();
               const b = barra.getBoundingClientRect();
@@ -106,7 +114,11 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
             // el evento scroll llega un cuadro tarde y un click rápido navegaría con la posición vieja
             const guardar = () => { try { sessionStorage.setItem(clave, String(barra.scrollTop)); } catch {} };
             barra.addEventListener('scroll', guardar, { passive: true });
-            barra.addEventListener('click', guardar, true);
+            barra.addEventListener('click', (e) => {
+              guardar();
+              const a = e.target.closest('a[data-tema]');
+              if (a) try { sessionStorage.setItem(claveClick, new URL(a.href).pathname); } catch {}
+            }, true);
             addEventListener('pagehide', guardar);
             guardar();
           })();
@@ -119,6 +131,7 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
           <slot name="esquina" />
           <nav aria-label="Principal" class="principal">
             <a href="/temario" aria-current={ruta === '/temario' ? 'page' : undefined}>Temario</a>
+            <a href="/glosario" aria-current={ruta === '/glosario' ? 'page' : undefined}>Glosario</a>
             <a href="/antes-de-empezar/que-es-javascript-hoy" aria-current={ruta === '/antes-de-empezar/que-es-javascript-hoy' ? 'page' : undefined}>Empezar</a>
           </nav>
         </header>

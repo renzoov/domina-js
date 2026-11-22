@@ -130,6 +130,7 @@ import Icono from '../Icono.astro';
 
     const desdeHash = retos.findIndex((r) => `#${r.id}` === location.hash);
     activar(desdeHash >= 0 && desdeHash <= alcanzado() ? desdeHash : alcanzado());
+    el.querySelector('[data-retos]')!.classList.add('lista');
     mover.hidden = false;
     // Con un solo reto, los pasos numerados no aportan nada
     pasos.hidden = retos.length < 2;
@@ -169,6 +170,9 @@ import Icono from '../Icono.astro';
   .cuenta.completo { color: var(--board-lo); background: var(--ok); border-color: var(--ok); }
 
   .pasos { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 26px; }
+  /* Hasta que corre el script (que deja visible un reto a la vez), solo se arma el primero:
+     armar los cuatro retos completos encarecía mucho la primera carga */
+  .retos:not(.lista) :global([data-ejercicio-id] ~ [data-ejercicio-id]) { display: none; }
   .pasos :global(.paso) {
     --c: var(--chalk-70);
     position: relative;

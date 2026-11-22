@@ -1,10 +1,13 @@
-@import '@fontsource/cabin-sketch/400.css';
-@import '@fontsource/cabin-sketch/700.css';
 @import '@fontsource/atkinson-hyperlegible/400.css';
 @import '@fontsource/atkinson-hyperlegible/400-italic.css';
 @import '@fontsource/atkinson-hyperlegible/700.css';
 @import '@fontsource/fira-code/400.css';
 @import '@fontsource/fira-code/600.css';
+
+/* Tiza Domina: Cabin Sketch con contornos simplificados y otro nombre (licencia OFL, ver src/fuentes/OFL.txt).
+   Se genera con herramientas/tiza-domina.py. Estas caras con swap son el respaldo de las de BaseLayout. */
+@font-face { font-family: 'Tiza Domina'; font-style: normal; font-weight: 400; font-display: swap; src: url('../fuentes/tiza-domina-400.woff2') format('woff2'); }
+@font-face { font-family: 'Tiza Domina'; font-style: normal; font-weight: 700; font-display: swap; src: url('../fuentes/tiza-domina-700.woff2') format('woff2'); }
 
 /* ── Pizarrón y tiza amarilla ─────────────────────────────── */
 :root {
@@ -36,7 +39,7 @@
   --ok: #c4ec8c;
   --red: #f08a7e;
 
-  --hand: 'Cabin Sketch', 'Atkinson Hyperlegible', cursive;
+  --hand: 'Tiza Domina', 'Atkinson Hyperlegible', cursive;
   --read: 'Atkinson Hyperlegible', system-ui, sans-serif;
   --mono: 'Fira Code', ui-monospace, monospace;
 

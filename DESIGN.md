@@ -29,22 +29,22 @@ colors:
   well-deep: "rgba(0, 0, 0, 0.18)"
 typography:
   display:
-    fontFamily: "Cabin Sketch, Atkinson Hyperlegible, cursive"
+    fontFamily: "Tiza Domina, Atkinson Hyperlegible, cursive"
     fontSize: "clamp(2.6rem, 5.2vw, 4.5rem)"
     fontWeight: 700
     lineHeight: 1
   headline:
-    fontFamily: "Cabin Sketch, Atkinson Hyperlegible, cursive"
+    fontFamily: "Tiza Domina, Atkinson Hyperlegible, cursive"
     fontSize: "clamp(1.6rem, 2.4vw, 2rem)"
     fontWeight: 700
     lineHeight: 1.15
   title:
-    fontFamily: "Cabin Sketch, Atkinson Hyperlegible, cursive"
+    fontFamily: "Tiza Domina, Atkinson Hyperlegible, cursive"
     fontSize: "1.65rem"
     fontWeight: 700
     lineHeight: 1
   annotation:
-    fontFamily: "Cabin Sketch, Atkinson Hyperlegible, cursive"
+    fontFamily: "Tiza Domina, Atkinson Hyperlegible, cursive"
     fontSize: "1.25rem"
     fontWeight: 700
     lineHeight: 1
@@ -284,7 +284,7 @@ Una pizarra verde-negra, tiza blanca gastada en tres intensidades, la tiza amari
 
 ## Typography
 
-**Display Font:** Cabin Sketch (con Atkinson Hyperlegible, cursive)
+**Display Font:** Cabin Sketch, servida como «Tiza Domina»: la misma letra recortada y con contornos simplificados (herramientas/tiza-domina.py), que pesa la mitad y se dibuja más rápido (con Atkinson Hyperlegible, cursive)
 **Body Font:** Atkinson Hyperlegible (con system-ui, sans-serif)
 **Label/Mono Font:** Fira Code (con ui-monospace, monospace), ligaduras apagadas
 
@@ -382,9 +382,11 @@ Ancho de la medida, encabezados como rótulo azul sobre una raya chalk-45 de 2px
 - **Editor del Laboratorio:** dentro de un marco lila (borde lila al 45% y anillo al 8%) con barra de archivo «programa.js» y la nota lila «se ejecuta mientras escribes». Fira Code 0.85rem, cursor amarillo, sin contorno propio; consola embebida debajo con `$ node programa.js`.
 - **Laboratorio con página** (sección del navegador): la barra dice «app.js» y, entre el editor y la consola, aparece «La página» (rótulo azul, `index.html` en Fira Code chalk-45) con un iframe de 240px redimensionable, borde chalk-15 de 2px y radio suave, sobre `#14201a`. La vista muestra solo lo que hizo el código del lector; las verificaciones (que hacen clics y envíos) corren en una copia oculta. La página de prueba tiene su propia hoja mínima: fondo pizarrón, texto chalk, botones amarillos, títulos amarillos.
 - **Error:** la salida se vuelve roja; la verificación fallida marca su óvalo en rojo, la cumplida lo rellena de lima.
+- **Filtro del glosario:** campo de búsqueda sobre el pozo (`--pozo`), borde chalk-45 de 2px con radio de tiza; al enfocar, borde amarillo y anillo amarillo al 12%. Etiqueta visible en Atkinson 700 encima y la cuenta de resultados en Fira Code chalk-70 al lado.
 
 ### Navigation
-- **Principal:** Atkinson 700 0.95rem en chalk-70; hover a chalk; página actual en chalk con la franja amarilla baja.
+- **Principal:** Temario, Glosario y Empezar, en Atkinson 700 0.95rem en chalk-70; hover a chalk; página actual en chalk con la franja amarilla baja.
+- **Glosario:** fila de letras en óvalos de tiza (Cabin Sketch, borde chalk-15; amarillo al pasar; las letras sin términos quedan en chalk-45 al 45% y las que el filtro vacía, al 30%). Cada letra es un encabezado amarillo con halo y raya discontinua; cada término, una fila de dos columnas (nombre en Atkinson 700 y su nombre en inglés en itálica chalk-70; definición a la medida de lectura, con el código en naranja). Debajo, «Lo ves en» (etiqueta Fira Code en mayúsculas) con enlaces subrayados en amarillo a la lección y su apartado, y «Relacionado» con enlaces azules a otros términos. El término enlazado (`:target`) se resalta con el tinte y el borde amarillos del tema actual del menú.
 - **Menú del temario (barra lateral):** «Temario» en Cabin Sketch y la cuenta de temas publicados; secciones desplegables con número en óvalo de tiza, cuenta «n/m» en Fira Code y flecha que gira; cada tema empieza con un guion de tiza (8×2px, chalk-45, apenas inclinado) y el texto lleva sangría, así un nombre de dos líneas queda alineado; los temas publicados en chalk 700, sin subrayado (más claros al pasar); el actual en tiza amarilla con un leve halo, fondo y borde amarillos muy tenues y el guion amarillo más largo; los futuros en chalk-70. El menú no muestra los apartados de la lección. La palomita lima marca temas con todos los ejercicios resueltos.
 - **Continúa con …:** tarjeta de tiza alineada a la izquierda con el texto, a todo el ancho de la medida: borde amarillo de 2.5px, tinte amarillo al 6% (12% al pasar, y se desplaza 4px), «Continúa con» en Cabin Sketch amarillo, el título de la lección en Cabin Sketch, la sección en azul si cambia, y una flecha en óvalo amarillo relleno. Sin lección publicada, la tarjeta es discontinua chalk-45 y dice «Lo que sigue». Debajo, «Volver a «…»» en chalk-70.
 

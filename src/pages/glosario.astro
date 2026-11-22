@@ -1,0 +1,221 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Subrayado from '../components/Subrayado.astro';
+import { glosario, idTermino } from '../data/glosario';
+
+const lecciones = await getCollection('lecciones');
+const porClave = new Map(lecciones.map((l) => [`${l.data.seccion}/${l.data.tema}`, l]));
+
+// Se comprueba al construir que cada enlace lleve a algo que existe: lecciones, títulos y términos relacionados
+const anclas = new Map<string, Set<string>>();
+async function anclasDe(clave: string) {
+  if (!anclas.has(clave)) {
+    const { headings } = await render(porClave.get(clave)!);
+    anclas.set(clave, new Set(headings.map((h) => h.slug)));
+  }
+  return anclas.get(clave)!;
+}
+
+const ids = new Set(glosario.map((t) => idTermino(t.termino)));
+if (ids.size !== glosario.length) throw new Error('Glosario: hay dos términos con el mismo id');
+const nombrePorId = new Map(glosario.map((t) => [idTermino(t.termino), t.termino]));
+
+const orden = new Intl.Collator('es', { sensitivity: 'base' });
+const letraDe = (termino: string) => termino.normalize('NFD')[0].toUpperCase();
+
+const entradas = await Promise.all(
+  [...glosario].sort((a, b) => orden.compare(a.termino, b.termino)).map(async (t) => {
+    const id = idTermino(t.termino);
+    const ver = await Promise.all(
+      t.ver.map(async (ref) => {
+        const [clave, ancla] = ref.split('#');
+        const leccion = porClave.get(clave);
+        if (!leccion) throw new Error(`Glosario «${t.termino}»: no existe la lección ${clave}`);
+        if (ancla && !(await anclasDe(clave)).has(ancla)) throw new Error(`Glosario «${t.termino}»: la lección ${clave} no tiene el título #${ancla}`);
+        return { href: `/${clave}${ancla ? `#${ancla}` : ''}`, titulo: leccion.data.titulo };
+      }),
+    );
+    const rel = (t.rel ?? []).map((r) => {
+      if (!nombrePorId.has(r)) throw new Error(`Glosario «${t.termino}»: el término relacionado «${r}» no existe`);
+      return { id: r, termino: nombrePorId.get(r)! };
+    });
+    // Lo que encuentra el filtro: nombre, inglés y alias, sin tildes
+    const buscar = [t.termino, t.en, ...(t.alias ?? [])].filter(Boolean).join(' ');
+    return { ...t, id, ver, rel, buscar, letra: letraDe(t.termino) };
+  }),
+);
+
+const grupos = new Map<string, typeof entradas>();
+for (const e of entradas) grupos.set(e.letra, [...(grupos.get(e.letra) ?? []), e]);
+const abecedario = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
+---
+<BaseLayout titulo="Glosario · domina-js" descripcion={`${glosario.length} términos de JavaScript explicados en una o dos frases, con enlaces a la lección donde se ven a fondo.`}>
+  <div class="glosario">
+    <header class="cab">
+      <h1>Glosario</h1>
+      <Subrayado ancho={300} />
+      <p class="lead">{glosario.length} términos que aparecen en el curso, en una o dos frases. Cada uno lleva a la lección donde se explica con calma.</p>
+
+      <div class="filtro" role="search">
+        <label for="filtro-glosario">Buscar un término</label>
+        <input id="filtro-glosario" type="search" placeholder="closure, hoisting, promesa…" autocomplete="off" spellcheck="false" data-filtro />
+        <p class="cuantos" data-cuantos aria-live="polite"></p>
+      </div>
+
+      <nav class="letras" aria-label="Letras del glosario">
+        {abecedario.map((l) => grupos.has(l)
+          ? <a href={`#letra-${l}`} data-letra-enlace={l}>{l}</a>
+          : <span aria-hidden="true">{l}</span>)}
+      </nav>
+    </header>
+
+    {[...grupos].map(([letra, lista]) => (
+      <section class="grupo" id={`letra-${letra}`} aria-labelledby={`letra-${letra}-t`} data-grupo={letra}>
+        <h2 id={`letra-${letra}-t`} class="letra">{letra}</h2>
+        <dl class="terminos">
+          {lista.map((e) => (
+            <div class="termino" id={e.id} data-termino data-buscar={e.buscar} data-texto={e.def}>
+              <dt>
+                <a class="ancla" href={`#${e.id}`}>{e.termino}</a>
+                {e.en && <span class="en" lang="en">{e.en}</span>}
+              </dt>
+              <dd>
+                <p class="def" set:html={e.def} />
+                {e.alias && <p class="alias">También: {e.alias.join(', ')}</p>}
+                <p class="ver">
+                  <span class="etq">Lo ves en</span>
+                  {e.ver.map((v) => <a href={v.href}>{v.titulo}</a>)}
+                </p>
+                {e.rel.length > 0 && (
+                  <p class="rel">
+                    <span class="etq">Relacionado</span>
+                    {e.rel.map((r) => <a href={`#${r.id}`}>{r.termino}</a>)}
+                  </p>
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+    ))}
+
+    <p class="vacio" data-vacio hidden>Ningún término coincide. Prueba con otra palabra, o en inglés.</p>
+  </div>
+</BaseLayout>
+
+<script>
+  const entrada = document.querySelector<HTMLInputElement>('[data-filtro]')!;
+  const cuantos = document.querySelector<HTMLElement>('[data-cuantos]')!;
+  const vacio = document.querySelector<HTMLElement>('[data-vacio]')!;
+  const terminos = Array.from(document.querySelectorAll<HTMLElement>('[data-termino]'));
+  const grupos = Array.from(document.querySelectorAll<HTMLElement>('[data-grupo]'));
+  const simple = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  // El nombre, el inglés y los alias pesan más; la definición también cuenta, pero sin etiquetas HTML
+  const indice = terminos.map((t) => ({
+    el: t,
+    nombre: simple(t.dataset.buscar || ''),
+    texto: simple((t.dataset.texto || '').replace(/<[^>]+>/g, '').replace(/&[a-z]+;/g, ' ')),
+  }));
+
+  function filtrar() {
+    const q = simple(entrada.value.trim());
+    let n = 0;
+    for (const { el, nombre, texto } of indice) {
+      const ve = !q || nombre.includes(q) || texto.includes(q);
+      el.hidden = !ve;
+      if (ve) n++;
+    }
+    for (const g of grupos) {
+      const alguno = g.querySelector('[data-termino]:not([hidden])');
+      g.hidden = !alguno;
+      document.querySelector<HTMLElement>(`[data-letra-enlace="${g.dataset.grupo}"]`)?.classList.toggle('apagada', !alguno);
+    }
+    vacio.hidden = n > 0;
+    cuantos.textContent = q ? (n === 1 ? '1 término' : `${n} términos`) : '';
+  }
+
+  entrada.addEventListener('input', filtrar);
+  // Al volver con el botón Atrás, el navegador puede recordar lo escrito
+  if (entrada.value) filtrar();
+</script>
+
+<style>
+  .glosario { max-width: 1000px; }
+  h1 { margin: 0; font: 700 clamp(2.6rem, 5vw, 4.5rem) / 1 var(--hand); text-shadow: 0 0 3px rgba(236, 234, 226, 0.4); }
+  .lead { margin: 18px 0 26px; max-width: 64ch; font-size: 1.12rem; line-height: 1.6; color: var(--chalk-70); }
+
+  .filtro { display: grid; grid-template-columns: minmax(0, 420px) auto; align-items: center; gap: 8px 16px; }
+  .filtro label { grid-column: 1 / -1; font-weight: 700; font-size: 0.95rem; }
+  .filtro input {
+    width: 100%;
+    padding: 11px 14px;
+    font: 400 1rem var(--read);
+    color: var(--chalk);
+    background: var(--pozo);
+    border: 2px solid var(--chalk-45);
+    border-radius: var(--r-chalk);
+    outline: none;
+  }
+  .filtro input::placeholder { color: var(--chalk-45); }
+  .filtro input:focus-visible { border-color: var(--y); box-shadow: 0 0 0 3px var(--y-12); }
+  .cuantos { margin: 0; font: 400 0.8rem var(--mono); color: var(--chalk-70); }
+
+  .letras { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 26px; }
+  .letras a, .letras span {
+    display: grid; place-items: center;
+    min-width: 32px; height: 32px;
+    font: 700 1.15rem/1 var(--hand);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  }
+  .letras a { color: var(--chalk); text-decoration: none; border: 2px solid var(--chalk-15); transition: border-color 150ms var(--ease-out), color 150ms var(--ease-out); }
+  .letras a:hover { color: var(--y); border-color: var(--y); }
+  .letras a.apagada { opacity: 0.3; }
+  .letras span { color: var(--chalk-45); opacity: 0.45; }
+
+  .grupo { padding-top: 48px; scroll-margin-top: 16px; }
+  .letra {
+    margin: 0 0 6px;
+    font: 700 2.4rem/1 var(--hand);
+    color: var(--y);
+    text-shadow: 0 0 6px rgba(247, 223, 30, 0.3);
+    border-bottom: 2px dashed var(--chalk-15);
+    padding-bottom: 8px;
+  }
+  .terminos { margin: 0; }
+  .termino {
+    display: grid;
+    grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+    gap: 4px 28px;
+    padding: 18px 12px;
+    margin: 0 -12px;
+    border-bottom: 1px dashed var(--chalk-15);
+    border-radius: 4px 7px 5px 6px;
+    scroll-margin-top: 24px;
+  }
+  .termino:target { background: var(--y-06); box-shadow: inset 0 0 0 1px var(--y-12); }
+  dt { display: flex; flex-direction: column; gap: 2px; }
+  .ancla { font-weight: 700; font-size: 1.08rem; color: var(--chalk); text-decoration: none; width: fit-content; }
+  .ancla:hover { color: var(--y); }
+  .termino:target .ancla { color: var(--y); }
+  .en { font-size: 0.85rem; font-style: italic; color: var(--chalk-70); }
+  dd { margin: 0; max-width: var(--measure); }
+  .def { margin: 0; line-height: 1.6; }
+  .def :global(code), .alias, .ver, .rel { font-size: 0.9rem; }
+  .def :global(code) { font-family: var(--mono); font-size: 0.88em; color: var(--naranja); }
+  .def :global(em) { color: var(--chalk); }
+  .alias { margin: 6px 0 0; color: var(--chalk-70); }
+  .ver, .rel { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; margin: 10px 0 0; }
+  .etq { font: 400 0.72rem var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--chalk-70); }
+  .ver a { font-weight: 700; color: var(--chalk); text-decoration: none; background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); }
+  .ver a:hover { color: var(--y); }
+  .rel a { color: var(--azul); text-decoration: underline; text-decoration-color: rgba(143, 208, 247, 0.4); text-underline-offset: 3px; }
+  .rel a:hover { text-decoration-color: var(--azul); }
+
+  .vacio { margin: 40px 0 0; font-size: 1.05rem; color: var(--chalk-70); }
+
+  @media (max-width: 720px) {
+    .termino { grid-template-columns: 1fr; }
+    .filtro { grid-template-columns: 1fr; }
+  }
+</style>

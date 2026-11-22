@@ -45,6 +45,10 @@ Los bloques de código de las lecciones tienen un botón **Ejecutar**. El códig
 
 El temario cubre lo que JavaScript sumó hasta hoy. Cada novedad lleva la insignia de su edición (ES2021 a ES2026), y las ediciones se verificaron contra la tabla de propuestas terminadas de TC39. También hay páginas para ES2027, ya cerrada, y para lo que viene en camino.
 
+### Un glosario enlazado
+
+En [`/glosario`](https://domina-js.pages.dev/glosario) están los términos del curso (closure, hoisting, microtarea, zona muerta temporal…) explicados en una o dos frases, con su nombre en inglés y un enlace al apartado exacto de la lección donde se ven a fondo. Se puede filtrar escribiendo, también en inglés.
+
 ## El temario
 
 0. Antes de empezar
@@ -75,7 +79,7 @@ En pantallas chicas el temario se abre con un botón y los controles del pizarr�
 
 ## Diseño
 
-La dirección visual es **«Pizarrón y tiza amarilla»**: un tablero verde oscuro, solo con fondo oscuro, y una paleta que sale del amarillo del logo de JavaScript (`#F7DF1E`). Los títulos van en Cabin Sketch, el texto en Atkinson Hyperlegible y el código en Fira Code. El sistema completo está en [`DESIGN.md`](DESIGN.md) y las direcciones que no se eligieron quedan archivadas en [`docs/disenos/`](docs/disenos/).
+La dirección visual es **«Pizarrón y tiza amarilla»**: un tablero verde oscuro, solo con fondo oscuro, y una paleta que sale del amarillo del logo de JavaScript (`#F7DF1E`). Los títulos van en Tiza Domina (ver abajo), el texto en Atkinson Hyperlegible y el código en Fira Code. El sistema completo está en [`DESIGN.md`](DESIGN.md) y las direcciones que no se eligieron quedan archivadas en [`docs/disenos/`](docs/disenos/).
 
 ## Hecho con
 
@@ -83,6 +87,11 @@ La dirección visual es **«Pizarrón y tiza amarilla»**: un tablero verde oscu
 - [CodeMirror](https://codemirror.net) 6 para el editor de los laboratorios
 - [Shiki](https://shiki.style), con un tema propio de tiza, para resaltar el código
 - Sin frameworks de interfaz: componentes de Astro y TypeScript
+
+### Fuentes
+
+- **Tiza Domina**, la letra de los títulos, es una versión modificada de [Cabin Sketch](https://fonts.google.com/specimen/Cabin+Sketch) (© 2011 The Cabin Project Authors): recortada a los caracteres que usa el sitio y con los contornos simplificados, para que pese la mitad y el navegador la dibuje más rápido. Como Cabin Sketch es un nombre reservado de su licencia, la versión modificada lleva otro nombre. Se distribuye bajo la [SIL Open Font License 1.1](src/fuentes/OFL.txt) y se regenera con `python herramientas/tiza-domina.py`.
+- [Atkinson Hyperlegible](https://www.brailleinstitute.org/freefont/) y [Fira Code](https://github.com/tonsky/FiraCode), sin cambios, desde Fontsource (OFL 1.1).
 
 ## Cómo correrlo
 
@@ -106,6 +115,7 @@ src/
 ├── content.config.ts   el esquema de las lecciones
 ├── data/
 │   ├── temario.ts      el temario completo: secciones, descripciones, temas e insignias de edición
+│   ├── glosario.ts     los términos del glosario y las lecciones donde se explican
 │   ├── ejercicios/     los ejercicios de cada sección, como datos
 │   └── visualizaciones.ts   los pasos de cada pizarrón
 ├── components/         StepVisualizer, menú del temario y los formatos de ejercicio
@@ -124,7 +134,7 @@ Para agregar una lección: crea el `.mdx` en `src/content/lecciones/`, regístra
 
 - **Modo Rayos X:** edita el código de un pizarrón, o escribe el tuyo, y el sitio genera los pasos solo, con un intérprete instrumentado que corre en un Web Worker.
 - **Mira tu solución** y un formato nuevo, **Rómpelo**, apoyados en Rayos X.
-- Un **Reto del motor** al final de cada sección y un **glosario**.
+- Un **Reto del motor** al final de cada sección.
 - Un **buscador** en la barra lateral.
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).

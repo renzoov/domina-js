@@ -65,7 +65,7 @@ const hay = (r?: { clave: string }) => !!r && disponibles.has(r.clave);
 
       <nav class="pasar" aria-label="Lecciones vecinas">
         {siguiente && (hay(siguiente) ? (
-          <a class="sigue" href={`/${siguiente.clave}`}>
+          <a class="sigue" href={`/${siguiente.clave}`} data-astro-prefetch="viewport">
             <span class="sigue-txt">
               <span class="sigue-pre">Continúa con</span>
               <span class="sigue-tit">{siguiente.titulo}</span>
