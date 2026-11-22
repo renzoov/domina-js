@@ -410,6 +410,8 @@ El tablero enmarcado de ejercicios, un reto a la vez. Marco de 10px en edge (8px
 ### Ejercicios
 Cinco formatos, cada uno con su tiza: Sé el motor naranja, Ordena la salida azul, Detective rosa, Laboratorio lila, Autoevaluación lima. Cabecera: etiqueta de formato, título en Atkinson 700 chalk y «Resuelto» a la derecha. El código en línea del enunciado toma la tiza del formato sobre un tinte al 12%. Comentarios de acierto en lima, de error en rojo. La Autoevaluación muestra una pregunta a la vez, con «Pregunta n de m» en azul, puntos de progreso (lima los respondidos, anillo lima el actual) y «Siguiente pregunta» bloqueado hasta responder.
 
+**Nunca código en blanco plano.** El código de las preguntas, las opciones, las pistas, los hallazgos y las explicaciones se colorea con los mismos tokens que el editor: palabras clave en azul, textos en rosa, números en naranja, comentarios en gris itálica y llamadas en chalk 600 (`resaltarHtml` y `resaltarEnLinea` en `src/lib/resaltar.ts`). Las líneas seguidas que son solo `<code>` forman un bloque sobre el pozo, con borde chalk-15 y radio de tiza, que se desplaza dentro de su caja si una línea es larga. El código nunca lleva ligaduras: `...` y `===` se ven tal como se escriben.
+
 ## Do's and Don'ts
 
 ### Do:

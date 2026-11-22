@@ -1,7 +1,7 @@
 ---
 import Ejercicio from './Ejercicio.astro';
 import Icono from '../Icono.astro';
-import { resaltar } from '../../lib/resaltar';
+import { resaltar, resaltarEnLinea } from '../../lib/resaltar';
 
 interface Props {
   id: string;
@@ -36,7 +36,7 @@ const lineas = resaltar(codigo);
       </ol>
       <button type="button" class="btn btn--y comprobar" data-comprobar>Comprobar el orden</button>
       <p class="feedback" data-feedback aria-live="polite"></p>
-      <p class="explica" data-explica hidden set:html={explicacion} />
+      <p class="explica" data-explica hidden set:html={resaltarEnLinea(explicacion)} />
     </div>
   </div>
 </Ejercicio>
@@ -68,7 +68,7 @@ const lineas = resaltar(codigo);
   .feedback :global(.no) { color: var(--red); font-weight: 700; }
   .feedback :global(.ok) { color: var(--ok); font-weight: 700; }
   .explica { margin: 0; font-size: 0.92rem; color: var(--chalk-70); line-height: 1.55; }
-  .explica :global(code) { font-family: var(--mono); color: var(--chalk); }
+  .explica :global(code) { font-family: var(--mono); color: var(--chalk); font-variant-ligatures: none; }
   @container (max-width: 620px) { .ordena { grid-template-columns: 1fr; } }
   @media (max-width: 720px) { .ordena { grid-template-columns: 1fr; } }
 </style>

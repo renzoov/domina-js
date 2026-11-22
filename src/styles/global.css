@@ -65,8 +65,9 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
-/* Sin ligaduras: quien aprende tiene que ver <= y === tal como se escriben */
-code, pre, kbd, samp, output, textarea, .cm-content { font-variant-ligatures: none; font-feature-settings: 'liga' 0, 'calt' 0; }
+/* Sin ligaduras: quien aprende tiene que ver <= y === tal como se escriben.
+   Con !important porque el atajo `font:` de los componentes vuelve a activarlas (convertía ... en …) */
+code, pre, kbd, samp, output, textarea, .cm-content, .tarjeta { font-variant-ligatures: none !important; font-feature-settings: 'liga' 0, 'calt' 0; }
 
 html {
   background: var(--edge);
