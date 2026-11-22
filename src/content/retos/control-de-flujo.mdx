@@ -1,0 +1,50 @@
+---
+seccion: control-de-flujo
+minutos: 15
+resumen: Reto del motor de la sección 2. Condicionales, bucles, break y continue, y errores con try, catch y finally, todo mezclado.
+intro: "Ya sabes <u>decidir</u>, <u>repetir</u> y <u>manejar lo que sale mal</u>. Aquí las tres cosas aparecen juntas, y el orden en que el motor las ejecuta no siempre es el que parece a primera vista."
+ejercicios: [reto-flujo-auto, reto-flujo-orden, reto-flujo-detective, reto-flujo-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoFlujoAuto, retoFlujoOrden, retoFlujoDetective, retoFlujoLab } from '../../data/ejercicios/retos/control-de-flujo';
+
+## Lo que pone a prueba
+
+- Qué hace `continue` y qué hace `break`, también dentro de un `try`.
+- Que un `switch` sin `break` sigue de largo.
+- Que `finally` se ejecuta siempre, incluso después de un `return`.
+- Encontrar el origen de un error, que no siempre está en la línea que lo lanza.
+
+Para repasar: [Bucles](/control-de-flujo/bucles), [break, continue y etiquetas](/control-de-flujo/break-continue-etiquetas) y [Errores y excepciones](/control-de-flujo/errores-y-excepciones).
+
+<Practica>
+
+<Autoevaluacion id={retoFlujoAuto.id} numero={1} titulo={retoFlujoAuto.titulo} preguntas={retoFlujoAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoFlujoOrden.id} numero={2} titulo={retoFlujoOrden.titulo} codigo={retoFlujoOrden.codigo} salida={retoFlujoOrden.salida} inicio={retoFlujoOrden.inicio} explicacion={retoFlujoOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un bucle con un <code>continue</code>, un <code>throw</code> y un <code>break</code>, todo dentro de un <code>try</code>. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoFlujoDetective.id} numero={3} titulo={retoFlujoDetective.titulo} codigo={retoFlujoDetective.codigo} error={retoFlujoDetective.error} culpable={retoFlujoDetective.culpable} hallazgo={retoFlujoDetective.hallazgo} pista={retoFlujoDetective.pista} arreglos={retoFlujoDetective.arreglos}>
+  <div slot="enunciado">
+    <p>El programa imprime los tres nombres y después se cae. Encuentra la línea donde nace el error, que no es la que marca el mensaje.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoFlujoLab.id} numero={4} titulo={retoFlujoLab.titulo} inicial={retoFlujoLab.inicial} verificaciones={retoFlujoLab.verificaciones} pistas={retoFlujoLab.pistas} solucion={retoFlujoLab.solucion} explicacion={retoFlujoLab.explicacion}>
+  <div slot="enunciado">
+    <p>Un bucle que se detiene a tiempo y una función que avisa cuando la usan mal.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

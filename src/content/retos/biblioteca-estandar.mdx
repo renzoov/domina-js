@@ -1,0 +1,50 @@
+---
+seccion: biblioteca-estandar
+minutos: 15
+resumen: Reto del motor de la sección 11. Expresiones regulares, Unicode, URL, Intl y Temporal en un mismo reto.
+intro: "La biblioteca estándar resuelve lo que antes pedía una dependencia: <u>texto</u>, <u>fechas</u>, <u>direcciones</u> y <u>formatos por idioma</u>. Este reto mezcla sus piezas, con sus sorpresas incluidas."
+ejercicios: [reto-bib-auto, reto-bib-orden, reto-bib-detective, reto-bib-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoBibAuto, retoBibOrden, retoBibDetective, retoBibLab } from '../../data/ejercicios/retos/biblioteca';
+
+## Lo que pone a prueba
+
+- Que `length` cuenta unidades de UTF-16 y no caracteres.
+- Qué cambia la bandera `g` en una expresión regular.
+- Cómo resuelve `URL` las rutas relativas y los parámetros.
+- Qué necesita `Intl.NumberFormat` para formatear dinero, y cómo suma meses Temporal.
+
+Para repasar: [Expresiones regulares](/biblioteca-estandar/expresiones-regulares), [Unicode y emojis](/biblioteca-estandar/unicode), [URL y URLSearchParams](/biblioteca-estandar/url) e [Internacionalización con Intl](/biblioteca-estandar/intl).
+
+<Practica>
+
+<Autoevaluacion id={retoBibAuto.id} numero={1} titulo={retoBibAuto.titulo} preguntas={retoBibAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoBibOrden.id} numero={2} titulo={retoBibOrden.titulo} codigo={retoBibOrden.codigo} salida={retoBibOrden.salida} inicio={retoBibOrden.inicio} explicacion={retoBibOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una URL con tildes, un texto con números y un emoji. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoBibDetective.id} numero={3} titulo={retoBibDetective.titulo} codigo={retoBibDetective.codigo} error={retoBibDetective.error} culpable={retoBibDetective.culpable} hallazgo={retoBibDetective.hallazgo} pista={retoBibDetective.pista} arreglos={retoBibDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Un formato de precios para Perú que no llega a crearse. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoBibLab.id} numero={4} titulo={retoBibLab.titulo} inicial={retoBibLab.inicial} verificaciones={retoBibLab.verificaciones} pistas={retoBibLab.pistas} solucion={retoBibLab.solucion} explicacion={retoBibLab.explicacion}>
+  <div slot="enunciado">
+    <p>Unicode y expresiones regulares para convertir títulos en direcciones.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

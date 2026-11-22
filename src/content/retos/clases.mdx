@@ -1,0 +1,50 @@
+---
+seccion: clases
+minutos: 15
+resumen: Reto del motor de la sección 6. Sintaxis class, herencia, super, campos privados y getters en un mismo reto.
+intro: "Las clases ordenan el código, pero por debajo siguen siendo <u>funciones y prototipos</u>. Este reto pone a prueba qué hereda una clase hija, cuándo existe <code>this</code> y qué tan privado es <u>un campo privado</u>."
+ejercicios: [reto-clases-auto, reto-clases-orden, reto-clases-detective, reto-clases-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoClasesAuto, retoClasesOrden, retoClasesDetective, retoClasesLab } from '../../data/ejercicios/retos/clases';
+
+## Lo que pone a prueba
+
+- Que una clase es una función, y que `super()` va antes de usar `this`.
+- El orden en que corren los constructores de una cadena de clases.
+- Que los campos privados son privados de su clase, no de sus hijas.
+- Escribir una clase con estado privado, un getter y validaciones.
+
+Para repasar: [La sintaxis class](/clases/sintaxis-class), [Herencia](/clases/herencia) y [Campos públicos y privados](/clases/campos-privados).
+
+<Practica>
+
+<Autoevaluacion id={retoClasesAuto.id} numero={1} titulo={retoClasesAuto.titulo} preguntas={retoClasesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoClasesOrden.id} numero={2} titulo={retoClasesOrden.titulo} codigo={retoClasesOrden.codigo} salida={retoClasesOrden.salida} inicio={retoClasesOrden.inicio} explicacion={retoClasesOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos clases encadenadas, cada una con su constructor y su versión de <code>hablar</code>. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoClasesDetective.id} numero={3} titulo={retoClasesDetective.titulo} codigo={retoClasesDetective.codigo} error={retoClasesDetective.error} culpable={retoClasesDetective.culpable} hallazgo={retoClasesDetective.hallazgo} pista={retoClasesDetective.pista} arreglos={retoClasesDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Una cuenta de ahorro que quiere calcular sus intereses. El programa ni siquiera arranca: encuentra por qué.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoClasesLab.id} numero={4} titulo={retoClasesLab.titulo} inicial={retoClasesLab.inicial} verificaciones={retoClasesLab.verificaciones} pistas={retoClasesLab.pistas} solucion={retoClasesLab.solucion} explicacion={retoClasesLab.explicacion}>
+  <div slot="enunciado">
+    <p>Una clase con campos privados, un getter y un error cuando la usan mal.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

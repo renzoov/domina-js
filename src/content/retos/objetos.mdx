@@ -1,0 +1,50 @@
+---
+seccion: objetos
+minutos: 15
+resumen: Reto del motor de la sección 5. Copias, spread, desestructuración, inmutabilidad y JSON en un mismo reto.
+intro: "Casi todo en JavaScript es un objeto, y casi todos los errores con objetos tienen que ver con <u>quién comparte qué</u>. Este reto te pide seguir referencias, copias y conversiones a JSON <u>sin perder la pista</u>."
+ejercicios: [reto-obj-auto, reto-obj-orden, reto-obj-detective, reto-obj-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoObjAuto, retoObjOrden, retoObjDetective, retoObjLab } from '../../data/ejercicios/retos/objetos';
+
+## Lo que pone a prueba
+
+- La diferencia entre una copia superficial y una profunda.
+- Qué se pierde en el camino a JSON, y qué comillas exige.
+- Que `Object.freeze` solo congela el primer nivel.
+- Actualizar datos anidados sin mutar el original.
+
+Para repasar: [Copias superficiales y profundas](/objetos/copias), [Desestructuración y spread](/objetos/desestructuracion-y-spread), [Inmutabilidad](/objetos/inmutabilidad) y [JSON](/objetos/json).
+
+<Practica>
+
+<Autoevaluacion id={retoObjAuto.id} numero={1} titulo={retoObjAuto.titulo} preguntas={retoObjAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoObjOrden.id} numero={2} titulo={retoObjOrden.titulo} codigo={retoObjOrden.codigo} salida={retoObjOrden.salida} inicio={retoObjOrden.inicio} explicacion={retoObjOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un objeto, una copia profunda y una superficial, y cambios en las dos. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoObjDetective.id} numero={3} titulo={retoObjDetective.titulo} codigo={retoObjDetective.codigo} error={retoObjDetective.error} culpable={retoObjDetective.culpable} hallazgo={retoObjDetective.hallazgo} pista={retoObjDetective.pista} arreglos={retoObjDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Alguien guardó la configuración escribiendo el JSON a mano. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoObjLab.id} numero={4} titulo={retoObjLab.titulo} inicial={retoObjLab.inicial} verificaciones={retoObjLab.verificaciones} pistas={retoObjLab.pistas} solucion={retoObjLab.solucion} explicacion={retoObjLab.explicacion}>
+  <div slot="enunciado">
+    <p>Spread, objetos anidados e inmutabilidad: actualiza un usuario sin tocar el original.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

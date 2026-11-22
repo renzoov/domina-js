@@ -1,0 +1,49 @@
+---
+seccion: servidor
+minutos: 12
+resumen: Reto del motor de la sección 14. El event loop de Node, archivos, rutas, permisos, procesos e hilos en un mismo reto.
+intro: "En el servidor, JavaScript tiene <u>archivos</u>, <u>procesos</u> y <u>permisos</u>, y un solo hilo para atender a todos. Este reto te pide seguir las fases del event loop de Node y leer sus errores con calma."
+ejercicios: [reto-serv-auto, reto-serv-orden, reto-serv-detective, reto-serv-auto-2]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoServAuto, retoServOrden, retoServDetective, retoServAuto2 } from '../../data/ejercicios/retos/servidor';
+
+## Lo que pone a prueba
+
+- El orden entre `nextTick`, promesas, `setImmediate` y temporizadores.
+- Qué bloquea el event loop de un servidor.
+- Cómo funcionan los permisos de Node y Deno.
+- Cuándo usar streams, workers y variables de entorno.
+
+Para repasar: [El event loop de Node](/servidor/event-loop-node), [Archivos y streams](/servidor/archivos-y-streams), [Procesos e hilos](/servidor/procesos-e-hilos) y [Seguridad en Node](/servidor/seguridad-node).
+
+<Practica>
+
+<Autoevaluacion id={retoServAuto.id} numero={1} titulo={retoServAuto.titulo} preguntas={retoServAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoServOrden.id} numero={2} titulo={retoServOrden.titulo} codigo={retoServOrden.codigo} salida={retoServOrden.salida} inicio={retoServOrden.inicio} explicacion={retoServOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Cuatro formas de dejar algo para después, dentro del callback de una lectura de archivo. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoServDetective.id} numero={3} titulo={retoServDetective.titulo} codigo={retoServDetective.codigo} error={retoServDetective.error} culpable={retoServDetective.culpable} hallazgo={retoServDetective.hallazgo} pista={retoServDetective.pista} arreglos={retoServDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Un programa que lee precios y quiere dejar un registro, ejecutado con el modelo de permisos. Encuentra dónde está el problema.</p>
+  </div>
+</Detective>
+
+<Autoevaluacion id={retoServAuto2.id} numero={4} titulo={retoServAuto2.titulo} preguntas={retoServAuto2.preguntas}>
+  <div slot="enunciado">
+    <p>Cuatro decisiones de todos los días en un servidor.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

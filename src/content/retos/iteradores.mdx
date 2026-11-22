@@ -1,0 +1,50 @@
+---
+seccion: iteradores
+minutos: 15
+resumen: Reto del motor de la sección 8. El protocolo iterable, generadores e iterator helpers en un mismo reto.
+intro: "Un generador <u>se pausa</u> y un iterator helper <u>no calcula nada</u> hasta que se lo piden. Este reto te pide seguir ese ritmo: quién corre cuándo, y por qué un bucle infinito puede ser inofensivo."
+ejercicios: [reto-iter-auto, reto-iter-orden, reto-iter-detective, reto-iter-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoIterAuto, retoIterOrden, retoIterDetective, retoIterLab } from '../../data/ejercicios/retos/iteradores';
+
+## Lo que pone a prueba
+
+- Qué devuelve cada `next()` y cuándo `done` es `true`.
+- Que un generador no ejecuta nada hasta el primer `next()`.
+- Que los iterator helpers son de los iteradores, no de los arrays.
+- Escribir un generador perezoso que funcione hasta `Infinity`.
+
+Para repasar: [El protocolo iterable](/iteradores/protocolo-iterable), [Generadores y yield](/iteradores/generadores) e [Iterator helpers](/iteradores/iterator-helpers).
+
+<Practica>
+
+<Autoevaluacion id={retoIterAuto.id} numero={1} titulo={retoIterAuto.titulo} preguntas={retoIterAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoIterOrden.id} numero={2} titulo={retoIterOrden.titulo} codigo={retoIterOrden.codigo} salida={retoIterOrden.salida} inicio={retoIterOrden.inicio} explicacion={retoIterOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un generador que imprime mientras avanza, y tres llamadas a <code>next()</code>. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoIterDetective.id} numero={3} titulo={retoIterDetective.titulo} codigo={retoIterDetective.codigo} error={retoIterDetective.error} culpable={retoIterDetective.culpable} hallazgo={retoIterDetective.hallazgo} pista={retoIterDetective.pista} arreglos={retoIterDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Alguien quiso usar un iterator helper de ES2025. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoIterLab.id} numero={4} titulo={retoIterLab.titulo} inicial={retoIterLab.inicial} verificaciones={retoIterLab.verificaciones} pistas={retoIterLab.pistas} solucion={retoIterLab.solucion} explicacion={retoIterLab.explicacion}>
+  <div slot="enunciado">
+    <p>Un generador perezoso que convive con los iterator helpers.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

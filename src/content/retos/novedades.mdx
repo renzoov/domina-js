@@ -1,0 +1,50 @@
+---
+seccion: novedades
+minutos: 12
+resumen: Reto del motor de la sección 16. Las novedades de ES2021 a ES2027 en un mismo reto.
+intro: "Seis ediciones de JavaScript en un solo reto. No hace falta memorizar los años: lo importante es saber <u>qué hace cada novedad</u> y cuándo te <u>ahorra código</u>."
+ejercicios: [reto-nov-auto, reto-nov-orden, reto-nov-detective, reto-nov-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoNovAuto, retoNovOrden, retoNovDetective, retoNovLab } from '../../data/ejercicios/retos/novedades';
+
+## Lo que pone a prueba
+
+- Ubicar las novedades más usadas en su edición.
+- Los métodos que cambian sin mutar, y en qué se diferencia `with` de agregar.
+- Asignación lógica, `at`, operaciones de conjuntos y `Object.hasOwn`.
+- Resolver un problema real con `Object.groupBy` y `toSorted`.
+
+Para repasar, cada edición tiene su página: de [ES2021](/novedades/es2021) a [ES2027](/novedades/es2027), y [lo que viene](/novedades/lo-que-viene).
+
+<Practica>
+
+<Autoevaluacion id={retoNovAuto.id} numero={1} titulo={retoNovAuto.titulo} preguntas={retoNovAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cinco novedades. Elige en qué edición de ECMAScript llegó cada una.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoNovOrden.id} numero={2} titulo={retoNovOrden.titulo} codigo={retoNovOrden.codigo} salida={retoNovOrden.salida} inicio={retoNovOrden.inicio} explicacion={retoNovOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un programa corto escrito solo con novedades de ES2021 en adelante. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoNovDetective.id} numero={3} titulo={retoNovDetective.titulo} codigo={retoNovDetective.codigo} error={retoNovDetective.error} culpable={retoNovDetective.culpable} hallazgo={retoNovDetective.hallazgo} pista={retoNovDetective.pista} arreglos={retoNovDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Alguien quiso agregar una nota sin mutar el array. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoNovLab.id} numero={4} titulo={retoNovLab.titulo} inicial={retoNovLab.inicial} verificaciones={retoNovLab.verificaciones} pistas={retoNovLab.pistas} solucion={retoNovLab.solucion} explicacion={retoNovLab.explicacion}>
+  <div slot="enunciado">
+    <p>Agrupar, sumar y ordenar con lo que trajeron ES2023 y ES2024.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

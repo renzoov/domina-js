@@ -28,4 +28,19 @@ const lecciones = defineCollection({
   }),
 });
 
-export const collections = { lecciones };
+// Reto del motor: uno al final de cada sección, mezcla los formatos de ejercicio de toda la sección
+const retos = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/retos' }),
+  schema: z.object({
+    /** slug de la sección en src/data/temario.ts */
+    seccion: z.string(),
+    minutos: z.number(),
+    resumen: z.string(),
+    /** Párrafo inicial (HTML simple) */
+    intro: z.string(),
+    nota: z.string().optional(),
+    ejercicios: z.array(z.string()).min(1),
+  }),
+});
+
+export const collections = { lecciones, retos };

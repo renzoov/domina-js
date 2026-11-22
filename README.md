@@ -35,6 +35,8 @@ Al costado de cada lección hay un pizarrón de práctica con varios formatos:
 
 Las pistas se piden de a una y la solución se explica. El progreso se guarda solo en tu navegador.
 
+Cada sección cierra con un **Reto del motor**: no es un examen, sino cuatro ejercicios que mezclan los temas de toda la sección (predecir, ordenar la salida, encontrar el error y programar), como pasa en un programa de verdad.
+
 ![El pizarrón de práctica de la pila de llamadas, con el ejercicio «Sé el motor»](docs/capturas/practica.webp)
 
 ### Ejemplos que se ejecutan
@@ -111,12 +113,13 @@ El sitio se publica en Cloudflare Pages con cada `git push` a `main`. `public/_h
 ```text
 src/
 ├── content/
-│   └── lecciones/      una lección por archivo .mdx (frontmatter: sección, tema, minutos, ejercicios…)
-├── content.config.ts   el esquema de las lecciones
+│   ├── lecciones/      una lección por archivo .mdx (frontmatter: sección, tema, minutos, ejercicios…)
+│   └── retos/          el Reto del motor de cada sección, uno por archivo .mdx
+├── content.config.ts   el esquema de las lecciones y los retos
 ├── data/
 │   ├── temario.ts      el temario completo: secciones, descripciones, temas e insignias de edición
 │   ├── glosario.ts     los términos del glosario y las lecciones donde se explican
-│   ├── ejercicios/     los ejercicios de cada sección, como datos
+│   ├── ejercicios/     los ejercicios de cada sección, como datos (los de los retos, en ejercicios/retos/)
 │   └── visualizaciones.ts   los pasos de cada pizarrón
 ├── components/         StepVisualizer, menú del temario y los formatos de ejercicio
 ├── layouts/            BaseLayout (barra lateral) y LessonLayout
@@ -126,15 +129,17 @@ docs/
 ├── PLAN.md             el plan del proyecto: temario, arquitectura y fases
 ├── capturas/           las imágenes de este README
 └── disenos/            direcciones de diseño archivadas
+herramientas/
+├── verificar-ejercicios.mjs   ejecuta los ejercicios en Node y comprueba salidas, soluciones y errores
+└── tiza-domina.py             genera la fuente de los títulos
 ```
 
-Para agregar una lección: crea el `.mdx` en `src/content/lecciones/`, regístrala en `src/data/temario.ts` y, si lleva ejercicios, agrégalos como datos en `src/data/ejercicios/`.
+Para agregar una lección: crea el `.mdx` en `src/content/lecciones/`, regístrala en `src/data/temario.ts` y, si lleva ejercicios, agrégalos como datos en `src/data/ejercicios/`. Después, `node herramientas/verificar-ejercicios.mjs` comprueba que cada «Ordena la salida» imprima lo que dice, que cada laboratorio se resuelva con su solución y que cada Detective lance el error que muestra.
 
 ## Lo que viene
 
 - **Modo Rayos X:** edita el código de un pizarrón, o escribe el tuyo, y el sitio genera los pasos solo, con un intérprete instrumentado que corre en un Web Worker.
 - **Mira tu solución** y un formato nuevo, **Rómpelo**, apoyados en Rayos X.
-- Un **Reto del motor** al final de cada sección.
 - Un **buscador** en la barra lateral.
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).

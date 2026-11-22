@@ -2,7 +2,7 @@
 // Menú lateral con todo el temario: secciones desplegables y sus temas.
 import { getCollection } from 'astro:content';
 import Icono from './Icono.astro';
-import { temario, totalTemas } from '../data/temario';
+import { temario, totalTemas, claveReto, SLUG_RETO, TITULO_RETO } from '../data/temario';
 
 interface Props {
   /** Tema que se está viendo, para marcarlo */
@@ -13,6 +13,7 @@ const lecciones = await getCollection('lecciones');
 const disponibles = new Set(lecciones.map((l) => `${l.data.seccion}/${l.data.tema}`));
 const ejerciciosPorTema = Object.fromEntries(lecciones.map((l) => [`${l.data.seccion}/${l.data.tema}`, l.data.ejercicios]));
 const publicados = disponibles.size;
+const retos = new Map((await getCollection('retos')).map((r) => [r.data.seccion, r.data.ejercicios]));
 ---
 <div class="menu" data-menu>
   <button type="button" class="abrir btn" aria-expanded="false" aria-controls="menu-temario" data-abrir>
@@ -57,6 +58,14 @@ const publicados = disponibles.size;
                     </li>
                   );
                 })}
+                {retos.has(s.slug) && (
+                  <li class:list={['hay', 'reto', { esta: actual?.seccion === s.slug && actual?.tema === SLUG_RETO }]}>
+                    <a href={`/${claveReto(s.slug)}`} aria-current={actual?.seccion === s.slug && actual?.tema === SLUG_RETO ? 'page' : undefined} data-tema={claveReto(s.slug)} data-ejercicios={retos.get(s.slug)!.join(',')}>
+                      <span class="txt">{TITULO_RETO}</span>
+                      <span class="hecho" data-hecho hidden><span class="sr-only">Ejercicios resueltos</span></span>
+                    </a>
+                  </li>
+                )}
               </ol>
             </details>
           </li>
@@ -168,6 +177,11 @@ const publicados = disponibles.size;
   .temas a[aria-current='page'] .txt { color: var(--y); text-shadow: 0 0 6px rgba(247, 223, 30, 0.35); }
 
   /* La palomita es una máscara de CSS y no un <svg> por tema: son más de cien en cada página */
+  /* El reto cierra la sección: en vez del guion, un punto de tiza amarilla */
+  .temas li.reto { margin-top: 4px; }
+  .temas li.reto a::before { width: 6px; height: 6px; top: calc(4px + 0.5em); left: 5px; border-radius: 50%; background: var(--y); transform: none; }
+  .temas li.reto a .txt { font-style: italic; }
+
   .hecho { display: inline-block; flex: none; width: 15px; height: 15px; margin-top: 1px; }
   .hecho::before {
     content: ''; display: block; width: 100%; height: 100%; background: var(--ok);

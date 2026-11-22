@@ -1,0 +1,50 @@
+---
+seccion: metaprogramacion
+minutos: 15
+resumen: Reto del motor de la sección 12. Descriptores, Proxy y Reflect, symbols conocidos y template tags en un mismo reto.
+intro: "La metaprogramación te deja <u>cambiar las reglas</u>: qué pasa al leer, al escribir o al convertir un objeto. Este reto te pide predecir esas reglas nuevas y respetar <u>los contratos</u> que exige el motor."
+ejercicios: [reto-meta-auto, reto-meta-orden, reto-meta-detective, reto-meta-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoMetaAuto, retoMetaOrden, retoMetaDetective, retoMetaLab } from '../../data/ejercicios/retos/metaprogramacion';
+
+## Lo que pone a prueba
+
+- Los atributos que pone `defineProperty` cuando no los indicas.
+- Qué operaciones intercepta cada trampa de un `Proxy`.
+- Cómo usa el motor `Symbol.toPrimitive`, y qué recibe un template tag.
+- Que la trampa `set` tiene que devolver `true`.
+
+Para repasar: [Descriptores de propiedades](/metaprogramacion/descriptores), [Proxy y Reflect](/metaprogramacion/proxy-y-reflect) y [Symbols conocidos](/metaprogramacion/symbols-conocidos).
+
+<Practica>
+
+<Autoevaluacion id={retoMetaAuto.id} numero={1} titulo={retoMetaAuto.titulo} preguntas={retoMetaAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoMetaOrden.id} numero={2} titulo={retoMetaOrden.titulo} codigo={retoMetaOrden.codigo} salida={retoMetaOrden.salida} inicio={retoMetaOrden.inicio} explicacion={retoMetaOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un proxy que anota cada lectura y cada escritura. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoMetaDetective.id} numero={3} titulo={retoMetaDetective.titulo} codigo={retoMetaDetective.codigo} error={retoMetaDetective.error} culpable={retoMetaDetective.culpable} hallazgo={retoMetaDetective.hallazgo} pista={retoMetaDetective.pista} arreglos={retoMetaDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Un proxy que valida precios y falla con un precio válido. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoMetaLab.id} numero={4} titulo={retoMetaLab.titulo} inicial={retoMetaLab.inicial} verificaciones={retoMetaLab.verificaciones} pistas={retoMetaLab.pistas} solucion={retoMetaLab.solucion} explicacion={retoMetaLab.explicacion}>
+  <div slot="enunciado">
+    <p>Un proxy que inventa un valor cuando la propiedad no existe.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

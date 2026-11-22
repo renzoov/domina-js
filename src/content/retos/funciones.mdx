@@ -1,0 +1,50 @@
+---
+seccion: funciones
+minutos: 15
+resumen: Reto del motor de la sección 3. Parámetros, funciones como valores, this y estilo funcional en un mismo reto.
+intro: "Las funciones son el corazón de JavaScript: se guardan, se pasan, se devuelven y deciden su <code>this</code> según cómo las llames. Este reto junta <u>todo eso</u> en unos pocos ejercicios."
+ejercicios: [reto-func-auto, reto-func-orden, reto-func-detective, reto-func-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoFuncAuto, retoFuncOrden, retoFuncDetective, retoFuncLab } from '../../data/ejercicios/retos/funciones';
+
+## Lo que pone a prueba
+
+- Cuándo se usa un valor por defecto y qué junta un parámetro rest.
+- Que una función puede fabricar otras que recuerdan sus datos.
+- Cómo se decide `this`, y por qué una función flecha no sirve como método.
+- Componer funciones pequeñas con `reduce`.
+
+Para repasar: [Parámetros](/funciones/parametros), [Funciones como valores](/funciones/funciones-como-valores), [this](/funciones/this) y [Estilo funcional](/funciones/estilo-funcional).
+
+<Practica>
+
+<Autoevaluacion id={retoFuncAuto.id} numero={1} titulo={retoFuncAuto.titulo} preguntas={retoFuncAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoFuncOrden.id} numero={2} titulo={retoFuncOrden.titulo} codigo={retoFuncOrden.codigo} salida={retoFuncOrden.salida} inicio={retoFuncOrden.inicio} explicacion={retoFuncOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una fábrica de saludos y un array de funciones. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoFuncDetective.id} numero={3} titulo={retoFuncDetective.titulo} codigo={retoFuncDetective.codigo} error={retoFuncDetective.error} culpable={retoFuncDetective.culpable} hallazgo={retoFuncDetective.hallazgo} pista={retoFuncDetective.pista} arreglos={retoFuncDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Un objeto con un método que no encuentra sus propios datos. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoFuncLab.id} numero={4} titulo={retoFuncLab.titulo} inicial={retoFuncLab.inicial} verificaciones={retoFuncLab.verificaciones} pistas={retoFuncLab.pistas} solucion={retoFuncLab.solucion} explicacion={retoFuncLab.explicacion}>
+  <div slot="enunciado">
+    <p>Una función que recibe funciones y devuelve otra función: el estilo funcional en pocas líneas.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

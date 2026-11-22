@@ -1,0 +1,50 @@
+---
+seccion: colecciones
+minutos: 15
+resumen: Reto del motor de la sección 7. Arrays, métodos de array, Map, Set y agrupar datos en un mismo reto.
+intro: "Arrays, <code>Map</code>, <code>Set</code>, grupos: cada colección tiene <u>sus reglas</u> para ordenar, comparar y leer. Este reto las mezcla, como pasa cuando hay que <u>resumir datos de verdad</u>."
+ejercicios: [reto-col-auto, reto-col-orden, reto-col-detective, reto-col-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoColAuto, retoColOrden, retoColDetective, retoColLab } from '../../data/ejercicios/retos/colecciones';
+
+## Lo que pone a prueba
+
+- Que `sort` ordena como texto si no le das una comparación.
+- Cuáles métodos mutan y cuáles devuelven un array nuevo.
+- Cómo comparan claves y valores `Map` y `Set`.
+- Agrupar, contar y resumir datos.
+
+Para repasar: [Métodos de array](/colecciones/metodos-de-array), [Cambiar sin mutar](/colecciones/cambiar-sin-mutar), [Map y Set](/colecciones/map-y-set) y [Agrupar datos](/colecciones/agrupar).
+
+<Practica>
+
+<Autoevaluacion id={retoColAuto.id} numero={1} titulo={retoColAuto.titulo} preguntas={retoColAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoColOrden.id} numero={2} titulo={retoColOrden.titulo} codigo={retoColOrden.codigo} salida={retoColOrden.salida} inicio={retoColOrden.inicio} explicacion={retoColOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Unas ventas agrupadas, contadas y sumadas. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoColDetective.id} numero={3} titulo={retoColDetective.titulo} codigo={retoColDetective.codigo} error={retoColDetective.error} culpable={retoColDetective.culpable} hallazgo={retoColDetective.hallazgo} pista={retoColDetective.pista} arreglos={retoColDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Un <code>Map</code> con precios, y un precio que no aparece. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoColLab.id} numero={4} titulo={retoColLab.titulo} inicial={retoColLab.inicial} verificaciones={retoColLab.verificaciones} pistas={retoColLab.pistas} solucion={retoColLab.solucion} explicacion={retoColLab.explicacion}>
+  <div slot="enunciado">
+    <p>Un <code>Map</code> que cuenta, en el orden en que aparece cada palabra.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

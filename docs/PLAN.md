@@ -350,7 +350,7 @@ Cada lección mezcla los formatos que tienen sentido para su tema:
    - buscador (Pagefind),
    - glosario (hecho: `/glosario`, datos en `src/data/glosario.ts`),
    - páginas de novedades,
-   - "Reto del motor" por sección,
+   - "Reto del motor" por sección (hecho: `/<sección>/reto-del-motor`, contenido en `src/content/retos/`),
    - despliegue en Cloudflare Pages,
    - la lección del event loop (Rayos X con colas).
 

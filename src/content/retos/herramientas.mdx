@@ -1,0 +1,50 @@
+---
+seccion: herramientas
+minutos: 15
+resumen: Reto del motor de la sección 15. npm y versiones, TypeScript, lint, testing y depuración en un mismo reto.
+intro: "Las herramientas no cambian el lenguaje, pero cambian <u>cómo trabajas</u> con él: qué versiones instalas, cómo pruebas y cómo encuentras errores. Este reto las pone a prueba con <u>situaciones de un proyecto real</u>."
+ejercicios: [reto-herr-auto, reto-herr-orden, reto-herr-detective, reto-herr-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoHerrAuto, retoHerrOrden, retoHerrDetective, retoHerrLab } from '../../data/ejercicios/retos/herramientas';
+
+## Lo que pone a prueba
+
+- Qué versiones acepta un rango con `^`, y para qué está el lockfile.
+- Que los tipos de TypeScript desaparecen al ejecutar.
+- El orden de los ganchos de prueba, y cómo comparar decimales en un test.
+- Comparar versiones semánticas como números.
+
+Para repasar: [npm, pnpm y dependencias](/herramientas/npm), [Testing](/herramientas/testing), [TypeScript para quien ya sabe JS](/herramientas/typescript) y [Depurar con DevTools](/herramientas/devtools).
+
+<Practica>
+
+<Autoevaluacion id={retoHerrAuto.id} numero={1} titulo={retoHerrAuto.titulo} preguntas={retoHerrAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoHerrOrden.id} numero={2} titulo={retoHerrOrden.titulo} codigo={retoHerrOrden.codigo} salida={retoHerrOrden.salida} inicio={retoHerrOrden.inicio} explicacion={retoHerrOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un bloque de pruebas de Vitest con tres ganchos que imprimen. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoHerrDetective.id} numero={3} titulo={retoHerrDetective.titulo} codigo={retoHerrDetective.codigo} error={retoHerrDetective.error} culpable={retoHerrDetective.culpable} hallazgo={retoHerrDetective.hallazgo} pista={retoHerrDetective.pista} arreglos={retoHerrDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Una prueba que falla aunque la función parece correcta. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoHerrLab.id} numero={4} titulo={retoHerrLab.titulo} inicial={retoHerrLab.inicial} verificaciones={retoHerrLab.verificaciones} pistas={retoHerrLab.pistas} solucion={retoHerrLab.solucion} explicacion={retoHerrLab.explicacion}>
+  <div slot="enunciado">
+    <p>El versionado semántico, convertido en una función de comparación.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

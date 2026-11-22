@@ -1,0 +1,49 @@
+---
+seccion: modulos
+minutos: 12
+resumen: Reto del motor de la sección 10. ES Modules, CommonJS, orden de evaluación, import dinámico e import maps en un mismo reto.
+intro: "Los módulos deciden <u>qué ve cada archivo</u> y <u>en qué orden</u> se ejecuta todo. Este reto te pide seguir los import de varios archivos y leer los errores que da Node cuando algo no encaja."
+ejercicios: [reto-mod-auto, reto-mod-orden, reto-mod-detective, reto-mod-auto-2]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoModAuto, retoModOrden, retoModDetective, retoModAuto2 } from '../../data/ejercicios/retos/modulos';
+
+## Lo que pone a prueba
+
+- Que los imports son enlaces vivos y que cada módulo se evalúa una sola vez.
+- El orden de evaluación cuando un módulo depende de otro.
+- Exports con nombre y por defecto, `import` y `require`.
+- Por qué un ES module necesita la extensión del archivo.
+
+Para repasar: [ES Modules](/modulos/es-modules), [CommonJS frente a ESM](/modulos/commonjs-y-esm) e [Import maps](/modulos/import-maps).
+
+<Practica>
+
+<Autoevaluacion id={retoModAuto.id} numero={1} titulo={retoModAuto.titulo} preguntas={retoModAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoModOrden.id} numero={2} titulo={retoModOrden.titulo} codigo={retoModOrden.codigo} salida={retoModOrden.salida} inicio={retoModOrden.inicio} explicacion={retoModOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Cuatro archivos que se importan entre sí, cada uno con su <code>console.log</code>. Ordena lo que aparecería en la consola al ejecutar <code>node main.js</code>.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoModDetective.id} numero={3} titulo={retoModDetective.titulo} codigo={retoModDetective.codigo} error={retoModDetective.error} culpable={retoModDetective.culpable} hallazgo={retoModDetective.hallazgo} pista={retoModDetective.pista} arreglos={retoModDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Un proyecto con <code>"type": "module"</code> que no encuentra su propio archivo. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Autoevaluacion id={retoModAuto2.id} numero={4} titulo={retoModAuto2.titulo} preguntas={retoModAuto2.preguntas}>
+  <div slot="enunciado">
+    <p>Cuatro preguntas sobre cargar y organizar módulos en proyectos reales.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

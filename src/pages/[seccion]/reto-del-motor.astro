@@ -1,0 +1,38 @@
+---
+// Reto del motor: cierra cada sección mezclando los formatos de ejercicio de todos sus temas.
+// Usa el mismo diseño que una lección; el contenido está en src/content/retos/<sección>.mdx.
+import { getCollection, render } from 'astro:content';
+import LessonLayout from '../../layouts/LessonLayout.astro';
+import { temario, claveReto, TITULO_RETO } from '../../data/temario';
+
+export async function getStaticPaths() {
+  const lecciones = await getCollection('lecciones');
+  const retos = await getCollection('retos');
+  const secciones = retos.map((r) => r.data.seccion);
+  const disponiblesLista = [...lecciones.map((l) => `${l.data.seccion}/${l.data.tema}`), ...secciones.map(claveReto)];
+  return retos.map((reto) => ({
+    params: { seccion: reto.data.seccion },
+    props: { reto, disponiblesLista, secciones },
+  }));
+}
+
+const { reto, disponiblesLista, secciones } = Astro.props;
+const seccion = temario.find((s) => s.slug === reto.data.seccion);
+if (!seccion) throw new Error(`El reto ${reto.id} apunta a una sección que no existe: ${reto.data.seccion}`);
+const { Content } = await render(reto);
+---
+<LessonLayout
+  titulo={TITULO_RETO}
+  resumen={reto.data.resumen}
+  minutos={reto.data.minutos}
+  intro={reto.data.intro}
+  nota={reto.data.nota}
+  seccion={seccion}
+  indice={seccion.temas.length}
+  reto
+  disponibles={new Set(disponiblesLista)}
+  retos={new Set(secciones)}
+  ejercicios={reto.data.ejercicios}
+>
+  <Content />
+</LessonLayout>

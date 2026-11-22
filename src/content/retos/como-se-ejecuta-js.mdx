@@ -1,0 +1,51 @@
+---
+seccion: como-se-ejecuta-js
+minutos: 18
+resumen: Reto del motor de la sección 4. Pila de llamadas, contextos, hoisting, scope, closures, memoria y recursión en un mismo reto.
+intro: "Esta es la sección del <u>motor por dentro</u>, y este es su reto: apilar llamadas, predecir qué se eleva, encontrar una variable tapada y escribir una recursión que <u>recuerde</u> lo que ya calculó."
+ejercicios: [reto-dentro-motor, reto-dentro-auto, reto-dentro-detective, reto-dentro-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import SeElMotor from '../../components/ejercicios/SeElMotor.astro';
+import { retoDentroMotor, retoDentroAuto, retoDentroDetective, retoDentroLab } from '../../data/ejercicios/retos/por-dentro';
+
+## Lo que pone a prueba
+
+- Seguir la pila de llamadas cuando una función llama a otra.
+- Qué se registra en la fase de creación: `function`, `var`, `let` y `const`.
+- Que cada llamada crea un entorno nuevo, y que los closures lo recuerdan.
+- Que la zona muerta temporal también aparece cuando una variable tapa a otra.
+- Recursión con un caso base y con memoria.
+
+Para repasar: [La pila de llamadas](/como-se-ejecuta-js/pila-de-llamadas), [Contextos de ejecución y hoisting](/como-se-ejecuta-js/contextos-y-hoisting), [Closures](/como-se-ejecuta-js/closures) y [Recursión](/como-se-ejecuta-js/recursion).
+
+<Practica>
+
+<SeElMotor id={retoDentroMotor.id} numero={1} titulo={retoDentroMotor.titulo} codigo={retoDentroMotor.codigo} funciones={retoDentroMotor.funciones} movimientos={retoDentroMotor.movimientos}>
+  <div slot="enunciado">
+    <p>Tú eres el motor: apila y desapila las llamadas en el orden en que ocurren. No hace falta apilar <code>console.log</code> ni los métodos de texto.</p>
+  </div>
+</SeElMotor>
+
+<Autoevaluacion id={retoDentroAuto.id} numero={2} titulo={retoDentroAuto.titulo} preguntas={retoDentroAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<Detective id={retoDentroDetective.id} numero={3} titulo={retoDentroDetective.titulo} codigo={retoDentroDetective.codigo} error={retoDentroDetective.error} culpable={retoDentroDetective.culpable} hallazgo={retoDentroDetective.hallazgo} pista={retoDentroDetective.pista} arreglos={retoDentroDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Hay una variable <code>total</code> con valor <code>10</code>, y aun así el motor dice que no se puede usar. Encuentra la línea culpable.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoDentroLab.id} numero={4} titulo={retoDentroLab.titulo} inicial={retoDentroLab.inicial} verificaciones={retoDentroLab.verificaciones} pistas={retoDentroLab.pistas} solucion={retoDentroLab.solucion} explicacion={retoDentroLab.explicacion}>
+  <div slot="enunciado">
+    <p>Recursión, closures y memoria en una sola función.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

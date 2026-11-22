@@ -1,0 +1,50 @@
+---
+seccion: fundamentos
+minutos: 15
+resumen: Reto del motor de la sección 1. Predice, ordena, encuentra el error y programa con tipos, conversiones, operadores y referencias.
+intro: "Llegaste al final de los <u>fundamentos</u>. Este reto no es un examen: mezcla lo que viste en toda la sección, como pasa en un programa de verdad, y te pide <u>pensar como el motor</u> antes de ejecutar."
+ejercicios: [reto-fund-auto, reto-fund-orden, reto-fund-detective, reto-fund-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoFundAuto, retoFundOrden, retoFundDetective, retoFundLab } from '../../data/ejercicios/retos/fundamentos';
+
+## Lo que pone a prueba
+
+- Que `+` concatena en cuanto hay un texto, y que `*` y `-` convierten a número.
+- Qué valores son falsy, y por qué `??` y `||` no son lo mismo.
+- Que asignar un objeto copia la referencia, no el objeto.
+- Leer propiedades que pueden faltar sin romper el programa.
+
+Si alguno se te resiste, vuelve a [Conversión de tipos](/fundamentos/conversion-de-tipos), [Operadores](/fundamentos/operadores) o [Valores primitivos y objetos](/fundamentos/primitivos-y-objetos).
+
+<Practica>
+
+<Autoevaluacion id={retoFundAuto.id} numero={1} titulo={retoFundAuto.titulo} preguntas={retoFundAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoFundOrden.id} numero={2} titulo={retoFundOrden.titulo} codigo={retoFundOrden.codigo} salida={retoFundOrden.salida} inicio={retoFundOrden.inicio} explicacion={retoFundOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un precio que llegó de un formulario como texto, usado en varias operaciones. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoFundDetective.id} numero={3} titulo={retoFundDetective.titulo} codigo={retoFundDetective.codigo} error={retoFundDetective.error} culpable={retoFundDetective.culpable} hallazgo={retoFundDetective.hallazgo} pista={retoFundDetective.pista} arreglos={retoFundDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Este programa quería mostrar «Sin ciudad» cuando falta el dato, pero se cae. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoFundLab.id} numero={4} titulo={retoFundLab.titulo} inicial={retoFundLab.inicial} verificaciones={retoFundLab.verificaciones} pistas={retoFundLab.pistas} solucion={retoFundLab.solucion} explicacion={retoFundLab.explicacion}>
+  <div slot="enunciado">
+    <p>Junta conversiones, <code>NaN</code>, números y template literals en una sola función.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

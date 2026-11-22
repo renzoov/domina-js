@@ -287,3 +287,25 @@ export function buscarTema(seccionSlug: string, temaSlug: string) {
   if (!seccion || indice < 0) return undefined;
   return { seccion, tema: seccion.temas[indice], indice };
 }
+
+// ── Reto del motor ──────────────────────────────────────────
+// Cada sección puede cerrar con un reto, en /<sección>/reto-del-motor. No es un tema del temario:
+// va después del último tema y solo aparece si existe su archivo en src/content/retos/.
+export const SLUG_RETO = 'reto-del-motor';
+export const TITULO_RETO = 'Reto del motor';
+export const claveReto = (seccionSlug: string) => `${seccionSlug}/${SLUG_RETO}`;
+
+export interface Parada {
+  clave: string;
+  titulo: string;
+  seccion: Seccion;
+  reto: boolean;
+}
+
+/** Todo el curso en orden, con el reto de cada sección (si existe) después de su último tema */
+export function recorrido(retos: Set<string>): Parada[] {
+  return temario.flatMap((s) => [
+    ...s.temas.map((t) => ({ clave: `${s.slug}/${t.slug}`, titulo: t.titulo, seccion: s, reto: false })),
+    ...(retos.has(s.slug) ? [{ clave: claveReto(s.slug), titulo: TITULO_RETO, seccion: s, reto: true }] : []),
+  ]);
+}

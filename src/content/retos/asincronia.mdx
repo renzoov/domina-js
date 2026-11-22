@@ -1,0 +1,50 @@
+---
+seccion: asincronia
+minutos: 18
+resumen: Reto del motor de la sección 9. Event loop, microtareas, promesas, async/await, combinadores y reintentos en un mismo reto.
+intro: "La asincronía es donde más se nota <u>pensar como el motor</u>: qué va a la pila, qué espera en cada cola y cuándo le toca. Este reto junta el event loop, las promesas y <code>async/await</code> en un solo recorrido."
+ejercicios: [reto-asinc-auto, reto-asinc-orden, reto-asinc-detective, reto-asinc-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoAsincAuto, retoAsincOrden, retoAsincDetective, retoAsincLab } from '../../data/ejercicios/retos/asincronia';
+
+## Lo que pone a prueba
+
+- El orden entre código síncrono, microtareas y tareas.
+- Que una función `async` devuelve siempre una promesa y corre síncrona hasta su primer `await`.
+- Qué hacen `Promise.all` y `forEach` con las funciones asíncronas.
+- Reintentar una operación que falla, con `try`, `catch` y `await`.
+
+Para repasar: [El event loop](/asincronia/event-loop), [Microtareas y macrotareas](/asincronia/microtareas), [async/await](/asincronia/async-await) y [Patrones asíncronos](/asincronia/patrones).
+
+<Practica>
+
+<Autoevaluacion id={retoAsincAuto.id} numero={1} titulo={retoAsincAuto.titulo} preguntas={retoAsincAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoAsincOrden.id} numero={2} titulo={retoAsincOrden.titulo} codigo={retoAsincOrden.codigo} salida={retoAsincOrden.salida} inicio={retoAsincOrden.inicio} explicacion={retoAsincOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos tareas con distinta demora, una microtarea y un <code>Promise.all</code>. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoAsincDetective.id} numero={3} titulo={retoAsincDetective.titulo} codigo={retoAsincDetective.codigo} error={retoAsincDetective.error} culpable={retoAsincDetective.culpable} hallazgo={retoAsincDetective.hallazgo} pista={retoAsincDetective.pista} arreglos={retoAsincDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Una función que carga un usuario y otra que lo saluda. El usuario nunca llega: encuentra la línea culpable.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoAsincLab.id} numero={4} titulo={retoAsincLab.titulo} inicial={retoAsincLab.inicial} verificaciones={retoAsincLab.verificaciones} pistas={retoAsincLab.pistas} solucion={retoAsincLab.solucion} explicacion={retoAsincLab.explicacion}>
+  <div slot="enunciado">
+    <p>Promesas, <code>async/await</code> y manejo de errores en un patrón muy común.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

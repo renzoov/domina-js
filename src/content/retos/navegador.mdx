@@ -1,0 +1,50 @@
+---
+seccion: navegador
+minutos: 18
+resumen: Reto del motor de la sección 13. Eventos, DOM, fetch, almacenamiento, seguridad y carga de scripts en un mismo reto.
+intro: "En el navegador, tu código convive con <u>la página</u>, <u>los eventos</u> y <u>la red</u>. Este reto junta los tres: un clic que viaja por el DOM, datos guardados que cambian de tipo y una página que reacciona mientras escribes."
+ejercicios: [reto-nav-auto, reto-nav-orden, reto-nav-detective, reto-nav-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import { retoNavAuto, retoNavOrden, retoNavDetective, retoNavLab } from '../../data/ejercicios/retos/navegador';
+
+## Lo que pone a prueba
+
+- Las fases de captura y burbujeo de un evento.
+- Qué guarda `localStorage` y qué hace `fetch` con un 404.
+- Por qué `textContent` es seguro y `innerHTML` no.
+- Actualizar la página en respuesta a lo que escribe el usuario.
+
+Para repasar: [Eventos](/navegador/eventos), [El DOM](/navegador/dom), [Guardar datos](/navegador/guardar-datos) y [Seguridad en el navegador](/navegador/seguridad).
+
+<Practica>
+
+<Autoevaluacion id={retoNavAuto.id} numero={1} titulo={retoNavAuto.titulo} preguntas={retoNavAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Cada pregunta trae unas líneas de código. Decide qué pasa antes de mirar la respuesta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={retoNavOrden.id} numero={2} titulo={retoNavOrden.titulo} codigo={retoNavOrden.codigo} salida={retoNavOrden.salida} inicio={retoNavOrden.inicio} explicacion={retoNavOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Cuatro listeners en tres elementos, y un solo clic. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={retoNavDetective.id} numero={3} titulo={retoNavDetective.titulo} codigo={retoNavDetective.codigo} error={retoNavDetective.error} culpable={retoNavDetective.culpable} hallazgo={retoNavDetective.hallazgo} pista={retoNavDetective.pista} arreglos={retoNavDetective.arreglos}>
+  <div slot="enunciado">
+    <p>Un carrito que funciona la primera vez y falla al volver a la página. Encuentra la línea culpable y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={retoNavLab.id} numero={4} titulo={retoNavLab.titulo} pagina={retoNavLab.pagina} inicial={retoNavLab.inicial} verificaciones={retoNavLab.verificaciones} pistas={retoNavLab.pistas} solucion={retoNavLab.solucion} explicacion={retoNavLab.explicacion}>
+  <div slot="enunciado">
+    <p>Eventos, DOM y clases de CSS: la página reacciona mientras escribes.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -219,6 +219,8 @@ export const lintAuto = {
 
 export const lintOrden = {
   id: 'lint-orden',
+  // La salida es la de ESLint, no la del código: herramientas/verificar-ejercicios.mjs no la ejecuta
+  sinEjecutar: true,
   titulo: 'Lo que encuentra el linter',
   codigo: `// eslint.config.js usa js.configs.recommended
 function sumar(a, b) {

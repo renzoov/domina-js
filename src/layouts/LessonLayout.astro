@@ -4,7 +4,7 @@ import Subrayado from '../components/Subrayado.astro';
 import StepVisualizer from '../components/StepVisualizer.astro';
 import Icono from '../components/Icono.astro';
 import Nota from '../components/Nota.astro';
-import { temario, type Seccion } from '../data/temario';
+import { recorrido as armarRecorrido, claveReto, SLUG_RETO, type Seccion } from '../data/temario';
 import type { DatosVisualizador } from '../lib/visualizador';
 
 interface Props {
@@ -15,21 +15,28 @@ interface Props {
   guia?: { titulo: string; texto: string };
   nota?: string;
   seccion: Seccion;
+  /** Posición del tema en su sección; en un reto no se usa */
   indice: number;
+  /** Es el Reto del motor de la sección, no una lección */
+  reto?: boolean;
+  /** Claves publicadas (sección/tema), incluidos los retos (sección/reto-del-motor) */
   disponibles: Set<string>;
+  /** Secciones que tienen Reto del motor */
+  retos: Set<string>;
   pizarron?: { id: string; datos: DatosVisualizador; mostrarPila?: boolean; modo?: 'pila' | 'variables' | 'eventloop' };
   ejercicios: string[];
 }
-const { titulo, resumen, minutos, intro, guia, nota, seccion, indice, disponibles, pizarron, ejercicios } = Astro.props;
+const { titulo, resumen, minutos, intro, guia, nota, seccion, indice, reto = false, disponibles, retos, pizarron, ejercicios } = Astro.props;
 const total = seccion.temas.length;
-// Recorrido de todo el temario, para pasar de una sección a la siguiente
-const recorrido = temario.flatMap((s) => s.temas.map((t) => ({ clave: `${s.slug}/${t.slug}`, titulo: t.titulo, seccion: s })));
-const posicion = recorrido.findIndex((r) => r.clave === `${seccion.slug}/${seccion.temas[indice].slug}`);
+// Recorrido de todo el temario (con los retos), para pasar de una sección a la siguiente
+const recorrido = armarRecorrido(retos);
+const temaActual = reto ? SLUG_RETO : seccion.temas[indice].slug;
+const posicion = recorrido.findIndex((r) => r.clave === (reto ? claveReto(seccion.slug) : `${seccion.slug}/${temaActual}`));
 const anterior = recorrido[posicion - 1];
 const siguiente = recorrido[posicion + 1];
 const hay = (r?: { clave: string }) => !!r && disponibles.has(r.clave);
 ---
-<BaseLayout titulo={`${titulo} · domina-js`} descripcion={resumen} actual={{ seccion: seccion.slug, tema: seccion.temas[indice].slug }}>
+<BaseLayout titulo={reto ? `${titulo}: ${seccion.titulo} · domina-js` : `${titulo} · domina-js`} descripcion={resumen} actual={{ seccion: seccion.slug, tema: temaActual }}>
   <a class="esquina" slot="esquina" href={`/temario#${seccion.slug}`}>{seccion.titulo}</a>
 
   <div class:list={['leccion', { 'con-tablero': pizarron, 'sin-tablero': !pizarron }]}>
@@ -37,7 +44,7 @@ const hay = (r?: { clave: string }) => !!r && disponibles.has(r.clave);
         <div class="titulo">
           <h1>{titulo}</h1>
           <Subrayado />
-          <p class="meta">Lección {indice + 1} de {total}<i aria-hidden="true">·</i>{minutos} min<i aria-hidden="true">·</i><span data-hechos data-ids={ejercicios.join(',')}>{ejercicios.length} {ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}</span></p>
+          <p class="meta">{reto ? `Cierre de la sección ${seccion.numero}` : `Lección ${indice + 1} de ${total}`}<i aria-hidden="true">·</i>{minutos} min<i aria-hidden="true">·</i><span data-hechos data-ids={ejercicios.join(',')}>{ejercicios.length} {ejercicios.length === 1 ? 'ejercicio' : 'ejercicios'}</span></p>
         </div>
         <div class="intro prosa">
           <p class="lead" set:html={intro} />
@@ -68,7 +75,7 @@ const hay = (r?: { clave: string }) => !!r && disponibles.has(r.clave);
           <a class="sigue" href={`/${siguiente.clave}`} data-astro-prefetch="viewport">
             <span class="sigue-txt">
               <span class="sigue-pre">Continúa con</span>
-              <span class="sigue-tit">{siguiente.titulo}</span>
+              <span class="sigue-tit">{siguiente.titulo}{siguiente.reto && <span class="sigue-reto">: {siguiente.seccion.titulo}</span>}</span>
               {siguiente.seccion.slug !== seccion.slug && <span class="sigue-sec">Sección {siguiente.seccion.numero} · {siguiente.seccion.titulo}</span>}
             </span>
             <span class="sigue-flecha" aria-hidden="true"><Icono nombre="der" /></span>
@@ -221,6 +228,7 @@ const hay = (r?: { clave: string }) => !!r && disponibles.has(r.clave);
   .sigue-pre { font: 700 1.1rem/1 var(--hand); color: var(--y); }
   .sigue-tit { width: fit-content; font: 700 clamp(1.6rem, 2.4vw, 2rem) / 1.1 var(--hand); color: var(--chalk); text-wrap: balance; }
   .sigue-sec { font-size: 0.9rem; color: var(--azul); font-weight: 700; }
+  .sigue-reto { color: var(--chalk-70); }
   .sigue-flecha {
     flex: none;
     display: grid; place-items: center;

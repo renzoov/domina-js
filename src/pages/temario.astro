@@ -3,10 +3,11 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Subrayado from '../components/Subrayado.astro';
 import Icono from '../components/Icono.astro';
-import { temario, totalTemas } from '../data/temario';
+import { temario, totalTemas, claveReto, TITULO_RETO } from '../data/temario';
 
 const lecciones = await getCollection('lecciones');
 const disponibles = new Set(lecciones.map((l) => `${l.data.seccion}/${l.data.tema}`));
+const retos = new Set((await getCollection('retos')).map((r) => r.data.seccion));
 ---
 <BaseLayout titulo="Temario · domina-js" descripcion={`${temario.length} secciones y ${totalTemas} temas para aprender JavaScript en español, de cero a cómo funciona por dentro.`}>
   <div class="temario">
@@ -45,6 +46,12 @@ const disponibles = new Set(lecciones.map((l) => `${l.data.seccion}/${l.data.tem
               </li>
             );
           })}
+          {retos.has(s.slug) && (
+            <li class="hay reto">
+              <a href={`/${claveReto(s.slug)}`}>{TITULO_RETO}</a>
+              <span class="marcas"><span class="cierre">cierre de sección</span></span>
+            </li>
+          )}
         </ol>
       </section>
     ))}
@@ -93,10 +100,16 @@ const disponibles = new Set(lecciones.map((l) => `${l.data.seccion}/${l.data.tem
   .temas a { flex: 1; font-weight: 700; color: var(--chalk); text-decoration: none; background: linear-gradient(transparent 82%, var(--y-90) 82% 94%, transparent 94%); width: fit-content; }
   .temas a:hover { color: var(--y); }
   .marcas { display: flex; align-items: center; gap: 6px; flex: none; }
+  .temas li.reto::before { content: '★'; color: var(--y); font-family: var(--read); }
+  .temas li.reto a { font-style: italic; }
+  .cierre { font: 400 0.64rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--chalk-70); }
   .pronto { font: 400 0.64rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--chalk-45); }
 
   @media (max-width: 720px) {
     .temas { margin-left: 0; grid-template-columns: 1fr; }
-    .pronto { display: none; }
+    .temas li.reto::before { content: '★'; color: var(--y); font-family: var(--read); }
+  .temas li.reto a { font-style: italic; }
+  .cierre { font: 400 0.64rem/1 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--chalk-70); }
+  .pronto { display: none; }
   }
 </style>
