@@ -1,0 +1,6 @@
+# Solo se puede abrir un reporte con uno de los formularios: así cada uno trae lo necesario para revisarlo
+blank_issues_enabled: false
+contact_links:
+  - name: Ir a domina-js
+    url: https://domina-js.pages.dev
+    about: Volver al curso.

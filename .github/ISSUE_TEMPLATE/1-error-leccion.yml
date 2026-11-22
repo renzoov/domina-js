@@ -1,0 +1,44 @@
+name: Error en una lección o ejercicio
+description: Algo está mal explicado, un ejemplo no hace lo que dice o un ejercicio no se puede resolver.
+title: "[Lección] "
+labels: ["contenido"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Gracias por avisar! Cada reporte ayuda a que el curso sea mejor para todos.
+        Si llegaste desde el enlace al final de una lección, la página ya viene completada.
+  - type: input
+    id: pagina
+    attributes:
+      label: Página
+      description: La dirección de la lección o del reto donde viste el problema.
+      placeholder: https://domina-js.pages.dev/como-se-ejecuta-js/closures
+    validations:
+      required: true
+  - type: dropdown
+    id: donde
+    attributes:
+      label: ¿Dónde está el problema?
+      options:
+        - En el texto de la lección
+        - En un ejemplo de código
+        - En el pizarrón paso a paso
+        - En un ejercicio (Sé el motor, Ordena la salida, Detective, Laboratorio o Autoevaluación)
+        - En el Reto del motor
+        - Otro
+    validations:
+      required: true
+  - type: textarea
+    id: que-paso
+    attributes:
+      label: ¿Qué está mal?
+      description: Si es un ejercicio, di cuál (su título) y qué respondiste o escribiste.
+      placeholder: En el ejercicio «Una fábrica de multiplicadores», mi solución imprime 10 y 15, pero la verificación sigue en rojo.
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: ¿Qué esperabas?
+      description: Opcional. Si sabes cuál sería lo correcto, cuéntalo.

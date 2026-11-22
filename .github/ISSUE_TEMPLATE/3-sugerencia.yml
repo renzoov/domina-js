@@ -1,0 +1,18 @@
+name: Sugerencia
+description: Una idea para el curso, un tema que falta o algo que se podría explicar mejor.
+title: "[Sugerencia] "
+labels: ["sugerencia"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Tu idea
+      description: ¿Qué te gustaría ver o cambiar, y por qué te ayudaría?
+    validations:
+      required: true
+  - type: input
+    id: pagina
+    attributes:
+      label: Página relacionada
+      description: Opcional.
+      placeholder: https://domina-js.pages.dev/temario

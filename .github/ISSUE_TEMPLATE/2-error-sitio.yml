@@ -1,0 +1,33 @@
+name: Algo no funciona en el sitio
+description: Un botón que no responde, una página que no carga, algo que se ve mal o no se puede usar.
+title: "[Sitio] "
+labels: ["error"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Gracias por avisar! Con estos datos es mucho más fácil encontrar el problema.
+  - type: input
+    id: pagina
+    attributes:
+      label: Página
+      description: Dónde pasó. Si pasa en todas, déjalo en blanco.
+      placeholder: https://domina-js.pages.dev/rayos-x
+  - type: textarea
+    id: que-paso
+    attributes:
+      label: ¿Qué pasó?
+      description: Qué hiciste, paso a paso, y qué viste. Si puedes, agrega una captura de pantalla.
+      placeholder: |
+        1. Elegí el pizarrón «Recursión».
+        2. Pulsé «Ejecutar».
+        3. El pizarrón se quedó en blanco.
+    validations:
+      required: true
+  - type: input
+    id: navegador
+    attributes:
+      label: Navegador y dispositivo
+      placeholder: Chrome en Windows, Safari en iPhone…
+    validations:
+      required: true

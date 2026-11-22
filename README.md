@@ -195,6 +195,15 @@ Para agregar una lección:
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).
 
+## ¿Encontraste un error?
+
+Avísame con un [Issue](https://github.com/renzoov/domina-js/issues/new/choose). Hay tres formularios en español: «Error en una lección o ejercicio», «Algo no funciona en el sitio» y «Sugerencia». Desde el sitio también se llega de dos formas:
+
+- con **«Reportar un problema»**, en el pie de todas las páginas;
+- con **«¿Viste un error en esta lección?»**, al final de cada lección y de cada reto. Este enlace abre el formulario con la página y el título ya completados.
+
+Los formularios están en [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE/).
+
 ## Licencia
 
 - **El código** (componentes, scripts, estilos y herramientas) usa la licencia [MIT](LICENSE).
