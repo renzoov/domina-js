@@ -44,7 +44,7 @@ const flechaDe = (e?: string) => (e === 'entra' ? 'entra' : e === 'sale' || e ==
   </header>
 
   <div class="fila">
-    <pre class="codigo caja" aria-label="Código del ejemplo"><code>{lineas.map((html, i) => (
+    <pre class="codigo caja" aria-label="Código del ejemplo" tabindex="0"><code>{lineas.map((html, i) => (
       <span class:list={['l', { on: inicial.lineas.includes(i + 1), espera: inicial.espera?.includes(i + 1) }]} data-l={i + 1}><i aria-hidden="true">{i + 1}</i><Fragment set:html={html || ' '} /></span>
     ))}</code></pre>
 

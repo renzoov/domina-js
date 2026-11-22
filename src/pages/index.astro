@@ -31,12 +31,12 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
           <p class="datos">{temario.length} secciones y {totalTemas} temas, de cero a cómo funciona JavaScript por dentro, al día con 2026.</p>
           <p class="mano" aria-hidden="true">pruébalo aquí al lado<Icono nombre="der" /></p>
 
-          <aside class="rayos" aria-labelledby="rayos-titulo">
+          <section class="rayos" aria-labelledby="rayos-titulo">
             <p class="rayos-etq">¿Y con tu propio código?</p>
             <h2 id="rayos-titulo" class="rayos-tit">Rayos <span>X</span></h2>
             <p class="rayos-txt">Escribe o cambia cualquier código y el pizarrón se arma solo: la pila, las variables y la consola, paso a paso. Con desafíos para reforzar lo que aprendes.</p>
             <BotonRayosX texto="Crea tu pizarrón" />
-          </aside>
+          </section>
         </div>
         <div class="demo">
           <StepVisualizer id="demo" titulo="Dale a «Siguiente»" datos={pilaSaludar} fijarControles={false} />

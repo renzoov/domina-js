@@ -417,6 +417,20 @@ Cinco formatos, cada uno con su tiza: Sé el motor naranja, Ordena la salida azu
 
 **Nunca código en blanco plano.** El código de las preguntas, las opciones, las pistas, los hallazgos y las explicaciones se colorea con los mismos tokens que el editor: palabras clave en azul, textos en rosa, números en naranja, comentarios en gris itálica y llamadas en chalk 600 (`resaltarHtml` y `resaltarEnLinea` en `src/lib/resaltar.ts`). Las líneas seguidas que son solo `<code>` forman un bloque sobre el pozo, con borde chalk-15 y radio de tiza, que se desplaza dentro de su caja si una línea es larga. El código nunca lleva ligaduras: `...` y `===` se ven tal como se escriben.
 
+### Tu progreso (MiProgreso)
+Caja de tiza en board-lo al pie del temario, de hasta 640px. Título «Tu progreso» en Cabin Sketch 1.5rem. El resumen va en chalk y sus cifras en lima («Llevas **7 de 464** ejercicios resueltos y **2 de 8** desafíos de Rayos X»). La nota sobre dónde se guarda va en chalk-70 a 0.9rem. Siguen dos botones secundarios con icono: «Descargar copia» (bajar) y «Cargar copia» (subir). Este último es un `label` con un `input type=file` transparente encima, así se abre con clic y con teclado, y el contorno de foco va en el label (`:focus-within`). Debajo hay un aviso `aria-live`: chalk-70 vacío, lima si salió bien y rojo si el archivo no sirve. Cargar una copia **suma**, nunca borra.
+
+### Página 404
+Usa el mismo BaseLayout, con la barra lateral, para que no parezca que se salió del sitio. Arriba, un «404» enorme en Cabin Sketch amarillo, girado −3° y con brillo. Debajo, el título «Esta página se borró del pizarrón» con Subrayado. Luego una consola de tiza con la ruta buscada dentro de un `TypeError` coloreado, porque el código nunca va en blanco. Al final, los botones «Volver al inicio» (amarillo), «Buscar en el temario» y el de Rayos X, y una nota para reportar el enlace roto. La página lleva `noindex` y no tiene canonical.
+
+## Accesibilidad
+
+- **Landmarks sin duplicados.** Hay un solo `main`. La barra lateral es un `aside` con el nombre «Barra lateral: temario», y todo `aside` que esté dentro de `main` lleva su propio nombre. Las Notas no son landmarks: son `div role="note"` con el rótulo escrito en `sr-only` («¡ojo!: …»). Una tarjeta que va dentro del contenido, como la de Rayos X en la portada, es una `section` con `aria-labelledby`.
+- **El código que se desplaza recibe el foco.** El `pre` del pizarrón y los bloques `.codigo-p` de las preguntas llevan `tabindex="0"`, así se recorren con las flechas aunque no se use el mouse. Los bloques de Shiki ya lo traen.
+- **Una tabla comparativa no deja la esquina vacía.** Si la primera celda del encabezado no tiene texto visible, lleva `<span class="sr-only">Aspecto</span>`.
+- **El foco es una raya amarilla discontinua** (`:focus-visible`, 2px, separada 3px). Los controles compuestos la repiten con `:focus-within`.
+- **Revisión:** axe-core 4.10 (WCAG 2.2 AA y buenas prácticas) en las 132 páginas, a 1366px y a 390px, con el progreso vacío y con todos los ejercicios resueltos: 0 fallas (22-nov-2026). Hay que repetirla al agregar un tipo de página o un componente nuevo.
+
 ## Do's and Don'ts
 
 ### Do:

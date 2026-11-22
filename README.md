@@ -117,6 +117,26 @@ En pantallas chicas el temario se abre con un botón y los controles del pizarr�
 
 <img src="docs/capturas/movil.webp" alt="La lección «La pila de llamadas» en un teléfono" width="320">
 
+## Tu progreso, en un archivo
+
+El progreso vive solo en tu navegador, sin cuentas ni servidor. Al final del [temario](https://domina-js.pages.dev/temario), «Tu progreso» dice cuántos ejercicios y desafíos de Rayos X llevas resueltos, y tiene dos botones:
+
+- **Descargar copia** guarda un archivo `domina-js-progreso-AAAA-MM-DD.json`.
+- **Cargar copia** lo lee en cualquier navegador o equipo y lo **suma** a lo que ya tenías. Si un ejercicio está resuelto en cualquiera de los dos lados, queda resuelto: cargar una copia nunca borra progreso. Si el archivo no es una copia de domina-js, lo dice y no toca nada.
+
+## Accesibilidad
+
+- Todo se usa con el teclado: el pizarrón avanza con las flechas, los bloques de código que se desplazan reciben el foco y el foco siempre se ve, con una raya amarilla discontinua.
+- Las explicaciones del pizarrón y los avisos de los ejercicios se anuncian a los lectores de pantalla (`aria-live`).
+- Con «reducir movimiento» activado, las animaciones de tiza son instantáneas.
+- Las 132 páginas pasan [axe](https://github.com/dequelabs/axe-core) (WCAG 2.2 AA y buenas prácticas) sin fallas, en escritorio y en móvil, con el progreso vacío y con todo resuelto. La última revisión fue el 22 de noviembre de 2026.
+
+## Al compartir y en los buscadores
+
+- Cada página tiene su URL canónica y su vista previa para redes y chats (Open Graph y Twitter), con la imagen `public/og.jpg` de 1200×630.
+- `/sitemap.xml` se genera con las colecciones, así que cada lección o reto nuevo aparece solo. `public/robots.txt` apunta a él.
+- Las direcciones que no existen muestran una página 404 propia («Esta página se borró del pizarrón»), con la ruta buscada dentro de un error de consola y enlaces al inicio, al temario y a Rayos X. Esa página no se indexa.
+
 ## Diseño
 
 La dirección visual es **«Pizarrón y tiza amarilla»**: un tablero verde oscuro, solo con fondo oscuro, y una paleta que sale del amarillo del logo de JavaScript (`#F7DF1E`). Los títulos van en Tiza Domina (ver abajo), el texto en Atkinson Hyperlegible y el código en Fira Code, sin ligaduras. Rayos X tiene su propia estética de radiografía, en azul. El sistema completo está en [`DESIGN.md`](DESIGN.md), y las direcciones que no se eligieron quedan archivadas en [`docs/disenos/`](docs/disenos/).
@@ -167,10 +187,11 @@ src/
 │   └── resaltar.ts     colorea el código de los ejercicios
 ├── components/         StepVisualizer, menú del temario, botón de Rayos X y los formatos de ejercicio
 ├── layouts/            BaseLayout (barra lateral) y LessonLayout (lecciones y retos)
-├── pages/              portada, temario, glosario, Rayos X y la ruta de cada lección y cada reto
+├── pages/              portada, temario, glosario, Rayos X, 404, sitemap.xml y la ruta de cada lección y cada reto
 ├── scripts/            visualizador, editor de tiza, Rayos X, corrección de ejercicios, sandbox y progreso
 ├── fuentes/            Tiza Domina y su licencia
 └── styles/global.css   tokens del pizarrón y estilos compartidos
+public/                 favicon, og.jpg (vista previa al compartir), robots.txt y _headers
 docs/
 ├── PLAN.md             el plan del proyecto: temario, arquitectura y fases
 ├── capturas/           las imágenes de este README

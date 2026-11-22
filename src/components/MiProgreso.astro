@@ -86,7 +86,7 @@ const idsDesafios = desafios.map((d) => d.id);
   .cargar { position: relative; cursor: pointer; }
   /* El input de archivo queda oculto pero accesible: el label es el botón y recibe el foco */
   .cargar input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-  .cargar:focus-within { outline: 2px solid var(--y); outline-offset: 2px; }
+  .cargar:focus-within { outline: 2px dashed var(--y); outline-offset: 3px; }
   .aviso { margin: 0; min-height: 1.4em; font-size: 0.92rem; color: var(--chalk-70); }
   .aviso:global(.bien) { color: var(--ok); }
   .aviso:global(.mal) { color: var(--red); }

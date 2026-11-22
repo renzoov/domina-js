@@ -60,7 +60,7 @@ export function resaltarHtml(html: string): string {
     if (!bloque.length) return;
     while (bloque.at(-1) === '') bloque.pop();
     const lineas = bloque.map((l) => `<span class="l">${resaltarLinea(l) || ' '}</span>`).join('');
-    salida.push(`<span class="codigo-p">${lineas}</span>`);
+    salida.push(`<span class="codigo-p" tabindex="0">${lineas}</span>`);
     bloque = [];
   };
   const cerrarTexto = () => {

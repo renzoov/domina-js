@@ -4,10 +4,10 @@ interface Props { tipo?: 'ojo' | 'consejo' | 'error' }
 const { tipo = 'ojo' } = Astro.props;
 const etiqueta = { ojo: '¡ojo!', consejo: 'tip', error: '¡cuidado!' }[tipo];
 ---
-<aside class:list={['nota', tipo]}>
+<div class:list={['nota', tipo]} role="note">
   <b aria-hidden="true">{etiqueta}</b>
   <div><span class="sr-only">{etiqueta}: </span><slot /></div>
-</aside>
+</div>
 
 <style>
   .nota {

@@ -66,6 +66,7 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
     <meta name="twitter:title" content={titulo} />
     <meta name="twitter:description" content={descripcion} />
     <meta name="twitter:image" content={imagenCompartir} />
+    <meta name="twitter:image:alt" content="domina-js: Aprende JavaScript viendo lo que hace el motor. Un pizarrón con la pila de llamadas." />
     <link rel="sitemap" href="/sitemap.xml" />
     <!-- No pintar hasta que la barra lateral tenga su progreso y su scroll (ver el script tras .lado-fijo);
          si no, Chromium la muestra un instante a medio armar al navegar entre temas -->
@@ -87,7 +88,7 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
     </svg>
     <div class="pizarron">
       <!-- Barra lateral fija: logo y temario, con su propio scroll -->
-      <aside class="lado">
+      <aside class="lado" aria-label="Barra lateral: temario">
         <div class="lado-fijo">
           <Logo />
           <MenuTemario actual={actual} />

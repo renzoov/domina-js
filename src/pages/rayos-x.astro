@@ -87,8 +87,8 @@ if (!inicial.datos) throw new Error(`Rayos X: el primer pizarrón no se puede ej
       </ol>
     </section>
 
-    <aside class="limites">
-      <h2>Lo que entiende Rayos X</h2>
+    <aside class="limites" aria-labelledby="limites-t">
+      <h2 id="limites-t">Lo que entiende Rayos X</h2>
       <p>Funciones (declaraciones, expresiones y flechas), closures, <code>let</code>, <code>const</code> y <code>var</code> con hoisting y zona muerta temporal, <code>if</code>, <code>switch</code>, <code>for</code>, <code>while</code>, <code>for…of</code>, <code>break</code> y <code>continue</code>, <code>try…catch</code>, arrays, objetos, template literals, métodos como <code>map</code> y <code>console.log</code>. Si usas algo que todavía no entiende (clases, <code>async</code>, desestructuración…), te dice qué es y en qué línea. Se detiene a los 300 pasos, así un bucle infinito no congela la página, y la pila se desborda a las 12 llamadas (en el navegador son miles) para que el desborde se pueda ver.</p>
     </aside>
 
