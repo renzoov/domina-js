@@ -39,6 +39,10 @@ Cada sección cierra con un **Reto del motor**: no es un examen, sino cuatro eje
 
 ![El pizarrón de práctica de la pila de llamadas, con el ejercicio «Sé el motor»](docs/capturas/practica.webp)
 
+### Rayos X: tu propio pizarrón
+
+En [`/rayos-x`](https://domina-js.pages.dev/rayos-x) eliges un pizarrón (la pila, recursión, closures, `var` y `let` en un bucle…), le cambias lo que quieras y lo ejecutas: el sitio corre tu código con un intérprete propio, escrito sobre Acorn, y arma el pizarrón solo, con la pila, las variables (también las que recuerda un closure), la consola y una explicación de cada paso. Abajo hay desafíos de refuerzo que se comprueban mirando lo que pasa en el pizarrón: «haz que la pila llegue a 3 funciones», «desborda la pila a propósito», «cambia una sola palabra para que imprima `0 1 2`».
+
 ### Ejemplos que se ejecutan
 
 Los bloques de código de las lecciones tienen un botón **Ejecutar**. El código corre aislado, en un Web Worker o en un iframe con *sandbox*, con un tiempo máximo y la consola capturada.
@@ -119,6 +123,7 @@ src/
 ├── data/
 │   ├── temario.ts      el temario completo: secciones, descripciones, temas e insignias de edición
 │   ├── glosario.ts     los términos del glosario y las lecciones donde se explican
+│   ├── rayos-x.ts      los pizarrones listos y los desafíos de Rayos X
 │   ├── ejercicios/     los ejercicios de cada sección, como datos (los de los retos, en ejercicios/retos/)
 │   └── visualizaciones.ts   los pasos de cada pizarrón
 ├── components/         StepVisualizer, menú del temario y los formatos de ejercicio
@@ -138,8 +143,8 @@ Para agregar una lección: crea el `.mdx` en `src/content/lecciones/`, regístra
 
 ## Lo que viene
 
-- **Modo Rayos X:** edita el código de un pizarrón, o escribe el tuyo, y el sitio genera los pasos solo, con un intérprete instrumentado que corre en un Web Worker.
-- **Mira tu solución** y un formato nuevo, **Rómpelo**, apoyados en Rayos X.
+- **Rayos X, etapa 2:** `setTimeout`, promesas y las colas del event loop en el pizarrón generado.
+- **Mira tu solución:** pasar por Rayos X el código de un laboratorio.
 - Un **buscador** en la barra lateral.
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).

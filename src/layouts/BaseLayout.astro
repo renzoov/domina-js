@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Logo from '../components/Logo.astro';
 import MenuTemario from '../components/MenuTemario.astro';
+import BotonRayosX from '../components/BotonRayosX.astro';
 import tiza400 from '../fuentes/tiza-domina-400.woff2?url';
 import tiza700 from '../fuentes/tiza-domina-700.woff2?url';
 import atkinson400 from '@fontsource/atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2?url';
@@ -133,13 +134,19 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
             <a href="/temario" aria-current={ruta === '/temario' ? 'page' : undefined}>Temario</a>
             <a href="/glosario" aria-current={ruta === '/glosario' ? 'page' : undefined}>Glosario</a>
             <a href="/antes-de-empezar/que-es-javascript-hoy" aria-current={ruta === '/antes-de-empezar/que-es-javascript-hoy' ? 'page' : undefined}>Empezar</a>
+            <BotonRayosX variante="nav" actual={ruta === '/rayos-x'} />
           </nav>
         </header>
         <main id="contenido" class="contenido" tabindex="-1">
           <slot />
         </main>
         <footer class="pie">
-          <p>domina-js · JavaScript en español, gratis y paso a paso.</p>
+          <p>
+            domina-js · JavaScript en español, gratis y paso a paso.
+            <a class="github" href="https://github.com/renzoov/domina-js" target="_blank" rel="noopener noreferrer" aria-label="Código del sitio en GitHub (se abre en otra pestaña)" title="Código en GitHub">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" /></svg>
+            </a>
+          </p>
           <span class="fantasma" aria-hidden="true">x = 3 + 4</span>
         </footer>
       </div>
@@ -191,7 +198,7 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
     padding: 30px var(--gutter) 0;
     min-height: 72px;
   }
-  .principal { display: flex; gap: 22px; margin-left: auto; }
+  .principal { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; margin-left: auto; }
   .principal a {
     font: 700 0.95rem/1 var(--read);
     color: var(--chalk-70);
@@ -217,6 +224,9 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
   .filtros { position: absolute; width: 0; height: 0; overflow: hidden; }
   .pie { position: relative; padding: 64px var(--gutter) 0; min-height: 120px; }
   .pie p { margin: 0; font: 400 0.9rem/1.5 var(--read); color: var(--chalk-70); }
+  .github { display: inline-grid; place-items: center; vertical-align: middle; margin-left: 8px; padding: 4px; color: var(--chalk-70); border-radius: 50%; transition: color 150ms var(--ease-out), background 150ms var(--ease-out); }
+  .github:hover, .github:focus-visible { color: var(--y); background: var(--chalk-08); }
+  .github svg { width: 20px; height: 20px; fill: currentColor; }
   .pie .fantasma { right: 8%; bottom: -6px; transform: rotate(-4deg); }
   .bandeja {
     position: absolute;

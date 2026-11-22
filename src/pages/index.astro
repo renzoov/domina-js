@@ -4,6 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import StepVisualizer from '../components/StepVisualizer.astro';
 import Subrayado from '../components/Subrayado.astro';
 import Icono from '../components/Icono.astro';
+import BotonRayosX from '../components/BotonRayosX.astro';
 import { pilaSaludar } from '../data/visualizaciones';
 import { temario, totalTemas, buscarTema } from '../data/temario';
 
@@ -29,6 +30,13 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
           </div>
           <p class="datos">{temario.length} secciones y {totalTemas} temas, de cero a cómo funciona JavaScript por dentro, al día con 2026.</p>
           <p class="mano" aria-hidden="true">pruébalo aquí al lado<Icono nombre="der" /></p>
+
+          <aside class="rayos" aria-labelledby="rayos-titulo">
+            <p class="rayos-etq">¿Y con tu propio código?</p>
+            <h2 id="rayos-titulo" class="rayos-tit">Rayos <span>X</span></h2>
+            <p class="rayos-txt">Escribe o cambia cualquier código y el pizarrón se arma solo: la pila, las variables y la consola, paso a paso. Con desafíos para reforzar lo que aprendes.</p>
+            <BotonRayosX texto="Crea tu pizarrón" />
+          </aside>
         </div>
         <div class="demo">
           <StepVisualizer id="demo" titulo="Dale a «Siguiente»" datos={pilaSaludar} fijarControles={false} />
@@ -81,6 +89,25 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
   .mano { display: flex; align-items: center; gap: 8px; margin: 30px 0 0; font: 700 1.5rem/1 var(--hand); color: var(--pink); transform: rotate(-3deg); width: fit-content; }
   .mano :global(svg) { width: 34px; height: 34px; filter: url(#tiza); }
   .mano :global(svg path) { stroke-width: 2.9; }
+
+  /* Rayos X en la portada: tarjeta de radiografía, con el azul del botón */
+  .rayos {
+    position: relative;
+    margin-top: 44px;
+    max-width: 46ch;
+    padding: 22px 24px 26px;
+    background:
+      radial-gradient(90% 120% at 100% 0%, rgba(143, 208, 247, 0.1), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(143, 208, 247, 0.035) 0 1px, transparent 1px 5px),
+      var(--board-lo);
+    border: 2px solid rgba(143, 208, 247, 0.45);
+    border-radius: var(--r-chalk);
+    box-shadow: 0 0 0 4px rgba(143, 208, 247, 0.06), 0 0 28px rgba(143, 208, 247, 0.08);
+  }
+  .rayos-etq { margin: 0; font: 700 1.2rem/1 var(--hand); color: var(--pink); transform: rotate(-2deg); width: fit-content; }
+  .rayos-tit { margin: 10px 0 10px; font: 700 clamp(2.4rem, 3.6vw, 3.2rem) / 1 var(--hand); color: var(--chalk); text-shadow: 0 0 3px rgba(236, 234, 226, 0.35); }
+  .rayos-tit span { color: var(--azul); text-shadow: 0 0 14px rgba(143, 208, 247, 0.55), 0 0 3px rgba(143, 208, 247, 0.6); }
+  .rayos-txt { margin: 0 0 20px; font-size: 1.05rem; line-height: 1.6; color: var(--chalk-70); }
 
   .como { padding-top: 120px; max-width: 1080px; }
   h2 { margin: 0 0 28px; font: 700 clamp(2rem, 3.2vw, 2.75rem) / 1.05 var(--hand); }

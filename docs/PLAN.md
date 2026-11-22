@@ -342,7 +342,7 @@ Cada lección mezcla los formatos que tienen sentido para su tema:
 5. **Lección:** "La pila de llamadas" completa, con sus dos visualizadores y sus ejercicios.
 6. **Portada:** con el visualizador funcionando en la primera pantalla.
 7. **Revisión:** capturas, detector, revisión independiente y `DESIGN.md`.
-8. **Modo Rayos X:**
+8. **Modo Rayos X** (etapa 1 hecha: página `/rayos-x` con pizarrones listos y desafíos; el intérprete está en `src/lib/rayos-x.ts`. Se decidió no poner el botón en cada pizarrón de las lecciones, sino una sección propia de práctica enlazada desde la navegación, la portada y cada Reto del motor):
    - el intérprete instrumentado, empezando por el subconjunto de JS;
    - "Mira tu solución";
    - el formato Rómpelo.

@@ -1,0 +1,217 @@
+---
+// Rayos X: pizarrones listos para modificar y desafíos de refuerzo. El código del lector se ejecuta con el
+// intérprete de src/lib/rayos-x.ts, en un Worker, y el pizarrón se arma solo con los pasos que genera.
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Subrayado from '../components/Subrayado.astro';
+import StepVisualizer from '../components/StepVisualizer.astro';
+import Icono from '../components/Icono.astro';
+import { radiografiar } from '../lib/rayos-x';
+import { pizarrones, desafios } from '../data/rayos-x';
+
+const lecciones = new Map((await getCollection('lecciones')).map((l) => [`${l.data.seccion}/${l.data.tema}`, l.data.titulo]));
+for (const p of pizarrones) if (!lecciones.has(p.leccion)) throw new Error(`Rayos X: el pizarrón «${p.id}» apunta a una lección que no existe: ${p.leccion}`);
+const deLecciones = [...new Set(pizarrones.map((p) => p.leccion))];
+const inicial = radiografiar(pizarrones[0].codigo);
+if (!inicial.datos) throw new Error(`Rayos X: el primer pizarrón no se puede ejecutar: ${inicial.error}`);
+---
+<BaseLayout titulo="Rayos X · domina-js" descripcion="Escribe tu propio código y mira cómo lo ejecuta el motor de JavaScript, paso a paso: la pila, las variables y la consola. Con desafíos para practicar.">
+  <div class="rx" data-rayosx>
+    <header class="cab">
+      <p class="sello">Tu propio pizarrón</p>
+      <h1>Rayos <span class="x">X</span></h1>
+      <Subrayado ancho={300} />
+      <p class="lead">Elige un pizarrón, cámbiale lo que quieras y pulsa <b>Ejecutar</b>. El sitio corre tu código con un intérprete propio y arma el pizarrón solo: qué funciones están en la pila, qué valen sus variables, qué sale por la consola y por qué, paso a paso.</p>
+    </header>
+
+    <section class="listos" aria-labelledby="listos-t">
+      <h2 id="listos-t"><span class="num" aria-hidden="true">1</span>Elige un pizarrón</h2>
+      <div class="tarjetas">
+        {pizarrones.map((p, i) => (
+          <button type="button" class="pz" data-pizarron={p.id} aria-pressed={i === 0 ? 'true' : 'false'}>
+            <span class="p-tit">{p.titulo}</span>
+            <span class="p-idea">{p.idea}</span>
+          </button>
+        ))}
+      </div>
+      <p class="nota">Cada uno sale de una lección: {deLecciones.map((l, i) => <>{i > 0 && ', '}<a href={`/${l}`}>{lecciones.get(l)}</a></>)}.</p>
+    </section>
+
+    <section class="taller" aria-labelledby="taller-t">
+      <h2 id="taller-t"><span class="num" aria-hidden="true">2</span>Cámbialo y ejecútalo</h2>
+
+      <div class="activo" data-activo hidden>
+        <div class="activo-cab">
+          <p class="activo-etq">Desafío</p>
+          <button type="button" class="btn btn--quiet salir" data-salir>Salir del desafío</button>
+        </div>
+        <h3 data-activo-titulo></h3>
+        <p class="activo-enunciado" data-activo-enunciado></p>
+        <ul class="objetivos" data-objetivos></ul>
+        <p class="superado-txt" data-superado hidden><Icono nombre="ok" />¡Desafío superado!</p>
+        <details>
+          <summary>Ver una pista</summary>
+          <p data-activo-pista></p>
+        </details>
+      </div>
+
+      <div class="marco">
+        <div class="barra"><span class="puntos" aria-hidden="true"><i></i><i></i><i></i></span><span class="nombre">tu-codigo.js</span><span class="atajo">Ctrl + Enter para ejecutar</span></div>
+        <div class="editor" data-editor><textarea aria-label="Tu código" spellcheck="false">{pizarrones[0].codigo}</textarea></div>
+      </div>
+      <div class="acciones">
+        <button type="button" class="btn btn--y" data-ejecutar><Icono nombre="jugar" />Ejecutar</button>
+        <button type="button" class="btn btn--quiet" data-restaurar><Icono nombre="reiniciar" />Restaurar</button>
+        <p class="aviso" data-aviso aria-live="polite"></p>
+      </div>
+    </section>
+
+    <div class="tablero">
+      <StepVisualizer id="rx" titulo="Tu pizarrón" datos={inicial.datos} fijarControles={false} />
+    </div>
+
+    <section class="desafios" aria-labelledby="desafios-t">
+      <h2 id="desafios-t"><span class="num" aria-hidden="true">3</span>Desafíos</h2>
+      <p class="lead-chico">Para reforzar lo que viste en las lecciones. Cada desafío se comprueba solo, mirando lo que pasa en el pizarrón: la pila, la consola o el error. Tu progreso se guarda en este navegador.</p>
+      <ol class="lista">
+        {desafios.map((d, i) => (
+          <li class="desafio" data-tarjeta-desafio={d.id}>
+            <span class="d-num" aria-hidden="true">{i + 1}</span>
+            <div class="d-cuerpo">
+              <h3>{d.titulo}<span class="d-hecho" data-estado hidden><Icono nombre="ok" titulo="Superado" /></span></h3>
+              <p set:html={d.enunciado} />
+              <button type="button" class="btn" data-desafio={d.id}>Aceptar el desafío<Icono nombre="der" /></button>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <aside class="limites">
+      <h2>Lo que entiende Rayos X</h2>
+      <p>Funciones (declaraciones, expresiones y flechas), closures, <code>let</code>, <code>const</code> y <code>var</code> con hoisting y zona muerta temporal, <code>if</code>, <code>switch</code>, <code>for</code>, <code>while</code>, <code>for…of</code>, <code>break</code> y <code>continue</code>, <code>try…catch</code>, arrays, objetos, template literals, métodos como <code>map</code> y <code>console.log</code>. Si usas algo que todavía no entiende (clases, <code>async</code>, desestructuración…), te dice qué es y en qué línea. Se detiene a los 300 pasos, así un bucle infinito no congela la página, y la pila se desborda a las 12 llamadas (en el navegador son miles) para que el desborde se pueda ver.</p>
+    </aside>
+
+    <script type="application/json" data-config set:html={JSON.stringify({ pizarrones, desafios }).replace(/</g, '\\u003c')} />
+  </div>
+</BaseLayout>
+
+<script>
+  import { iniciarRayosX } from '../scripts/rayos-x';
+  iniciarRayosX();
+</script>
+
+<style>
+  .rx { max-width: 1000px; display: grid; gap: 40px; }
+  .sello { margin: 0 0 8px; width: fit-content; font: 700 1.15rem/1 var(--hand); color: var(--azul); transform: rotate(-2deg); }
+  h1 { margin: 0; font: 700 clamp(2.8rem, 5.4vw, 4.8rem) / 1 var(--hand); text-shadow: 0 0 3px rgba(236, 234, 226, 0.4); }
+  h1 .x { color: var(--azul); text-shadow: 0 0 14px rgba(143, 208, 247, 0.55), 0 0 3px rgba(143, 208, 247, 0.6); }
+  .lead { margin: 18px 0 0; max-width: 64ch; font-size: 1.12rem; line-height: 1.6; color: var(--chalk-70); }
+  .lead b { color: var(--y); }
+
+  h2 { display: flex; align-items: center; gap: 12px; margin: 0 0 16px; font: 700 clamp(1.6rem, 2.4vw, 2rem) / 1.1 var(--hand); }
+  .num {
+    display: grid; place-items: center; flex: none;
+    width: 36px; height: 36px;
+    font: 700 1.25rem/1 var(--hand); color: var(--azul);
+    border: 2px solid var(--azul);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  }
+
+  .tarjetas { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+  .pz {
+    display: grid; gap: 4px; text-align: left; cursor: pointer;
+    padding: 12px 14px;
+    color: var(--chalk-70);
+    background: var(--board-lo);
+    border: 2px solid var(--chalk-15);
+    border-radius: var(--r-chalk);
+    transition: border-color 150ms var(--ease-out), background 150ms var(--ease-out);
+  }
+  .pz:hover { border-color: var(--chalk-45); }
+  .pz[aria-pressed='true'] { border-color: var(--azul); background: color-mix(in srgb, var(--azul) 8%, var(--board-lo)); box-shadow: 0 0 12px rgba(143, 208, 247, 0.15); }
+  .p-tit { font: 700 1rem/1.25 var(--read); color: var(--chalk); }
+  .pz[aria-pressed='true'] .p-tit { color: var(--azul); }
+  .p-idea { font-size: 0.88rem; line-height: 1.45; }
+  .nota { margin: 12px 0 0; font-size: 0.88rem; line-height: 1.6; color: var(--chalk-70); }
+  .nota a { color: var(--chalk); text-decoration-color: var(--y); }
+
+  .taller { display: grid; gap: 12px; max-width: 820px; }
+  .taller h2 { margin-bottom: 4px; }
+  .marco { border: 2px solid color-mix(in srgb, var(--azul) 45%, transparent); border-radius: var(--r-chalk); background: var(--board-lo); overflow: hidden; box-shadow: 0 0 0 4px color-mix(in srgb, var(--azul) 8%, transparent); }
+  .barra { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px dashed var(--chalk-15); }
+  .puntos { display: flex; gap: 5px; }
+  .puntos i { width: 9px; height: 9px; border-radius: 50%; background: var(--chalk-15); }
+  .nombre { font: 400 0.8rem var(--mono); color: var(--chalk-70); }
+  .atajo { margin-left: auto; font-size: 0.75rem; color: var(--azul); }
+  .editor { min-height: 240px; background: var(--pozo); }
+  .editor textarea { display: block; width: 100%; min-height: 240px; padding: 12px 16px; border: 0; font: 400 0.85rem/1.6 var(--mono); color: var(--chalk); background: transparent; resize: vertical; }
+
+  .acciones { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+  .aviso { margin: 0; flex: 1 1 260px; font-size: 0.95rem; color: var(--chalk-70); }
+  .aviso:global(.bien) { color: var(--ok); }
+  .aviso:global(.mal) { color: var(--red); }
+  .aviso :global(code) { font-family: var(--mono); color: var(--chalk); }
+
+  .activo {
+    padding: 16px 18px;
+    border: 2px solid var(--naranja);
+    border-radius: var(--r-chalk);
+    background: color-mix(in srgb, var(--naranja) 7%, transparent);
+  }
+  .activo:global(.superado) { border-color: var(--ok); background: color-mix(in srgb, var(--ok) 7%, transparent); }
+  .activo-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .activo-etq { margin: 0; font: 700 1.2rem/1 var(--hand); color: var(--naranja); transform: rotate(-2deg); }
+  .salir { padding: 4px 8px; font-size: 0.85rem; }
+  .activo h3 { margin: 6px 0 6px; font: 700 1.25rem/1.25 var(--read); }
+  .activo-enunciado { margin: 0 0 10px; line-height: 1.6; color: var(--chalk-70); }
+  .activo-enunciado :global(code), .activo details :global(code) { font-family: var(--mono); font-size: 0.9em; color: var(--naranja); }
+  .activo-enunciado :global(b) { color: var(--chalk); }
+  .objetivos { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; }
+  .objetivos :global(li) { position: relative; padding-left: 26px; font-size: 0.95rem; color: var(--chalk-70); }
+  .objetivos :global(li)::before {
+    content: ''; position: absolute; left: 2px; top: 0.25em;
+    width: 14px; height: 14px; border: 2px solid var(--chalk-45); border-radius: 50%;
+  }
+  .objetivos :global(li.ok) { color: var(--ok); }
+  .objetivos :global(li.ok)::before { border-color: var(--ok); background: var(--ok); }
+  .objetivos :global(li.no) { color: var(--chalk); }
+  .objetivos :global(li.no)::before { border-color: var(--red); }
+  .superado-txt { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font: 700 1.3rem/1 var(--hand); color: var(--ok); }
+  .superado-txt :global(svg) { width: 22px; height: 22px; }
+  .activo details summary { cursor: pointer; font-size: 0.9rem; font-weight: 700; color: var(--azul); }
+  .activo details p { margin: 8px 0 0; font-size: 0.92rem; line-height: 1.6; color: var(--chalk-70); }
+
+  :global(#rx.muchos-pasos ol.linea) { justify-content: flex-start; overflow-x: auto; padding-bottom: 8px; scrollbar-width: thin; scrollbar-color: var(--chalk-15) transparent; }
+  :global(#rx.muchos-pasos ol.linea li) { flex: none; }
+
+  .lead-chico { margin: 0 0 18px; max-width: 64ch; line-height: 1.6; color: var(--chalk-70); }
+  .lista { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 14px; }
+  .desafio {
+    display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 14px;
+    padding: 16px 18px;
+    background: var(--board-lo);
+    border: 2px solid var(--chalk-15);
+    border-radius: var(--r-chalk-2);
+  }
+  .desafio:global(.hecho) { border-color: color-mix(in srgb, var(--ok) 55%, transparent); }
+  .d-num {
+    display: grid; place-items: center;
+    width: 36px; height: 36px;
+    font: 700 1.2rem/1 var(--hand); color: var(--naranja);
+    border: 2px solid var(--naranja);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  }
+  .desafio:global(.hecho) .d-num { color: var(--ok); border-color: var(--ok); }
+  .desafio h3 { display: flex; align-items: center; gap: 8px; margin: 4px 0 6px; font: 700 1.08rem/1.3 var(--read); }
+  .d-hecho { display: inline-grid; color: var(--ok); }
+  .d-hecho :global(svg) { width: 18px; height: 18px; }
+  .desafio p { margin: 0 0 12px; font-size: 0.95rem; line-height: 1.55; color: var(--chalk-70); }
+  .desafio p :global(code) { font-family: var(--mono); font-size: 0.9em; color: var(--naranja); }
+  .desafio p :global(b) { color: var(--chalk); }
+
+  .limites { max-width: 760px; padding-top: 16px; border-top: 2px dashed var(--chalk-15); }
+  .limites h2 { font-size: 1.5rem; }
+  .limites p { margin: 0; color: var(--chalk-70); line-height: 1.6; }
+  .limites code { font-family: var(--mono); font-size: 0.9em; color: var(--naranja); }
+</style>
