@@ -191,6 +191,7 @@ Para agregar una lección:
 
 - **Rayos X, etapa 2:** `setTimeout`, promesas y las colas del event loop en el pizarrón generado, con pizarrones y desafíos de asincronía.
 - **Mira tu solución:** pasar por Rayos X el código de un laboratorio.
+- **Proyectos:** de 5 a 8 aplicaciones completas para hacer paso a paso, de la más fácil a una final grande. Cada una con su `proyecto-inicial.zip` (HTML y CSS hechos, el JavaScript por escribir) y su `proyecto-final.zip`. El plan está en [`docs/PROYECTOS.md`](docs/PROYECTOS.md).
 - Un **buscador** en la barra lateral.
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).

@@ -3,6 +3,7 @@ import '../styles/global.css';
 import Logo from '../components/Logo.astro';
 import MenuTemario from '../components/MenuTemario.astro';
 import BotonRayosX from '../components/BotonRayosX.astro';
+import BotonProyectos from '../components/BotonProyectos.astro';
 import { REPO, PERFIL, REPORTAR } from '../data/sitio';
 import tiza400 from '../fuentes/tiza-domina-400.woff2?url';
 import tiza700 from '../fuentes/tiza-domina-700.woff2?url';
@@ -134,8 +135,9 @@ const ruta = Astro.url.pathname.replace(/\/$/, '');
           <nav aria-label="Principal" class="principal">
             <a href="/temario" aria-current={ruta === '/temario' ? 'page' : undefined}>Temario</a>
             <a href="/glosario" aria-current={ruta === '/glosario' ? 'page' : undefined}>Glosario</a>
-            <a href="/antes-de-empezar/que-es-javascript-hoy" aria-current={ruta === '/antes-de-empezar/que-es-javascript-hoy' ? 'page' : undefined}>Empezar</a>
             <BotonRayosX variante="nav" actual={ruta === '/rayos-x'} />
+            <!-- Proyectos todavía no existe: se muestra tachado, con «Próximamente» (plan en docs/PROYECTOS.md) -->
+            <BotonProyectos pronto />
           </nav>
         </header>
         <main id="contenido" class="contenido" tabindex="-1">
