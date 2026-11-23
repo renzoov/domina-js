@@ -68,6 +68,10 @@
 /* Sin ligaduras: quien aprende tiene que ver <= y === tal como se escriben.
    Con !important porque el atajo `font:` de los componentes vuelve a activarlas (convertía ... en …) */
 code, pre, kbd, samp, output, textarea, .cm-content, .tarjeta { font-variant-ligatures: none !important; font-feature-settings: 'liga' 0, 'calt' 0; }
+/* El navegador le pone `font-family: monospace` a todo <code>, y dentro de un <pre> eso le gana a la
+   Fira Code del <pre>: cada sistema elegía su propia fuente (Consolas en Windows, Courier en el Safari
+   de Windows). Así el código usa siempre la fuente y el tamaño de su bloque. */
+pre code { font: inherit; }
 
 html {
   background: var(--edge);

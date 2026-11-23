@@ -1,21 +1,25 @@
 ---
 // Botón a una sección propia del sitio (Proyectos, Librerías), con la estética de Rayos X y su propio color.
 // Mientras la sección no exista, `pronto` lo deja tachado, sin enlace y con el aviso «Próximamente».
-// El ícono va en el slot: un SVG de 32×32 con trazos (sin relleno), que toma el color de la sección.
 interface Props {
   texto: string;
   href: string;
   /** Nombre de la variable de color del sitio: lila, naranja, azul… */
   color: string;
+  icono: 'bloques' | 'paquete';
   pronto?: boolean;
   actual?: boolean;
+  /** 'nav' en la navegación principal; 'grande' en la portada */
+  variante?: 'nav' | 'grande';
 }
-const { texto, href, color, pronto = true, actual = false } = Astro.props;
+const { texto, href, color, icono, pronto = true, actual = false, variante = 'nav' } = Astro.props;
+// Íconos: tres bloques apilados (piezas que se arman) para Proyectos; un paquete de npm para Librerías
 const Etiqueta = pronto ? 'span' : 'a';
-const idAviso = `${href.replace(/\W+/g, '')}-pronto`;
+// El mismo botón puede estar dos veces en una página (navegación y portada): el id lleva la variante
+const idAviso = `${href.replace(/\W+/g, '')}-${variante}-pronto`;
 ---
 <Etiqueta
-  class:list={['seccion', { pronto }]}
+  class:list={['seccion', variante, { pronto }]}
   style={`--c-seccion: var(--${color})`}
   href={pronto ? undefined : href}
   tabindex={pronto ? 0 : undefined}
@@ -23,7 +27,13 @@ const idAviso = `${href.replace(/\W+/g, '')}-pronto`;
   aria-current={actual ? 'page' : undefined}
   aria-describedby={pronto ? idAviso : undefined}
 >
-  <span class="ico" aria-hidden="true"><slot /></span>
+  <span class="ico" aria-hidden="true">
+    {icono === 'bloques' ? (
+      <svg viewBox="0 0 32 32"><rect x="4" y="17" width="11" height="11" rx="2" /><rect x="17" y="17" width="11" height="11" rx="2" /><rect x="10.5" y="4.5" width="11" height="11" rx="2" /></svg>
+    ) : (
+      <svg viewBox="0 0 32 32"><path d="M16 4 27 9.5v13L16 28 5 22.5v-13z" /><path d="M5 9.5 16 15l11-5.5M16 15v13M10.5 6.8 21.5 12.2" /></svg>
+    )}
+  </span>
   <span class="txt">{texto}</span>
   {pronto && <span class="aviso" id={idAviso} role="tooltip">Próximamente</span>}
 </Etiqueta>
@@ -50,6 +60,10 @@ const idAviso = `${href.replace(/\W+/g, '')}-pronto`;
   .ico { flex: none; display: flex; width: 20px; height: 20px; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--c) 60%, transparent)); }
   .ico :global(svg) { width: 100%; height: 100%; fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
   .txt { position: relative; font: 700 1.2rem/1 var(--hand); letter-spacing: 0.01em; text-shadow: 0 0 6px color-mix(in srgb, var(--c) 50%, transparent); }
+
+  .grande { padding: 14px 26px 14px 20px; gap: 12px; max-width: 100%; transform: rotate(-1deg); }
+  .grande .ico { width: 34px; height: 34px; }
+  .grande .txt { font-size: clamp(1.5rem, 5vw, 1.9rem); white-space: nowrap; }
 
   a.seccion:hover, a.seccion:focus-visible { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent), 0 0 22px color-mix(in srgb, var(--c) 45%, transparent); }
   a.seccion[aria-current='page'] { --c: var(--y); }

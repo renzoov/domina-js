@@ -176,14 +176,8 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
             <a href="/glosario" aria-current={ruta === '/glosario' ? 'page' : undefined}>Glosario</a>
             <BotonRayosX variante="nav" actual={ruta === '/rayos-x'} />
             <!-- Proyectos y Librerías todavía no existen: se muestran tachados, con «Próximamente» (plan en docs/PROYECTOS.md) -->
-            <BotonSeccion texto="Proyectos" href="/proyectos" color="lila" pronto>
-              <!-- Tres bloques apilados: piezas que se arman -->
-              <svg viewBox="0 0 32 32"><rect x="4" y="17" width="11" height="11" rx="2" /><rect x="17" y="17" width="11" height="11" rx="2" /><rect x="10.5" y="4.5" width="11" height="11" rx="2" /></svg>
-            </BotonSeccion>
-            <BotonSeccion texto="Librerías" href="/librerias" color="naranja" pronto>
-              <!-- Un paquete: lo que se instala con npm -->
-              <svg viewBox="0 0 32 32"><path d="M16 4 27 9.5v13L16 28 5 22.5v-13z" /><path d="M5 9.5 16 15l11-5.5M16 15v13M10.5 6.8 21.5 12.2" /></svg>
-            </BotonSeccion>
+            <BotonSeccion texto="Proyectos" href="/proyectos" color="lila" icono="bloques" pronto />
+            <BotonSeccion texto="Librerías" href="/librerias" color="naranja" icono="paquete" pronto />
           </nav>
         </header>
         <main id="contenido" class="contenido" tabindex="-1">

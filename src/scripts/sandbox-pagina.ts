@@ -22,6 +22,54 @@ function entornoPagina() {
   let error: string | null = null;
   const activos = new Map<number, 'una' | 'repite' | 'cuadro'>();
 
+  // WebKit (Safari) no deja mover el foco por código dentro de un iframe aislado de otro origen, aunque la
+  // página le preste el foco al iframe: focus() no hace nada. Para que los ejemplos y laboratorios de foco
+  // den lo mismo en todos los navegadores, si el foco real no se mueve se imita: focus() anota el elemento,
+  // document.activeElement lo devuelve y se disparan focus y focusin. Solo con elementos que un navegador
+  // dejaría enfocar: no los <div> sin tabindex, ni los deshabilitados, ocultos o dentro de un bloque inert.
+  (() => {
+    const focusNativo = HTMLElement.prototype.focus;
+    const blurNativo = HTMLElement.prototype.blur;
+    const activoReal = Object.getOwnPropertyDescriptor(Document.prototype, 'activeElement')!.get!;
+    let imitado: HTMLElement | null = null;
+    const enfocable = (el: HTMLElement) =>
+      el.isConnected &&
+      !(el as HTMLButtonElement).disabled &&
+      !el.closest('[inert]') &&
+      (typeof el.checkVisibility !== 'function' || el.checkVisibility()) &&
+      (el.hasAttribute('tabindex') || el.tabIndex >= 0 || el.isContentEditable);
+    const avisar = (el: HTMLElement, entra: boolean, otro: HTMLElement | null) => {
+      el.dispatchEvent(new FocusEvent(entra ? 'focus' : 'blur', { relatedTarget: otro }));
+      el.dispatchEvent(new FocusEvent(entra ? 'focusin' : 'focusout', { bubbles: true, relatedTarget: otro }));
+    };
+    HTMLElement.prototype.focus = function (this: HTMLElement, opciones?: FocusOptions) {
+      focusNativo.call(this, opciones);
+      if (activoReal.call(document) === this) {
+        imitado = null;
+        return;
+      }
+      if (imitado === this || !enfocable(this)) return;
+      const anterior = imitado;
+      imitado = this;
+      if (anterior) avisar(anterior, false, this);
+      avisar(this, true, anterior);
+    };
+    HTMLElement.prototype.blur = function (this: HTMLElement) {
+      blurNativo.call(this);
+      if (imitado !== this) return;
+      imitado = null;
+      avisar(this, false, null);
+    };
+    Object.defineProperty(Document.prototype, 'activeElement', {
+      configurable: true,
+      get(this: Document) {
+        const real = activoReal.call(this);
+        if (imitado && (real === null || real === this.body) && enfocable(imitado)) return imitado;
+        return real;
+      },
+    });
+  })();
+
   const mensaje = (e: unknown) => (e instanceof Error ? `${e.name}: ${e.message}` : `Uncaught ${String(e)}`);
   const fallar = (e: unknown) => {
     if (!error) error = mensaje(e);

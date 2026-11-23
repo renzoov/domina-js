@@ -5,6 +5,7 @@ import StepVisualizer from '../components/StepVisualizer.astro';
 import Subrayado from '../components/Subrayado.astro';
 import Icono from '../components/Icono.astro';
 import BotonRayosX from '../components/BotonRayosX.astro';
+import BotonSeccion from '../components/BotonSeccion.astro';
 import { pilaSaludar } from '../data/visualizaciones';
 import { temario, totalTemas, buscarTema } from '../data/temario';
 
@@ -40,6 +41,22 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
         </div>
         <div class="demo">
           <StepVisualizer id="demo" titulo="Dale a «Siguiente»" datos={pilaSaludar} fijarControles={false} />
+
+          <!-- Las dos secciones que vienen: todavía no existen, así que sus botones van tachados, con «Próximamente» -->
+          <div class="proximas">
+            <section class="proxima" style="--c: var(--lila)" aria-labelledby="proyectos-titulo">
+              <p class="proxima-etq">¿Listo para construir?</p>
+              <h2 id="proyectos-titulo" class="proxima-tit">Proyectos</h2>
+              <p class="proxima-txt">30 aplicaciones completas, solo con JavaScript: de un generador de paletas a un tablero que funciona sin conexión. Paso a paso, con pistas y la solución.</p>
+              <BotonSeccion texto="Ver proyectos" href="/proyectos" color="lila" icono="bloques" variante="grande" pronto />
+            </section>
+            <section class="proxima" style="--c: var(--naranja)" aria-labelledby="librerias-titulo">
+              <p class="proxima-etq">¿Y después?</p>
+              <h2 id="librerias-titulo" class="proxima-tit">Librerías</h2>
+              <p class="proxima-txt">10 proyectos con las librerías que se usan en el trabajo: Zod, Prisma, Socket.IO, Chart.js y más, con un servidor nativo y otro con Express.</p>
+              <BotonSeccion texto="Ver librerías" href="/librerias" color="naranja" icono="paquete" variante="grande" pronto />
+            </section>
+          </div>
         </div>
       </section>
 
@@ -109,6 +126,26 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
   .rayos-tit span { color: var(--azul); text-shadow: 0 0 14px rgba(143, 208, 247, 0.55), 0 0 3px rgba(143, 208, 247, 0.6); }
   .rayos-txt { margin: 0 0 20px; font-size: 1.05rem; line-height: 1.6; color: var(--chalk-70); }
 
+  /* Proyectos y Librerías: tarjetas como la de Rayos X, cada una con su color, con borde discontinuo
+     mientras la sección no existe */
+  .proximas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 44px; }
+  .proxima {
+    display: flex; flex-direction: column; align-items: flex-start;
+    padding: 20px 22px 24px;
+    background:
+      radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--c) 10%, transparent), transparent 60%),
+      var(--board-lo);
+    border: 2px dashed color-mix(in srgb, var(--c) 50%, transparent);
+    border-radius: var(--r-chalk);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 5%, transparent), 0 0 24px color-mix(in srgb, var(--c) 6%, transparent);
+  }
+  .proxima-etq { margin: 0; font: 700 1.1rem/1 var(--hand); color: var(--pink); transform: rotate(-2deg); width: fit-content; }
+  .proxima-tit { margin: 10px 0 8px; font: 700 clamp(2rem, 2.8vw, 2.5rem) / 1 var(--hand); color: var(--c); text-shadow: 0 0 12px color-mix(in srgb, var(--c) 40%, transparent); }
+  .proxima-txt { flex: 1; margin: 0 0 18px; font-size: 0.98rem; line-height: 1.6; color: var(--chalk-70); }
+  .proxima :global(.seccion.grande) { padding: 10px 18px 10px 14px; }
+  .proxima :global(.seccion.grande .ico) { width: 26px; height: 26px; }
+  .proxima :global(.seccion.grande .txt) { font-size: 1.45rem; }
+
   .como { padding-top: 120px; max-width: 1080px; }
   h2 { margin: 0 0 28px; font: 700 clamp(2rem, 3.2vw, 2.75rem) / 1.05 var(--hand); }
   .como ol {
@@ -146,6 +183,7 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
     .mano { display: none; }
   }
   @media (max-width: 720px) {
+    .proximas { grid-template-columns: minmax(0, 1fr); }
     .como ol { grid-template-columns: 1fr; }
     .como, .empieza { padding-top: 80px; }
   }

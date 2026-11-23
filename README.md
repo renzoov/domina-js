@@ -54,7 +54,7 @@ Cada uno se comprueba mirando lo que pasa en el pizarrón (la pila, las colas, l
 
 El intérprete corre en un Web Worker y no usa `eval`. Entiende `setTimeout`, `clearTimeout`, `queueMicrotask`, promesas (`then`, `catch`, `finally`, `Promise.all`, `race` y `allSettled`) y `async`/`await`. Sus sentencias son generadores, así que un `await` puede pausar una función a la mitad, y el event loop la retoma después. El orden de la consola se comprobó contra Node, y el tiempo es simulado: un temporizador de 1000 ms no hace esperar un segundo. Si el código usa algo que todavía no entiende (clases, generadores, `setInterval`, desestructuración…), dice qué es y en qué línea. Corta los bucles infinitos a los 400 pasos y desborda la pila a las 12 llamadas, para que el desborde se pueda ver. A Rayos X se llega desde un botón propio en la navegación, desde la portada y desde el final de cada Reto del motor.
 
-![La tarjeta de Rayos X en la portada, con el botón «Crea tu pizarrón»](docs/capturas/portada-rayos-x.webp)
+![La tarjeta de Rayos X en la portada, con el botón «Crea tu pizarrón», y al lado las tarjetas de Proyectos y Librerías, todavía con «Próximamente»](docs/capturas/portada-rayos-x.webp)
 
 ### Ejercicios que no son solo «escribe y ejecuta»
 

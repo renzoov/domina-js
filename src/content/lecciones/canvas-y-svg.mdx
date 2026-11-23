@@ -46,21 +46,23 @@ Lo que pintas son solo píxeles: el canvas no recuerda que ahí hay "un círculo
 
 ## Animar un canvas
 
-Las animaciones repintan en cada cuadro con `requestAnimationFrame`:
+Las animaciones repintan en cada cuadro con `requestAnimationFrame`. La función recibe la hora del cuadro, y conviene mover las cosas según el **tiempo** que pasó, no según la cantidad de cuadros: así la animación dura lo mismo en una pantalla de 60 cuadros por segundo, en una de 120 o en un teléfono que ahorra batería:
 
 ```js
 document.body.innerHTML = `<canvas id="lienzo" width="300" height="80"></canvas>`;
 const ctx = document.querySelector("#lienzo").getContext("2d");
-let x = 0;
+const VELOCIDAD = 0.26;   // píxeles por milisegundo
+let inicio = null;
 
-function cuadro() {
+function cuadro(ahora) {
+  inicio ??= ahora;
+  const x = Math.min(240, (ahora - inicio) * VELOCIDAD);   // dónde va, según el tiempo
   ctx.clearRect(0, 0, 300, 80);
   ctx.fillStyle = "#c4ec8c";
   ctx.beginPath();
   ctx.arc(20 + x, 40, 16, 0, Math.PI * 2);
   ctx.fill();
-  x += 4;
-  if (x < 260) requestAnimationFrame(cuadro);
+  if (x < 240) requestAnimationFrame(cuadro);
   else console.log("llegó");
 }
 requestAnimationFrame(cuadro);
