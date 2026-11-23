@@ -174,7 +174,19 @@ Lo que TC39 ya terminó (Stage 4) pero se publica en **ES2027** (como Temporal y
 - Una página "lo que viene" con propuestas en curso: Decorators (Stage 2.7) y, en Stage 3, `import defer`, importar texto (*Import Text*) y *source phase imports*.
 - Cada página enlaza a los temas que tratan esas novedades. Se arma sola a partir del campo `es` de cada lección (sección 2).
 
-**Fuera de alcance por ahora:** frameworks (React, Vue, Svelte, JSX), backend avanzado y bases de datos. Pueden ser secciones más adelante.
+**17. ¿Y ahora qué?** (agregada el 2026-11-22: un mapa, a alto nivel, sin profundizar)
+1. Después de JavaScript: librería, framework y meta-framework, y cómo elegir
+2. TypeScript: un error de JS y el mismo código con tipos (lo completo sigue en 15.5)
+3. React (y Next.js)
+4. Vue (y Nuxt)
+5. Angular: signals, inyección de dependencias, Angular Universal → `@angular/ssr` y Analog
+6. Svelte (y SvelteKit)
+7. Astro: islas y colecciones de contenido
+8. Otras librerías conocidas: Solid, Preact, Lit, Alpine.js, htmx y jQuery
+9. JavaScript en el backend: Express, Fastify, Hono, NestJS, Koa, AdonisJS y Elysia
+10. Más allá del navegador clásico: WebAssembly, WebGL y WebGPU, React Native, Electron y Tauri
+
+**Fuera de alcance:** los frameworks, TypeScript, los algoritmos y los patrones de diseño **a fondo**. Cada uno tendrá su propio sitio; aquí solo se presentan.
 
 En total son unos 105 temas. No se escriben todos de una vez: el sitio los muestra como "próximamente" y se publican de a uno.
 

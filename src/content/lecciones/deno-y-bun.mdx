@@ -3,7 +3,7 @@ titulo: Deno y Bun
 seccion: servidor
 tema: deno-y-bun
 minutos: 10
-resumen: Qué son Deno y Bun, los otros dos runtimes de JavaScript para el servidor, en qué se diferencian de Node.js (permisos, TypeScript, velocidad, herramientas incluidas), su compatibilidad con npm, las APIs comunes de WinterTC y cómo elegir.
+resumen: Qué son Deno y Bun, los otros dos runtimes de JavaScript para el servidor, en qué se diferencian de Node.js (permisos, TypeScript, velocidad, herramientas incluidas), su compatibilidad con npm, las APIs comunes de WinterTC, qué cambia con la llegada del equipo de Deno a Cloudflare y cómo elegir.
 intro: 'Node.js no es el único runtime de JavaScript fuera del navegador. <u>Deno</u>, creado por el mismo autor de Node, apuesta por la seguridad y los estándares web. <u>Bun</u> apuesta por la velocidad y por traer todas las herramientas en un solo programa. Los tres se parecen cada vez más, y conocerlos te da opciones.'
 ejercicios: [runtimes-auto, runtimes-orden, runtimes-detective]
 ---
@@ -12,9 +12,12 @@ import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
 import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
 import Detective from '../../components/ejercicios/Detective.astro';
 import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
 import { runtimesAuto, runtimesOrden, runtimesDetective } from '../../data/ejercicios/servidor';
 
 ## Deno
+
+<Oficial enlaces={[{ nombre: 'Deno', url: 'https://docs.deno.com' }, { nombre: 'JSR', url: 'https://jsr.io' }]} />
 
 Ryan Dahl, el creador de Node.js, presentó Deno en 2018 con una lista de cosas que habría hecho distinto. Sus rasgos:
 
@@ -38,7 +41,22 @@ deno run --allow-net=0.0.0.0:8000 servidor.ts
 
 Los paquetes se publican también en **JSR**, un registro pensado para TypeScript y para funcionar en todos los runtimes.
 
+## El futuro de Deno
+
+El **9 de octubre de 2026**, Ryan Dahl anunció en el blog de Deno que **todo el equipo de Deno se une a Cloudflare**, y que su trabajo seguirá en la plataforma de Cloudflare Workers en lugar de en un runtime propio. Lo que cambia:
+
+- **El runtime de Deno** recibe **un año más** de versiones mensuales con arreglos de errores y de seguridad. Después de ese año, el equipo **deja de desarrollarlo**, hacia octubre de 2027.
+- **Deno sigue siendo de código abierto**: el anuncio invita a la comunidad a continuarlo, pero todavía no se sabe quién lo hará ni con qué ritmo.
+- **Deno Deploy**, su servicio para publicar aplicaciones, **cierra** seis meses después del anuncio, hacia abril de 2027. A los clientes de pago les ofrecen ayuda para mudarse a Cloudflare Workers.
+- **JSR**, el registro de paquetes, **sigue funcionando**, con su infraestructura en Cloudflare.
+
+O sea: Deno no desaparece de un día para otro, pero sí deja de tener a su equipo detrás. Para un proyecto **nuevo**, hoy conviene Node.js o Bun. Si ya tienes uno en Deno, tienes tiempo de planear la mudanza, y será más fácil cuanto más uses las APIs estándar (`fetch`, `Request`, `Response`) y menos las propias de `Deno`.
+
+Sus ideas, en cambio, se quedan: los permisos, TypeScript sin configurar y las APIs de la web en el servidor ya están en Node.js y en los demás runtimes, en buena parte porque Deno los popularizó.
+
 ## Bun
+
+<Oficial enlaces={[{ nombre: 'Bun', url: 'https://bun.com/docs' }]} />
 
 Bun nació en 2022 con una prioridad: la **velocidad**. Está escrito en Zig y usa JavaScriptCore, el motor de Safari. Sus rasgos:
 
@@ -72,9 +90,9 @@ Fíjate en que `Deno.serve`, `Bun.serve`, Cloudflare Workers y frameworks como H
 | Si te importa… | Considera |
 |---|---|
 | Estabilidad, ecosistema, que cualquier tutorial funcione | **Node.js** |
-| Seguridad por permisos, TypeScript con revisión, herramientas incluidas | **Deno** |
+| Seguridad por permisos, TypeScript con revisión, herramientas incluidas | **Deno** (su desarrollo termina en 2027: mira *El futuro de Deno*) |
 | Velocidad de instalación y ejecución, todo en un programa | **Bun** |
-| Ejecutar en el borde (cerca del usuario), sin servidores | Cloudflare Workers, Deno Deploy |
+| Ejecutar en el borde (cerca del usuario), sin servidores | Cloudflare Workers |
 
 No es una decisión para siempre: con APIs estándar y un framework como Hono, cambiar de runtime suele ser cambiar una línea.
 
@@ -85,6 +103,7 @@ No es una decisión para siempre: con APIs estándar y un framework como Hono, c
 ## Resumen
 
 - **Deno**: seguro por defecto (permisos), TypeScript revisado, APIs web, herramientas incluidas, compatible con npm.
+- En octubre de 2026 el equipo de Deno se unió a Cloudflare: el runtime recibe arreglos por un año más y después queda en manos de la comunidad; Deno Deploy cierra en 2027.
 - **Bun**: muy rápido, gestor de paquetes, empaquetador y pruebas en un solo programa, compatible con Node.js.
 - Los dos ejecutan TypeScript directamente.
 - Un manejador `Request → Response` funciona en casi todos los runtimes; WinterTC estandariza esas APIs.

@@ -118,6 +118,21 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
               progreso.textContent = `Llevas ${hechos} de ${total} ejercicios resueltos`;
             }
 
+            // Las secciones empiezan cerradas; se abren las que la persona abrió en esta visita.
+            // Va antes de restaurar el scroll, porque abrir una sección cambia la altura de la barra.
+            const claveSecciones = 'domina:secciones-abiertas';
+            let abiertas = [];
+            try { abiertas = JSON.parse(sessionStorage.getItem(claveSecciones) || '[]'); } catch {}
+            barra.querySelectorAll('[data-menu] details[data-seccion]').forEach((d) => {
+              if (abiertas.includes(d.dataset.seccion)) d.open = true;
+            });
+            // toggle no burbujea: se escucha en la fase de captura
+            barra.addEventListener('toggle', (e) => {
+              if (!(e.target instanceof HTMLDetailsElement) || !e.target.dataset.seccion) return;
+              const lista = [...barra.querySelectorAll('[data-menu] details[data-seccion][open]')].map((d) => d.dataset.seccion);
+              try { sessionStorage.setItem(claveSecciones, JSON.stringify(lista)); } catch {}
+            }, true);
+
             const clave = 'domina:barra-scroll';
             const claveClick = 'domina:barra-click';
             let guardado = null;
@@ -130,7 +145,8 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
             if (guardado !== null) barra.scrollTop = Number(guardado);
             // Si llegaste con un click en la barra, el tema estaba a la vista: no hace falta medirlo
             // (medir obliga a armar la página antes de tiempo)
-            const actual = !desdeBarra && barra.querySelector('a[aria-current="page"]');
+            // (si su sección está cerrada, el tema no se ve: no hay nada que acercar)
+            const actual = !desdeBarra && barra.querySelector('details[open] a[aria-current="page"]');
             if (actual && barra.scrollHeight > barra.clientHeight) {
               const t = actual.getBoundingClientRect();
               const b = barra.getBoundingClientRect();

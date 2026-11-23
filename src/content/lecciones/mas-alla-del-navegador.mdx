@@ -1,0 +1,106 @@
+---
+titulo: Más allá del navegador clásico
+seccion: y-ahora-que
+tema: mas-alla-del-navegador
+minutos: 7
+resumen: Hacia dónde más se puede llevar JavaScript. WebAssembly para correr código de otros lenguajes a gran velocidad, WebGL y WebGPU para 3D y cálculo en la tarjeta gráfica, React Native para aplicaciones de teléfono, y Electron y Tauri para aplicaciones de escritorio.
+intro: 'JavaScript empezó para dar vida a páginas web, pero hoy llega a muchos más lugares: juegos en 3D en el navegador, programas que antes solo existían para instalar, aplicaciones de teléfono y de escritorio. Esta última lección es un <u>vistazo a esos caminos</u>, por si alguno te llama.'
+ejercicios: [ahora-mas-alla-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { masAllaAuto } from '../../data/ejercicios/y-ahora-que';
+
+## WebAssembly
+
+<Oficial enlaces={[{ nombre: 'WebAssembly (MDN)', url: 'https://developer.mozilla.org/es/docs/WebAssembly' }]} />
+
+**WebAssembly** (Wasm) es un formato de código binario que el navegador ejecuta casi a la velocidad de un programa nativo. No se escribe a mano: se **compila** desde otros lenguajes, como C, C++, Rust o Go. No reemplaza a JavaScript, lo **acompaña**: JavaScript sigue manejando la página, y Wasm hace el cálculo pesado.
+
+```js
+// Cargar un módulo de WebAssembly y llamar a una función que exporta
+const { instance } = await WebAssembly.instantiateStreaming(fetch("calculos.wasm"));
+console.log(instance.exports.sumar(2, 3));
+```
+
+Así funcionan, por ejemplo, editores de imágenes y video que corren en el navegador, juegos hechos con motores como Unity, o bases de datos completas que viven en la página. También corre fuera del navegador: en Node, en Deno y en servidores "en el borde".
+
+## WebGL y WebGPU
+
+<Oficial enlaces={[{ nombre: 'Three.js', url: 'https://threejs.org/docs/' }, { nombre: 'Babylon.js', url: 'https://doc.babylonjs.com' }, { nombre: 'PixiJS', url: 'https://pixijs.com/8.x/guides' }, { nombre: 'WebGPU (MDN, en inglés)', url: 'https://developer.mozilla.org/en-US/docs/Web/API/WebGPU_API' }]} />
+
+Para gráficos en 3D, el canvas tiene otros contextos además del 2D que viste en *Gráficos: Canvas y SVG*:
+
+- **WebGL**: lleva años en todos los navegadores, y dibuja con la tarjeta gráfica.
+- **WebGPU**: su sucesor, más moderno y rápido. Además de dibujar, sirve para **cálculo general** en la tarjeta gráfica, como correr modelos de inteligencia artificial en el navegador.
+
+Programarlos directamente es muy trabajoso, así que casi siempre se usan a través de una librería. La más conocida es **Three.js**:
+
+```js
+import * as THREE from "three";
+
+const escena = new THREE.Scene();
+const camara = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+camara.position.z = 3;
+
+const cubo = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshNormalMaterial());
+escena.add(cubo);
+
+const pintor = new THREE.WebGLRenderer();
+pintor.setSize(innerWidth, innerHeight);
+document.body.append(pintor.domElement);
+
+pintor.setAnimationLoop(() => {
+  cubo.rotation.y += 0.01;   // gira un poco en cada cuadro
+  pintor.render(escena, camara);
+});
+```
+
+Otras librerías conocidas son **Babylon.js**, pensada para juegos, y **PixiJS**, para 2D muy rápido.
+
+## Aplicaciones de teléfono
+
+<Oficial enlaces={[{ nombre: 'React Native', url: 'https://reactnative.dev/docs/getting-started' }, { nombre: 'Expo', url: 'https://docs.expo.dev' }, { nombre: 'Capacitor', url: 'https://capacitorjs.com/docs' }]} />
+
+**React Native** usa React (lo que viste en la lección de React) para crear aplicaciones de **iOS y Android** que usan los controles propios de cada sistema, no una página web. Con **Expo** se crea un proyecto y se prueba en el teléfono en minutos. Hay otras opciones: **Ionic** con **Capacitor** empaquetan una aplicación web para publicarla en las tiendas, y también funcionan con Vue o Angular.
+
+Y recuerda que una **PWA** (lo viste en *Service Workers y PWA*) ya se puede instalar en el teléfono sin pasar por ninguna tienda.
+
+## Aplicaciones de escritorio
+
+<Oficial enlaces={[{ nombre: 'Electron', url: 'https://www.electronjs.org/docs/latest/' }, { nombre: 'Tauri', url: 'https://tauri.app/start/' }]} />
+
+- **Electron** junta Chromium y Node.js en una aplicación para Windows, macOS y Linux. Es el más usado: Visual Studio Code, Slack y Discord están hechos con Electron. Su contra es el peso, porque cada aplicación trae su propio navegador.
+- **Tauri** usa el navegador que ya trae el sistema y un backend en **Rust**, así que las aplicaciones pesan mucho menos. La interfaz se hace con el framework web que prefieras.
+
+<Nota tipo="consejo">
+  Todos estos caminos se apoyan en lo mismo: JavaScript, el DOM o algo parecido, eventos y asincronía. No hace falta elegir ahora. Cuando un proyecto te lleve hacia uno de ellos, vas a reconocer casi todas las piezas.
+</Nota>
+
+## Para seguir
+
+Terminaste el curso. Algunas ideas para lo que viene:
+
+- **Construye algo tuyo.** Un proyecto real enseña lo que ningún curso: decidir, equivocarse y arreglarlo.
+- **Elige un framework** de la sección y llévalo hasta un proyecto completo.
+- **Vuelve cuando lo necesites**: el glosario, Rayos X y el buscador están para eso.
+- **Lee la documentación** con lo que aprendiste en *Cómo leer documentación*: MDN para el lenguaje y el navegador, y la oficial de cada herramienta.
+
+## Resumen
+
+- **WebAssembly** ejecuta código de otros lenguajes a gran velocidad, junto a JavaScript.
+- **WebGL** y **WebGPU** usan la tarjeta gráfica para 3D y cálculo; casi siempre con Three.js u otra librería.
+- **React Native**, **Expo** y **Capacitor** llevan JavaScript a las aplicaciones de teléfono.
+- **Electron** y **Tauri** hacen aplicaciones de escritorio con tecnologías web.
+
+<Practica>
+
+<Autoevaluacion id={masAllaAuto.id} numero={1} titulo={masAllaAuto.titulo} preguntas={masAllaAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

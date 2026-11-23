@@ -1,0 +1,97 @@
+---
+titulo: Astro
+seccion: y-ahora-que
+tema: astro
+minutos: 7
+resumen: Qué es Astro y para qué sirve. Páginas que llegan como HTML sin JavaScript por defecto, componentes .astro, la arquitectura de islas con las directivas client, la mezcla de componentes de React, Vue o Svelte y las colecciones de contenido, con este mismo curso como ejemplo.
+intro: '<b>Astro</b> está pensado para sitios donde lo principal es el <b>contenido</b>: blogs, documentaciones, tiendas, sitios de empresas y cursos como este, que está hecho con Astro. Su idea es simple: la página llega como HTML, <u>sin JavaScript</u>, y solo las partes que de verdad son interactivas cargan el suyo.'
+ejercicios: [ahora-astro-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { astroAuto } from '../../data/ejercicios/y-ahora-que';
+
+<Oficial enlaces={[{ nombre: 'Astro', url: 'https://docs.astro.build/es/getting-started/' }]} />
+
+## Un componente .astro
+
+Un componente de Astro tiene dos partes: arriba, entre `---`, el código que corre **al construir la página** (o en el servidor); abajo, la plantilla, que es casi HTML:
+
+```astro
+---
+// Esto corre al construir el sitio, no en el navegador
+const lecciones = ["Variables", "Funciones", "Closures"];
+const titulo = "Temario";
+---
+
+<h2>{titulo}</h2>
+<ul>
+  {lecciones.map((l) => <li>{l}</li>)}
+</ul>
+
+<style>
+  h2 { color: #f7df1e; }
+</style>
+```
+
+El resultado es HTML puro: ese `map` se ejecutó una vez, al construir, y el navegador solo recibe la lista ya armada. Por eso los sitios de Astro cargan muy rápido.
+
+## Las islas
+
+Cuando sí necesitas algo interactivo, como un buscador o un carrito, usas un componente de **React, Vue, Svelte, Solid** o el que prefieras, y le dices **cuándo** cargar su JavaScript con una directiva `client:`:
+
+```astro
+---
+import Contador from "../components/Contador.jsx";   // un componente de React
+import Buscador from "../components/Buscador.svelte"; // uno de Svelte, en la misma página
+---
+
+<h1>Mi tienda</h1>
+<p>Todo esto es HTML estático.</p>
+
+<Contador client:load />       <!-- se activa apenas carga la página -->
+<Buscador client:visible />    <!-- se activa cuando aparece en pantalla -->
+```
+
+Cada componente interactivo es una **isla** en un mar de HTML estático. Las demás opciones son `client:idle` (cuando el navegador está libre) y `client:media` (solo en ciertos tamaños de pantalla). Sin una directiva, el componente se muestra como HTML y nunca carga JavaScript.
+
+## Contenido
+
+Astro trae **colecciones de contenido**: carpetas de archivos Markdown o MDX, con un esquema que valida sus datos al construir. Así está hecho este curso:
+
+- Cada lección es un archivo `.mdx` en `src/content/lecciones/`, con su título, su sección y sus ejercicios arriba.
+- Un esquema comprueba que no falte nada, y una sola página genera todas las lecciones.
+- Los pizarrones, los ejercicios y el buscador son las únicas partes con JavaScript.
+
+## Más que sitios estáticos
+
+Astro también puede renderizar páginas **en el servidor**, en cada visita, y tener **rutas de API** y **acciones** (funciones del servidor que se llaman desde un formulario). Con un *adapter* se publica en Node, Cloudflare, Vercel o Netlify. Y con las **View Transitions**, el paso de una página a otra se anima sin recargar, como en una aplicación.
+
+<Nota tipo="consejo">
+  Astro no compite con React o Vue: los **usa**. Si tu proyecto es sobre todo contenido con algunas partes interactivas, Astro con islas suele dar un sitio más rápido que una aplicación entera de React. Si es una aplicación muy interactiva de punta a punta (un editor, un tablero), un framework de aplicaciones encaja mejor.
+</Nota>
+
+## Cómo se empieza
+
+<Oficial enlaces={[{ nombre: 'Starlight', url: 'https://starlight.astro.build/es/' }]} />
+
+`npm create astro@latest` crea un proyecto, con plantillas para blogs, documentación o un sitio vacío. Para documentación, **Starlight** es una plantilla completa de Astro, con buscador, menú y modo oscuro.
+
+## Resumen
+
+- Astro manda HTML sin JavaScript por defecto; el código entre `---` corre al construir o en el servidor.
+- Las **islas**: componentes interactivos de React, Vue, Svelte u otros, activados con `client:load`, `client:visible`, `client:idle` o `client:media`.
+- Las colecciones de contenido validan Markdown y MDX con un esquema.
+- También renderiza en el servidor, con rutas de API, acciones y View Transitions.
+
+<Practica>
+
+<Autoevaluacion id={astroAuto.id} numero={1} titulo={astroAuto.titulo} preguntas={astroAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

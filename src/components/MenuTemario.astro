@@ -32,10 +32,11 @@ const retos = new Map((await getCollection('retos')).map((r) => [r.data.seccion,
     <ol class="secciones">
       {temario.map((s) => {
         const hay = s.temas.filter((t) => disponibles.has(`${s.slug}/${t.slug}`)).length;
-        const abierta = hay > 0 || actual?.seccion === s.slug;
+        // Todas empiezan cerradas: las abre la persona, y el script en línea de BaseLayout
+        // recuerda cuáles abrió mientras dura la visita
         return (
           <li>
-            <details open={abierta}>
+            <details data-seccion={s.slug}>
               <summary>
                 <span class="num" aria-hidden="true">{s.numero}</span>
                 <span class="nombre"><span class="sr-only">Sección {s.numero}: </span>{s.titulo}</span>

@@ -262,6 +262,23 @@ const crudo: { titulo: string; slug: string; descripcion: string; temas: TemaCru
       ['Lo que viene', 'propuesta', 'lo-que-viene'],
     ],
   },
+  {
+    titulo: '¿Y ahora qué?',
+    slug: 'y-ahora-que',
+    descripcion: 'Qué aprender después, a alto nivel: TypeScript, los frameworks de interfaz, Astro, el backend y más allá del navegador.',
+    temas: [
+      ['Después de JavaScript', '', 'despues-de-javascript'],
+      ['TypeScript', '', 'typescript'],
+      ['React (y Next.js)', '', 'react'],
+      ['Vue (y Nuxt)', '', 'vue'],
+      ['Angular (y su SSR)', '', 'angular'],
+      ['Svelte (y SvelteKit)', '', 'svelte'],
+      ['Astro', '', 'astro'],
+      ['Otras librerías conocidas', '', 'otras-librerias'],
+      ['JavaScript en el backend', '', 'backend'],
+      ['Más allá del navegador clásico', '', 'mas-alla-del-navegador'],
+    ],
+  },
 ];
 
 export function slugify(texto: string): string {

@@ -1,0 +1,107 @@
+---
+titulo: Vue (y Nuxt)
+seccion: y-ahora-que
+tema: vue
+minutos: 7
+resumen: Qué es Vue y qué lo hace cómodo de aprender. Componentes de un solo archivo, plantillas con directivas y reactividad con ref, en un ejemplo corto. Qué agrega Nuxt, su meta-framework.
+intro: '<b>Vue</b> lo creó Evan You en 2014, después de trabajar con AngularJS en Google: quería quedarse con lo bueno y que fuera más liviano. Su fama es ser <u>el más fácil de empezar</u>, porque sus plantillas se parecen mucho al HTML que ya conoces. Evan You también creó Vite, la herramienta que viste en la sección de herramientas.'
+ejercicios: [ahora-vue-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { vueAuto } from '../../data/ejercicios/y-ahora-que';
+
+<Oficial enlaces={[{ nombre: 'Vue', url: 'https://vuejs.org/guide/introduction.html' }]} />
+
+## Un componente en un archivo
+
+Un componente de Vue vive en un archivo `.vue` con tres partes: la lógica, la plantilla y los estilos. Este es el contador:
+
+```vue
+<script setup>
+import { ref } from "vue";
+
+const cuenta = ref(0);
+</script>
+
+<template>
+  <button @click="cuenta++">Sumar</button>
+  <p>Clics: {{ cuenta }}</p>
+</template>
+
+<style scoped>
+p { color: #f7df1e; }
+</style>
+```
+
+- **`ref(0)`** crea un valor **reactivo**: cuando cambia, Vue actualiza solo las partes de la página que lo usan. En el `<script>` se lee y se cambia con `cuenta.value`; en la plantilla, directamente `cuenta`.
+- **`{{ … }}`** muestra un valor en la plantilla.
+- Las **directivas** son atributos especiales: `@click` escucha un evento, `v-if` muestra o esconde, `v-for` repite y `v-model` conecta un campo de formulario con un valor, en los dos sentidos.
+- `<style scoped>` aplica los estilos solo a este componente.
+
+## Reactividad sin pedirla
+
+A diferencia de React, en Vue no hay que llamar a una función para avisar del cambio: basta con **asignar**. Por dentro, Vue intercepta las lecturas y escrituras de sus valores reactivos con *Proxy* y *getters* (lo viste en *Metaprogramación*), anota qué partes de la página leen cada valor y las actualiza cuando ese valor cambia.
+
+```vue
+<script setup>
+import { ref, computed } from "vue";
+
+const productos = ref([{ nombre: "Té", precio: 3 }, { nombre: "Pan", precio: 2 }]);
+const total = computed(() => productos.value.reduce((suma, p) => suma + p.precio, 0));
+</script>
+
+<template>
+  <ul>
+    <li v-for="p in productos" :key="p.nombre">{{ p.nombre }}: {{ p.precio }}</li>
+  </ul>
+  <p>Total: {{ total }}</p>
+</template>
+```
+
+`computed` crea un valor que se **calcula** a partir de otros, y se recalcula solo cuando cambian.
+
+## Cómo se empieza
+
+`npm create vue@latest` crea un proyecto con Vite, y te pregunta si quieres TypeScript, rutas (Vue Router) y un lugar para el estado compartido (Pinia). También se puede usar Vue sin herramientas, cargándolo con un `<script>` en una página existente, algo que pocos frameworks permiten.
+
+<Nota tipo="consejo">
+  Vas a ver dos estilos en la documentación y los tutoriales: la **Options API** (`data()`, `methods`, `computed` como propiedades de un objeto), que es la forma clásica, y la **Composition API** con `<script setup>`, la que usa esta lección y la que se recomienda hoy.
+</Nota>
+
+## Nuxt
+
+<Oficial enlaces={[{ nombre: 'Nuxt', url: 'https://nuxt.com/docs' }]} />
+
+**Nuxt** es a Vue lo que Next.js es a React: el meta-framework para armar la aplicación completa.
+
+- **Rutas según los archivos**: `pages/productos.vue` es la página `/productos`.
+- **Renderizado en el servidor** y generación de sitios estáticos.
+- **Importaciones automáticas**: `ref`, `computed` y tus propios componentes se usan sin escribir el `import`.
+- **Backend incluido**: los archivos de `server/api/` son rutas de API, que funcionan gracias a su servidor, Nitro.
+
+```js
+// server/api/productos.js — responde en /api/productos
+export default defineEventHandler(async () => {
+  return [{ nombre: "Té", precio: 3 }];
+});
+```
+
+## Resumen
+
+- Vue escribe cada componente en un archivo `.vue`, con su script, su plantilla y sus estilos.
+- `ref` crea valores reactivos; `computed`, valores calculados; las directivas (`@click`, `v-if`, `v-for`, `v-model`) conectan la plantilla.
+- Basta asignar para que la página se actualice.
+- **Nuxt** agrega rutas por archivos, renderizado en el servidor, importaciones automáticas y backend.
+
+<Practica>
+
+<Autoevaluacion id={vueAuto.id} numero={1} titulo={vueAuto.titulo} preguntas={vueAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

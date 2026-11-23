@@ -1,0 +1,124 @@
+---
+titulo: Angular (y su SSR)
+seccion: y-ahora-que
+tema: angular
+minutos: 8
+resumen: Qué es Angular y por qué es tan común en empresas grandes. Un framework completo con TypeScript, componentes con decorators, signals, inyección de dependencias y su propio control de flujo en las plantillas. Qué fue Angular Universal y cómo se renderiza hoy en el servidor con @angular/ssr, y qué es Analog, el meta-framework de la comunidad.
+intro: '<b>Angular</b> es el framework de Google, y es el más completo de esta sección. Donde React y Vue te dejan elegir cada pieza, Angular <u>ya trae todo decidido</u>: rutas, formularios, peticiones HTTP, pruebas y una forma de organizar el código, siempre con TypeScript. Por eso es tan común en empresas grandes y en equipos con muchas personas.'
+ejercicios: [ahora-angular-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { angularAuto } from '../../data/ejercicios/y-ahora-que';
+
+<Nota>
+  No lo confundas con **AngularJS**, la versión 1, de 2010. En 2016 Google lo reescribió desde cero con TypeScript y lo llamó solo **Angular**. Son dos frameworks distintos: AngularJS ya no tiene soporte, aunque todavía aparece en aplicaciones viejas y en tutoriales antiguos.
+</Nota>
+
+<Oficial enlaces={[{ nombre: 'Angular', url: 'https://angular.dev' }]} />
+
+## Un componente
+
+Un componente de Angular es una **clase** de TypeScript con un *decorator* `@Component` (los viste en *Decorators*, en la sección de Clases), que dice cómo se llama su etiqueta y cuál es su plantilla. Este es el contador, con **signals**, la forma actual de manejar el estado en Angular:
+
+```ts
+import { Component, signal } from "@angular/core";
+
+@Component({
+  selector: "app-contador",
+  template: `
+    <button (click)="sumar()">Sumar</button>
+    <p>Clics: {{ cuenta() }}</p>
+  `,
+})
+export class Contador {
+  cuenta = signal(0);
+
+  sumar() {
+    this.cuenta.update((n) => n + 1);
+  }
+}
+```
+
+- `signal(0)` crea un valor reactivo; se lee llamándolo (`cuenta()`) y se cambia con `set` o `update`.
+- En la plantilla, `(click)` escucha un evento, `[disabled]="…"` conecta una propiedad y `{{ … }}` muestra un valor.
+- Las plantillas tienen su propio **control de flujo**: `@if`, `@for` y `@switch`.
+
+```html
+@if (productos().length === 0) {
+  <p>No hay productos.</p>
+} @else {
+  <ul>
+    @for (p of productos(); track p.id) {
+      <li>{{ p.nombre }}</li>
+    }
+  </ul>
+}
+```
+
+## Inyección de dependencias
+
+Lo más propio de Angular es la **inyección de dependencias**: los componentes no crean lo que necesitan, sino que lo **piden**, y Angular se lo entrega. Un **servicio** guarda la lógica que comparten varios componentes, como hablar con el servidor:
+
+```ts
+import { Injectable, inject } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+
+@Injectable({ providedIn: "root" })
+export class ProductosService {
+  private http = inject(HttpClient);   // Angular entrega el cliente HTTP
+
+  todos() {
+    return this.http.get("/api/productos");
+  }
+}
+```
+
+Así cada pieza se puede probar por separado, reemplazando lo que pide por una imitación. Es más ceremonia que en React o Vue, pero en una aplicación enorme mantiene todo ordenado.
+
+## Angular Universal y @angular/ssr
+
+<Oficial enlaces={[{ nombre: 'SSR en Angular', url: 'https://angular.dev/guide/ssr' }]} />
+
+Durante años, renderizar Angular en el servidor (para que la página llegue armada en HTML, como hace Next.js con React) requería un proyecto aparte, llamado **Angular Universal**. Era un agregado: se instalaba y se configuraba por separado.
+
+Desde **Angular 17**, eso pasó a ser **parte del propio Angular**, en el paquete `@angular/ssr`, y el nombre "Universal" dejó de usarse. Hoy se activa al crear el proyecto o se agrega después:
+
+```bash
+ng new mi-tienda --ssr      # un proyecto nuevo con renderizado en el servidor
+ng add @angular/ssr         # agregarlo a un proyecto existente
+```
+
+Incluye la **hidratación**: el navegador recibe el HTML ya armado y Angular lo "despierta" sin volver a dibujarlo. Si en un tutorial lees "Angular Universal", es esto mismo, con su nombre viejo.
+
+## ¿Y un meta-framework, como Next o Nuxt?
+
+<Oficial enlaces={[{ nombre: 'Analog', url: 'https://analogjs.org/docs' }]} />
+
+Angular **no tiene uno oficial**, porque ya trae casi todo lo que agregan Next.js o Nuxt: rutas, renderizado en el servidor y una estructura definida. Lo que no trae es la parte de **backend en el mismo proyecto** y las **rutas según los archivos**.
+
+Para eso existe **Analog**, un meta-framework hecho por la comunidad: usa Vite, define las páginas con archivos (`src/app/pages/productos.page.ts` es `/productos`) y permite escribir rutas de API junto a la aplicación. Es lo más parecido a Next o Nuxt en el mundo de Angular.
+
+## Cómo se empieza
+
+Con el **Angular CLI**: `npm install -g @angular/cli` y después `ng new mi-app`. El comando `ng` genera componentes y servicios, ejecuta las pruebas y compila el proyecto. La documentación oficial está en angular.dev.
+
+## Resumen
+
+- Angular es un framework completo, con TypeScript: rutas, formularios, HTTP y pruebas incluidos.
+- Los componentes son clases con `@Component`; el estado, **signals**; las plantillas tienen `@if` y `@for`.
+- La **inyección de dependencias** entrega a cada pieza lo que necesita, como los servicios.
+- **Angular Universal** era el renderizado en el servidor como proyecto aparte; desde Angular 17 es parte de Angular, como `@angular/ssr`.
+- No hay meta-framework oficial; el más parecido a Next o Nuxt es **Analog**, de la comunidad.
+
+<Practica>
+
+<Autoevaluacion id={angularAuto.id} numero={1} titulo={angularAuto.titulo} preguntas={angularAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

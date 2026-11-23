@@ -929,6 +929,49 @@ export const glosario: Termino[] = [
     ver: ['funciones/estilo-funcional#currificación'],
     rel: ['aplicacion-parcial', 'closure', 'funcion-pura'],
   },
+  {
+    termino: 'Framework',
+    alias: ['meta-framework', 'librería'],
+    def: 'Una herramienta que llama a tu código y decide la estructura de la aplicación (una <b>librería</b>, en cambio, la llamas tú). Un <b>meta-framework</b>, como Next.js o Nuxt, se arma sobre una librería de interfaz y agrega rutas, renderizado en el servidor y backend.',
+    ver: ['y-ahora-que/despues-de-javascript#librería-framework-y-meta-framework'],
+    rel: ['renderizado-en-el-servidor'],
+  },
+  {
+    termino: 'Renderizado en el servidor',
+    en: 'server-side rendering',
+    alias: ['SSR', 'hidratación', 'Angular Universal'],
+    def: 'Armar el HTML de una página en el servidor, para que llegue al navegador ya lista para ver; después el framework la "hidrata" para que sea interactiva. Lo hacen Next.js, Nuxt, SvelteKit, Astro y Angular (con <code>@angular/ssr</code>, antes llamado Angular Universal).',
+    ver: ['y-ahora-que/angular#angular-universal-y-angularssr', 'y-ahora-que/react#nextjs'],
+    rel: ['framework', 'isla'],
+  },
+  {
+    termino: 'Isla',
+    en: 'island',
+    alias: ['arquitectura de islas', 'client:load'],
+    def: 'Un componente interactivo dentro de una página de HTML estático, que carga su propio JavaScript solo cuando hace falta. Es la idea central de Astro: <code>&lt;Buscador client:visible /&gt;</code>.',
+    ver: ['y-ahora-que/astro#las-islas'],
+    rel: ['renderizado-en-el-servidor'],
+  },
+  {
+    termino: 'Signal',
+    alias: ['signals', 'reactividad fina'],
+    def: 'Un valor reactivo que sabe qué partes de la página dependen de él, y al cambiar actualiza solo esas. Lo usan Solid, Angular, Preact, Vue (con <code>ref</code>) y Svelte (con <code>$state</code>); TC39 estudia una propuesta para tenerlas en el lenguaje.',
+    ver: ['y-ahora-que/otras-librerias#solid', 'y-ahora-que/angular#un-componente'],
+    rel: ['framework'],
+  },
+  {
+    termino: 'Middleware',
+    alias: ['app.use'],
+    def: 'En un servidor, una función que corre en el camino de cada petición, antes de la ruta (registrar, comprobar la sesión, leer el cuerpo), y decide si sigue. Express, Koa y Hono se arman encadenando middlewares.',
+    ver: ['y-ahora-que/backend#lo-que-resuelven', 'y-ahora-que/backend#express'],
+    rel: ['framework'],
+  },
+  {
+    termino: 'WebAssembly',
+    alias: ['Wasm'],
+    def: 'Un formato de código binario que el navegador (y Node, Deno o Bun) ejecuta casi a la velocidad de un programa nativo. Se compila desde lenguajes como C, C++, Rust o Go, y trabaja junto a JavaScript, que sigue manejando la página.',
+    ver: ['y-ahora-que/mas-alla-del-navegador#webassembly'],
+  },
 ];
 
 /** id de un término: su nombre sin tildes, en minúsculas y con guiones */

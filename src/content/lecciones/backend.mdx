@@ -1,0 +1,149 @@
+---
+titulo: JavaScript en el backend
+seccion: y-ahora-que
+tema: backend
+minutos: 10
+resumen: Los frameworks de servidor más usados, a alto nivel, con la misma ruta en cada uno. Express y sus middlewares, Fastify y la validación, Hono sobre las APIs web, NestJS con módulos y decorators, Koa, AdonisJS y Elysia, y el resto de un backend real (ORMs, validación y autenticación).
+intro: 'En <i>Un servidor HTTP desde cero</i> armaste un servidor con <code>node:http</code>, leyendo la URL y el método a mano. Funciona, pero en una API real hay decenas de rutas, datos que validar, sesiones y errores que manejar. Los frameworks de backend resuelven esa parte repetida para que <u>te concentres en lo que hace tu aplicación</u>.'
+ejercicios: [ahora-backend-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { backendAuto } from '../../data/ejercicios/y-ahora-que';
+
+## Lo que resuelven
+
+Casi todos los frameworks de servidor traen lo mismo, con distinto estilo:
+
+- **Rutas**: qué función atiende `GET /productos` y cuál `POST /productos`, con parámetros como `/productos/:id`.
+- **Middlewares**: funciones que corren en el camino de cada petición, antes de la ruta (registrar, comprobar la sesión, leer el cuerpo en JSON), y deciden si sigue.
+- **Respuestas cómodas**: devolver JSON, un código de estado o un error sin escribir los encabezados a mano.
+- **Manejo de errores** en un solo lugar.
+
+Para compararlos, vas a ver **la misma ruta** en cada uno: `GET /saludo/:nombre`, que responde `{ "mensaje": "Hola, Ana" }`.
+
+## Express
+
+<Oficial enlaces={[{ nombre: 'Express', url: 'https://expressjs.com/es/' }]} />
+
+**Express** es el clásico, de 2010: el framework de Node más usado y el que aparece en más tutoriales. Es mínimo y flexible, y casi todo se arma con middlewares:
+
+```js
+import express from "express";
+
+const app = express();
+app.use(express.json());   // middleware: lee el cuerpo de las peticiones en JSON
+
+app.get("/saludo/:nombre", (req, res) => {
+  res.json({ mensaje: `Hola, ${req.params.nombre}` });
+});
+
+app.listen(3000);
+```
+
+Hay un middleware para casi todo (sesiones, CORS, archivos subidos), y su versión 5 ya maneja los errores de las funciones `async`. Su punto débil es que no trae estructura: en un proyecto grande, la organización depende de ti.
+
+## Fastify
+
+<Oficial enlaces={[{ nombre: 'Fastify', url: 'https://fastify.dev/docs/latest/' }]} />
+
+**Fastify** se parece a Express, pero está pensado para ser **rápido** y para **validar** los datos con esquemas: describes qué forma tiene cada petición y cada respuesta, y Fastify rechaza lo que no cumple antes de llegar a tu código.
+
+```js
+import Fastify from "fastify";
+
+const app = Fastify({ logger: true });
+
+app.get("/saludo/:nombre", {
+  schema: { params: { type: "object", properties: { nombre: { type: "string", minLength: 1 } } } },
+}, async (req) => {
+  return { mensaje: `Hola, ${req.params.nombre}` };   // lo que devuelves se envía como JSON
+});
+
+await app.listen({ port: 3000 });
+```
+
+## Hono
+
+<Oficial enlaces={[{ nombre: 'Hono', url: 'https://hono.dev/docs/' }]} />
+
+**Hono** es pequeño y está hecho sobre las **APIs web**: recibe un `Request` y devuelve un `Response`, los mismos objetos de `fetch`. Por eso el mismo código corre en Node, Deno, Bun, Cloudflare Workers y otros servicios:
+
+```js
+import { Hono } from "hono";
+
+const app = new Hono();
+
+app.get("/saludo/:nombre", (c) => {
+  return c.json({ mensaje: `Hola, ${c.req.param("nombre")}` });
+});
+
+export default app;   // cada plataforma lo arranca a su manera
+```
+
+Es una muy buena opción para APIs nuevas, sobre todo si se van a publicar "en el borde", en servidores repartidos por el mundo.
+
+## NestJS
+
+<Oficial enlaces={[{ nombre: 'NestJS', url: 'https://docs.nestjs.com' }]} />
+
+**NestJS** es un framework **completo**, con TypeScript, y su estructura se parece mucho a la de Angular: **módulos**, **controladores** que atienden las rutas, **servicios** con la lógica e **inyección de dependencias**, todo marcado con decorators.
+
+```ts
+import { Controller, Get, Param } from "@nestjs/common";
+
+@Controller("saludo")
+export class SaludoController {
+  @Get(":nombre")
+  saludar(@Param("nombre") nombre: string) {
+    return { mensaje: `Hola, ${nombre}` };
+  }
+}
+```
+
+Por dentro usa Express (o Fastify, si lo eliges) para atender las peticiones. Es muy común en empresas y en equipos grandes, por la misma razón que Angular: todo el mundo organiza el código igual. Se empieza con su CLI, `nest new mi-api`.
+
+## Otros que conviene conocer
+
+<Oficial enlaces={[{ nombre: 'Koa', url: 'https://koajs.com' }, { nombre: 'AdonisJS', url: 'https://docs.adonisjs.com' }, { nombre: 'Elysia', url: 'https://elysiajs.com' }]} />
+
+- **Koa**: del mismo equipo que creó Express, más pequeño y pensado desde el principio para `async`/`await`. Sus middlewares reciben un único objeto, el contexto (`ctx`).
+- **AdonisJS**: un framework completo al estilo de Laravel (PHP) o Rails (Ruby), con TypeScript, base de datos, autenticación, validación y plantillas incluidos.
+- **Elysia**: pensado para **Bun**, muy rápido y con tipos que llegan de punta a punta, del servidor al cliente.
+- **Los meta-frameworks**: Next.js, Nuxt, SvelteKit y Astro también tienen su parte de servidor. Para muchas aplicaciones, el backend vive en el mismo proyecto que la interfaz.
+
+## El resto de un backend real
+
+<Oficial enlaces={[{ nombre: 'Prisma', url: 'https://www.prisma.io/docs' }, { nombre: 'Drizzle', url: 'https://orm.drizzle.team/docs/overview' }, { nombre: 'Zod', url: 'https://zod.dev' }]} />
+
+Un framework atiende las peticiones, pero una API real necesita más piezas:
+
+- **Base de datos**: PostgreSQL, MySQL o SQLite (lo viste en *Bases de datos con node:sqlite*), casi siempre a través de un **ORM** o un constructor de consultas como **Prisma** o **Drizzle**, que arman el SQL a partir de objetos.
+- **Validación**: comprobar que los datos que llegan tienen la forma correcta, con librerías como **Zod**.
+- **Autenticación**: quién es cada persona (sesiones, contraseñas protegidas, inicio de sesión con Google o GitHub), con librerías especializadas. No conviene armarla desde cero.
+- **Seguridad**: todo lo de *Seguridad en Node*, como los límites de peticiones, los encabezados y los secretos fuera del código.
+
+<Nota tipo="consejo">
+  Para aprender, **Express** sigue siendo el mejor punto de partida: casi todo lo que se escribe sobre backend en Node lo usa, y sus ideas (rutas y middlewares) se repiten en todos los demás. Para un proyecto nuevo, mira también **Hono** o **Fastify**; y si vas a trabajar en un equipo grande con TypeScript, **NestJS**.
+</Nota>
+
+## Resumen
+
+- Los frameworks de backend resuelven rutas, middlewares, respuestas y errores.
+- **Express**: el clásico, mínimo y lleno de middlewares. **Fastify**: rápido, con validación por esquemas.
+- **Hono**: sobre `Request` y `Response`; corre en Node, Deno, Bun y Workers.
+- **NestJS**: módulos, controladores y servicios con decorators, como Angular en el servidor.
+- También Koa, AdonisJS y Elysia, y la parte de servidor de los meta-frameworks.
+- Un backend real suma base de datos (con un ORM), validación, autenticación y seguridad.
+
+<Practica>
+
+<Autoevaluacion id={backendAuto.id} numero={1} titulo={backendAuto.titulo} preguntas={backendAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

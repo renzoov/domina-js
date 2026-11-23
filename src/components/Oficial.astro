@@ -1,0 +1,47 @@
+---
+// Enlaces a la documentación oficial de una herramienta (sección «¿Y ahora qué?»).
+// Se abren en otra pestaña, y lo dicen: con el ícono a la vista y con texto para los lectores de pantalla.
+import Icono from './Icono.astro';
+
+interface Props {
+  enlaces: { nombre: string; url: string }[];
+}
+const { enlaces } = Astro.props;
+---
+<div class="oficial">
+  <span class="rotulo">Documentación oficial</span>
+  <ul>
+    {enlaces.map((e) => (
+      <li>
+        <a href={e.url} target="_blank" rel="noopener noreferrer">
+          {e.nombre}
+          <Icono nombre="afuera" />
+          <span class="sr-only">(se abre en otra pestaña)</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .oficial {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    max-width: var(--measure);
+    margin: 0 0 1.4em;
+  }
+  .rotulo { font: 400 0.72rem/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--chalk-70); }
+  ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  a {
+    display: inline-flex; align-items: center; gap: 6px;
+    min-height: 34px;
+    padding: 4px 12px;
+    font-weight: 700; font-size: 0.92rem;
+    color: var(--azul);
+    text-decoration: none;
+    border: 2px solid color-mix(in srgb, var(--azul) 40%, transparent);
+    border-radius: var(--r-chalk);
+    transition: color 150ms var(--ease-out), border-color 150ms var(--ease-out), background 150ms var(--ease-out);
+  }
+  a:hover, a:focus-visible { color: var(--y); border-color: var(--y); background: var(--y-06); }
+  a :global(svg) { flex: none; width: 15px; height: 15px; }
+</style>

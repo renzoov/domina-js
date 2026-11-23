@@ -1,0 +1,96 @@
+---
+titulo: Después de JavaScript
+seccion: y-ahora-que
+tema: despues-de-javascript
+minutos: 7
+resumen: Qué viene después del curso. Qué te llevas a cualquier herramienta, la diferencia entre librería, framework y meta-framework, un mapa de las opciones más usadas para la interfaz y para el servidor, y cómo elegir sin perderte.
+intro: 'Si llegaste hasta aquí, ya sabes lo más difícil: cómo funciona JavaScript por dentro, cómo se arma una página y cómo responde un servidor. Lo que sigue son <u>herramientas</u> construidas con eso mismo. Esta sección es un mapa, no un curso: te cuenta qué es cada una, qué problema resuelve y cómo se ve, para que elijas con criterio por dónde seguir.'
+ejercicios: [ahora-despues-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import { despuesAuto } from '../../data/ejercicios/y-ahora-que';
+
+## Lo que te llevas
+
+Cada framework tiene su forma de escribir, pero por debajo todos usan lo que ya viste: **eventos** para reaccionar, el **DOM** para mostrar, **promesas** y `async`/`await` para esperar datos, **módulos** para ordenar el código y **closures** por todas partes. Cuando algo de un framework te parezca magia, casi siempre es una de estas piezas bien combinada.
+
+Por eso este es el mejor momento para elegir: con los fundamentos firmes, aprender un framework nuevo lleva semanas, no meses.
+
+## El problema que resuelven
+
+Mira este contador escrito solo con JavaScript:
+
+```js
+document.body.innerHTML = `<button id="mas">Sumar</button> <p id="cuenta"></p>`;
+let cuenta = 0;
+const parrafo = document.querySelector("#cuenta");
+
+function mostrar() {
+  parrafo.textContent = `Clics: ${cuenta}`;
+}
+
+document.querySelector("#mas").addEventListener("click", () => {
+  cuenta++;
+  mostrar();   // ← hay que acordarse de actualizar la página cada vez
+});
+
+mostrar();
+document.querySelector("#mas").click();
+console.log(parrafo.textContent);
+```
+
+Funciona, y para algo chico es lo correcto. El problema aparece cuando la aplicación crece: decenas de datos que cambian, cada uno mostrado en varios lugares, y en cada cambio hay que acordarse de actualizar **todos**. Cuando uno se olvida, aparece un error.
+
+Los frameworks de interfaz invierten la idea: tú describes **cómo se ve la página para cada estado**, y el framework se ocupa de actualizar el DOM cuando el estado cambia. En las próximas lecciones vas a ver este mismo contador escrito con cada uno.
+
+## Librería, framework y meta-framework
+
+- Una **librería** es código que **tú llamas** cuando lo necesitas: React, por ejemplo, solo se ocupa de los componentes.
+- Un **framework** es al revés: **él llama a tu código** y decide la estructura de la aplicación. Angular trae las rutas, los formularios y la forma de organizar todo.
+- Un **meta-framework** se arma sobre una librería de interfaz y agrega lo que una aplicación completa necesita: rutas según los archivos, renderizado en el servidor, carga de datos y una parte de backend. Next.js lo hace para React, Nuxt para Vue y SvelteKit para Svelte.
+
+En la práctica, todos dicen "framework" para casi todo. Lo importante es saber cuánto decide la herramienta por ti.
+
+## El mapa
+
+| Para… | Las más usadas | En esta sección |
+|---|---|---|
+| Tipos | TypeScript | *TypeScript* |
+| La interfaz | React, Vue, Angular, Svelte | Una lección para cada uno |
+| Sitios de contenido | Astro | *Astro* |
+| Alternativas más livianas | Solid, Preact, Lit, Alpine.js, htmx | *Otras librerías conocidas* |
+| El servidor | Express, Fastify, Hono, NestJS | *JavaScript en el backend* |
+| Fuera de la página web | WebAssembly, WebGL y WebGPU, React Native, Electron, Tauri | *Más allá del navegador clásico* |
+
+<Nota tipo="consejo">
+  No hace falta aprenderlos todos. Elige **uno** de interfaz (el que más se pida donde quieres trabajar, o el que más te guste al ver los ejemplos) y llévalo hasta hacer un proyecto completo. El segundo se aprende en la mitad de tiempo.
+</Nota>
+
+## Cómo elegir
+
+Algunas preguntas que ayudan:
+
+- **¿Qué piden los trabajos que te interesan?** React es el más pedido en casi todo el mundo; Angular es muy común en empresas grandes; Vue tiene mucha presencia en algunos países y comunidades.
+- **¿Qué vas a construir?** Para un sitio con mucho contenido (un blog, una documentación), Astro. Para una aplicación muy interactiva, React, Vue, Svelte o Solid. Para una API, uno de backend.
+- **¿Cuánto quieres que se decida por ti?** Angular y NestJS deciden casi todo; React y Express te dejan elegir cada pieza.
+
+Y una regla para no perder el rumbo: el ecosistema cambia rápido, pero los fundamentos no. Lo que aprendiste en este curso te va a servir con cualquiera de ellos, y con los que todavía no existen.
+
+## Resumen
+
+- Todos los frameworks están hechos de eventos, DOM, promesas, módulos y closures.
+- Resuelven un problema concreto: mantener la página al día cuando el estado cambia.
+- Librería (tú la llamas), framework (te llama a ti) y meta-framework (la aplicación completa alrededor de una librería).
+- Elige uno de interfaz, llévalo hasta un proyecto real, y después suma los demás.
+
+<Practica>
+
+<Autoevaluacion id={despuesAuto.id} numero={1} titulo={despuesAuto.titulo} preguntas={despuesAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

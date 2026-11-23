@@ -8,12 +8,12 @@
 
 | | |
 |---|---|
-| **17 secciones** | de «Antes de empezar» a las novedades de cada edición de ECMAScript |
-| **123 lecciones** | todas publicadas |
-| **510 ejercicios** | 446 en las lecciones y 64 en los Retos del motor, con corrección automática y progreso guardado en el navegador |
+| **18 secciones** | de «Antes de empezar» a «¿Y ahora qué?», el mapa de lo que se aprende después |
+| **133 lecciones** | todas publicadas |
+| **520 ejercicios** | 456 en las lecciones y 64 en los Retos del motor, con corrección automática y progreso guardado en el navegador |
 | **34 pizarrones** | visualizadores paso a paso de la pila, los scopes, la memoria y el event loop |
 | **Rayos X** | tu propio pizarrón: 12 pizarrones para modificar y 12 desafíos de refuerzo, también con asincronía |
-| **129 términos** | en un glosario enlazado a las lecciones |
+| **135 términos** | en un glosario enlazado a las lecciones |
 
 ## Qué lo hace distinto
 
@@ -94,6 +94,10 @@ En [`/glosario`](https://domina-js.pages.dev/glosario) están los términos del 
 
 ![El glosario: el buscador, la fila de letras y los primeros términos con sus enlaces a las lecciones](docs/capturas/glosario.webp)
 
+### La barra lateral
+
+El temario completo vive en la barra lateral. Al entrar, todas las secciones están cerradas: cada persona abre las que le interesan, y las que abrió siguen abiertas mientras navega por el sitio (se recuerdan en `sessionStorage`, solo durante la visita).
+
 ### Un buscador en la barra lateral
 
 Arriba del temario, en todas las páginas, hay un buscador que recorre las lecciones, los Retos del motor, el glosario y Rayos X. Cada resultado dice de qué sección es, muestra un pedazo del texto con las palabras encontradas resaltadas y, cuando conviene, enlaza al apartado exacto de la lección. Se abre con la tecla <kbd>/</kbd>; las flechas recorren los resultados y <kbd>Esc</kbd> lo limpia. Usa [Pagefind](https://pagefind.app), que arma el índice al compilar, así que funciona sin servidor. En el teléfono está dentro del menú «Secciones y temas».
@@ -117,6 +121,7 @@ Arriba del temario, en todas las páginas, hay un buscador que recorre las lecci
 14. JavaScript en el servidor
 15. Herramientas y ecosistema
 16. Novedades por edición
+17. ¿Y ahora qué?
 
 ![La página del temario: las lecciones de cada sección, sus insignias de edición y, al final, el Reto del motor con la etiqueta «cierre de sección»](docs/capturas/temario.webp)
 
@@ -138,7 +143,7 @@ El progreso vive solo en tu navegador, sin cuentas ni servidor. Al final del [te
 - Todo se usa con el teclado: el pizarrón avanza con las flechas, los bloques de código que se desplazan reciben el foco y el foco siempre se ve, con una raya amarilla discontinua.
 - Las explicaciones del pizarrón y los avisos de los ejercicios se anuncian a los lectores de pantalla (`aria-live`).
 - Con «reducir movimiento» activado, las animaciones de tiza son instantáneas.
-- Las 144 páginas pasan [axe](https://github.com/dequelabs/axe-core) (WCAG 2.2 AA y buenas prácticas) sin fallas, en escritorio y en móvil, con el progreso vacío y con todo resuelto. La última revisión fue el 22 de noviembre de 2026.
+- Las 154 páginas pasan [axe](https://github.com/dequelabs/axe-core) (WCAG 2.2 AA y buenas prácticas) sin fallas, en escritorio y en móvil, con el progreso vacío y con todo resuelto. La última revisión fue el 22 de noviembre de 2026.
 
 ## Al compartir y en los buscadores
 
@@ -222,7 +227,6 @@ Para agregar una lección:
 
 ## Lo que viene
 
-- **«¿Y ahora qué?»:** una sección de cierre, a alto nivel, sobre qué aprender después de JavaScript: TypeScript, React y Next.js, Vue y Nuxt, Angular, Svelte, otras librerías conocidas, WebAssembly, WebGL y WebGPU.
 - **Proyectos:** de 5 a 8 aplicaciones completas para hacer paso a paso, de la más fácil a una final grande. Cada una con su `proyecto-inicial.zip` (HTML y CSS hechos, el JavaScript por escribir) y su `proyecto-final.zip`. El plan está en [`docs/PROYECTOS.md`](docs/PROYECTOS.md).
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).

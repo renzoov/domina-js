@@ -1,0 +1,116 @@
+---
+titulo: React (y Next.js)
+seccion: y-ahora-que
+tema: react
+minutos: 8
+resumen: Qué es React y por qué es la librería de interfaz más usada. Componentes, JSX, estado con useState y propiedades, en un ejemplo corto. Cómo se empieza hoy, y qué agrega Next.js, su meta-framework más conocido.
+intro: '<b>React</b> nació en Facebook en 2013 y cambió la forma de pensar las interfaces: en lugar de tocar el DOM paso a paso, escribes <u>componentes</u>, funciones que dicen cómo se ve un trozo de la página para cada estado. Es la librería de interfaz más usada y la más pedida en trabajos.'
+ejercicios: [ahora-react-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { reactAuto } from '../../data/ejercicios/y-ahora-que';
+
+<Oficial enlaces={[{ nombre: 'React', url: 'https://react.dev/learn' }]} />
+
+## Componentes y JSX
+
+En React, la interfaz se arma con **componentes**: funciones que devuelven lo que se ve. Se escriben en **JSX**, una sintaxis parecida a HTML dentro de JavaScript. Este es el contador de la primera lección:
+
+```jsx
+import { useState } from "react";
+
+export function Contador() {
+  const [cuenta, setCuenta] = useState(0);
+
+  return (
+    <div>
+      <button onClick={() => setCuenta(cuenta + 1)}>Sumar</button>
+      <p>Clics: {cuenta}</p>
+    </div>
+  );
+}
+```
+
+Fíjate en lo que **no** hay: ningún `querySelector` ni `textContent`. `useState` guarda un valor y te da la función para cambiarlo. Cuando llamas a `setCuenta`, React vuelve a ejecutar el componente, compara el resultado con lo que había y cambia en el DOM solo lo necesario.
+
+- Las llaves `{…}` dentro de JSX son expresiones de JavaScript: `{cuenta}`, `{lista.map(…)}`, `{activo ? "Sí" : "No"}`.
+- Los eventos se escriben como atributos: `onClick`, `onChange`, `onSubmit`.
+- JSX no llega así al navegador: una herramienta (Vite, por ejemplo) lo convierte en llamadas a funciones de JavaScript.
+
+## Componentes dentro de componentes
+
+Los componentes reciben datos de afuera, sus **props**, y se combinan como etiquetas:
+
+```jsx
+function Producto({ nombre, precio }) {
+  return <li>{nombre}: ${precio}</li>;
+}
+
+export function Lista({ productos }) {
+  return (
+    <ul>
+      {productos.map((p) => (
+        <Producto key={p.id} nombre={p.nombre} precio={p.precio} />
+      ))}
+    </ul>
+  );
+}
+```
+
+La idea central de React es esa: **la interfaz es una función del estado**. Los datos bajan por las props, los cambios suben por funciones, y React se ocupa del DOM. Para todo lo demás (efectos con `useEffect`, datos compartidos con contexto, formularios) hay *hooks* y un ecosistema enorme de librerías.
+
+## Cómo se empieza hoy
+
+<Oficial enlaces={[{ nombre: 'Vite', url: 'https://vite.dev/guide/' }, { nombre: 'React Router', url: 'https://reactrouter.com/home' }]} />
+
+- Con **Vite**: `npm create vite@latest` y eliges React. Es lo más simple para aprender.
+- Con un **framework** sobre React, para una aplicación completa: Next.js, o React Router en su modo de framework.
+
+La herramienta antigua, Create React App, ya no se recomienda: la vas a ver en tutoriales viejos. Y el **React Compiler** optimiza tus componentes solo, al compilar, para que no tengas que hacerlo a mano.
+
+## Next.js
+
+<Oficial enlaces={[{ nombre: 'Next.js', url: 'https://nextjs.org/docs' }]} />
+
+**Next.js**, de la empresa Vercel, es el meta-framework más usado de React. Sobre los componentes agrega todo lo que una aplicación necesita:
+
+- **Rutas según los archivos**: el archivo `app/productos/page.jsx` es la página `/productos`.
+- **Renderizado en el servidor**: la página llega al navegador ya armada en HTML, lo que la hace más rápida de ver y mejor para los buscadores.
+- **Componentes de servidor**: componentes que corren solo en el servidor y pueden leer una base de datos directamente, sin mandar ese código al navegador.
+- **El backend en el mismo proyecto**: rutas de API y funciones que se llaman desde un formulario.
+
+```jsx
+// app/productos/page.jsx — un componente de servidor: corre en el servidor, no en el navegador
+export default async function Productos() {
+  const productos = await db.productos.todos();
+  return (
+    <ul>
+      {productos.map((p) => <li key={p.id}>{p.nombre}</li>)}
+    </ul>
+  );
+}
+```
+
+<Nota>
+  Los componentes de servidor y el renderizado en el servidor son lo más nuevo de React y lo que más confunde al principio. Aprende primero React solo, con Vite, y pasa a Next.js cuando ya te sientas cómodo con los componentes y el estado.
+</Nota>
+
+## Resumen
+
+- React arma la interfaz con **componentes**: funciones que devuelven JSX.
+- `useState` guarda el estado; al cambiarlo, React actualiza el DOM por ti.
+- Los datos bajan por **props**; la interfaz es una función del estado.
+- Se empieza con Vite; **Next.js** agrega rutas por archivos, renderizado y componentes de servidor, y backend.
+
+<Practica>
+
+<Autoevaluacion id={reactAuto.id} numero={1} titulo={reactAuto.titulo} preguntas={reactAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

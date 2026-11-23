@@ -24,7 +24,7 @@
 | **Texto editable** | Lección nueva *Texto editable y selección* (13): `contenteditable`, Range, Selection, la selección en `input`/`textarea` y `beforeinput` |
 | **Otras** | Compression Streams en *Datos binarios*; Storage API en *Guardar datos*; Web Locks en *Web Workers y mensajería*; `requestIdleCallback` y `scheduler.yield()` en *Rendimiento de la página* |
 
-## 3. Temas de JavaScript (hecho el 2026-11-22, salvo lo indicado)
+## 3. Temas de JavaScript (hecho el 2026-11-22)
 
 | Tema | Cómo quedó |
 |---|---|
@@ -37,10 +37,10 @@
 | **`arguments`, `eval` y `new Function`** | Ampliadas *Parámetros* (`arguments`) y *Seguridad en el navegador* (`eval`, `new Function`, textos en `setTimeout`) |
 | **Rendimiento web** | Lección nueva *Rendimiento de la página* (13): Web Vitals, tareas largas, reflow, lotes con `DocumentFragment`, carga diferida y medición |
 | **Gráficos a fondo** | Ampliada *Gráficos: Canvas y SVG*: transformaciones, píxeles, exportar con `toBlob`, CORS en el canvas y un gráfico de barras en SVG. Una pizarra completa queda para Proyectos |
-| **WebGL, WebGPU y WebAssembly** | Pendiente: irán en la sección nueva «¿Y ahora qué?» (ver 5) |
+| **WebGL, WebGPU y WebAssembly** | En *Más allá del navegador clásico* (17) |
 | **Pruebas de punta a punta** | Ampliada *Testing*: Playwright, localizadores por rol y `expect` que espera |
 | **Bases de datos en Node y línea de comandos** | Lecciones nuevas *Bases de datos con node:sqlite* y *Programas de línea de comandos* (14) |
-| **Después del curso** | Pendiente: la sección nueva «¿Y ahora qué?» (ver 5) |
+| **Después del curso** | La sección 17, «¿Y ahora qué?» (ver 5) |
 
 También se agregaron al glosario: CustomEvent, Blob, Foco, Región viva, Popover, WebSocket, Tarea larga, Web Vitals, Inyección de SQL y Currificación.
 
@@ -51,7 +51,7 @@ También se agregaron al glosario: CustomEvent, Blob, Foco, Región viva, Popove
 ## 5. Secciones nuevas
 
 - **Patrones y arquitectura** y **Algoritmos y estructuras de datos:** descartadas para este sitio (2026-11-22). Esos temas tendrán su propio sitio.
-- **«¿Y ahora qué?» (cierre):** aprobada la idea, pendiente de aprobar el contenido. Qué aprender después de JavaScript, a alto nivel: TypeScript con un ejemplo de JS y su versión con tipos, React (y Next.js), Vue (y Nuxt), Angular, Svelte y otras librerías conocidas, más WebAssembly, WebGL y WebGPU. Sin profundizar: cada uno de esos temas tendrá su propio sitio.
+- **«¿Y ahora qué?» (cierre):** hecha el 2026-11-22, como sección 17: Después de JavaScript, TypeScript, React (y Next.js), Vue (y Nuxt), Angular (con Angular Universal, `@angular/ssr` y Analog), Svelte (y SvelteKit), Astro, Otras librerías conocidas, JavaScript en el backend y Más allá del navegador clásico. A alto nivel: cada tema tendrá su propio sitio.
 
 ## 6. Cómo decidir
 

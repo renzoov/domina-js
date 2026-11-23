@@ -1,0 +1,95 @@
+---
+titulo: Svelte (y SvelteKit)
+seccion: y-ahora-que
+tema: svelte
+minutos: 6
+resumen: Qué es Svelte y por qué es distinto. Un compilador en lugar de una librería, componentes .svelte y reactividad con las runes ($state, $derived, $effect, $props), en un ejemplo corto. Qué agrega SvelteKit, su meta-framework.
+intro: '<b>Svelte</b>, creado por Rich Harris en 2016, toma otro camino: no es una librería que corre en el navegador, sino un <u>compilador</u>. Convierte tus componentes en JavaScript que actualiza el DOM directamente, así que la página carga menos código. Es de los más queridos por quienes lo usan, por lo poco que hay que escribir.'
+ejercicios: [ahora-svelte-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { svelteAuto } from '../../data/ejercicios/y-ahora-que';
+
+<Oficial enlaces={[{ nombre: 'Svelte', url: 'https://svelte.dev/docs/svelte/overview' }]} />
+
+## Un componente
+
+Un componente de Svelte es un archivo `.svelte`, con un `<script>`, el HTML y, si quieres, los estilos. El contador es casi JavaScript puro:
+
+```svelte
+<script>
+  let cuenta = $state(0);
+</script>
+
+<button onclick={() => cuenta++}>Sumar</button>
+<p>Clics: {cuenta}</p>
+
+<style>
+  p { color: #f7df1e; }
+</style>
+```
+
+`$state` es una **rune**: una palabra especial que le dice al compilador "esto es reactivo". Después usas la variable como cualquier otra (`cuenta++`), y Svelte actualiza la página. No hay `setCuenta` ni `.value`.
+
+## Las runes
+
+Svelte 5 tiene pocas runes, y con ellas se hace casi todo:
+
+```svelte
+<script>
+  let { productos } = $props();                 // los datos que llegan de afuera
+  let filtro = $state("");                      // estado propio
+  let visibles = $derived(                      // un valor calculado a partir de otros
+    productos.filter((p) => p.nombre.includes(filtro))
+  );
+  $effect(() => {                               // código que corre cuando cambia lo que lee
+    document.title = `${visibles.length} productos`;
+  });
+</script>
+
+<input bind:value={filtro} placeholder="Filtrar" />
+{#each visibles as p (p.id)}
+  <p>{p.nombre}</p>
+{/each}
+```
+
+- **`$props`** recibe los datos del componente padre.
+- **`$derived`** calcula un valor a partir de otros, y se recalcula solo cuando cambian.
+- **`$effect`** corre código con efectos secundarios (cambiar el título, guardar algo) cada vez que cambia lo que lee.
+- En el HTML, `bind:value` conecta un campo con una variable, y los bloques `{#if}` y `{#each}` muestran o repiten.
+
+<Nota>
+  Las runes llegaron con **Svelte 5**, en 2024. En tutoriales anteriores vas a ver otra sintaxis (`let cuenta = 0` ya era reactivo, y `$:` marcaba los valores calculados). La idea es la misma, pero conviene aprender la actual.
+</Nota>
+
+## SvelteKit
+
+<Oficial enlaces={[{ nombre: 'SvelteKit', url: 'https://svelte.dev/docs/kit/introduction' }]} />
+
+**SvelteKit** es el meta-framework de Svelte, como Next.js para React o Nuxt para Vue:
+
+- **Rutas según las carpetas**: `src/routes/productos/+page.svelte` es la página `/productos`.
+- **Carga de datos** en el servidor, con un archivo `+page.server.js` al lado de la página.
+- **Renderizado en el servidor**, sitios estáticos y rutas de API (`+server.js`).
+
+Se empieza con `npx sv create mi-app`, que crea un proyecto de SvelteKit con Vite.
+
+## Resumen
+
+- Svelte es un **compilador**: tus componentes se convierten en JavaScript que toca el DOM directamente.
+- Las **runes** marcan lo reactivo: `$state`, `$derived`, `$effect` y `$props`.
+- Se escribe muy poco: la variable se usa como cualquier otra.
+- **SvelteKit** agrega rutas por carpetas, carga de datos en el servidor y backend.
+
+<Practica>
+
+<Autoevaluacion id={svelteAuto.id} numero={1} titulo={svelteAuto.titulo} preguntas={svelteAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

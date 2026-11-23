@@ -1,0 +1,91 @@
+---
+titulo: TypeScript
+seccion: y-ahora-que
+tema: typescript
+minutos: 6
+resumen: Qué es TypeScript y para qué sirve, a alto nivel. Un error de JavaScript que aparece recién al ejecutar y cómo TypeScript lo marca antes, qué llega al navegador, cómo se ejecuta hoy y por qué casi todos los frameworks lo usan.
+intro: 'TypeScript es JavaScript con <b>tipos</b>: anotas qué forma tienen tus datos (<i>este parámetro es un número, este objeto tiene precio y cantidad</i>) y una herramienta revisa todo el proyecto <u>antes de ejecutarlo</u>. Hoy es la forma más común de escribir JavaScript en equipos y en casi todos los frameworks.'
+ejercicios: [ahora-typescript-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { tsAuto } from '../../data/ejercicios/y-ahora-que';
+
+<Oficial enlaces={[{ nombre: 'TypeScript', url: 'https://www.typescriptlang.org/es/docs/' }]} />
+
+## Un error que llega tarde
+
+Esta función suma el total de un carrito. Funciona, hasta que alguien escribe mal el nombre de una propiedad:
+
+```js
+function total(carrito) {
+  return carrito.reduce((suma, p) => suma + p.precio * p.cantidad, 0);
+}
+
+console.log(total([{ precio: 3, cantidad: 2 }, { precio: 5, cantidad: 1 }]));
+console.log(total([{ precio: 3, cantidad: 2 }, { precio: 5, cant: 1 }]));   // "cant" en lugar de "cantidad"
+```
+
+JavaScript no se queja: `p.cantidad` vale `undefined`, la cuenta da `NaN`, y el error aparece recién **cuando alguien ve el total en pantalla**, quizás muy lejos de donde estaba la equivocación.
+
+## El mismo código, con tipos
+
+En TypeScript describes qué forma tiene un producto, y le dices a la función qué recibe y qué devuelve:
+
+```ts
+interface Producto {
+  precio: number;
+  cantidad: number;
+}
+
+function total(carrito: Producto[]): number {
+  return carrito.reduce((suma, p) => suma + p.precio * p.cantidad, 0);
+}
+
+total([{ precio: 3, cantidad: 2 }, { precio: 5, cant: 1 }]);
+//                                              ~~~~
+// Error: Object literal may only specify known properties,
+//        and 'cant' does not exist in type 'Producto'.
+```
+
+El error aparece **en el editor, mientras escribes**, subrayado en rojo y con su explicación. Además, el editor ahora sabe qué hay dentro de cada producto: te sugiere `precio` y `cantidad` al escribir `p.`, y si mañana cambias el nombre de una propiedad, te muestra todos los lugares que hay que arreglar.
+
+## Qué llega al navegador
+
+Los tipos son solo para ti y para el editor: **al ejecutar, se borran**. Lo que llega al navegador o a Node es JavaScript común. Eso tiene dos consecuencias:
+
+- No hay que reaprender nada. Todo JavaScript válido es TypeScript válido, y los tipos se suman encima, de a poco.
+- Los tipos **no validan datos que llegan de afuera**, como una respuesta de `fetch` o lo que escribió una persona. Eso se sigue comprobando en el código (librerías como Zod lo hacen con un esquema).
+
+## Cómo se ejecuta hoy
+
+- `tsc`, el compilador de TypeScript, revisa los tipos de todo el proyecto y genera los `.js`.
+- Node.js ejecuta archivos `.ts` directamente: borra los tipos al cargar, sin revisarlos (lo viste en *Node.js hoy*). Deno y Bun también lo hacen.
+- Vite y los frameworks lo traen configurado: creas el proyecto y ya escribes TypeScript.
+
+<Nota tipo="consejo">
+  Para ver TypeScript con más detalle (uniones, genéricos, `unknown`, la configuración y los tipos en JSDoc), tienes la lección *TypeScript para quien ya sabe JS*, en la sección *Herramientas y ecosistema*.
+</Nota>
+
+## Por qué casi todos lo usan
+
+En un proyecto chico, los tipos parecen trabajo extra. En uno grande, con varias personas y miles de líneas, son la diferencia entre cambiar algo con confianza y cambiarlo con miedo. Por eso Angular y NestJS lo usan siempre, y React, Vue, Svelte, Astro y Hono lo traen listo al crear un proyecto. Casi toda la documentación que leas de aquí en adelante va a estar escrita en TypeScript.
+
+## Resumen
+
+- TypeScript es JavaScript con tipos: describe la forma de tus datos.
+- Encuentra errores **antes** de ejecutar, en el editor, y mejora el autocompletado.
+- Los tipos se borran al ejecutar: lo que corre es JavaScript, y los datos de afuera se validan igual.
+- `tsc` revisa todo; Node, Deno y Bun ejecutan `.ts` directamente.
+
+<Practica>
+
+<Autoevaluacion id={tsAuto.id} numero={1} titulo={tsAuto.titulo} preguntas={tsAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

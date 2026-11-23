@@ -1,0 +1,149 @@
+---
+titulo: Otras librerías conocidas
+seccion: y-ahora-que
+tema: otras-librerias
+minutos: 8
+resumen: Otras herramientas de interfaz muy usadas, cada una con su ejemplo. Solid y sus signals, Preact como React liviano, Lit para Web Components, Alpine.js y htmx para dar vida al HTML sin un proyecto aparte, y jQuery, que vas a encontrar en código viejo.
+intro: 'React, Vue, Angular y Svelte son los más grandes, pero no los únicos. Hay herramientas más livianas, con otras ideas, que a veces son <u>justo lo que un proyecto necesita</u>. Algunas nacieron para hacer lo mismo con menos; otras, para no tener que armar una aplicación de JavaScript en absoluto.'
+ejercicios: [ahora-otras-auto]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import Nota from '../../components/Nota.astro';
+import Oficial from '../../components/Oficial.astro';
+import { otrasAuto } from '../../data/ejercicios/y-ahora-que';
+
+## Solid
+
+<Oficial enlaces={[{ nombre: 'Solid', url: 'https://docs.solidjs.com' }, { nombre: 'SolidStart', url: 'https://start.solidjs.com' }]} />
+
+**Solid** se escribe parecido a React, con JSX y componentes como funciones, pero funciona distinto. El componente corre **una sola vez**, y cada valor es una **signal** que sabe exactamente qué parte del DOM depende de ella. Al cambiarla, Solid actualiza solo ese texto, sin volver a ejecutar el componente:
+
+```jsx
+import { createSignal } from "solid-js";
+
+export function Contador() {
+  const [cuenta, setCuenta] = createSignal(0);
+  return (
+    <>
+      <button onClick={() => setCuenta(cuenta() + 1)}>Sumar</button>
+      <p>Clics: {cuenta()}</p>
+    </>
+  );
+}
+```
+
+Es de los más rápidos que existen, y su idea de las signals inspiró a Angular, Vue, Preact y Svelte. Su meta-framework es **SolidStart**.
+
+<Nota>
+  Las signals se volvieron tan comunes que TC39 estudia una propuesta para tenerlas en el propio lenguaje (lo viste en *Lo que viene*). Si se aprueba, los frameworks podrían compartir la misma pieza.
+</Nota>
+
+## Preact
+
+<Oficial enlaces={[{ nombre: 'Preact', url: 'https://preactjs.com/guide/v10/getting-started' }]} />
+
+**Preact** es una alternativa a React que pesa unos pocos kilobytes, con casi la misma API: `useState`, JSX y componentes. Con un paquete de compatibilidad se pueden usar muchas librerías hechas para React. Se elige cuando cada kilobyte importa, por ejemplo en un *widget* que se incrusta en páginas ajenas. Además tiene sus propias signals (`@preact/signals`).
+
+## Lit
+
+<Oficial enlaces={[{ nombre: 'Lit', url: 'https://lit.dev/docs/' }]} />
+
+**Lit**, de Google, hace más fácil escribir **Web Components** (los viste en *Web Components*): elementos propios del navegador que funcionan en cualquier página y con cualquier framework. Usa *template tags* para las plantillas (lo viste en *Template tags*):
+
+```js
+import { LitElement, html, css } from "lit";
+
+class MiContador extends LitElement {
+  static properties = { cuenta: { type: Number } };
+  static styles = css`p { color: #f7df1e; }`;
+
+  constructor() {
+    super();
+    this.cuenta = 0;
+  }
+
+  render() {
+    return html`
+      <button @click=${() => this.cuenta++}>Sumar</button>
+      <p>Clics: ${this.cuenta}</p>`;
+  }
+}
+customElements.define("mi-contador", MiContador);
+```
+
+Después se usa como cualquier etiqueta: `<mi-contador></mi-contador>`. Es ideal para **sistemas de diseño**, botones y componentes que una empresa usa en muchos proyectos hechos con frameworks distintos.
+
+## Alpine.js
+
+<Oficial enlaces={[{ nombre: 'Alpine.js', url: 'https://alpinejs.dev/start-here' }]} />
+
+**Alpine.js** agrega comportamiento **directamente en el HTML**, con atributos, sin compilar nada. Se carga con un `<script>` y listo:
+
+```html
+<div x-data="{ cuenta: 0 }">
+  <button x-on:click="cuenta++">Sumar</button>
+  <p>Clics: <span x-text="cuenta"></span></p>
+</div>
+```
+
+Es perfecto para darle un poco de vida a una página que ya existe, por ejemplo una que arma un servidor en PHP, Python o Ruby: un menú desplegable, pestañas, un modal.
+
+## htmx
+
+<Oficial enlaces={[{ nombre: 'htmx', url: 'https://htmx.org/docs/' }]} />
+
+**htmx** va todavía más lejos: en lugar de pedir datos en JSON y armar la página con JavaScript, le pide al servidor **trozos de HTML** y los inserta donde digas, también con atributos:
+
+```html
+<button hx-get="/productos?pagina=2" hx-target="#lista" hx-swap="beforeend">
+  Ver más
+</button>
+<ul id="lista">…</ul>
+```
+
+Al hacer clic, htmx hace un `fetch` a `/productos?pagina=2` y agrega el HTML que responde el servidor al final de la lista. Toda la lógica queda en el servidor, en el lenguaje que sea. Para muchas aplicaciones con formularios y listas, alcanza y sobra.
+
+## jQuery
+
+<Oficial enlaces={[{ nombre: 'jQuery', url: 'https://api.jquery.com' }]} />
+
+**jQuery** fue, durante más de diez años, la forma de escribir JavaScript en la web. Resolvía dos problemas enormes de su época: cada navegador hacía las cosas distinto, y el DOM era incómodo de usar.
+
+```js
+$("#mas").on("click", () => {
+  $("#cuenta").text("¡Sumaste uno!");
+});
+$.get("/api/productos", (datos) => mostrar(datos));
+```
+
+Hoy el navegador ya trae todo eso: `querySelector`, `addEventListener`, `classList`, `fetch`, y los navegadores se comportan igual. Por eso en un proyecto nuevo **no hace falta**. Pero sigue en una enorme cantidad de sitios (muchos temas de WordPress, por ejemplo), así que vale la pena saber leerla: `$(selector)` busca elementos, y los métodos encadenados los cambian.
+
+## ¿Cuándo usar cada una?
+
+| <span class="sr-only">Librería</span> | Ideal para |
+|---|---|
+| Solid | Aplicaciones donde la velocidad importa mucho, con una forma de escribir parecida a React |
+| Preact | Lo mismo que React, cuando cada kilobyte cuenta |
+| Lit | Componentes que se comparten entre proyectos con frameworks distintos |
+| Alpine.js | Un poco de interactividad en páginas que ya existen |
+| htmx | Aplicaciones con la lógica en el servidor, sin armar un frontend aparte |
+| jQuery | Mantener código existente (no para proyectos nuevos) |
+
+## Resumen
+
+- **Solid**: JSX con signals; el componente corre una vez y se actualiza solo lo necesario.
+- **Preact**: React en pocos kilobytes.
+- **Lit**: Web Components con menos código, para compartir entre proyectos.
+- **Alpine.js** y **htmx**: interactividad desde el HTML, sin un proyecto de JavaScript aparte.
+- **jQuery**: la vas a leer en código viejo; el navegador de hoy ya trae lo que resolvía.
+
+<Practica>
+
+<Autoevaluacion id={otrasAuto.id} numero={1} titulo={otrasAuto.titulo} preguntas={otrasAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+</Practica>

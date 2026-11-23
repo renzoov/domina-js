@@ -4,7 +4,7 @@
 import { ejecutarEnPagina, usaFoco } from './sandbox-pagina';
 
 const LIMITE_MS = 3000;
-const NOMBRES: Record<string, string> = { js: 'ejemplo.js', javascript: 'ejemplo.js', bash: 'terminal', sh: 'terminal', html: 'index.html', css: 'estilos.css', json: 'datos.json' };
+const NOMBRES: Record<string, string> = { js: 'ejemplo.js', javascript: 'ejemplo.js', bash: 'terminal', sh: 'terminal', html: 'index.html', css: 'estilos.css', json: 'datos.json', ts: 'ejemplo.ts', jsx: 'Componente.jsx', tsx: 'Componente.tsx', vue: 'Componente.vue', svelte: 'Componente.svelte', astro: 'pagina.astro' };
 
 const icono = (d: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d}"/></svg>`;
