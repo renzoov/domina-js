@@ -1,69 +1,398 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-20T12:00:00Z",
+  "generatedAt": "2026-11-22T18:40:00Z",
   "title": "Design System: domina-js",
   "extensions": {
     "colorMeta": {
-      "board": { "role": "neutral", "displayName": "Pizarra", "canonical": "#1b2a23", "tonalRamp": ["#0b120e", "#0f1712", "#15211b", "#1b2a23", "#22342b", "#3a5045", "#6b8577", "#c9d6cf"] },
-      "board-hi": { "role": "neutral", "displayName": "Pizarra clara", "canonical": "#22342b" },
-      "board-lo": { "role": "neutral", "displayName": "Pizarra oscura", "canonical": "#15211b" },
-      "edge": { "role": "neutral", "displayName": "Marco", "canonical": "#0f1712" },
-      "tray": { "role": "neutral", "displayName": "Bandeja", "canonical": "#0b120e" },
-      "chalk": { "role": "neutral", "displayName": "Tiza", "canonical": "#eceae2", "tonalRamp": ["#2c2b27", "#4a4944", "#68675f", "#7f8a82", "#9a9a92", "#b8bcb4", "#d4d3cb", "#eceae2"] },
-      "chalk-70": { "role": "neutral", "displayName": "Tiza gastada", "canonical": "#b8bcb4" },
-      "chalk-45": { "role": "neutral", "displayName": "Tiza tenue", "canonical": "#7f8a82" },
-      "chalk-15": { "role": "neutral", "displayName": "Polvo de tiza", "canonical": "rgba(236, 234, 226, 0.15)" },
-      "chalk-08": { "role": "neutral", "displayName": "Polvo leve", "canonical": "rgba(236, 234, 226, 0.08)" },
-      "chalk-04": { "role": "neutral", "displayName": "Mancha de borrado", "canonical": "rgba(236, 234, 226, 0.04)" },
-      "comment": { "role": "neutral", "displayName": "Comentario", "canonical": "#97a29a" },
-      "js-yellow": { "role": "primary", "displayName": "Tiza amarilla JS", "canonical": "#f7df1e", "tonalRamp": ["#3a3405", "#5e540a", "#8a7b0f", "#b8a414", "#e0c81a", "#f7df1e", "#f9e962", "#fcf4b4"] },
-      "js-yellow-90": { "role": "primary", "displayName": "Franja de subrayado", "canonical": "rgba(247, 223, 30, 0.9)" },
-      "js-yellow-12": { "role": "primary", "displayName": "Amarillo velado", "canonical": "rgba(247, 223, 30, 0.12)" },
-      "js-yellow-06": { "role": "primary", "displayName": "Amarillo en espera", "canonical": "rgba(247, 223, 30, 0.06)" },
-      "chalk-blue": { "role": "secondary", "displayName": "Tiza azul", "canonical": "#8fd0f7", "tonalRamp": ["#0f2a3a", "#174259", "#215c7c", "#2f7aa2", "#4f9fca", "#8fd0f7", "#b6e0fa", "#ddf1fd"] },
-      "chalk-orange": { "role": "secondary", "displayName": "Tiza naranja", "canonical": "#ffb36b", "tonalRamp": ["#3d2208", "#5e3510", "#84491a", "#ad6126", "#d9843f", "#ffb36b", "#ffcd9c", "#ffe7cf"] },
-      "chalk-pink": { "role": "secondary", "displayName": "Tiza rosa", "canonical": "#f2a7b8", "tonalRamp": ["#3d1f26", "#5e313c", "#844656", "#ad5e73", "#d17f94", "#f2a7b8", "#f6c4d0", "#fbe2e8"] },
-      "chalk-lilac": { "role": "tertiary", "displayName": "Tiza lila", "canonical": "#cdb0ff", "tonalRamp": ["#251a3d", "#38285c", "#4f3a82", "#6a52aa", "#9a7fd6", "#cdb0ff", "#ddcaff", "#eee4ff"] },
-      "chalk-lime": { "role": "tertiary", "displayName": "Tiza lima (ok)", "canonical": "#c4ec8c", "tonalRamp": ["#22300f", "#344a17", "#4a6822", "#648c30", "#90bd56", "#c4ec8c", "#d8f3b2", "#ecf9d8"] },
-      "chalk-red": { "role": "tertiary", "displayName": "Tiza roja", "canonical": "#f08a7e", "tonalRamp": ["#3b1a16", "#5c2922", "#843b31", "#ad5044", "#d26b5e", "#f08a7e", "#f5b0a7", "#fad6d1"] },
-      "sage": { "role": "tertiary", "displayName": "Salvia (heredado, sin uso en texto)", "canonical": "#8fb7a1", "tonalRamp": ["#1c2a23", "#2c4237", "#3f5b4c", "#557663", "#6f9580", "#8fb7a1", "#b2cfbf", "#d8e8df"] }
+      "board": {
+        "role": "neutral",
+        "displayName": "Pizarra",
+        "canonical": "#1b2a23",
+        "tonalRamp": [
+          "#0b120e",
+          "#0f1712",
+          "#15211b",
+          "#1b2a23",
+          "#22342b",
+          "#3a5045",
+          "#6b8577",
+          "#c9d6cf"
+        ]
+      },
+      "board-hi": {
+        "role": "neutral",
+        "displayName": "Pizarra clara",
+        "canonical": "#22342b"
+      },
+      "board-lo": {
+        "role": "neutral",
+        "displayName": "Pizarra oscura",
+        "canonical": "#15211b"
+      },
+      "edge": {
+        "role": "neutral",
+        "displayName": "Marco",
+        "canonical": "#0f1712"
+      },
+      "tray": {
+        "role": "neutral",
+        "displayName": "Bandeja",
+        "canonical": "#0b120e"
+      },
+      "chalk": {
+        "role": "neutral",
+        "displayName": "Tiza",
+        "canonical": "#eceae2",
+        "tonalRamp": [
+          "#2c2b27",
+          "#4a4944",
+          "#68675f",
+          "#7f8a82",
+          "#9a9a92",
+          "#b8bcb4",
+          "#d4d3cb",
+          "#eceae2"
+        ]
+      },
+      "chalk-70": {
+        "role": "neutral",
+        "displayName": "Tiza gastada",
+        "canonical": "#b8bcb4"
+      },
+      "chalk-45": {
+        "role": "neutral",
+        "displayName": "Tiza tenue",
+        "canonical": "#7f8a82"
+      },
+      "chalk-15": {
+        "role": "neutral",
+        "displayName": "Polvo de tiza",
+        "canonical": "rgba(236, 234, 226, 0.15)"
+      },
+      "chalk-08": {
+        "role": "neutral",
+        "displayName": "Polvo leve",
+        "canonical": "rgba(236, 234, 226, 0.08)"
+      },
+      "chalk-04": {
+        "role": "neutral",
+        "displayName": "Mancha de borrado",
+        "canonical": "rgba(236, 234, 226, 0.04)"
+      },
+      "comment": {
+        "role": "neutral",
+        "displayName": "Comentario",
+        "canonical": "#97a29a"
+      },
+      "js-yellow": {
+        "role": "primary",
+        "displayName": "Tiza amarilla JS",
+        "canonical": "#f7df1e",
+        "tonalRamp": [
+          "#3a3405",
+          "#5e540a",
+          "#8a7b0f",
+          "#b8a414",
+          "#e0c81a",
+          "#f7df1e",
+          "#f9e962",
+          "#fcf4b4"
+        ]
+      },
+      "js-yellow-90": {
+        "role": "primary",
+        "displayName": "Franja de subrayado",
+        "canonical": "rgba(247, 223, 30, 0.9)"
+      },
+      "js-yellow-12": {
+        "role": "primary",
+        "displayName": "Amarillo velado",
+        "canonical": "rgba(247, 223, 30, 0.12)"
+      },
+      "js-yellow-06": {
+        "role": "primary",
+        "displayName": "Amarillo en espera",
+        "canonical": "rgba(247, 223, 30, 0.06)"
+      },
+      "chalk-blue": {
+        "role": "secondary",
+        "displayName": "Tiza azul",
+        "canonical": "#8fd0f7",
+        "tonalRamp": [
+          "#0f2a3a",
+          "#174259",
+          "#215c7c",
+          "#2f7aa2",
+          "#4f9fca",
+          "#8fd0f7",
+          "#b6e0fa",
+          "#ddf1fd"
+        ]
+      },
+      "chalk-orange": {
+        "role": "secondary",
+        "displayName": "Tiza naranja",
+        "canonical": "#ffb36b",
+        "tonalRamp": [
+          "#3d2208",
+          "#5e3510",
+          "#84491a",
+          "#ad6126",
+          "#d9843f",
+          "#ffb36b",
+          "#ffcd9c",
+          "#ffe7cf"
+        ]
+      },
+      "chalk-pink": {
+        "role": "secondary",
+        "displayName": "Tiza rosa",
+        "canonical": "#f2a7b8",
+        "tonalRamp": [
+          "#3d1f26",
+          "#5e313c",
+          "#844656",
+          "#ad5e73",
+          "#d17f94",
+          "#f2a7b8",
+          "#f6c4d0",
+          "#fbe2e8"
+        ]
+      },
+      "chalk-lilac": {
+        "role": "tertiary",
+        "displayName": "Tiza lila",
+        "canonical": "#cdb0ff",
+        "tonalRamp": [
+          "#251a3d",
+          "#38285c",
+          "#4f3a82",
+          "#6a52aa",
+          "#9a7fd6",
+          "#cdb0ff",
+          "#ddcaff",
+          "#eee4ff"
+        ]
+      },
+      "chalk-lime": {
+        "role": "tertiary",
+        "displayName": "Tiza lima (ok)",
+        "canonical": "#c4ec8c",
+        "tonalRamp": [
+          "#22300f",
+          "#344a17",
+          "#4a6822",
+          "#648c30",
+          "#90bd56",
+          "#c4ec8c",
+          "#d8f3b2",
+          "#ecf9d8"
+        ]
+      },
+      "chalk-red": {
+        "role": "tertiary",
+        "displayName": "Tiza roja",
+        "canonical": "#f08a7e",
+        "tonalRamp": [
+          "#3b1a16",
+          "#5c2922",
+          "#843b31",
+          "#ad5044",
+          "#d26b5e",
+          "#f08a7e",
+          "#f5b0a7",
+          "#fad6d1"
+        ]
+      },
+      "sage": {
+        "role": "tertiary",
+        "displayName": "Salvia (heredado, sin uso en texto)",
+        "canonical": "#8fb7a1",
+        "tonalRamp": [
+          "#1c2a23",
+          "#2c4237",
+          "#3f5b4c",
+          "#557663",
+          "#6f9580",
+          "#8fb7a1",
+          "#b2cfbf",
+          "#d8e8df"
+        ]
+      },
+      "well": {
+        "role": "neutral",
+        "displayName": "Pozo",
+        "canonical": "rgba(0, 0, 0, 0.14)",
+        "tonalRamp": [
+          "rgba(0,0,0,0.04)",
+          "rgba(0,0,0,0.07)",
+          "rgba(0,0,0,0.10)",
+          "rgba(0,0,0,0.14)",
+          "rgba(0,0,0,0.18)",
+          "rgba(0,0,0,0.24)",
+          "rgba(0,0,0,0.32)",
+          "rgba(0,0,0,0.40)"
+        ]
+      },
+      "well-deep": {
+        "role": "neutral",
+        "displayName": "Pozo hondo",
+        "canonical": "rgba(0, 0, 0, 0.18)",
+        "tonalRamp": [
+          "rgba(0,0,0,0.06)",
+          "rgba(0,0,0,0.10)",
+          "rgba(0,0,0,0.14)",
+          "rgba(0,0,0,0.18)",
+          "rgba(0,0,0,0.22)",
+          "rgba(0,0,0,0.28)",
+          "rgba(0,0,0,0.36)",
+          "rgba(0,0,0,0.44)"
+        ]
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Título de lección, temario y portada; con el subrayado SVG amarillo y halo de tiza." },
-      "headline": { "displayName": "Headline", "purpose": "h2 de la prosa con su trazo de tiza de color, secciones del temario, «¡A practicar!» y el título de «Continúa con …»." },
-      "title": { "displayName": "Title", "purpose": "Título del visualizador y del menú «Temario»." },
-      "annotation": { "displayName": "Anotación a mano", "purpose": "Etiquetas de nota, anotaciones, etiqueta de formato, «Continúa con», numerales dibujados; rotada −1.5° a −6°." },
-      "subhead": { "displayName": "Subhead", "purpose": "h3 de la prosa y título del ejercicio." },
-      "lead": { "displayName": "Lead", "purpose": "Párrafo inicial de cada página." },
-      "body": { "displayName": "Body", "purpose": "Lectura, máximo 66ch." },
-      "label": { "displayName": "Rótulo", "purpose": "Rótulos de panel, encabezados de tabla y línea de metadatos; mayúsculas, azul." },
-      "code": { "displayName": "Code", "purpose": "Código en la prosa y bloques vivos; ligaduras apagadas." },
-      "code-panel": { "displayName": "Code (panel)", "purpose": "Código, pila y consola dentro del visualizador y los ejercicios." },
-      "counter": { "displayName": "Contador", "purpose": "«Paso N de M» (azul, número amarillo) y la pastilla «N/M resueltos»." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Título de lección, temario y portada; con el subrayado SVG amarillo y halo de tiza."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "h2 de la prosa con su trazo de tiza de color, secciones del temario, «¡A practicar!» y el título de «Continúa con …»."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Título del visualizador y del menú «Temario»."
+      },
+      "annotation": {
+        "displayName": "Anotación a mano",
+        "purpose": "Etiquetas de nota, anotaciones, etiqueta de formato, «Continúa con», numerales dibujados; rotada −1.5° a −6°."
+      },
+      "subhead": {
+        "displayName": "Subhead",
+        "purpose": "h3 de la prosa y título del ejercicio."
+      },
+      "lead": {
+        "displayName": "Lead",
+        "purpose": "Párrafo inicial de cada página."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Lectura, máximo 66ch."
+      },
+      "label": {
+        "displayName": "Rótulo",
+        "purpose": "Rótulos de panel, encabezados de tabla y línea de metadatos; mayúsculas, azul."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Código en la prosa y bloques vivos; ligaduras apagadas."
+      },
+      "code-panel": {
+        "displayName": "Code (panel)",
+        "purpose": "Código, pila y consola dentro del visualizador y los ejercicios."
+      },
+      "counter": {
+        "displayName": "Contador",
+        "purpose": "«Paso N de M» (azul, número amarillo) y la pastilla «N/M resueltos»."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Campos de texto (el buscador, el filtro del glosario) y controles con texto de lectura."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Notas y textos de apoyo: «Tu progreso», avisos de los ejercicios y explicaciones secundarias."
+      }
     },
     "shadows": [
-      { "name": "board-vignette", "value": "inset 0 0 0 2px rgba(0,0,0,0.4), inset 0 0 90px rgba(0,0,0,0.45)", "purpose": "Viñeta interior del pizarrón principal." },
-      { "name": "practice-board", "value": "inset 0 0 0 2px rgba(236,234,226,0.06), inset 0 0 60px rgba(0,0,0,0.45), 0 10px 26px rgba(0,0,0,0.35)", "purpose": "Pizarrón de práctica enmarcado: viñeta propia y sombra difusa de objeto físico." },
-      { "name": "chalk-halo", "value": "0 0 3px rgba(236,234,226,0.12)", "purpose": "Halo de las cajas de tiza." },
-      { "name": "active-glow", "value": "0 0 5px rgba(247,223,30,0.25)", "purpose": "Marco en la cima de la pila (6px al 40% en el paso actual)." },
-      { "name": "chalk-ring", "value": "0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent)", "purpose": "Paso de reto seleccionado y pregunta actual (3px); el marco del Laboratorio usa lila al 8%." },
-      { "name": "title-chalk", "value": "0 0 3px rgba(236,234,226,0.4), 1px 1px 0 rgba(236,234,226,0.2)", "purpose": "Text-shadow de los títulos display: tiza que deja polvo." },
-      { "name": "ledge", "value": "0 -4px 10px rgba(0,0,0,0.35)", "purpose": "Bandeja de tizas y barra de controles fija en móvil (0 -8px 16px)." }
+      {
+        "name": "board-vignette",
+        "value": "inset 0 0 0 2px rgba(0,0,0,0.4), inset 0 0 90px rgba(0,0,0,0.45)",
+        "purpose": "Viñeta interior del pizarrón principal."
+      },
+      {
+        "name": "practice-board",
+        "value": "inset 0 0 0 2px rgba(236,234,226,0.06), inset 0 0 60px rgba(0,0,0,0.45), 0 10px 26px rgba(0,0,0,0.35)",
+        "purpose": "Pizarrón de práctica enmarcado: viñeta propia y sombra difusa de objeto físico."
+      },
+      {
+        "name": "chalk-halo",
+        "value": "0 0 3px rgba(236,234,226,0.12)",
+        "purpose": "Halo de las cajas de tiza."
+      },
+      {
+        "name": "active-glow",
+        "value": "0 0 5px rgba(247,223,30,0.25)",
+        "purpose": "Marco en la cima de la pila (6px al 40% en el paso actual)."
+      },
+      {
+        "name": "chalk-ring",
+        "value": "0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent)",
+        "purpose": "Paso de reto seleccionado y pregunta actual (3px); el marco del Laboratorio usa lila al 8%."
+      },
+      {
+        "name": "title-chalk",
+        "value": "0 0 3px rgba(236,234,226,0.4), 1px 1px 0 rgba(236,234,226,0.2)",
+        "purpose": "Text-shadow de los títulos display: tiza que deja polvo."
+      },
+      {
+        "name": "ledge",
+        "value": "0 -4px 10px rgba(0,0,0,0.35)",
+        "purpose": "Bandeja de tizas y barra de controles fija en móvil (0 -8px 16px)."
+      }
     ],
     "motion": [
-      { "name": "ease-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Curva de toda transición; exponencial de salida." },
-      { "name": "t-write", "value": "280ms", "purpose": "Escribir: revelado de izquierda a derecha (clip-path) de marcos, subrayado de línea, punto de profundidad." },
-      { "name": "t-erase", "value": "220ms ease-in", "purpose": "Borrar: blur 6px, desplazamiento 14px y fundido de un marco que sale." },
-      { "name": "t-state", "value": "160–180ms", "purpose": "Hover de botones, pasos de reto, nodos y la tarjeta «Continúa con» (se desplaza 4px)." },
-      { "name": "reduced-motion", "value": "1ms", "purpose": "Con prefers-reduced-motion los cambios son instantáneos y el scroll del reto no es suave." }
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Curva de toda transición; exponencial de salida."
+      },
+      {
+        "name": "t-write",
+        "value": "280ms",
+        "purpose": "Escribir: revelado de izquierda a derecha (clip-path) de marcos, subrayado de línea, punto de profundidad."
+      },
+      {
+        "name": "t-erase",
+        "value": "220ms ease-in",
+        "purpose": "Borrar: blur 6px, desplazamiento 14px y fundido de un marco que sale."
+      },
+      {
+        "name": "t-state",
+        "value": "160–180ms",
+        "purpose": "Hover de botones, pasos de reto, nodos y la tarjeta «Continúa con» (se desplaza 4px)."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "1ms",
+        "purpose": "Con prefers-reduced-motion los cambios son instantáneos y el scroll del reto no es suave."
+      }
     ],
     "breakpoints": [
-      { "name": "viz-stack", "value": "560px" },
-      { "name": "board-full", "value": "640px" },
-      { "name": "practice-compact", "value": "720px" },
-      { "name": "sidebar-top", "value": "960px" },
-      { "name": "opening-stack", "value": "1280px" },
-      { "name": "practice-beside", "value": "1400px" }
+      {
+        "name": "viz-stack",
+        "value": "560px"
+      },
+      {
+        "name": "board-full",
+        "value": "640px"
+      },
+      {
+        "name": "practice-compact",
+        "value": "720px"
+      },
+      {
+        "name": "sidebar-top",
+        "value": "960px"
+      },
+      {
+        "name": "opening-stack",
+        "value": "1280px"
+      },
+      {
+        "name": "practice-beside",
+        "value": "1400px"
+      }
     ]
   },
   "components": [
@@ -146,6 +475,22 @@
       "description": "Nodos ovalados de la línea de tiempo: visto azul, actual amarillo.",
       "html": "<ol class=\"ds-linea\"><li><button class=\"visto\">1</button></li><li><button aria-current=\"step\">2</button></li><li><button>3</button></li></ol>",
       "css": ".ds-linea { list-style: none; margin: 0; padding: 0; display: flex; gap: 18px; position: relative; } .ds-linea::before { content: ''; position: absolute; left: 15px; right: 15px; top: 50%; height: 2px; background: repeating-linear-gradient(90deg, rgba(236,234,226,0.15) 0 6px, transparent 6px 10px); } .ds-linea button { position: relative; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; font: 400 0.75rem var(--mono, 'Fira Code', monospace); color: var(--chalk-70, #b8bcb4); background: var(--board, #1b2a23); border: 2px solid rgba(236,234,226,0.15); border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%; cursor: pointer; transition: border-color 160ms cubic-bezier(0.16,1,0.3,1); } .ds-linea button:hover { border-color: var(--chalk-70, #b8bcb4); color: var(--chalk, #eceae2); } .ds-linea button.visto { color: var(--azul, #8fd0f7); border-color: var(--azul, #8fd0f7); } .ds-linea button[aria-current='step'] { color: var(--board-lo, #15211b); background: var(--y, #f7df1e); border-color: var(--y, #f7df1e); font-weight: 600; box-shadow: 0 0 6px rgba(247,223,30,0.4); } .ds-linea button:focus-visible { outline: 2px dashed var(--y, #f7df1e); outline-offset: 3px; }"
+    },
+    {
+      "name": "Buscador de la barra lateral",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Campo de búsqueda en trazo de tiza, con lupa a mano y la tecla /; se vuelve amarillo al enfocarlo. Debajo, resultados con sección, título y extracto.",
+      "html": "<div class=\"ds-buscar\"><label class=\"ds-campo\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10.6 4.4c-3.5 0-6.2 2.8-6.1 6.3.1 3.4 2.9 6 6.3 5.9 3.4-.1 6-2.9 5.9-6.3-.1-3.3-2.8-5.9-6.1-5.9zM15.1 15.3c1.7 1.6 3.3 3.3 4.9 5\"/></svg><input type=\"search\" placeholder=\"Buscar un tema…\"><kbd>/</kbd></label><a class=\"ds-res\" href=\"#\"><span class=\"ds-sec\">4 · Cómo se ejecuta JS por dentro</span><span class=\"ds-tit\">Closures</span><span class=\"ds-ext\">Una función que recuerda las variables del lugar donde nació: el <mark>closure</mark>.</span></a></div>",
+      "css": ".ds-buscar { display: grid; gap: 10px; max-width: 300px; } .ds-campo { display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 2px solid var(--chalk-45, #7f8a82); border-radius: 5px 9px 4px 8px / 8px 4px 9px 5px; background: var(--board-lo, #15211b); color: var(--chalk-70, #b8bcb4); transition: border-color 150ms cubic-bezier(0.16,1,0.3,1); } .ds-campo:hover { border-color: var(--chalk-70, #b8bcb4); } .ds-campo:focus-within { border-color: var(--y, #f7df1e); color: var(--y, #f7df1e); outline: 2px dashed var(--y, #f7df1e); outline-offset: 3px; } .ds-campo svg { width: 18px; height: 18px; flex: none; } .ds-campo input { flex: 1; min-width: 0; padding: 9px 0; border: 0; background: none; outline: none; font: 400 0.95rem/1.2 var(--read, \"Atkinson Hyperlegible\", sans-serif); color: var(--chalk, #eceae2); } .ds-campo input::placeholder { color: var(--chalk-70, #b8bcb4); } .ds-campo kbd { min-width: 20px; padding: 1px 6px; font: 400 0.75rem/1.4 var(--mono, \"Fira Code\", monospace); text-align: center; color: var(--chalk-70, #b8bcb4); border: 1px solid var(--chalk-15, rgba(236,234,226,0.15)); border-radius: 4px; } .ds-campo:focus-within kbd { visibility: hidden; } .ds-res { display: grid; gap: 2px; padding: 8px 10px; text-decoration: none; border-radius: 4px 7px 5px 6px; transition: background 150ms cubic-bezier(0.16,1,0.3,1); } .ds-res:hover, .ds-res:focus-visible { background: rgba(247,223,30,0.06); box-shadow: inset 0 0 0 1px rgba(247,223,30,0.12); } .ds-sec { font: 400 0.68rem/1.3 var(--mono, \"Fira Code\", monospace); letter-spacing: 0.06em; text-transform: uppercase; color: var(--azul, #8fd0f7); } .ds-tit { font: 700 0.92rem/1.3 var(--read, \"Atkinson Hyperlegible\", sans-serif); color: var(--chalk, #eceae2); } .ds-res:hover .ds-tit, .ds-res:focus-visible .ds-tit { color: var(--y, #f7df1e); } .ds-ext { font: 400 0.8rem/1.45 var(--read, \"Atkinson Hyperlegible\", sans-serif); color: var(--chalk-70, #b8bcb4); } .ds-ext mark { background: none; color: var(--y, #f7df1e); font-weight: 700; }"
+    },
+    {
+      "name": "Zonas del event loop",
+      "kind": "custom",
+      "refersTo": "event-loop-zones",
+      "description": "Columna del pizarrón en modo event loop (lecciones y Rayos X): la pila abajo y, encima, una tarjeta por zona con su rótulo en Fira Code.",
+      "html": "<ul class=\"ds-zonas\"><li class=\"ds-z ds-micro\" data-zona=\"microtareas\">seguir preparar()<small>después del await de la línea 7</small></li><li class=\"ds-z ds-tarea\" data-zona=\"cola de tareas\">() =&gt; console.log(\"4. tarea\")<small>espera su turno</small></li><li class=\"ds-z ds-api\" data-zona=\"Web API\">temporizador de 100 ms<small>luego: resolve</small></li><li class=\"ds-z ds-obj\">preparar()<small>en pausa: await de la línea 7</small></li><li class=\"ds-z ds-pila ds-cima\" data-zona=\"pila\">programa principal</li></ul>",
+      "css": ".ds-zonas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-width: 230px; } .ds-z { position: relative; margin-top: 14px; padding: 8px 12px; font: 700 0.9rem/1.3 var(--mono, \"Fira Code\", monospace); color: var(--chalk, #eceae2); border: 2px solid var(--chalk-45, #7f8a82); border-radius: 5px 9px 4px 8px / 8px 4px 9px 5px; } .ds-z small { display: block; margin-top: 3px; font-weight: 400; font-size: 0.72rem; color: var(--chalk, #eceae2); } .ds-z[data-zona]::before { content: attr(data-zona); position: absolute; top: -15px; left: 2px; font: 400 0.62rem/1 var(--mono, \"Fira Code\", monospace); letter-spacing: 0.1em; text-transform: uppercase; color: var(--zona, #7f8a82); } .ds-api { --zona: #ffb36b; color: #ffb36b; border-color: rgba(255,179,107,0.65); } .ds-tarea { --zona: #8fd0f7; color: #8fd0f7; border-style: dashed; border-color: rgba(143,208,247,0.65); } .ds-micro { --zona: #f2a7b8; color: #f2a7b8; border-style: dashed; border-color: rgba(242,167,184,0.65); } .ds-obj { margin-top: 0; margin-left: 18px; color: #cdb0ff; border-style: dashed; border-color: rgba(205,176,255,0.7); background: rgba(205,176,255,0.06); } .ds-pila { --zona: #8fd0f7; } .ds-cima { border-color: var(--y, #f7df1e); background: rgba(247,223,30,0.06); color: var(--y, #f7df1e); box-shadow: 0 0 5px rgba(247,223,30,0.25); }"
     }
   ],
   "narrative": {
@@ -159,17 +504,61 @@
       "Escribir 280ms, borrar 220ms; con reduced-motion todo es instantáneo."
     ],
     "rules": [
-      { "name": "The Yellow Chalk Rule", "body": "El amarillo solo, como único color de un elemento, marca lo que importa ahora: subrayado, línea activa, marco activo, paso actual, acción principal y foco. Como una tiza más en una rotación (subrayados de h2, puntos de la barra de archivo, bandeja) puede decorar.", "section": "colors" },
-      { "name": "The Readable Chalk Rule", "body": "Todo color que escribe texto sobre el pizarrón es una tiza clara: chalk, chalk-70, amarillo, azul, naranja, rosa, lila, lima o rojo. La salvia nunca escribe texto, rótulos, números ni viñetas.", "section": "colors" },
-      { "name": "The One Job Per Chalk Rule", "body": "Cada tiza de color tiene su trabajo: azul rotula, naranja es literal y contado, rosa es la mano del maestro, lila es el Laboratorio, lima es el acierto, rojo es el error. Los colores de formato siguen ese reparto.", "section": "colors" },
-      { "name": "The Red Is Wrong Rule", "body": "El rojo aparece solo cuando algo está mal (error del programa o respuesta del lector). El acierto es lima.", "section": "colors" },
-      { "name": "The Tint Not Paint Rule", "body": "Una tiza de color colorea superficies solo como tinte (7–12%) con un borde al 45%; los rellenos plenos quedan para el estado (paso actual, «Resuelto», pastilla completa, flecha de «Continúa con»).", "section": "colors" },
-      { "name": "The Worn Chalk Rule", "body": "El texto que se lee usa chalk o chalk-70. chalk-45 es para trazos y texto grande, nunca para letra de lectura.", "section": "colors" },
-      { "name": "The Three Hands Rule", "body": "Cabin Sketch solo para títulos, encabezados, anotaciones a mano y numerales dibujados; Atkinson Hyperlegible para lectura y etiquetas de interfaz (incluidos botones); Fira Code solo para código, números de línea, contadores, etiquetas de edición, nombres de archivo y consola. Un botón con texto nunca va en Cabin Sketch.", "section": "typography" },
-      { "name": "The Literal Code Rule", "body": "Todo lo monoespaciado desactiva ligaduras ('liga' 0, 'calt' 0). Quien aprende tiene que ver los caracteres que escribe.", "section": "typography" },
-      { "name": "The Chalk Glows Rule", "body": "Lo escrito brilla un poco (halo o anillo sin desplazamiento). Solo los objetos físicos del aula (la bandeja, el pizarrón de práctica) proyectan sombra, y siempre difusa; ningún botón, tarjeta o nota se levanta del tablero.", "section": "elevation" },
-      { "name": "The Irregular Radius Rule", "body": "Todo trazo de tiza usa un radio de tiza o de nodo. Son regulares solo los objetos que no son tiza: el pizarrón (6px), el marco del pizarrón de práctica (12px), la pastilla «N/M resueltos» (999px), las teclas kbd (4px) y los puntos pequeños (puntos de la barra de archivo, de progreso y de lectura).", "section": "shapes" },
-      { "name": "The Framed Board Rule", "body": "El pizarrón de práctica es un tablero dentro del tablero: marco de 10px en edge, superficie board-lo y bandeja con tizas propia. Dentro de él sí hay cajas de tiza (formato, editor, opciones). Fuera de la práctica, una caja de tiza no contiene otra: la prosa agrupa con espacio, rótulos y rayas.", "section": "shapes" }
+      {
+        "name": "The Yellow Chalk Rule",
+        "body": "El amarillo solo, como único color de un elemento, marca lo que importa ahora: subrayado, línea activa, marco activo, paso actual, acción principal y foco. Como una tiza más en una rotación (subrayados de h2, puntos de la barra de archivo, bandeja) puede decorar.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Chalk Rule",
+        "body": "Todo color que escribe texto sobre el pizarrón es una tiza clara: chalk, chalk-70, amarillo, azul, naranja, rosa, lila, lima o rojo. La salvia nunca escribe texto, rótulos, números ni viñetas.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Job Per Chalk Rule",
+        "body": "Cada tiza de color tiene su trabajo: azul rotula, naranja es literal y contado, rosa es la mano del maestro, lila es el Laboratorio, lima es el acierto, rojo es el error. Los colores de formato siguen ese reparto.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Is Wrong Rule",
+        "body": "El rojo aparece solo cuando algo está mal (error del programa o respuesta del lector). El acierto es lima.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tint Not Paint Rule",
+        "body": "Una tiza de color colorea superficies solo como tinte (7–12%) con un borde al 45%; los rellenos plenos quedan para el estado (paso actual, «Resuelto», pastilla completa, flecha de «Continúa con»).",
+        "section": "colors"
+      },
+      {
+        "name": "The Worn Chalk Rule",
+        "body": "El texto que se lee usa chalk o chalk-70. chalk-45 es para trazos y texto grande, nunca para letra de lectura.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Hands Rule",
+        "body": "Cabin Sketch solo para títulos, encabezados, anotaciones a mano y numerales dibujados; Atkinson Hyperlegible para lectura y etiquetas de interfaz (incluidos botones); Fira Code solo para código, números de línea, contadores, etiquetas de edición, nombres de archivo y consola. Un botón con texto nunca va en Cabin Sketch.",
+        "section": "typography"
+      },
+      {
+        "name": "The Literal Code Rule",
+        "body": "Todo lo monoespaciado desactiva ligaduras (`'liga' 0, 'calt' 0`). Quien aprende tiene que ver los caracteres que escribe.",
+        "section": "typography"
+      },
+      {
+        "name": "The Chalk Glows Rule",
+        "body": "Lo escrito brilla un poco (halo o anillo sin desplazamiento). Solo los objetos físicos del aula (la bandeja, el pizarrón de práctica) proyectan sombra, y siempre difusa; ningún botón, tarjeta o nota se levanta del tablero.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Irregular Radius Rule",
+        "body": "Todo trazo de tiza usa un radio de tiza o de nodo. Son regulares solo los objetos que no son tiza: el pizarrón (6px), el marco del pizarrón de práctica (12px), la pastilla «N/M resueltos» (999px), las teclas `kbd` (4px) y los puntos pequeños (puntos de la barra de archivo, de progreso y de lectura).",
+        "section": "shapes"
+      },
+      {
+        "name": "The Framed Board Rule",
+        "body": "El pizarrón de práctica es un tablero dentro del tablero: marco de 10px en edge, superficie board-lo y bandeja con tizas propia. Dentro de él sí hay cajas de tiza (formato, editor, opciones). Fuera de la práctica, una caja de tiza no contiene otra: la prosa agrupa con espacio, rótulos y rayas.",
+        "section": "shapes"
+      }
     ],
     "dos": [
       "Do mantener el fondo oscuro siempre: tablero #1B2A23 dentro del marco #0F1712.",
@@ -179,11 +568,11 @@
       "Do teñir notas y marcos de color con la tiza al 7–12% y borde al 45%, no con relleno pleno.",
       "Do subrayar con la franja amarilla baja (82–94% de la línea), con el SVG Subrayado bajo los títulos display y con el trazo de tiza rotatorio (amarillo, rosa, azul, naranja) bajo los h2.",
       "Do dibujar bordes con radios de tiza irregulares y trazos de 2px.",
-      "Do convertir los bloques de código de la lección en pizarras de prueba (barra de archivo, Copiar, Ejecutar si imprime, consola $ node ejemplo.js) y ejecutar en un Worker aislado.",
+      "Do convertir los bloques de código de la lección en pizarras de prueba (barra de archivo, Copiar, Ejecutar si imprime, consola `$ node ejemplo.js`) y ejecutar en un Worker aislado.",
       "Do presentar los ejercicios en el pizarrón de práctica, un reto a la vez, con el siguiente bloqueado hasta resolver el actual.",
-      "Do usar iconos de Icono.astro, y el filtro #tiza cuando el icono forma parte de una anotación o dibujo a mano.",
+      "Do usar iconos de Icono.astro, y el filtro `#tiza` cuando el icono forma parte de una anotación o dibujo a mano.",
       "Do animar con la gramática de la tiza: escribir 280ms ease-out (cubic-bezier(0.16, 1, 0.3, 1)), borrar 220ms; instantáneo con prefers-reduced-motion.",
-      "Do describir cada visualizador nuevo como datos en el formato de src/lib/visualizador.ts."
+      "Do describir cada visualizador nuevo como datos en el formato de `src/lib/visualizador.ts`."
     ],
     "donts": [
       "Don't usar fondos claros ni superficies grises neutras de documentación.",

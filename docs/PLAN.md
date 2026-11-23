@@ -290,9 +290,9 @@ Cada lección mezcla los formatos que tienen sentido para su tema:
 | **Sé el motor** | Hace el trabajo del motor: arrastra marcos a la pila y los saca, o mueve tareas a las colas. El sitio valida cada movimiento. Tiene alternativa con teclado. | Apilar y desapilar en orden las llamadas de `a()` → `b()` → `c()` |
 | **Ordena la salida** | Ordena tarjetas con las líneas que imprime la consola | Orden de los `console.log` en funciones anidadas (y en el event loop: síncrono, microtareas, timers) |
 | **Detective** | Recibe un error real con su *stack trace*, toca la línea culpable y luego la corrige | Leer `RangeError: Maximum call stack size exceeded` y encontrar la recursión sin caso base |
-| **Rómpelo** | Al revés que un ejercicio normal: tiene código que funciona y debe modificarlo para provocar un error concreto | Hacer que el código desborde la pila, o dispare un error de TDZ |
+| **Rómpelo** *(descartado)* | Al revés que un ejercicio normal: tiene código que funciona y debe modificarlo para provocar un error concreto | Hacer que el código desborde la pila, o dispare un error de TDZ |
 | **Laboratorio** | Escribe código real en un editor. Los tests son una **lista visible** que se pone en verde mientras escribe (no tests ocultos) | Escribir `cuentaAtras(n)` recursiva, con caso base |
-| **Mira tu solución** | Después de resolver un laboratorio, pasa su propio código por Rayos X y ve su pila y su gráfica, junto a la del ejemplo | Comparar la "montaña" de su recursión con la del ejemplo |
+| **Mira tu solución** *(descartado)* | Después de resolver un laboratorio, pasa su propio código por Rayos X y ve su pila y su gráfica, junto a la del ejemplo | Comparar la "montaña" de su recursión con la del ejemplo |
 
 - **Pistas:** tres niveles que se piden de a uno.
   1. Una pregunta que orienta.
@@ -342,17 +342,17 @@ Cada lección mezcla los formatos que tienen sentido para su tema:
 5. **Lección:** "La pila de llamadas" completa, con sus dos visualizadores y sus ejercicios.
 6. **Portada:** con el visualizador funcionando en la primera pantalla.
 7. **Revisión:** capturas, detector, revisión independiente y `DESIGN.md`.
-8. **Modo Rayos X** (etapa 1 hecha: página `/rayos-x` con pizarrones listos y desafíos; el intérprete está en `src/lib/rayos-x.ts`. Se decidió no poner el botón en cada pizarrón de las lecciones, sino una sección propia de práctica enlazada desde la navegación, la portada y cada Reto del motor):
-   - el intérprete instrumentado, empezando por el subconjunto de JS;
-   - "Mira tu solución";
-   - el formato Rómpelo.
+8. **Modo Rayos X** (hecho: página `/rayos-x` con pizarrones listos y desafíos; el intérprete está en `src/lib/rayos-x.ts`. Se decidió no poner el botón en cada pizarrón de las lecciones, sino una sección propia de práctica enlazada desde la navegación, la portada y cada Reto del motor):
+   - el intérprete instrumentado (etapa 1, hecha: el subconjunto síncrono de JS);
+   - la asincronía (etapa 2, hecha el 22-nov-2026): `setTimeout`, `queueMicrotask`, promesas y `async`/`await` con un event loop simulado. Las sentencias son generadores para que `await` pueda pausar una función. El orden de la consola se comprobó contra Node en 18 programas;
+   - ~~"Mira tu solución"~~ y ~~el formato Rómpelo~~: **descartados** el 22-nov-2026. Los desafíos de Rayos X ya cubren la idea de Rómpelo («desborda la pila», «provoca la zona muerta temporal»).
 9. **Después:**
-   - buscador (Pagefind),
+   - buscador (hecho: Pagefind en la barra lateral, `src/components/Buscador.astro`; el índice se arma con `npm run build`),
    - glosario (hecho: `/glosario`, datos en `src/data/glosario.ts`),
    - páginas de novedades,
    - "Reto del motor" por sección (hecho: `/<sección>/reto-del-motor`, contenido en `src/content/retos/`),
    - despliegue en Cloudflare Pages,
-   - la lección del event loop (Rayos X con colas).
+   - la lección del event loop (Rayos X con colas: hecho en la etapa 2).
 
 ## Notas de verificación
 

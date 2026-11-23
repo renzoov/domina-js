@@ -44,14 +44,7 @@
 
 ## 4. La web en sí (no el contenido)
 
-| Falta | Por qué importa |
-|---|---|
-| **Página 404 propia** (`src/pages/404.astro`) | Hoy, una dirección mal escrita muestra la página genérica de Cloudflare. Una 404 con el pizarrón y enlaces al temario mantiene a la persona en el sitio |
-| **Vista previa al compartir** (Open Graph y Twitter: título, descripción e imagen) | Al pegar un enlace en WhatsApp, Discord o redes no aparece ninguna imagen ni resumen. Una imagen por lección, o una general, ayuda a que el sitio se comparta |
-| **`sitemap.xml`, `robots.txt` y URL canónica** | Para que los buscadores encuentren las 131 páginas. Astro lo resuelve con `@astrojs/sitemap` y la opción `site` |
-| **Exportar e importar el progreso** | El progreso vive solo en `localStorage`. Si alguien cambia de navegador o borra los datos, lo pierde. Un botón «Descargar mi progreso» y «Cargar progreso» (un JSON) lo resuelve sin cuentas |
-| **Buscador** | Ya está en los pendientes (Pagefind) |
-| **Revisión de accesibilidad** del sitio (teclado, lectores de pantalla, contraste de los estados) | Se cuidó al construir, pero nunca se hizo una pasada completa con herramientas |
+**Todo hecho el 2026-11-22:** página 404 propia, vista previa al compartir (Open Graph y Twitter, con `og.jpg`), `sitemap.xml`, `robots.txt` y URL canónica, exportar e importar el progreso («Tu progreso», en el temario), buscador (Pagefind, en la barra lateral) y revisión de accesibilidad con axe (0 fallas en las 132 páginas). El detalle está en el README.
 
 ## 5. Secciones nuevas posibles
 

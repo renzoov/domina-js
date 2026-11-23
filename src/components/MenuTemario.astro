@@ -2,6 +2,7 @@
 // Menú lateral con todo el temario: secciones desplegables y sus temas.
 import { getCollection } from 'astro:content';
 import Icono from './Icono.astro';
+import Buscador from './Buscador.astro';
 import { temario, totalTemas, claveReto, SLUG_RETO, TITULO_RETO } from '../data/temario';
 
 interface Props {
@@ -27,6 +28,7 @@ const retos = new Map((await getCollection('retos')).map((r) => [r.data.seccion,
       <p class="cuenta">{publicados} de {totalTemas} temas publicados</p>
       <p class="progreso" data-progreso hidden></p>
     </div>
+    <Buscador />
     <ol class="secciones">
       {temario.map((s) => {
         const hay = s.temas.filter((t) => disponibles.has(`${s.slug}/${t.slug}`)).length;
@@ -119,7 +121,7 @@ const retos = new Map((await getCollection('retos')).map((r) => [r.data.seccion,
   .abrir { display: none; }
 
   .panel { padding: 0 0 8px; }
-  .cab { padding: 0 0 14px; margin-bottom: 8px; border-bottom: 2px dashed var(--chalk-15); }
+  .cab { padding: 0 0 14px; margin-bottom: 14px; border-bottom: 2px dashed var(--chalk-15); }
   .titulo { margin: 0; font: 700 1.7rem/1 var(--hand); color: var(--chalk); }
   .cuenta, .progreso { margin: 6px 0 0; font-size: 0.85rem; line-height: 1.4; color: var(--chalk-70); }
   .progreso { color: var(--ok); font-weight: 700; }

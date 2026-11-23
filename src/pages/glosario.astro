@@ -51,7 +51,7 @@ for (const e of entradas) grupos.set(e.letra, [...(grupos.get(e.letra) ?? []), e
 const abecedario = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ'.split('');
 ---
 <BaseLayout titulo="Glosario · domina-js" descripcion={`${glosario.length} términos de JavaScript explicados en una o dos frases, con enlaces a la lección donde se ven a fondo.`}>
-  <div class="glosario">
+  <div class="glosario" data-pagefind-body data-pagefind-meta="seccion:Glosario">
     <header class="cab">
       <h1>Glosario</h1>
       <Subrayado ancho={300} />

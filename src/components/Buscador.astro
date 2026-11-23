@@ -1,0 +1,214 @@
+---
+// Buscador del curso, en la barra lateral. Usa el índice que Pagefind arma al compilar (npm run build):
+// busca en las lecciones, los Retos del motor, el glosario y Rayos X, sin servidor.
+// Se dibuja con tiza, como el resto del menú; los resultados aparecen debajo del campo.
+import Icono from './Icono.astro';
+---
+<div class="buscador" role="search" aria-label="Buscar en el curso" data-buscador>
+  <label class="sr-only" for="buscar-q">Buscar en el curso</label>
+  <div class="campo">
+    <Icono nombre="lupa" />
+    <input id="buscar-q" type="search" placeholder="Buscar un tema…" autocomplete="off" spellcheck="false" enterkeyhint="search" aria-controls="buscar-resultados" aria-describedby="buscar-atajo" data-q />
+    <kbd id="buscar-atajo" aria-label="Atajo: tecla barra">/</kbd>
+  </div>
+  <p class="estado" aria-live="polite" data-estado hidden></p>
+  <ol id="buscar-resultados" class="resultados" aria-label="Resultados de la búsqueda" data-resultados hidden></ol>
+</div>
+
+<script>
+  interface Sub { title: string; url: string; excerpt: string }
+  interface Dato { url: string; excerpt: string; meta: { title?: string; seccion?: string }; sub_results?: Sub[] }
+  interface Pagefind {
+    options(o: Record<string, unknown>): Promise<void>;
+    init(): void;
+    debouncedSearch(q: string, o?: Record<string, unknown>, ms?: number): Promise<{ results: { data(): Promise<Dato> }[] } | null>;
+  }
+
+  const MAX = 8;
+  // Las páginas se generan como archivos (tema.html), pero Cloudflare Pages las sirve sin la extensión
+  const limpiar = (url: string) => url.replace(/\.html(?=#|$)/, '').replace(/\/index(?=#|$)/, '/');
+
+  const raiz = document.querySelector<HTMLElement>('[data-buscador]');
+  if (raiz) {
+    const q = raiz.querySelector<HTMLInputElement>('[data-q]')!;
+    const lista = raiz.querySelector<HTMLOListElement>('[data-resultados]')!;
+    const estado = raiz.querySelector<HTMLElement>('[data-estado]')!;
+    let pagefind: Promise<Pagefind | null> | null = null;
+
+    const cargar = () => (pagefind ??= (async () => {
+      try {
+        const url = '/pagefind/pagefind.js';
+        const pf = (await import(/* @vite-ignore */ url)) as Pagefind;
+        await pf.options({ excerptLength: 16 });
+        pf.init();
+        return pf;
+      } catch {
+        return null;
+      }
+    })());
+
+    const avisar = (texto: string) => {
+      estado.textContent = texto;
+      estado.hidden = !texto;
+    };
+    const vaciar = () => {
+      lista.replaceChildren();
+      lista.hidden = true;
+      avisar('');
+    };
+
+    function resultado(d: Dato): HTMLLIElement {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.className = 'res';
+      a.href = limpiar(d.url);
+      if (d.meta.seccion) {
+        const s = document.createElement('span');
+        s.className = 'r-sec';
+        s.textContent = d.meta.seccion;
+        a.append(s);
+      }
+      const t = document.createElement('span');
+      t.className = 'r-tit';
+      t.textContent = d.meta.title ?? limpiar(d.url);
+      const e = document.createElement('span');
+      e.className = 'r-ext';
+      // Pagefind entrega el extracto ya escapado, con <mark> en las coincidencias
+      e.innerHTML = d.excerpt;
+      a.append(t, e);
+      li.append(a);
+      // Hasta dos apartados de la página (títulos con id) donde aparece la búsqueda. Se saltan las letras del
+      // glosario (#letra-A-t) y los títulos de los ejercicios (#…-titulo), que pueden estar ocultos hasta llegar a ellos.
+      const util = (s: Sub) => s.url.includes('#') && s.title && s.title !== d.meta.title && !/#(letra-|[^#]*-titulo$)/.test(s.url);
+      const subs = (d.sub_results ?? []).filter(util).slice(0, 2);
+      if (subs.length) {
+        const ul = document.createElement('ul');
+        ul.className = 'r-subs';
+        for (const s of subs) {
+          const sli = document.createElement('li');
+          const sa = document.createElement('a');
+          sa.href = limpiar(s.url);
+          sa.textContent = s.title;
+          sli.append(sa);
+          ul.append(sli);
+        }
+        li.append(ul);
+      }
+      return li;
+    }
+
+    async function buscar() {
+      const texto = q.value.trim();
+      if (!texto) return vaciar();
+      const pf = await cargar();
+      if (!pf) {
+        lista.hidden = true;
+        return avisar('El buscador se arma al compilar el sitio. Corre npm run build una vez y vuelve a buscar.');
+      }
+      const r = await pf.debouncedSearch(texto, {}, 180);
+      if (!r || q.value.trim() !== texto) return; // llegó otra búsqueda después
+      const datos = await Promise.all(r.results.slice(0, MAX).map((x) => x.data()));
+      if (q.value.trim() !== texto) return;
+      lista.replaceChildren(...datos.map(resultado));
+      lista.hidden = !datos.length;
+      avisar(datos.length
+        ? `${r.results.length === 1 ? '1 resultado' : `${r.results.length} resultados`}${r.results.length > MAX ? `, se ven los ${MAX} mejores` : ''}.`
+        : `Nada con «${texto}». Prueba con otra palabra, o búscala en el glosario.`);
+    }
+
+    q.addEventListener('focus', () => void cargar(), { once: true });
+    q.addEventListener('input', () => void buscar());
+
+    // Teclado: flechas para recorrer los resultados, Escape para limpiar
+    const enlaces = () => Array.from(lista.querySelectorAll<HTMLAnchorElement>('a'));
+    raiz.addEventListener('keydown', (e) => {
+      const todos = enlaces();
+      const i = todos.indexOf(document.activeElement as HTMLAnchorElement);
+      if (e.key === 'ArrowDown' && todos.length) {
+        e.preventDefault();
+        todos[Math.min(i + 1, todos.length - 1)].focus();
+      } else if (e.key === 'ArrowUp' && (i >= 0)) {
+        e.preventDefault();
+        if (i === 0) q.focus();
+        else todos[i - 1].focus();
+      } else if (e.key === 'Escape') {
+        if (q.value) { q.value = ''; vaciar(); }
+        q.focus();
+      }
+    });
+
+    // «/» enfoca el buscador desde cualquier parte, salvo cuando se está escribiendo
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+      const t = e.target as HTMLElement;
+      if (t.closest('input, textarea, select, [contenteditable="true"], .cm-editor')) return;
+      if (!q.offsetParent) return; // el menú está cerrado (teléfono)
+      e.preventDefault();
+      q.focus();
+    });
+  }
+</script>
+
+<style>
+  .buscador { padding: 2px 0 14px; margin-bottom: 8px; border-bottom: 2px dashed var(--chalk-15); }
+  .campo {
+    position: relative;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 10px;
+    border: 2px solid var(--chalk-45);
+    border-radius: var(--r-chalk);
+    background: var(--board-lo);
+    color: var(--chalk-70);
+    transition: border-color 150ms var(--ease-out);
+  }
+  .campo:hover { border-color: var(--chalk-70); }
+  .campo:focus-within { border-color: var(--y); color: var(--y); outline: 2px dashed var(--y); outline-offset: 3px; }
+  .campo :global(svg) { flex: none; width: 18px; height: 18px; }
+  input {
+    flex: 1; min-width: 0;
+    padding: 9px 0;
+    border: 0; background: none; outline: none;
+    font: 400 0.95rem/1.2 var(--read);
+    color: var(--chalk);
+  }
+  input::placeholder { color: var(--chalk-70); }
+  input::-webkit-search-cancel-button { filter: grayscale(1) brightness(1.6); cursor: pointer; }
+  kbd {
+    flex: none;
+    min-width: 20px; padding: 1px 6px;
+    font: 400 0.75rem/1.4 var(--mono);
+    text-align: center;
+    color: var(--chalk-70);
+    border: 1px solid var(--chalk-15);
+    border-radius: 4px;
+  }
+  .campo:focus-within kbd { visibility: hidden; }
+
+  .estado { margin: 8px 2px 0; font-size: 0.8rem; line-height: 1.4; color: var(--chalk-70); }
+
+  .resultados { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 4px; }
+  .resultados :global(.res) {
+    display: grid; gap: 2px;
+    padding: 8px 10px;
+    text-decoration: none;
+    border-radius: 4px 7px 5px 6px;
+    transition: background 150ms var(--ease-out);
+  }
+  .resultados :global(.res:hover), .resultados :global(.res:focus-visible) { background: var(--y-06); box-shadow: inset 0 0 0 1px var(--y-12); }
+  .resultados :global(.r-sec) { font: 400 0.68rem/1.3 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--azul); }
+  .resultados :global(.r-tit) { font-weight: 700; font-size: 0.92rem; line-height: 1.3; color: var(--chalk); }
+  .resultados :global(.res:hover .r-tit), .resultados :global(.res:focus-visible .r-tit) { color: var(--y); }
+  .resultados :global(.r-ext) { font-size: 0.8rem; line-height: 1.45; color: var(--chalk-70); }
+  .resultados :global(.r-ext mark) { background: none; color: var(--y); font-weight: 700; }
+  .resultados :global(.r-subs) { list-style: none; margin: 0 0 4px; padding: 0 0 0 22px; display: grid; gap: 2px; }
+  .resultados :global(.r-subs a) {
+    position: relative; display: flex; align-items: center;
+    min-height: 26px;
+    padding: 2px 8px 2px 14px;
+    font-size: 0.82rem; line-height: 1.35;
+    color: var(--chalk-70); text-decoration: none;
+    border-radius: 4px;
+  }
+  .resultados :global(.r-subs a::before) { content: ''; position: absolute; left: 2px; top: 50%; width: 7px; height: 2px; border-radius: var(--r-trazo); background: var(--chalk-45); transform: rotate(-4deg); }
+  .resultados :global(.r-subs a:hover), .resultados :global(.r-subs a:focus-visible) { color: var(--chalk); background: var(--y-06); }
+</style>

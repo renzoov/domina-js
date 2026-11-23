@@ -1,17 +1,21 @@
 // Rayos X: ejecuta código del lector con un intérprete propio y anota cada paso (pila, variables,
 // consola y explicación) en el mismo formato que los pizarrones escritos a mano (DatosVisualizador).
 //
-// Etapa 1 (prototipo): un subconjunto de JavaScript. Funciones (declaraciones, expresiones y flechas),
-// closures, let/const/var con hoisting y zona muerta temporal, if, switch, for, while, for…of,
-// break/continue, try/catch/throw, arrays, objetos, plantillas y console.log. Lo que no está soportado
-// se informa con su nombre y su línea, en lugar de fallar en silencio.
+// Etapa 1: un subconjunto de JavaScript. Funciones (declaraciones, expresiones y flechas), closures,
+// let/const/var con hoisting y zona muerta temporal, if, switch, for, while, for…of, break/continue,
+// try/catch/throw, arrays, objetos, plantillas y console.log.
+// Etapa 2: asincronía. setTimeout, queueMicrotask, promesas (new Promise, then/catch/finally,
+// Promise.resolve/reject/all/race/allSettled) y async/await, con un event loop simulado: la pila,
+// los temporizadores del runtime, la cola de tareas y la de microtareas se dibujan en el pizarrón.
+// Lo que no está soportado se informa con su nombre y su línea, en lugar de fallar en silencio.
 //
-// No usa eval: recorre el árbol de Acorn. Corta a los MAX_PASOS pasos y a las MAX_OPERACIONES
-// operaciones, así un bucle infinito no congela la página.
+// No usa eval: recorre el árbol de Acorn. Las sentencias y expresiones son generadores: así un `await`
+// puede pausar la función a la mitad y el event loop la retoma después. Corta a los MAX_PASOS pasos y a
+// las MAX_OPERACIONES operaciones, así un bucle infinito no congela la página.
 import { parse } from 'acorn';
 import type { DatosVisualizador, Marco, Paso, Evento } from './visualizador';
 
-const MAX_PASOS = 300;
+const MAX_PASOS = 400;
 const MAX_OPERACIONES = 200_000;
 const MAX_PROFUNDIDAD = 12;
 // Con más marcos que esto, los del medio se juntan en uno («… 4 llamadas más»)
@@ -34,6 +38,12 @@ class Sigue { etiqueta?: string; constructor(etiqueta?: string) { this.etiqueta 
 class Lanzado { valor: unknown; linea: number; constructor(valor: unknown, linea: number) { this.valor = valor; this.linea = linea; } }
 class NoSoportado extends Error {}
 class Detenido extends Error {}
+const esControl = (e: unknown) => e instanceof Retorno || e instanceof Corte || e instanceof Sigue || e instanceof Detenido || e instanceof NoSoportado;
+const valorDe = (e: unknown) => (e instanceof Lanzado ? e.valor : e);
+
+/** Lo que entrega un generador al llegar a un `await`: el valor que espera y su línea */
+interface Espera { valor: unknown; linea: number }
+type G<T = unknown> = Generator<Espera, T, unknown>;
 
 // ── Variables y scopes ───────────────────────────────────────────────────────
 interface Variable { valor: unknown; tipo: 'let' | 'const' | 'var' | 'param' | 'function'; lista: boolean }
@@ -52,22 +62,60 @@ class Funcion {
   nodo: Nodo;
   scope: Scope;
   esFlecha: boolean;
+  esAsync: boolean;
   thisLexico: unknown;
   constructor(nombre: string, nodo: Nodo, scope: Scope, esFlecha: boolean, thisLexico: unknown) {
     this.nombre = nombre;
     this.nodo = nodo;
     this.scope = scope;
     this.esFlecha = esFlecha;
+    this.esAsync = !!nodo.async;
     this.thisLexico = thisLexico;
   }
 }
 
-interface Marco_ { etiqueta: string; scope: Scope; lineaLlamada: number }
+/** Una función del entorno que implementa Rayos X (setTimeout, resolve, then…): recibe los argumentos tal cual y la línea */
+class Nativa {
+  nombre: string;
+  fn: (args: unknown[], thisValor: unknown, linea: number) => unknown;
+  constructor(nombre: string, fn: (args: unknown[], thisValor: unknown, linea: number) => unknown) { this.nombre = nombre; this.fn = fn; }
+}
+
+// ── Promesas ─────────────────────────────────────────────────────────────────
+type Estado = 'pendiente' | 'cumplida' | 'rechazada';
+interface Reaccion {
+  /** Rótulo de la microtarea según cómo terminó la promesa */
+  etiqueta: (estado: Estado) => string;
+  nota: string;
+  alCumplir: (v: unknown) => void;
+  alRechazar: (v: unknown) => void;
+}
+class Promesa {
+  estado: Estado = 'pendiente';
+  valor: unknown = undefined;
+  /** Ya se llamó a resolve o reject (puede seguir pendiente si adoptó otra promesa) */
+  bloqueada = false;
+  /** Alguien la espera con then, catch o await */
+  manejada = false;
+  avisada = false;
+  reacciones: Reaccion[] = [];
+}
+
+interface Marco_ { etiqueta: string; scope: Scope; lineaLlamada: number; principal?: boolean }
+interface Trabajo { etiqueta: string; nota: string; correr: () => void }
+interface Temporizador { id: number; cuando: number; orden: number; ms: number; linea: number; trabajo: Trabajo }
+interface Pausada { etiqueta: string; linea: number }
+interface Proceso { gen: G; marco: Marco_; promesa: Promesa; scopeEnPausa: Scope }
 
 // ── Mostrar valores como los mostraría la consola ─────────────────────────────
 function mostrar(v: unknown, anidado = false, prof = 0): string {
   if (typeof v === 'string') return anidado ? `"${v}"` : v;
   if (v instanceof Funcion) return v.nombre ? `[Function: ${v.nombre}]` : '[Function (anónima)]';
+  if (v instanceof Nativa) return `[Function: ${v.nombre || 'nativa'}]`;
+  if (v instanceof Promesa) {
+    if (v.estado === 'pendiente') return 'Promise { <pending> }';
+    return `Promise { ${v.estado === 'rechazada' ? '<rejected> ' : ''}${mostrar(v.valor, true, prof + 1)} }`;
+  }
   if (typeof v === 'function') return `[Function: ${v.name || 'nativa'}]`;
   if (typeof v === 'bigint') return `${v}n`;
   if (typeof v === 'symbol') return v.toString();
@@ -88,15 +136,17 @@ function corto(v: unknown): string {
 }
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const cod = (s: string) => `<code>${esc(s.length > 48 ? s.slice(0, 47) + '…' : s)}</code>`;
+const textoError = (v: unknown) => (v instanceof Error ? `${v.name}: ${v.message}` : mostrar(v, true));
 
 // Nombres amables de lo que todavía no se soporta
 const NOMBRES: Record<string, string> = {
   ClassDeclaration: 'las clases (<code>class</code>)', ClassExpression: 'las clases (<code>class</code>)',
-  AwaitExpression: '<code>await</code>', YieldExpression: 'los generadores (<code>yield</code>)',
+  YieldExpression: 'los generadores (<code>yield</code>)',
   ImportDeclaration: '<code>import</code>', ExportNamedDeclaration: '<code>export</code>', ExportDefaultDeclaration: '<code>export</code>',
   ObjectPattern: 'la desestructuración', ArrayPattern: 'la desestructuración', NewExpression: '<code>new</code>',
   ForInStatement: '<code>for…in</code>', DoWhileStatement: '<code>do…while</code>', LabeledStatement: 'las etiquetas',
   TaggedTemplateExpression: 'los template tags', ThisExpression: '<code>this</code> fuera de un método',
+  ForAwaitStatement: '<code>for await…of</code>',
 };
 
 // Funciones y objetos del entorno que se pueden usar
@@ -105,6 +155,27 @@ const GLOBALES: Record<string, unknown> = {
   Infinity, NaN, undefined, Map, Set, Error, TypeError, RangeError, ReferenceError, Symbol,
 };
 const CONSTRUCTORES = new Set<unknown>([Map, Set, Error, TypeError, RangeError, ReferenceError, Array, Object]);
+const ASINCRONOS = new Set(['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'queueMicrotask', 'Promise']);
+
+/** ¿El código usa algo asíncrono? Entonces el pizarrón muestra el modo event loop (pila, runtime y colas) */
+function usaAsincronia(n: Nodo): boolean {
+  if (!n || typeof n !== 'object') return false;
+  if (n.type === 'AwaitExpression' || n.async === true) return true;
+  if (n.type === 'Identifier' && ASINCRONOS.has(n.name)) return true;
+  for (const k of Object.keys(n)) {
+    if (k === 'loc') continue;
+    const v = n[k];
+    if (Array.isArray(v) ? v.some(usaAsincronia) : v && typeof v.type === 'string' && usaAsincronia(v)) return true;
+  }
+  return false;
+}
+
+/** Corre un generador que no puede pausarse (el cuerpo de una función que no es async) */
+function correrSync<T>(g: G<T>): T {
+  const r = g.next();
+  if (!r.done) throw new NoSoportado('Rayos X encontró un <code>await</code> fuera de una función <code>async</code>.');
+  return r.value;
+}
 
 export function radiografiar(codigo: string): ResultadoRayosX {
   let programa: Nodo;
@@ -115,6 +186,7 @@ export function radiografiar(codigo: string): ResultadoRayosX {
     return { error: `El código tiene un error de sintaxis${m.loc ? ` en la línea ${m.loc.line}` : ''}: ${esc(m.message.replace(/\s*\(\d+:\d+\)$/, ''))}.` };
   }
 
+  const modoAsync = usaAsincronia(programa);
   const pasos: Paso[] = [];
   const consola: string[] = [];
   const marcos: Marco_[] = [];
@@ -127,13 +199,37 @@ export function radiografiar(codigo: string): ResultadoRayosX {
   const fuente = (n: Nodo) => codigo.slice(n.start, n.end);
   const linea = (n: Nodo) => n.loc.start.line as number;
 
+  // ── Event loop ─────────────────────────────────────────────────────────────
+  const microtareas: Trabajo[] = [];
+  const tareas: Trabajo[] = [];
+  const temporizadores: Temporizador[] = [];
+  const pausadas: Pausada[] = [];
+  const sinManejar = new Set<Promesa>();
+  let reloj = 0;
+  let ultimoTemporizador = 0;
+  const MOTIVO_MICRO = 'La pila está vacía: el event loop toma la primera <b>microtarea</b> de la cola. ';
+  const MOTIVO_TAREA = 'Pila vacía y sin microtareas: el event loop toma la primera <b>tarea</b> de la cola. ';
+
+  /** Cómo se ve una función en una cola: su nombre o un pedazo de su código */
+  function etiquetaFn(f: unknown): string {
+    if (f instanceof Funcion) {
+      if (f.nombre) return `${f.nombre}()`;
+      const t = fuente(f.nodo).replace(/\s+/g, ' ');
+      return t.length > 30 ? t.slice(0, 29) + '…' : t;
+    }
+    if (f instanceof Nativa) return f.nombre;
+    return String(f);
+  }
+
   // ── Pasos ──────────────────────────────────────────────────────────────────
   function variablesDe(m: Marco_, scopeActual: Scope): string {
     const partes: string[] = [];
     const vistos = new Set<string>();
+    const oculta = (s: Scope, nombre: string, v: Variable) =>
+      vistos.has(nombre) || !v.lista || nombre === 'this' || v.tipo === 'function' || v.valor instanceof Funcion || v.valor instanceof Nativa || (s === global && nativos.has(nombre));
     for (let s: Scope | null = scopeActual; s; s = s.padre) {
       for (const [nombre, v] of s.vars) {
-        if (vistos.has(nombre) || !v.lista || v.tipo === 'function' || v.valor instanceof Funcion) continue;
+        if (oculta(s, nombre, v)) continue;
         vistos.add(nombre);
         partes.push(`${nombre} = ${corto(v.valor)}`);
       }
@@ -143,7 +239,7 @@ export function radiografiar(codigo: string): ResultadoRayosX {
     const recordadas: string[] = [];
     for (let s: Scope | null = m.scope.padre; s && s !== global; s = s.padre) {
       for (const [nombre, v] of s.vars) {
-        if (vistos.has(nombre) || !v.lista || nombre === 'this' || v.tipo === 'function' || v.valor instanceof Funcion) continue;
+        if (oculta(s, nombre, v)) continue;
         vistos.add(nombre);
         recordadas.push(`${nombre} = ${corto(v.valor)} (recordada)`);
       }
@@ -152,20 +248,37 @@ export function radiografiar(codigo: string): ResultadoRayosX {
   }
   let scopeEnCurso: Scope = global;
   function pila(): Marco[] {
+    const conZona = modoAsync ? { tipo: 'pila' as const } : {};
     const todos: Marco[] = marcos.map((m, i) => {
       const arriba = i === marcos.length - 1;
       const nota = arriba ? variablesDe(m, scopeEnCurso) : `esperando en la línea ${marcos[i + 1].lineaLlamada}`;
-      return { nombre: m.etiqueta, ...(nota ? { nota } : {}) };
+      return { nombre: m.etiqueta, ...(nota ? { nota } : {}), ...conZona };
     });
-    if (todos.length <= MAX_VISIBLES) return todos;
-    const ocultos = todos.length - (MAX_VISIBLES - 1);
-    return [todos[0], { nombre: `… ${ocultos} llamadas más`, nota: 'todas esperando' }, ...todos.slice(ocultos + 1)];
+    let visibles = todos;
+    if (todos.length > MAX_VISIBLES) {
+      const ocultos = todos.length - (MAX_VISIBLES - 1);
+      visibles = [todos[0], { nombre: `… ${ocultos} llamadas más`, nota: 'todas esperando', ...conZona }, ...todos.slice(ocultos + 1)];
+    }
+    if (!modoAsync) return visibles;
+    // Modo event loop: debajo de la pila, lo que espera fuera de ella
+    const tarjetas: Marco[] = [
+      ...pausadas.map((p): Marco => ({ nombre: p.etiqueta, nota: `en pausa: await de la línea ${p.linea}`, tipo: 'objeto' })),
+      ...[...temporizadores].sort((a, b) => a.cuando - b.cuando || a.orden - b.orden).map((t): Marco => ({ nombre: `temporizador de ${t.ms} ms`, nota: `luego: ${t.trabajo.etiqueta}`, tipo: 'api' })),
+      ...tareas.map((t): Marco => ({ nombre: t.etiqueta, nota: t.nota, tipo: 'tarea' })),
+      ...microtareas.map((t): Marco => ({ nombre: t.etiqueta, nota: t.nota, tipo: 'micro' })),
+    ];
+    const todo = [...visibles, ...tarjetas];
+    // Lo que se destaca: la cima de la pila o, si está vacía, lo próximo que va a entrar
+    const k = visibles.length ? visibles.length - 1 : [todo.findIndex((m) => m.tipo === 'micro'), todo.findIndex((m) => m.tipo === 'tarea')].find((i) => i >= 0) ?? -1;
+    if (k >= 0) todo[k] = { ...todo[k], destacar: true };
+    return todo;
   }
   function paso(lineas: number[], evento: Evento, texto: string, anotacion?: string) {
     if (pasos.length >= MAX_PASOS) throw new Detenido();
+    const espera = marcos.slice(1).map((m) => m.lineaLlamada).filter((l) => l > 0);
     pasos.push({
       lineas,
-      ...(marcos.length > 1 ? { espera: marcos.slice(1).map((m) => m.lineaLlamada) } : {}),
+      ...(espera.length ? { espera } : {}),
       pila: pila(),
       consola: [...consola],
       texto,
@@ -180,8 +293,10 @@ export function radiografiar(codigo: string): ResultadoRayosX {
   // ── Declaraciones y hoisting ──────────────────────────────────────────────
   function elevar(cuerpo: Nodo[], scope: Scope, funcionScope: Scope) {
     for (const s of cuerpo) {
-      if (s.type === 'FunctionDeclaration') scope.vars.set(s.id.name, { valor: new Funcion(s.id.name, s, scope, false, undefined), tipo: 'function', lista: true });
-      else if (s.type === 'VariableDeclaration') {
+      if (s.type === 'FunctionDeclaration') {
+        if (s.generator) throw noSoportado({ ...s, type: 'YieldExpression' });
+        scope.vars.set(s.id.name, { valor: new Funcion(s.id.name, s, scope, false, undefined), tipo: 'function', lista: true });
+      } else if (s.type === 'VariableDeclaration') {
         for (const d of s.declarations) {
           if (d.id.type !== 'Identifier') throw noSoportado(d.id);
           if (s.kind === 'var') { if (!funcionScope.vars.has(d.id.name)) funcionScope.vars.set(d.id.name, { valor: undefined, tipo: 'var', lista: true }); }
@@ -201,21 +316,21 @@ export function radiografiar(codigo: string): ResultadoRayosX {
 
   function noSoportado(n: Nodo) {
     const nombre = NOMBRES[n.type] ?? `<code>${n.type}</code>`;
-    return new NoSoportado(`Rayos X todavía no sabe mostrar ${nombre} (línea ${linea(n)}). Por ahora entiende funciones, variables, condicionales, bucles, arrays, objetos y <code>console.log</code>.`);
+    return new NoSoportado(`Rayos X todavía no sabe mostrar ${nombre} (línea ${linea(n)}). Por ahora entiende funciones, variables, condicionales, bucles, arrays, objetos, <code>console.log</code>, <code>setTimeout</code>, promesas y <code>async</code>/<code>await</code>.`);
   }
 
   // ── Sentencias ────────────────────────────────────────────────────────────
-  function ejecutarBloque(cuerpo: Nodo[], scope: Scope) {
+  function* ejecutarBloque(cuerpo: Nodo[], scope: Scope): G<void> {
     const antes = scopeEnCurso;
     scopeEnCurso = scope;
     try {
-      for (const s of cuerpo) sentencia(s, scope);
+      for (const s of cuerpo) yield* sentencia(s, scope);
     } finally {
       scopeEnCurso = antes;
     }
   }
 
-  function sentencia(s: Nodo, scope: Scope, etiqueta?: string): void {
+  function* sentencia(s: Nodo, scope: Scope, etiqueta?: string): G<void> {
     contar();
     scopeEnCurso = scope;
     lineaActual = linea(s);
@@ -225,7 +340,7 @@ export function radiografiar(codigo: string): ResultadoRayosX {
         return;
       case 'VariableDeclaration': {
         for (const d of s.declarations) {
-          const valor = d.init ? evaluar(d.init, scope) : undefined;
+          const valor = d.init ? yield* evaluar(d.init, scope) : undefined;
           const destino = s.kind === 'var' ? scope.buscar(d.id.name)! : scope.vars.get(d.id.name)!;
           destino.valor = nombrar(valor, d.id.name);
           destino.lista = true;
@@ -239,35 +354,36 @@ export function radiografiar(codigo: string): ResultadoRayosX {
         const e = s.expression;
         const esLog = e.type === 'CallExpression' && e.callee.type === 'MemberExpression' && e.callee.object.name === 'console';
         const antes = consola.length;
-        const valor = evaluar(e, scope);
+        const valor = yield* evaluar(e, scope);
         if (esLog && consola.length > antes) paso([linea(s)], 'imprime', `${cod(fuente(e.callee))} imprime ${cod(consola.at(-1)!)} en la consola.`);
         else if (e.type === 'AssignmentExpression' || e.type === 'UpdateExpression') paso([linea(s)], 'ejecuta', `${cod(fuente(e))}: ahora ${cod(fuente(e.type === 'UpdateExpression' ? e.argument : e.left))} vale ${cod(corto(evaluarSinPasos(e.type === 'UpdateExpression' ? e.argument : e.left, scope)))}.`);
+        else if (e.type === 'AwaitExpression') paso([linea(s)], 'ejecuta', `El ${cod('await')} terminó: ${cod(fuente(e.argument))} dio ${cod(corto(valor))}.`);
         else if (e.type !== 'CallExpression') paso([linea(s)], 'ejecuta', `Se evalúa ${cod(fuente(e))}: da ${cod(corto(valor))}.`);
         return;
       }
       case 'ReturnStatement': {
-        const valor = s.argument ? evaluar(s.argument, scope) : undefined;
+        const valor = s.argument ? yield* evaluar(s.argument, scope) : undefined;
         paso([linea(s)], 'ejecuta', s.argument ? `${cod('return')} devuelve ${cod(corto(valor))}.` : `${cod('return')} sin valor: la función devuelve ${cod('undefined')}.`);
         throw new Retorno(valor);
       }
       case 'IfStatement': {
-        const v = evaluar(s.test, scope);
+        const v = yield* evaluar(s.test, scope);
         paso([linea(s)], 'ejecuta', `La condición ${cod(fuente(s.test))} da ${cod(corto(v))}: ${v ? 'entra al <code>if</code>.' : s.alternate ? 'va al <code>else</code>.' : 'se salta el bloque.'}`);
-        if (v) sentencia(s.consequent, scope);
-        else if (s.alternate) sentencia(s.alternate, scope);
+        if (v) yield* sentencia(s.consequent, scope);
+        else if (s.alternate) yield* sentencia(s.alternate, scope);
         return;
       }
       case 'BlockStatement': {
         const bloque = new Scope(scope);
         elevar(s.body, bloque, funcionDe(scope));
-        ejecutarBloque(s.body, bloque);
+        yield* ejecutarBloque(s.body, bloque);
         return;
       }
       case 'ForStatement': {
         const sc = new Scope(scope);
         if (s.init) {
-          if (s.init.type === 'VariableDeclaration') { elevar([s.init], sc, funcionDe(scope)); sentencia(s.init, sc); }
-          else evaluar(s.init, sc);
+          if (s.init.type === 'VariableDeclaration') { elevar([s.init], sc, funcionDe(scope)); yield* sentencia(s.init, sc); }
+          else yield* evaluar(s.init, sc);
         }
         // let en el for: cada vuelta tiene su propia copia de la variable (por eso los closures ven 0, 1, 2).
         // Como en la especificación: se copia antes de la primera vuelta y antes de cada actualización.
@@ -276,30 +392,31 @@ export function radiografiar(codigo: string): ResultadoRayosX {
         for (;;) {
           contar();
           if (s.test) {
-            const v = evaluar(s.test, vuelta);
+            const v = yield* evaluar(s.test, vuelta);
             paso([linea(s)], 'ejecuta', `Condición del <code>for</code>: ${cod(fuente(s.test))} da ${cod(corto(v))}${v ? '.' : ': el bucle termina.'}`);
             if (!v) break;
           }
-          try { sentencia(s.body, vuelta); }
+          try { yield* sentencia(s.body, vuelta); }
           catch (e) { if (e instanceof Corte && (!e.etiqueta || e.etiqueta === etiqueta)) break; if (!(e instanceof Sigue && (!e.etiqueta || e.etiqueta === etiqueta))) throw e; }
           vuelta = copiar(vuelta);
-          if (s.update) evaluar(s.update, vuelta);
+          if (s.update) yield* evaluar(s.update, vuelta);
         }
         return;
       }
       case 'WhileStatement': {
         for (;;) {
           contar();
-          const v = evaluar(s.test, scope);
+          const v = yield* evaluar(s.test, scope);
           paso([linea(s)], 'ejecuta', `Condición del <code>while</code>: ${cod(fuente(s.test))} da ${cod(corto(v))}${v ? '.' : ': el bucle termina.'}`);
           if (!v) break;
-          try { sentencia(s.body, scope); }
+          try { yield* sentencia(s.body, scope); }
           catch (e) { if (e instanceof Corte && (!e.etiqueta || e.etiqueta === etiqueta)) break; if (!(e instanceof Sigue && (!e.etiqueta || e.etiqueta === etiqueta))) throw e; }
         }
         return;
       }
       case 'ForOfStatement': {
-        const iterable = evaluar(s.right, scope) as Iterable<unknown>;
+        if (s.await) throw noSoportado({ ...s, type: 'ForAwaitStatement' });
+        const iterable = (yield* evaluar(s.right, scope)) as Iterable<unknown>;
         if (iterable == null || typeof (iterable as { [Symbol.iterator]?: unknown })[Symbol.iterator] !== 'function') throw new TypeError(`${fuente(s.right)} is not iterable`);
         const decl = s.left;
         if (decl.type !== 'VariableDeclaration' || decl.declarations[0].id.type !== 'Identifier') throw noSoportado(decl.type === 'VariableDeclaration' ? decl.declarations[0].id : decl);
@@ -310,7 +427,7 @@ export function radiografiar(codigo: string): ResultadoRayosX {
           vuelta.vars.set(nombre, { valor, tipo: decl.kind, lista: true });
           scopeEnCurso = vuelta;
           paso([linea(s)], 'ejecuta', `Vuelta del <code>for…of</code>: ${cod(nombre)} = ${cod(corto(valor))}.`);
-          try { sentencia(s.body, vuelta); }
+          try { yield* sentencia(s.body, vuelta); }
           catch (e) { if (e instanceof Corte && (!e.etiqueta || e.etiqueta === etiqueta)) break; if (!(e instanceof Sigue && (!e.etiqueta || e.etiqueta === etiqueta))) throw e; }
         }
         return;
@@ -322,30 +439,32 @@ export function radiografiar(codigo: string): ResultadoRayosX {
         paso([linea(s)], 'ejecuta', `${cod('continue')}: salta a la siguiente vuelta.`);
         throw new Sigue(s.label?.name);
       case 'SwitchStatement': {
-        const v = evaluar(s.discriminant, scope);
+        const v = yield* evaluar(s.discriminant, scope);
         const bloque = new Scope(scope);
-        let entro = false;
-        const k = s.cases.findIndex((c: Nodo) => c.test && evaluar(c.test, scope) === v);
+        let k = -1;
+        for (let i = 0; i < s.cases.length; i++) {
+          const c = s.cases[i];
+          if (c.test && (yield* evaluar(c.test, scope)) === v) { k = i; break; }
+        }
         const desde = k >= 0 ? k : s.cases.findIndex((c: Nodo) => !c.test);
         paso([linea(s)], 'ejecuta', desde >= 0 ? `${cod(`switch (${fuente(s.discriminant)})`)} vale ${cod(corto(v))}: salta a ${s.cases[desde].test ? cod(`case ${fuente(s.cases[desde].test)}`) : cod('default')}.` : `Ningún ${cod('case')} coincide con ${cod(corto(v))}.`);
         if (desde < 0) return;
         try {
-          for (const c of s.cases.slice(desde)) { entro = true; elevar(c.consequent, bloque, funcionDe(scope)); ejecutarBloque(c.consequent, bloque); }
+          for (const c of s.cases.slice(desde)) { elevar(c.consequent, bloque, funcionDe(scope)); yield* ejecutarBloque(c.consequent, bloque); }
         } catch (e) { if (!(e instanceof Corte && !e.etiqueta)) throw e; }
-        void entro;
         return;
       }
       case 'ThrowStatement': {
-        const v = evaluar(s.argument, scope);
+        const v = yield* evaluar(s.argument, scope);
         paso([linea(s)], 'error', `${cod('throw')} lanza ${cod(corto(v))}. Busca un <code>catch</code> que lo atrape.`);
         throw new Lanzado(v, linea(s));
       }
       case 'TryStatement': {
         try {
-          sentencia(s.block, scope);
+          yield* sentencia(s.block, scope);
         } catch (e) {
-          if (!s.handler || e instanceof Retorno || e instanceof Corte || e instanceof Sigue || e instanceof Detenido || e instanceof NoSoportado) throw e;
-          const valor = e instanceof Lanzado ? e.valor : e;
+          if (!s.handler || esControl(e)) throw e;
+          const valor = valorDe(e);
           fotoError = null;
           const sc = new Scope(scope);
           if (s.handler.param) {
@@ -354,14 +473,14 @@ export function radiografiar(codigo: string): ResultadoRayosX {
           }
           scopeEnCurso = sc;
           paso([linea(s.handler)], 'ejecuta', `El <code>catch</code> atrapa el error: ${cod(corto(valor))}.`);
-          sentencia(s.handler.body, sc);
+          yield* sentencia(s.handler.body, sc);
         } finally {
-          if (s.finalizer) { paso([linea(s.finalizer)], 'ejecuta', 'El <code>finally</code> se ejecuta siempre.'); sentencia(s.finalizer, scope); }
+          if (s.finalizer) { paso([linea(s.finalizer)], 'ejecuta', 'El <code>finally</code> se ejecuta siempre.'); yield* sentencia(s.finalizer, scope); }
         }
         return;
       }
       case 'LabeledStatement':
-        return sentencia(s.body, scope, s.label.name);
+        return yield* sentencia(s.body, scope, s.label.name);
       default:
         throw noSoportado(s);
     }
@@ -371,58 +490,367 @@ export function radiografiar(codigo: string): ResultadoRayosX {
   const nombrar = (v: unknown, nombre: string) => { if (v instanceof Funcion && !v.nombre) v.nombre = nombre; return v; };
 
   // ── Llamadas ──────────────────────────────────────────────────────────────
-  function llamar(f: Funcion, args: unknown[], thisValor: unknown, lineaLlamada: number): unknown {
-    if (marcos.length >= MAX_PROFUNDIDAD) throw new RangeError('Maximum call stack size exceeded');
+  /** El cuerpo de una función como generador: devuelve su valor de retorno */
+  function* cuerpo(f: Funcion, sc: Scope): G {
+    const nodo = f.nodo;
+    if (nodo.expression) {
+      const valor = yield* evaluar(nodo.body, sc);
+      paso([linea(nodo.body)], 'ejecuta', `La flecha devuelve ${cod(corto(valor))}.`);
+      return valor;
+    }
+    elevar(nodo.body.body, sc, sc);
+    try {
+      yield* ejecutarBloque(nodo.body.body, sc);
+    } catch (e) {
+      if (e instanceof Retorno) return e.valor;
+      throw e;
+    }
+    return undefined;
+  }
+
+  interface OpcionesLlamada { motivo?: string; anonima?: string }
+  function llamar(f: Funcion, args: unknown[], thisValor: unknown, lineaLlamada: number, op: OpcionesLlamada = {}): unknown {
+    if (marcos.filter((m) => !m.principal).length >= MAX_PROFUNDIDAD) throw new RangeError('Maximum call stack size exceeded');
     const nodo = f.nodo;
     const sc = new Scope(f.scope, true);
     sc.vars.set('this', { valor: f.esFlecha ? f.thisLexico : thisValor, tipo: 'const', lista: false });
     nodo.params.forEach((p: Nodo, i: number) => {
       if (p.type === 'Identifier') sc.vars.set(p.name, { valor: args[i], tipo: 'param', lista: true });
-      else if (p.type === 'AssignmentPattern' && p.left.type === 'Identifier') sc.vars.set(p.left.name, { valor: args[i] === undefined ? evaluar(p.right, sc) : args[i], tipo: 'param', lista: true });
+      else if (p.type === 'AssignmentPattern' && p.left.type === 'Identifier') sc.vars.set(p.left.name, { valor: args[i] === undefined ? correrSync(evaluar(p.right, sc)) : args[i], tipo: 'param', lista: true });
       else if (p.type === 'RestElement' && p.argument.type === 'Identifier') sc.vars.set(p.argument.name, { valor: args.slice(i), tipo: 'param', lista: true });
       else throw noSoportado(p);
     });
-    const etiqueta = `${f.nombre || 'anónima'}(${args.map((a) => corto(a)).join(', ')})`;
-    const marco: Marco_ = { etiqueta: etiqueta.length > 30 ? `${f.nombre || 'anónima'}(…)` : etiqueta, scope: sc, lineaLlamada };
+    const nombre = f.nombre || op.anonima || 'anónima';
+    const etiqueta = `${nombre}(${args.map((a) => corto(a)).join(', ')})`;
+    const marco: Marco_ = { etiqueta: etiqueta.length > 30 ? `${nombre}(…)` : etiqueta, scope: sc, lineaLlamada };
     marcos.push(marco);
     const antes = scopeEnCurso;
     scopeEnCurso = sc;
     const params = variablesDe(marco, sc);
-    paso([linea(nodo)], 'entra', `${cod(marco.etiqueta)} entra a la pila${params ? ` con ${cod(params)}` : ''}. El motor ejecuta su cuerpo.`, 'entra');
+    paso([linea(nodo)], 'entra', `${op.motivo ?? ''}${cod(marco.etiqueta)} entra a la pila${params ? ` con ${cod(params)}` : ''}. ${f.esAsync ? 'Es <code>async</code>: corre como cualquier función hasta su primer <code>await</code>.' : 'El motor ejecuta su cuerpo.'}`, 'entra');
+    if (f.esAsync) {
+      const promesa = new Promesa();
+      avanzar({ gen: cuerpo(f, sc), marco, promesa, scopeEnPausa: sc }, true, undefined, antes);
+      return promesa;
+    }
     let valor: unknown;
     try {
-      if (nodo.expression) {
-        valor = evaluar(nodo.body, sc);
-        paso([linea(nodo.body)], 'ejecuta', `La flecha devuelve ${cod(corto(valor))}.`);
-      } else {
-        elevar(nodo.body.body, sc, sc);
-        ejecutarBloque(nodo.body.body, sc);
-      }
+      valor = correrSync(cuerpo(f, sc));
     } catch (e) {
-      if (!(e instanceof Retorno)) {
-        if (!fotoError && !(e instanceof Corte || e instanceof Sigue || e instanceof Detenido || e instanceof NoSoportado)) fotoError = { pila: pila(), linea: lineaActual };
-        marcos.pop();
-        scopeEnCurso = antes;
-        throw e;
-      }
-      valor = e.valor;
+      if (!fotoError && !esControl(e)) fotoError = { pila: pila(), linea: lineaActual };
+      marcos.pop();
+      scopeEnCurso = antes;
+      throw e;
     }
     marcos.pop();
     scopeEnCurso = antes;
-    paso([lineaLlamada], 'sale', `${cod(marco.etiqueta)} sale de la pila y devuelve ${cod(corto(valor))}.`, 'sale');
+    paso(lineaLlamada ? [lineaLlamada] : [], 'sale', `${cod(marco.etiqueta)} sale de la pila y devuelve ${cod(corto(valor))}.`, 'sale');
     return valor;
   }
 
+  // ── async/await ─────────────────────────────────────────────────────────
+  /** Sigue una función async hasta su próximo await o hasta el final. `antes` es el scope al que se vuelve. */
+  function avanzar(pr: Proceso, ok: boolean, entrada: unknown, antes: Scope) {
+    const etq = pr.marco.etiqueta;
+    let r: IteratorResult<Espera, unknown>;
+    try {
+      r = ok ? pr.gen.next(entrada) : pr.gen.throw(new Lanzado(entrada, lineaActual));
+    } catch (e) {
+      if (esControl(e)) throw e;
+      fotoError = null;
+      marcos.pop();
+      scopeEnCurso = antes;
+      const v = valorDe(e);
+      rechazarPromesa(pr.promesa, v);
+      paso([lineaActual], 'sale', `${cod(etq)} termina con un error sin atrapar y sale de la pila. No se cae el programa: su promesa queda <b>rechazada</b> con ${cod(corto(v))}.`, 'sale');
+      return;
+    }
+    if (r.done) {
+      marcos.pop();
+      scopeEnCurso = antes;
+      resolverPromesa(pr.promesa, r.value);
+      paso(pr.marco.lineaLlamada && marcos.length ? [pr.marco.lineaLlamada] : [], 'sale', `${cod(etq)} terminó y sale de la pila: su promesa ${r.value instanceof Promesa ? 'adopta la promesa que devolvió' : `se cumple con ${cod(corto(r.value))}`}.`, 'sale');
+      return;
+    }
+    // Llegó a un await: la función sale de la pila y su resto queda esperando la promesa
+    const { valor, linea: l } = r.value;
+    const p = valor instanceof Promesa ? valor : promesaCumplida(valor);
+    const pausa: Pausada = { etiqueta: etq, linea: l };
+    pr.scopeEnPausa = scopeEnCurso;
+    marcos.pop();
+    scopeEnCurso = antes;
+    pausadas.push(pausa);
+    const lista = p.estado !== 'pendiente';
+    reaccionar(p, {
+      etiqueta: () => `seguir ${etq}`,
+      nota: `después del await de la línea ${l}`,
+      alCumplir: (v) => reanudar(pr, pausa, true, v),
+      alRechazar: (v) => reanudar(pr, pausa, false, v),
+    });
+    paso([l], 'sale', `${cod('await')} pausa ${cod(etq)}: ${lista
+      ? 'aunque el valor ya está listo, la función sale de la pila y lo que sigue pasa a la <b>cola de microtareas</b>.'
+      : 'la promesa todavía no está lista, así que la función sale de la pila y queda en pausa hasta que se cumpla.'} El código que la llamó sigue.`, 'en pausa');
+  }
+
+  function reanudar(pr: Proceso, pausa: Pausada, ok: boolean, v: unknown) {
+    pausadas.splice(pausadas.indexOf(pausa), 1);
+    const antes = scopeEnCurso;
+    marcos.push(pr.marco);
+    scopeEnCurso = pr.scopeEnPausa;
+    lineaActual = pausa.linea;
+    paso([pausa.linea], 'entra', `${MOTIVO_MICRO}${cod(pr.marco.etiqueta)} vuelve a la pila justo después del ${cod('await')}, ${ok ? `que da ${cod(corto(v))}` : `que lanza ${cod(corto(v))}: la promesa se rechazó`}.`, 'vuelve');
+    avanzar(pr, ok, v, antes);
+  }
+
+  // ── Promesas ──────────────────────────────────────────────────────────────
+  function promesaCumplida(v: unknown): Promesa {
+    const p = new Promesa();
+    p.bloqueada = true;
+    p.estado = 'cumplida';
+    p.valor = v;
+    return p;
+  }
+  const aPromesa = (v: unknown) => (v instanceof Promesa ? v : promesaCumplida(v));
+
+  function encolarReaccion(p: Promesa, r: Reaccion) {
+    const { estado, valor } = p;
+    microtareas.push({ etiqueta: r.etiqueta(estado), nota: r.nota, correr: () => (estado === 'cumplida' ? r.alCumplir : r.alRechazar)(valor) });
+  }
+  function reaccionar(p: Promesa, r: Reaccion) {
+    p.manejada = true;
+    sinManejar.delete(p);
+    if (p.estado === 'pendiente') p.reacciones.push(r);
+    else encolarReaccion(p, r);
+  }
+  function asentar(p: Promesa, estado: 'cumplida' | 'rechazada', valor: unknown) {
+    if (p.estado !== 'pendiente') return;
+    p.estado = estado;
+    p.valor = valor;
+    const rs = p.reacciones;
+    p.reacciones = [];
+    for (const r of rs) encolarReaccion(p, r);
+    if (estado === 'rechazada' && !p.manejada) sinManejar.add(p);
+  }
+  function resolverPromesa(p: Promesa, v: unknown) {
+    if (p.bloqueada) return;
+    p.bloqueada = true;
+    if (v === p) return asentar(p, 'rechazada', new TypeError('Chaining cycle detected for promise #<Promise>'));
+    if (v instanceof Promesa) {
+      // Una promesa resuelta con otra promesa la espera con un then propio, en una microtarea aparte
+      microtareas.push({
+        etiqueta: 'adoptar otra promesa',
+        nota: 'microtarea interna',
+        correr: () => {
+          reaccionar(v, {
+            etiqueta: () => 'pasar el resultado',
+            nota: 'a la promesa de afuera',
+            alCumplir: (x) => { asentar(p, 'cumplida', x); paso([], 'ejecuta', `Microtarea interna: la promesa de afuera toma el resultado de la de adentro y se cumple con ${cod(corto(x))}.`); },
+            alRechazar: (x) => { asentar(p, 'rechazada', x); paso([], 'ejecuta', `Microtarea interna: la promesa de adentro se rechazó, así que la de afuera también: ${cod(corto(x))}.`); },
+          });
+          paso([], 'ejecuta', 'Microtarea interna: la promesa se resolvió con <b>otra promesa</b>, y el motor la espera con un <code>then</code> propio. Por eso devolver una promesa cuesta dos vueltas más de microtareas.');
+        },
+      });
+      return;
+    }
+    asentar(p, 'cumplida', v);
+  }
+  function rechazarPromesa(p: Promesa, v: unknown) {
+    if (p.bloqueada) return;
+    p.bloqueada = true;
+    asentar(p, 'rechazada', v);
+  }
+
+  /** then(alCumplir, alRechazar): registra una reacción y devuelve la promesa siguiente de la cadena */
+  function then(p: Promesa, onF: unknown, onR: unknown, l: number, metodo: string): Promesa {
+    const siguiente = new Promesa();
+    const esFn = (h: unknown) => h instanceof Funcion || h instanceof Nativa;
+    const manejar = (h: unknown, estado: 'cumplida' | 'rechazada', v: unknown) => {
+      if (!esFn(h)) {
+        paso([], 'ejecuta', estado === 'cumplida'
+          ? `El event loop toma la microtarea, pero este ${cod(metodo)} no tiene función para un valor: pasa ${cod(corto(v))} a la siguiente promesa de la cadena.`
+          : `El event loop toma la microtarea, pero este ${cod(metodo)} no atrapa errores: el rechazo (${cod(corto(v))}) sigue por la cadena hasta un ${cod('.catch')}.`);
+        if (estado === 'cumplida') resolverPromesa(siguiente, v);
+        else rechazarPromesa(siguiente, v);
+        return;
+      }
+      const antes = pasos.length;
+      try {
+        const r = h instanceof Funcion ? llamar(h, [v], undefined, 0, { motivo: MOTIVO_MICRO, anonima: metodo === '.catch' ? 'callback de .catch' : 'callback de .then' }) : (h as Nativa).fn([v], undefined, 0);
+        resolverPromesa(siguiente, r);
+        // Una microtarea interna (la de finally) no pasa por la pila: igual se cuenta en el pizarrón
+        if (pasos.length === antes) paso([], 'ejecuta', `Microtarea interna de ${cod('.finally')}: la cadena sigue con el valor de antes, ${cod(corto(v))}.`);
+      } catch (e) {
+        if (esControl(e)) throw e;
+        fotoError = null;
+        rechazarPromesa(siguiente, valorDe(e));
+        paso([], 'ejecuta', h instanceof Funcion
+          ? `El callback lanzó ${cod(corto(valorDe(e)))}: no se cae el programa, la siguiente promesa de la cadena queda <b>rechazada</b>.`
+          : `Microtarea interna de ${cod('.finally')}: la cadena sigue con el error de antes, ${cod(corto(valorDe(e)))}.`);
+      }
+    };
+    const principal = esFn(onF) ? onF : onR;
+    reaccionar(p, {
+      etiqueta: (estado) => {
+        const h = estado === 'cumplida' ? onF : onR;
+        return esFn(h) ? etiquetaFn(h) : `(${metodo} sin función)`;
+      },
+      nota: `callback de ${metodo}`,
+      alCumplir: (v) => manejar(onF, 'cumplida', v),
+      alRechazar: (v) => manejar(onR, 'rechazada', v),
+    });
+    if (l) {
+      const etq = esFn(principal) ? cod(etiquetaFn(principal)) : 'su callback';
+      paso([l], 'ejecuta', p.estado === 'pendiente'
+        ? `${cod(metodo)} anota ${etq} en la promesa, que todavía está pendiente: correrá cuando se ${metodo === '.catch' ? 'rechace' : metodo === '.finally' ? 'resuelva' : 'cumpla'}. El programa sigue sin esperar.`
+        : `La promesa ya está ${p.estado}: ${cod(metodo)} pone ${etq} directo en la <b>cola de microtareas</b>. Correrá cuando la pila quede vacía.`);
+    }
+    return siguiente;
+  }
+
+  function metodoDePromesa(p: Promesa, clave: PropertyKey): Nativa | undefined {
+    if (clave === 'then') return new Nativa('then', ([onF, onR], _t, l) => then(p, onF, onR, l, '.then'));
+    if (clave === 'catch') return new Nativa('catch', ([onR], _t, l) => then(p, undefined, onR, l, '.catch'));
+    if (clave === 'finally') return new Nativa('finally', ([fn], _t, l) => {
+      if (!(fn instanceof Funcion)) return then(p, undefined, undefined, l, '.finally');
+      // Como en la especificación: llama a fn y después devuelve el valor original (o vuelve a lanzar el error)
+      const correr = (estado: 'cumplida' | 'rechazada') => new Nativa(etiquetaFn(fn), ([v]) => {
+        const r = llamar(fn, [], undefined, 0, { motivo: MOTIVO_MICRO, anonima: 'callback de .finally' });
+        return then(aPromesa(r), new Nativa('devolver el valor de antes', () => {
+          if (estado === 'rechazada') throw new Lanzado(v, 0);
+          return v;
+        }), undefined, 0, '.then');
+      });
+      return then(p, correr('cumplida'), correr('rechazada'), l, '.finally');
+    });
+    return undefined;
+  }
+
+  function crearPromesaCon(ejecutor: unknown, l: number): Promesa {
+    if (!(ejecutor instanceof Funcion)) throw new TypeError(`Promise resolver ${mostrar(ejecutor, true)} is not a function`);
+    const p = new Promesa();
+    const resolver = new Nativa('resolve', ([v], _t, ln) => {
+      const esperando = p.reacciones.length;
+      const yaEstaba = p.bloqueada;
+      resolverPromesa(p, v);
+      paso(ln ? [ln] : [], 'ejecuta', yaEstaba
+        ? 'La promesa ya estaba resuelta: esta llamada no cambia nada. Una promesa se resuelve una sola vez.'
+        : v instanceof Promesa
+          ? 'La promesa se resuelve con <b>otra promesa</b>: va a esperar a que esa termine.'
+          : `La promesa se <b>cumple</b> con ${cod(corto(v))}.${esperando ? ` ${esperando === 1 ? 'Su callback pasa' : `Sus ${esperando} callbacks pasan`} a la cola de microtareas.` : ' Todavía nadie la espera con <code>.then</code> ni <code>await</code>.'}`);
+    });
+    const rechazar = new Nativa('reject', ([v], _t, ln) => {
+      const esperando = p.reacciones.length;
+      const yaEstaba = p.bloqueada;
+      rechazarPromesa(p, v);
+      paso(ln ? [ln] : [], 'ejecuta', yaEstaba
+        ? 'La promesa ya estaba resuelta: esta llamada no cambia nada.'
+        : `La promesa se <b>rechaza</b> con ${cod(corto(v))}.${esperando ? ' Los que la esperan pasan a la cola de microtareas.' : ''}`);
+    });
+    try {
+      llamar(ejecutor, [resolver, rechazar], undefined, l, { motivo: '<code>new Promise</code> llama al ejecutor enseguida, de forma síncrona. ', anonima: 'ejecutor' });
+    } catch (e) {
+      if (esControl(e)) throw e;
+      fotoError = null;
+      rechazarPromesa(p, valorDe(e));
+      paso([l], 'ejecuta', `El ejecutor lanzó ${cod(corto(valorDe(e)))}: la promesa queda <b>rechazada</b>.`);
+    }
+    return p;
+  }
+
+  function combinador(nombre: 'all' | 'race' | 'allSettled', iterable: unknown, l: number): Promesa {
+    if (iterable == null || typeof (iterable as { [Symbol.iterator]?: unknown })[Symbol.iterator] !== 'function') throw new TypeError(`${mostrar(iterable, true)} is not iterable`);
+    const lista = [...(iterable as Iterable<unknown>)];
+    const p = new Promesa();
+    const resultados: unknown[] = [];
+    let faltan = lista.length;
+    const metodo = `Promise.${nombre}`;
+    if (!faltan && nombre !== 'race') resolverPromesa(p, []);
+    lista.forEach((x, i) => {
+      reaccionar(aPromesa(x), {
+        etiqueta: (estado) => `${metodo}: ${estado === 'cumplida' ? 'resultado' : 'rechazo'} ${i + 1}`,
+        nota: `${i + 1} de ${lista.length}`,
+        alCumplir: (v) => {
+          if (nombre === 'race') { const gana = !p.bloqueada; resolverPromesa(p, v); paso([], 'ejecuta', gana ? `La promesa ${i + 1} es la primera en terminar: ${cod(metodo)} se cumple con ${cod(corto(v))}.` : `La promesa ${i + 1} también terminó, pero ${cod(metodo)} ya tenía ganadora.`); return; }
+          resultados[i] = nombre === 'all' ? v : { status: 'fulfilled', value: v };
+          faltan--;
+          if (!faltan) resolverPromesa(p, resultados);
+          paso([], 'ejecuta', `${cod(metodo)} recibe el resultado ${i + 1} de ${lista.length}: ${cod(corto(v))}.${faltan ? ` Faltan ${faltan}.` : ' Ya están todos: su promesa se cumple con el array, en el orden original.'}`);
+        },
+        alRechazar: (v) => {
+          if (nombre === 'allSettled') {
+            resultados[i] = { status: 'rejected', reason: v };
+            faltan--;
+            if (!faltan) resolverPromesa(p, resultados);
+            paso([], 'ejecuta', `${cod(metodo)} anota el rechazo ${i + 1} sin fallar.${faltan ? ` Faltan ${faltan}.` : ' Ya están todas: su promesa se cumple con el array.'}`);
+            return;
+          }
+          const primero = !p.bloqueada;
+          rechazarPromesa(p, v);
+          paso([], 'ejecuta', primero ? `La promesa ${i + 1} se rechazó con ${cod(corto(v))}: ${cod(metodo)} se rechaza enseguida, sin esperar a las demás.` : `La promesa ${i + 1} se rechazó, pero ${cod(metodo)} ya había terminado.`);
+        },
+      });
+    });
+    if (lista.length) paso([l], 'ejecuta', `${cod(metodo)} espera ${lista.length} promesas${nombre === 'all' ? ': se cumple cuando se cumplan todas, o se rechaza con el primer error' : nombre === 'race' ? ': gana la primera que termine' : ': espera a todas, salgan bien o mal'}.`);
+    return p;
+  }
+
+  // ── El entorno asíncrono: setTimeout, queueMicrotask y Promise ─────────────
+  /** Corre el callback de una tarea o microtarea. Si es una función del entorno (como resolve), lo cuenta en un paso. */
+  function correrCallback(fn: Funcion | Nativa, args: unknown[], motivo: string, anonima: string) {
+    if (fn instanceof Funcion) { llamar(fn, args, undefined, 0, { motivo, anonima }); return; }
+    paso([], 'ejecuta', `${motivo}Es ${cod(fn.nombre)}, una función del entorno: corre sin mostrar su interior.`);
+    fn.fn(args, undefined, 0);
+  }
+  const setTimeout_ = new Nativa('setTimeout', ([fn, ms, ...extra], _t, l) => {
+    if (!(fn instanceof Funcion || fn instanceof Nativa)) throw new TypeError('The "callback" argument must be of type function');
+    const espera = Math.max(0, Number(ms) || 0);
+    const id = ++ultimoTemporizador;
+    temporizadores.push({
+      id, cuando: reloj + espera, orden: id, ms: espera, linea: l,
+      trabajo: { etiqueta: etiquetaFn(fn), nota: `del setTimeout de la línea ${l}`, correr: () => correrCallback(fn, extra, MOTIVO_TAREA, 'callback del temporizador') },
+    });
+    paso([l], 'ejecuta', `${cod('setTimeout')} no espera: le entrega ${cod(etiquetaFn(fn))} al <b>runtime</b>, que cuenta ${espera} ms, y el programa sigue enseguida.`, 'encargo');
+    return id;
+  });
+  const clearTimeout_ = new Nativa('clearTimeout', ([id], _t, l) => {
+    const i = temporizadores.findIndex((t) => t.id === id);
+    if (i >= 0) temporizadores.splice(i, 1);
+    paso([l], 'ejecuta', i >= 0 ? `${cod('clearTimeout')} cancela el temporizador: su callback ya no va a correr.` : `${cod('clearTimeout')} no encuentra ese temporizador pendiente: no hace nada.`);
+  });
+  const queueMicrotask_ = new Nativa('queueMicrotask', ([fn], _t, l) => {
+    if (!(fn instanceof Funcion || fn instanceof Nativa)) throw new TypeError('The "callback" argument must be of type function');
+    microtareas.push({ etiqueta: etiquetaFn(fn), nota: 'de queueMicrotask', correr: () => correrCallback(fn, [], MOTIVO_MICRO, 'microtarea') });
+    paso([l], 'ejecuta', `${cod('queueMicrotask')} pone ${cod(etiquetaFn(fn))} en la <b>cola de microtareas</b>. Correrá apenas la pila quede vacía, antes que cualquier temporizador.`);
+  });
+  const sinIntervalo = new Nativa('setInterval', (_a, _t, l) => {
+    throw new NoSoportado(`Rayos X todavía no sabe mostrar <code>setInterval</code> (línea ${l}): se repetiría sin fin. Prueba con <code>setTimeout</code>.`);
+  });
+  const PromesaGlobal = Object.assign(new Nativa('Promise', () => { throw new TypeError("Class constructor Promise cannot be invoked without 'new'"); }), {
+    resolve: new Nativa('resolve', ([v]) => aPromesa(v)),
+    reject: new Nativa('reject', ([v]) => { const p = new Promesa(); rechazarPromesa(p, v); return p; }),
+    all: new Nativa('all', ([it], _t, l) => combinador('all', it, l)),
+    race: new Nativa('race', ([it], _t, l) => combinador('race', it, l)),
+    allSettled: new Nativa('allSettled', ([it], _t, l) => combinador('allSettled', it, l)),
+  });
+  const entorno: Record<string, unknown> = {
+    setTimeout: setTimeout_, clearTimeout: clearTimeout_, setInterval: sinIntervalo, clearInterval: clearTimeout_,
+    queueMicrotask: queueMicrotask_, Promise: PromesaGlobal,
+  };
+  for (const [k, v] of Object.entries(entorno)) global.vars.set(k, { valor: v, tipo: 'const', lista: true });
+  const nativos = new Set([...Object.keys(GLOBALES), ...Object.keys(entorno), 'console']);
+
   // Una función del lector pasada a algo nativo (map, forEach, sort…) se llama igual, paso a paso
   function aNativa(v: unknown, lineaLlamada: number): unknown {
-    return v instanceof Funcion ? (...a: unknown[]) => llamar(v, a, undefined, lineaLlamada) : v;
+    if (v instanceof Funcion) return (...a: unknown[]) => llamar(v, a, undefined, lineaLlamada);
+    if (v instanceof Nativa) return (...a: unknown[]) => v.fn(a, undefined, lineaLlamada);
+    return v;
   }
 
   // ── Expresiones ───────────────────────────────────────────────────────────
   let silencio = 0;
   function evaluarSinPasos(n: Nodo, scope: Scope) {
     silencio++;
-    try { return evaluar(n, scope); } finally { silencio--; }
+    try { return correrSync(evaluar(n, scope)); } finally { silencio--; }
   }
 
   function leer(nombre: string, scope: Scope): unknown {
@@ -431,7 +859,7 @@ export function radiografiar(codigo: string): ResultadoRayosX {
     if (!v.lista) throw new ReferenceError(`Cannot access '${nombre}' before initialization`);
     return v.valor;
   }
-  function escribir(objetivo: Nodo, valor: unknown, scope: Scope) {
+  function* escribir(objetivo: Nodo, valor: unknown, scope: Scope): G<void> {
     if (objetivo.type === 'Identifier') {
       const v = scope.buscar(objetivo.name);
       if (!v) throw new ReferenceError(`${objetivo.name} is not defined`);
@@ -439,53 +867,64 @@ export function radiografiar(codigo: string): ResultadoRayosX {
       if (v.tipo === 'const') throw new TypeError('Assignment to constant variable.');
       v.valor = valor;
     } else if (objetivo.type === 'MemberExpression') {
-      const obj = evaluar(objetivo.object, scope) as Record<PropertyKey, unknown>;
-      const clave = objetivo.computed ? (evaluar(objetivo.property, scope) as PropertyKey) : objetivo.property.name;
+      const obj = (yield* evaluar(objetivo.object, scope)) as Record<PropertyKey, unknown>;
+      const clave = objetivo.computed ? ((yield* evaluar(objetivo.property, scope)) as PropertyKey) : objetivo.property.name;
       if (obj == null) throw new TypeError(`Cannot set properties of ${obj} (setting '${String(clave)}')`);
       obj[clave] = valor;
     } else throw noSoportado(objetivo);
   }
 
-  function evaluar(n: Nodo, scope: Scope): unknown {
+  function* evaluar(n: Nodo, scope: Scope): G {
     contar();
     switch (n.type) {
       case 'Literal': return n.regex ? new RegExp(n.regex.pattern, n.regex.flags) : n.value;
       case 'Identifier': return leer(n.name, scope);
-      case 'TemplateLiteral': return n.quasis.map((q: Nodo, i: number) => q.value.cooked + (i < n.expressions.length ? String(mostrarPlano(evaluar(n.expressions[i], scope))) : '')).join('');
+      case 'TemplateLiteral': {
+        let out = '';
+        for (let i = 0; i < n.quasis.length; i++) {
+          out += n.quasis[i].value.cooked;
+          if (i < n.expressions.length) out += String(mostrarPlano(yield* evaluar(n.expressions[i], scope)));
+        }
+        return out;
+      }
       case 'ArrayExpression': {
         const out: unknown[] = [];
         for (const e of n.elements) {
-          if (e?.type === 'SpreadElement') out.push(...(evaluar(e.argument, scope) as Iterable<unknown>));
-          else out.push(e ? evaluar(e, scope) : undefined);
+          if (e?.type === 'SpreadElement') out.push(...((yield* evaluar(e.argument, scope)) as Iterable<unknown>));
+          else out.push(e ? yield* evaluar(e, scope) : undefined);
         }
         return out;
       }
       case 'ObjectExpression': {
         const out: Record<PropertyKey, unknown> = {};
         for (const p of n.properties) {
-          if (p.type === 'SpreadElement') { Object.assign(out, evaluar(p.argument, scope)); continue; }
+          if (p.type === 'SpreadElement') { Object.assign(out, yield* evaluar(p.argument, scope)); continue; }
           if (p.kind !== 'init') throw noSoportado(p);
-          const clave = p.computed ? (evaluar(p.key, scope) as PropertyKey) : p.key.type === 'Identifier' ? p.key.name : p.key.value;
-          out[clave] = nombrar(evaluar(p.value, scope), String(clave));
+          const clave = p.computed ? ((yield* evaluar(p.key, scope)) as PropertyKey) : p.key.type === 'Identifier' ? p.key.name : p.key.value;
+          out[clave] = nombrar(yield* evaluar(p.value, scope), String(clave));
         }
         return out;
       }
       case 'FunctionExpression':
       case 'ArrowFunctionExpression':
-        if (n.async || n.generator) throw noSoportado({ ...n, type: n.async ? 'AwaitExpression' : 'YieldExpression' });
+        if (n.generator) throw noSoportado({ ...n, type: 'YieldExpression' });
         return new Funcion(n.id?.name ?? '', n, scope, n.type === 'ArrowFunctionExpression', n.type === 'ArrowFunctionExpression' ? scope.buscar('this')?.valor : undefined);
       case 'ThisExpression': {
         const v = scope.buscar('this');
         return v ? v.valor : undefined;
       }
+      case 'AwaitExpression': {
+        const v = yield* evaluar(n.argument, scope);
+        return yield { valor: v, linea: linea(n) };
+      }
       case 'UnaryExpression': {
         if (n.operator === 'typeof') {
           if (n.argument.type === 'Identifier' && !scope.buscar(n.argument.name)) return 'undefined';
-          const v = evaluar(n.argument, scope);
-          return v instanceof Funcion ? 'function' : typeof v;
+          const v = yield* evaluar(n.argument, scope);
+          return v instanceof Funcion || v instanceof Nativa ? 'function' : typeof v;
         }
         if (n.operator === 'delete') throw noSoportado(n);
-        const v = evaluar(n.argument, scope) as number;
+        const v = (yield* evaluar(n.argument, scope)) as number;
         switch (n.operator) {
           case '!': return !v;
           case '-': return -v;
@@ -496,8 +935,8 @@ export function radiografiar(codigo: string): ResultadoRayosX {
         throw noSoportado(n);
       }
       case 'BinaryExpression': {
-        const a = evaluar(n.left, scope) as never;
-        const b = evaluar(n.right, scope) as never;
+        const a = (yield* evaluar(n.left, scope)) as never;
+        const b = (yield* evaluar(n.right, scope)) as never;
         switch (n.operator) {
           case '+': return (a as number) + (b as number);
           case '-': return a - b;
@@ -514,7 +953,7 @@ export function radiografiar(codigo: string): ResultadoRayosX {
           case '>': return a > b;
           case '>=': return a >= b;
           case 'in': return (a as PropertyKey) in (b as object);
-          case 'instanceof': return (a as object) instanceof (b as never);
+          case 'instanceof': return b === PromesaGlobal ? a instanceof Promesa : (a as object) instanceof (b as never);
           case '&': return a & b;
           case '|': return a | b;
           case '^': return a ^ b;
@@ -525,122 +964,187 @@ export function radiografiar(codigo: string): ResultadoRayosX {
         throw noSoportado(n);
       }
       case 'LogicalExpression': {
-        const a = evaluar(n.left, scope);
-        if (n.operator === '&&') return a ? evaluar(n.right, scope) : a;
-        if (n.operator === '||') return a ? a : evaluar(n.right, scope);
-        return a ?? evaluar(n.right, scope);
+        const a = yield* evaluar(n.left, scope);
+        if (n.operator === '&&') return a ? yield* evaluar(n.right, scope) : a;
+        if (n.operator === '||') return a ? a : yield* evaluar(n.right, scope);
+        return a ?? (yield* evaluar(n.right, scope));
       }
       case 'ConditionalExpression':
-        return evaluar(n.test, scope) ? evaluar(n.consequent, scope) : evaluar(n.alternate, scope);
+        return (yield* evaluar(n.test, scope)) ? yield* evaluar(n.consequent, scope) : yield* evaluar(n.alternate, scope);
       case 'AssignmentExpression': {
-        if (n.operator === '=') { const v = nombrar(evaluar(n.right, scope), n.left.name ?? ''); escribir(n.left, v, scope); return v; }
-        const actual = evaluar(n.left, scope) as never;
+        if (n.operator === '=') { const v = nombrar(yield* evaluar(n.right, scope), n.left.name ?? ''); yield* escribir(n.left, v, scope); return v; }
+        const actual = (yield* evaluar(n.left, scope)) as never;
         if (n.operator === '??=' && actual != null) return actual;
         if (n.operator === '||=' && actual) return actual;
         if (n.operator === '&&=' && !actual) return actual;
-        const b = evaluar(n.right, scope) as never;
+        const b = (yield* evaluar(n.right, scope)) as never;
         const ops: Record<string, () => unknown> = {
           '+=': () => (actual as number) + (b as number), '-=': () => actual - b, '*=': () => actual * b, '/=': () => actual / b,
           '%=': () => actual % b, '**=': () => (actual as number) ** (b as number), '??=': () => b, '||=': () => b, '&&=': () => b,
         };
         if (!ops[n.operator]) throw noSoportado(n);
         const v = ops[n.operator]();
-        escribir(n.left, v, scope);
+        yield* escribir(n.left, v, scope);
         return v;
       }
       case 'UpdateExpression': {
-        const antes = Number(evaluar(n.argument, scope));
+        const antes = Number(yield* evaluar(n.argument, scope));
         const despues = n.operator === '++' ? antes + 1 : antes - 1;
-        escribir(n.argument, despues, scope);
+        yield* escribir(n.argument, despues, scope);
         return n.prefix ? despues : antes;
       }
       case 'ChainExpression':
-        return evaluar(n.expression, scope);
+        return yield* evaluar(n.expression, scope);
       case 'MemberExpression': {
-        const obj = evaluar(n.object, scope) as Record<PropertyKey, unknown>;
+        const obj = (yield* evaluar(n.object, scope)) as Record<PropertyKey, unknown>;
         if (obj == null && n.optional) return undefined;
-        const clave = n.computed ? (evaluar(n.property, scope) as PropertyKey) : n.property.name;
+        const clave = n.computed ? ((yield* evaluar(n.property, scope)) as PropertyKey) : n.property.name;
         if (obj == null) throw new TypeError(`Cannot read properties of ${obj} (reading '${String(clave)}')`);
+        if (obj instanceof Promesa) return metodoDePromesa(obj, clave);
         return obj[clave];
       }
       case 'SequenceExpression': {
         let v: unknown;
-        for (const e of n.expressions) v = evaluar(e, scope);
+        for (const e of n.expressions) v = yield* evaluar(e, scope);
         return v;
       }
-      case 'CallExpression': return llamada(n, scope);
+      case 'CallExpression': return yield* llamada(n, scope);
       case 'NewExpression': {
-        const C = evaluar(n.callee, scope);
+        const C = yield* evaluar(n.callee, scope);
+        const args = yield* evaluarArgumentos(n.arguments, scope);
+        if (C === PromesaGlobal) return crearPromesaCon(args[0], linea(n));
         if (!CONSTRUCTORES.has(C)) throw noSoportado(n);
-        const args = n.arguments.map((a: Nodo) => aNativa(evaluar(a, scope), linea(n)));
-        return new (C as new (...a: unknown[]) => unknown)(...args);
+        return new (C as new (...a: unknown[]) => unknown)(...args.map((a) => aNativa(a, linea(n))));
       }
       default:
         throw noSoportado(n);
     }
   }
 
-  function llamada(n: Nodo, scope: Scope): unknown {
+  function* llamada(n: Nodo, scope: Scope): G {
     let thisValor: unknown;
     let f: unknown;
     const c = n.callee;
     if (c.type === 'MemberExpression') {
-      thisValor = evaluar(c.object, scope);
+      thisValor = yield* evaluar(c.object, scope);
       if (thisValor == null && c.optional) return undefined;
-      const clave = c.computed ? (evaluar(c.property, scope) as PropertyKey) : c.property.name;
+      const clave = c.computed ? ((yield* evaluar(c.property, scope)) as PropertyKey) : c.property.name;
       if (thisValor == null) throw new TypeError(`Cannot read properties of ${thisValor} (reading '${String(clave)}')`);
-      f = (thisValor as Record<PropertyKey, unknown>)[clave];
+      f = thisValor instanceof Promesa ? metodoDePromesa(thisValor, clave) : (thisValor as Record<PropertyKey, unknown>)[clave];
       if (thisValor === consolaFalsa && (clave === 'log' || clave === 'info' || clave === 'warn' || clave === 'error')) {
-        const args = evaluarArgumentos(n.arguments, scope);
+        const args = yield* evaluarArgumentos(n.arguments, scope);
         if (!silencio) consola.push(args.map((a) => mostrar(a)).join(' '));
         return undefined;
       }
-    } else f = evaluar(c, scope);
+    } else f = yield* evaluar(c, scope);
     if (f == null && n.optional) return undefined;
-    const args = evaluarArgumentos(n.arguments, scope);
+    const args = yield* evaluarArgumentos(n.arguments, scope);
+    lineaActual = linea(n);
     if (f instanceof Funcion) return llamar(f, args, thisValor, linea(n));
+    if (f instanceof Nativa) return f.fn(args, thisValor, linea(n));
     if (typeof f !== 'function') throw new TypeError(`${fuente(c)} is not a function`);
     return (f as (...a: unknown[]) => unknown).apply(thisValor, args.map((a) => aNativa(a, linea(n))));
   }
 
-  function evaluarArgumentos(lista: Nodo[], scope: Scope): unknown[] {
+  function* evaluarArgumentos(lista: Nodo[], scope: Scope): G<unknown[]> {
     const out: unknown[] = [];
     for (const a of lista) {
-      if (a.type === 'SpreadElement') out.push(...(evaluar(a.argument, scope) as Iterable<unknown>));
-      else out.push(evaluar(a, scope));
+      if (a.type === 'SpreadElement') out.push(...((yield* evaluar(a.argument, scope)) as Iterable<unknown>));
+      else out.push(yield* evaluar(a, scope));
     }
     return out;
   }
 
   const consolaFalsa = {};
   global.vars.set('console', { valor: consolaFalsa, tipo: 'const', lista: true });
-  const mostrarPlano = (v: unknown) => (typeof v === 'string' ? v : v instanceof Funcion ? `function ${v.nombre}` : Array.isArray(v) ? v.map((x) => mostrarPlano(x)).join(',') : String(v));
+  const mostrarPlano = (v: unknown) => (typeof v === 'string' ? v : v instanceof Funcion ? `function ${v.nombre}` : v instanceof Promesa ? '[object Promise]' : Array.isArray(v) ? v.map((x) => mostrarPlano(x)).join(',') : String(v));
+
+  // ── Errores sin atrapar ───────────────────────────────────────────────────
+  function reportarError(e: unknown) {
+    const err = valorDe(e);
+    const texto = err instanceof Error ? `${err.name}: ${err.message}` : `Uncaught ${mostrar(err, true)}`;
+    const desborde = err instanceof RangeError && /call stack/.test(err.message);
+    consola.push(err instanceof Error ? `Uncaught ${texto}` : texto);
+    pasos.push({
+      lineas: [fotoError?.linea ?? lineaActual],
+      pila: fotoError?.pila ?? pila(),
+      consola: [...consola],
+      evento: 'error',
+      texto: desborde
+        ? `<b>Stack overflow</b>: la pila llegó a ${MAX_PROFUNDIDAD} marcos y el motor se detiene con ${cod(texto)}. En un navegador el límite es de miles de llamadas, pero sin caso base se llega igual.`
+        : `<b>Error</b>: <code>${esc(texto)}</code>. Nadie lo atrapó con <code>try…catch</code>, así que ${modoAsync ? 'esta tarea se detiene aquí. El event loop sigue con lo que quede en las colas.' : 'el programa se detiene aquí.'}`,
+    });
+    fotoError = null;
+  }
+  function avisarRechazos() {
+    for (const p of sinManejar) {
+      if (p.manejada || p.avisada) continue;
+      p.avisada = true;
+      const texto = textoError(p.valor);
+      consola.push(`Uncaught (in promise) ${texto}`);
+      paso([], 'error', `<b>Promesa rechazada sin atrapar</b>: ${cod(texto)}. Nadie la esperaba con ${cod('.catch')} ni con un ${cod('await')} dentro de ${cod('try…catch')}, así que el runtime avisa en la consola.`);
+    }
+    sinManejar.clear();
+  }
+  function ejecutarTrabajo(t: Trabajo) {
+    try {
+      t.correr();
+    } catch (e) {
+      if (e instanceof Detenido || e instanceof NoSoportado) throw e;
+      while (marcos.length) marcos.pop();
+      scopeEnCurso = global;
+      reportarError(e);
+    }
+  }
 
   // ── Ejecución ─────────────────────────────────────────────────────────────
   try {
     paso([], 'inicio', 'El programa empieza. Antes de ejecutar, el motor registra las funciones declaradas y las variables. La pila está vacía.');
     elevar(programa.body, global, global);
-    ejecutarBloque(programa.body, global);
-    paso([], 'fin', 'El programa terminó: la pila quedó vacía.');
+    ejecutarTrabajo({
+      etiqueta: 'programa principal',
+      nota: '',
+      correr: () => {
+        if (modoAsync) marcos.push({ etiqueta: 'programa principal', scope: global, lineaLlamada: 0, principal: true });
+        try {
+          correrSync(ejecutarBloque(programa.body, global));
+        } catch (e) {
+          if (!fotoError && !esControl(e)) fotoError = { pila: pila(), linea: lineaActual };
+          throw e;
+        }
+        if (modoAsync) {
+          marcos.pop();
+          paso([], 'sale', `El programa principal llegó al final y sale de la pila. Ahora manda el <b>event loop</b>: ${microtareas.length || tareas.length || temporizadores.length ? 'primero vacía la cola de microtareas; después toma las tareas de a una.' : 'no queda nada pendiente.'}`, 'pila vacía');
+        }
+      },
+    });
+    // El event loop: microtareas hasta vaciar la cola, después una tarea; si no hay tareas, espera al próximo temporizador
+    for (;;) {
+      while (microtareas.length) ejecutarTrabajo(microtareas.shift()!);
+      avisarRechazos();
+      if (!tareas.length) {
+        if (!temporizadores.length) break;
+        const proximo = Math.min(...temporizadores.map((t) => t.cuando));
+        const vencen = temporizadores.filter((t) => t.cuando === proximo).sort((a, b) => a.orden - b.orden);
+        for (const t of vencen) temporizadores.splice(temporizadores.indexOf(t), 1);
+        reloj = proximo;
+        tareas.push(...vencen.map((t) => t.trabajo));
+        paso([], 'ejecuta', vencen.length === 1
+          ? `Pasaron ${reloj} ms desde el inicio: el temporizador de la línea ${vencen[0].linea} terminó, y el runtime pone su callback en la <b>cola de tareas</b>.`
+          : `Pasaron ${reloj} ms desde el inicio: terminan ${vencen.length} temporizadores a la vez, y el runtime pone sus callbacks en la <b>cola de tareas</b>, en el orden en que se crearon.`, 'a la cola');
+      }
+      ejecutarTrabajo(tareas.shift()!);
+    }
+    if (pasos.at(-1)?.evento !== 'error') {
+      paso([], 'fin', modoAsync
+        ? 'Pila vacía, colas vacías y sin temporizadores pendientes: el programa terminó.'
+        : 'El programa terminó: la pila quedó vacía.');
+    }
   } catch (e) {
     if (e instanceof NoSoportado) return { error: e.message };
     if (e instanceof Detenido) {
       pasos.push({ lineas: [], pila: pila(), consola: [...consola], evento: 'error', texto: `Rayos X se detuvo después de ${pasos.length} pasos. ¿Hay un bucle que nunca termina? En el navegador, un bucle así congelaría la página.` });
-    } else {
-      const err = e instanceof Lanzado ? e.valor : e;
-      const texto = err instanceof Error ? `${err.name}: ${err.message}` : `Uncaught ${mostrar(err, true)}`;
-      const desborde = err instanceof RangeError && /call stack/.test(err.message);
-      consola.push(err instanceof Error ? `Uncaught ${texto}` : texto);
-      pasos.push({
-        lineas: [fotoError?.linea ?? lineaActual],
-        pila: fotoError?.pila ?? pila(),
-        consola: [...consola],
-        evento: 'error',
-        texto: desborde
-          ? `<b>Stack overflow</b>: la pila llegó a ${MAX_PROFUNDIDAD} marcos y el motor se detiene con ${cod(texto)}. En un navegador el límite es de miles de llamadas, pero sin caso base se llega igual.`
-          : `<b>Error</b>: <code>${esc(texto)}</code>. Nadie lo atrapó con <code>try…catch</code>, así que el programa se detiene aquí.`,
-      });
-    }
+    } else reportarError(e);
   }
   return { datos: { codigo, pasos } };
 }

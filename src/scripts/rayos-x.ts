@@ -219,5 +219,7 @@ function montar(datos: DatosVisualizador) {
   el.classList.toggle('muchos-pasos', total > 24);
   el.querySelector('[data-datos]')!.textContent = JSON.stringify(datos);
   viejo.replaceWith(el);
+  // El paso guardado en la dirección (#rx-paso-N) era del pizarrón anterior: el nuevo empieza en el paso 1
+  if (location.hash.startsWith('#rx-paso-')) history.replaceState(null, '', location.pathname + location.search);
   iniciarVisualizadores();
 }

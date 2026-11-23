@@ -12,7 +12,7 @@
 | **111 lecciones** | todas publicadas |
 | **464 ejercicios** | 400 en las lecciones y 64 en los Retos del motor, con corrección automática y progreso guardado en el navegador |
 | **34 pizarrones** | visualizadores paso a paso de la pila, los scopes, la memoria y el event loop |
-| **Rayos X** | tu propio pizarrón: 8 pizarrones para modificar y 8 desafíos de refuerzo |
+| **Rayos X** | tu propio pizarrón: 12 pizarrones para modificar y 12 desafíos de refuerzo, también con asincronía |
 | **119 términos** | en un glosario enlazado a las lecciones |
 
 ## Qué lo hace distinto
@@ -27,11 +27,12 @@ Cada tema difícil trae un visualizador. A la izquierda, el código, con la lín
 
 ### Rayos X: tu propio pizarrón
 
-En [`/rayos-x`](https://domina-js.pages.dev/rayos-x) eliges uno de los pizarrones listos: la pila, recursión, closures, `var` y `let` en un bucle, la zona muerta temporal, scope, funciones como valores o un error atrapado. Le cambias lo que quieras en el editor y pulsas **Ejecutar**. El sitio corre tu código con un intérprete propio, escrito sobre [Acorn](https://github.com/acornjs/acorn), y arma el pizarrón solo, con todo esto:
+En [`/rayos-x`](https://domina-js.pages.dev/rayos-x) eliges uno de los pizarrones listos: la pila, recursión, closures, `var` y `let` en un bucle, la zona muerta temporal, scope, funciones como valores, un error atrapado, `setTimeout` de 0 ms, microtareas, una promesa con su `then` o `async`/`await`. Le cambias lo que quieras en el editor y pulsas **Ejecutar**. El sitio corre tu código con un intérprete propio, escrito sobre [Acorn](https://github.com/acornjs/acorn), y arma el pizarrón solo, con todo esto:
 
 - qué funciones están en la pila;
 - qué valen sus variables, también las que **recuerda un closure**;
 - qué sale por la consola;
+- con código asíncrono, **el event loop**: los temporizadores que cuenta el runtime, la cola de tareas, la de microtareas y las funciones `async` en pausa por un `await`;
 - una explicación en español de cada paso.
 
 ![La página Rayos X: el título, las ocho tarjetas de pizarrones listos y el editor](docs/capturas/rayos-x.webp)
@@ -43,13 +44,15 @@ Debajo hay **desafíos de refuerzo**, distintos a los de las lecciones, por ejem
 - «haz que la pila llegue a 3 funciones»;
 - «desborda la pila a propósito»;
 - «cambia una sola palabra para que imprima `0 1 2`»;
-- «escribe un contador que recuerde su cuenta».
+- «escribe un contador que recuerde su cuenta»;
+- «cuela una microtarea antes del temporizador»;
+- «escribe `esperar(ms)` con una promesa y `setTimeout`».
 
-Cada uno se comprueba mirando lo que pasa en el pizarrón (la pila, la consola o el error), no con tests ocultos.
+Cada uno se comprueba mirando lo que pasa en el pizarrón (la pila, las colas, la consola o el error), no con tests ocultos.
 
 ![Un desafío de Rayos X superado: «Una sola palabra», con sus dos objetivos en verde y el código con let](docs/capturas/rayos-x-desafio.webp)
 
-El intérprete corre en un Web Worker y no usa `eval`. Si el código usa algo que todavía no entiende (clases, `async`, desestructuración…), dice qué es y en qué línea. Corta los bucles infinitos a los 300 pasos y desborda la pila a las 12 llamadas, para que el desborde se pueda ver. A Rayos X se llega desde un botón propio en la navegación, desde la portada y desde el final de cada Reto del motor.
+El intérprete corre en un Web Worker y no usa `eval`. Entiende `setTimeout`, `clearTimeout`, `queueMicrotask`, promesas (`then`, `catch`, `finally`, `Promise.all`, `race` y `allSettled`) y `async`/`await`. Sus sentencias son generadores, así que un `await` puede pausar una función a la mitad, y el event loop la retoma después. El orden de la consola se comprobó contra Node, y el tiempo es simulado: un temporizador de 1000 ms no hace esperar un segundo. Si el código usa algo que todavía no entiende (clases, generadores, `setInterval`, desestructuración…), dice qué es y en qué línea. Corta los bucles infinitos a los 400 pasos y desborda la pila a las 12 llamadas, para que el desborde se pueda ver. A Rayos X se llega desde un botón propio en la navegación, desde la portada y desde el final de cada Reto del motor.
 
 ![La tarjeta de Rayos X en la portada, con el botón «Crea tu pizarrón»](docs/capturas/portada-rayos-x.webp)
 
@@ -88,6 +91,10 @@ El temario cubre lo que JavaScript sumó hasta hoy. Cada novedad lleva la insign
 En [`/glosario`](https://domina-js.pages.dev/glosario) están los términos del curso (closure, hoisting, microtarea, zona muerta temporal…) explicados en una o dos frases. Cada uno trae su nombre en inglés, otras formas de decirlo y un enlace al apartado exacto de la lección donde se ve a fondo. Se puede filtrar escribiendo, también en inglés. Al construir el sitio se comprueba que cada enlace lleve a una lección y a un apartado que existen.
 
 ![El glosario: el buscador, la fila de letras y los primeros términos con sus enlaces a las lecciones](docs/capturas/glosario.webp)
+
+### Un buscador en la barra lateral
+
+Arriba del temario, en todas las páginas, hay un buscador que recorre las lecciones, los Retos del motor, el glosario y Rayos X. Cada resultado dice de qué sección es, muestra un pedazo del texto con las palabras encontradas resaltadas y, cuando conviene, enlaza al apartado exacto de la lección. Se abre con la tecla <kbd>/</kbd>; las flechas recorren los resultados y <kbd>Esc</kbd> lo limpia. Usa [Pagefind](https://pagefind.app), que arma el índice al compilar, así que funciona sin servidor. En el teléfono está dentro del menú «Secciones y temas».
 
 ## El temario
 
@@ -147,6 +154,7 @@ La dirección visual es **«Pizarrón y tiza amarilla»**: un tablero verde oscu
 - [CodeMirror](https://codemirror.net) 6 para el editor de los laboratorios y de Rayos X
 - [Acorn](https://github.com/acornjs/acorn) para analizar el código que ejecuta Rayos X
 - [Shiki](https://shiki.style), con un tema propio de tiza, para resaltar el código
+- [Pagefind](https://pagefind.app) para el buscador
 - Sin frameworks de interfaz: componentes de Astro y TypeScript
 
 ### Fuentes
@@ -161,9 +169,11 @@ Necesitas Node.js 22 o superior.
 ```sh
 npm install
 npm run dev       # servidor de desarrollo en http://localhost:4321
-npm run build     # sitio estático en ./dist
+npm run build     # sitio estático en ./dist, con el índice del buscador (Pagefind)
 npm run preview   # sirve ./dist para revisarlo antes de publicar
 ```
+
+Con `npm run dev` el buscador usa el índice de la última compilación (`dist/pagefind`), así que corre `npm run build` una vez antes y de nuevo cuando quieras que encuentre texto nuevo. Si nunca compilaste, el buscador avisa que no tiene índice.
 
 El sitio se publica en Cloudflare Pages con cada `git push` a `main`. `public/_headers` deja en caché por un año los archivos de `/_astro/`, que llevan un hash en el nombre. Las páginas se generan como archivos (`build.format: 'file'`) para que se sirvan sin redirección.
 
@@ -185,7 +195,7 @@ src/
 │   ├── rayos-x.ts      el intérprete de Rayos X: recorre el código y genera los pasos del pizarrón
 │   ├── rayos-x-reglas.ts    comprueba los objetivos de los desafíos
 │   └── resaltar.ts     colorea el código de los ejercicios
-├── components/         StepVisualizer, menú del temario, botón de Rayos X y los formatos de ejercicio
+├── components/         StepVisualizer, menú del temario, buscador, botón de Rayos X y los formatos de ejercicio
 ├── layouts/            BaseLayout (barra lateral) y LessonLayout (lecciones y retos)
 ├── pages/              portada, temario, glosario, Rayos X, 404, sitemap.xml y la ruta de cada lección y cada reto
 ├── scripts/            visualizador, editor de tiza, Rayos X, corrección de ejercicios, sandbox y progreso
@@ -210,10 +220,7 @@ Para agregar una lección:
 
 ## Lo que viene
 
-- **Rayos X, etapa 2:** `setTimeout`, promesas y las colas del event loop en el pizarrón generado, con pizarrones y desafíos de asincronía.
-- **Mira tu solución:** pasar por Rayos X el código de un laboratorio.
 - **Proyectos:** de 5 a 8 aplicaciones completas para hacer paso a paso, de la más fácil a una final grande. Cada una con su `proyecto-inicial.zip` (HTML y CSS hechos, el JavaScript por escribir) y su `proyecto-final.zip`. El plan está en [`docs/PROYECTOS.md`](docs/PROYECTOS.md).
-- Un **buscador** en la barra lateral.
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).
 
