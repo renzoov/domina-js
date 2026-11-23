@@ -1,34 +1,36 @@
 ---
-// Botón a la sección Proyectos (ver docs/PROYECTOS.md). Tiene la misma estética de Rayos X, en lila.
+// Botón a una sección propia del sitio (Proyectos, Librerías), con la estética de Rayos X y su propio color.
 // Mientras la sección no exista, `pronto` lo deja tachado, sin enlace y con el aviso «Próximamente».
+// El ícono va en el slot: un SVG de 32×32 con trazos (sin relleno), que toma el color de la sección.
 interface Props {
+  texto: string;
+  href: string;
+  /** Nombre de la variable de color del sitio: lila, naranja, azul… */
+  color: string;
   pronto?: boolean;
   actual?: boolean;
 }
-const { pronto = true, actual = false } = Astro.props;
+const { texto, href, color, pronto = true, actual = false } = Astro.props;
 const Etiqueta = pronto ? 'span' : 'a';
+const idAviso = `${href.replace(/\W+/g, '')}-pronto`;
 ---
 <Etiqueta
-  class:list={['proyectos', { pronto }]}
-  href={pronto ? undefined : '/proyectos'}
+  class:list={['seccion', { pronto }]}
+  style={`--c-seccion: var(--${color})`}
+  href={pronto ? undefined : href}
   tabindex={pronto ? 0 : undefined}
   aria-disabled={pronto ? 'true' : undefined}
   aria-current={actual ? 'page' : undefined}
-  aria-describedby={pronto ? 'proyectos-pronto' : undefined}
+  aria-describedby={pronto ? idAviso : undefined}
 >
-  <svg class="ico" viewBox="0 0 32 32" aria-hidden="true">
-    <!-- Tres bloques apilados: piezas que se arman -->
-    <rect x="4" y="17" width="11" height="11" rx="2" />
-    <rect x="17" y="17" width="11" height="11" rx="2" />
-    <rect x="10.5" y="4.5" width="11" height="11" rx="2" />
-  </svg>
-  <span class="txt">Proyectos</span>
-  {pronto && <span class="aviso" id="proyectos-pronto" role="tooltip">Próximamente</span>}
+  <span class="ico" aria-hidden="true"><slot /></span>
+  <span class="txt">{texto}</span>
+  {pronto && <span class="aviso" id={idAviso} role="tooltip">Próximamente</span>}
 </Etiqueta>
 
 <style>
-  .proyectos {
-    --c: var(--lila);
+  .seccion {
+    --c: var(--c-seccion);
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -45,11 +47,12 @@ const Etiqueta = pronto ? 'span' : 'a';
     transform: rotate(1.5deg);
     transition: box-shadow 200ms var(--ease-out), border-color 200ms var(--ease-out);
   }
-  .ico { flex: none; width: 20px; height: 20px; fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--c) 60%, transparent)); }
+  .ico { flex: none; display: flex; width: 20px; height: 20px; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--c) 60%, transparent)); }
+  .ico :global(svg) { width: 100%; height: 100%; fill: none; stroke: var(--c); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
   .txt { position: relative; font: 700 1.2rem/1 var(--hand); letter-spacing: 0.01em; text-shadow: 0 0 6px color-mix(in srgb, var(--c) 50%, transparent); }
 
-  a.proyectos:hover, a.proyectos:focus-visible { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent), 0 0 22px color-mix(in srgb, var(--c) 45%, transparent); }
-  a.proyectos[aria-current='page'] { --c: var(--y); }
+  a.seccion:hover, a.seccion:focus-visible { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent), 0 0 22px color-mix(in srgb, var(--c) 45%, transparent); }
+  a.seccion[aria-current='page'] { --c: var(--y); }
 
   /* Todavía no existe: apagado, tachado con un trazo de tiza y sin enlace */
   .pronto { cursor: not-allowed; border-style: dashed; box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 6%, transparent); }

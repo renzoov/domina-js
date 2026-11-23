@@ -1,11 +1,11 @@
 # Plan: sección «Proyectos»
 
 > Estado: **planificado, sin implementar.** En la navegación ya está el botón «Proyectos», tachado y con el aviso «Próximamente».
-> Falta decidir la lista de proyectos. Cuando se decida, se agrega en la sección 10 de este plan. Los huecos del curso que pueden cubrir los proyectos están en [`COBERTURA.md`](COBERTURA.md).
+> La lista ya está decidida (2026-11-23): son **30 proyectos**, en la sección 10. Falta elegir el piloto y construir la base (sección 8).
 
 ## 1. Objetivo
 
-Mucha gente aprende mejor construyendo algo. Después de las lecciones, los ejercicios, los Retos del motor y Rayos X, la sección **Proyectos** propone entre 5 y 8 aplicaciones completas, de la más fácil a la más difícil. Cada una toca varios temas del curso y **profundiza un poco más** que la lección. El último proyecto es grande y junta temas de casi todas las secciones.
+Mucha gente aprende mejor construyendo algo. Después de las lecciones, los ejercicios, los Retos del motor y Rayos X, la sección **Proyectos** propone 30 aplicaciones completas, de la más fácil a la más difícil, hechas solo con JavaScript. Cada una toca varios temas del curso y **profundiza un poco más** que la lección. El último proyecto es grande y junta temas de casi todas las secciones.
 
 La regla de oro: **el HTML y el CSS ya vienen hechos.** Quien sigue el proyecto escribe sobre todo JavaScript, paso a paso, en el editor que prefiera. Si algún paso obliga a tocar el HTML o el CSS, el paso lo dice claramente.
 
@@ -85,7 +85,7 @@ src/pages/proyectos/
 ├── index.astro                  la cuadrícula bento
 └── [slug].astro                 la página de cada proyecto
 src/components/
-├── BotonProyectos.astro         el botón de la navegación (ya existe, en modo «Próximamente»)
+├── BotonSeccion.astro           el botón de la navegación (ya existe, en modo «Próximamente»; lo comparte con Librerías)
 └── PasoProyecto.astro           un paso: objetivo, archivo, comprobación, pistas, solución y «Hecho»
 ```
 
@@ -113,12 +113,11 @@ src/components/
 
 ## 7. Cobertura y criterios para elegir los proyectos
 
-- Entre todos los proyectos deben tocarse **las 16 secciones** del temario. Cada proyecto declara sus temas en el frontmatter, y el verificador arma una tabla de cobertura para ver qué secciones quedan sin proyecto.
+- Entre todos los proyectos deben tocarse **las secciones 0 a 16** del temario (la 17 habla de librerías y frameworks, que aquí no se usan). Cada proyecto declara sus temas en el frontmatter, y el verificador arma una tabla de cobertura para ver qué secciones quedan sin proyecto.
 - Los proyectos son el lugar para **profundizar y para cubrir huecos** del curso que se entienden mejor construyendo. La lista de huecos está en [`COBERTURA.md`](COBERTURA.md): archivos, tiempo real, arrastrar y soltar, APIs del dispositivo, gráficos a fondo con Canvas y SVG, multimedia, accesibilidad, eventos propios, `contenteditable`, etc. Cada hueco que cubra un proyecto va en su bloque «Lo nuevo de este proyecto».
 - **La dificultad sube de a poco:** proyectos fáciles y visuales al principio, uno o dos con servidor hacia el final y un proyecto final grande que junta varias secciones.
 - **Proyectos con servidor:** se hacen con Node sin librerías siempre que se pueda. Por ejemplo, un chat con Server-Sent Events y `fetch` usa solo `node:http`. Si un proyecto necesita WebSocket del lado del servidor, se ofrece la versión con Deno o Bun, que lo traen incluido, y se explica que en Node hace falta la librería `ws`.
 - **Si un proyecto usa una API que no funciona igual en todos los navegadores** (por ejemplo, File System Access, que es solo de Chromium), se avisa y se ofrece una alternativa que funcione en todos.
-- **Ideas en evaluación** (no es la lista definitiva): calculadora, juego de memoria, lista de tareas, quiz con cuenta regresiva, explorador de países, galería que sube fotos, control de gastos con gráfico, pizarra para dibujar con Canvas y con SVG, juego en Canvas, editor de Markdown, API de notas con Node, chat en tiempo real y el proyecto final Kanban offline.
 
 ## 8. Fases
 
@@ -127,14 +126,182 @@ src/components/
 3. **El resto**, de a uno, del más fácil al más difícil, cada uno verificado antes de publicarse.
 4. **Lanzamiento:** el botón de la navegación pasa de «Próximamente» a enlace, se suma la tarjeta en la portada y las invitaciones, y se actualizan el README (con capturas), DESIGN.md y este plan.
 
-## 9. Decisiones pendientes
+## 9. Decisiones
 
-- **La lista de proyectos** (sección 10): nombres, orden y temas. Hay una propuesta de 8; se puede reducir a 5 o 6.
-- Si el proyecto con servidor (Node) entra o no. Es el único que no se abre en el navegador.
-- Si el proyecto final usa herramientas (npm, Vite, Vitest) o se mantiene sin dependencias.
+**Tomadas (2026-11-23):**
+
+- **Son 30 proyectos**, del más fácil al proyecto final (sección 10). Cubren todas las lecciones de las secciones 0 a 16, salvo las pocas que quedan solo en las lecciones (al final de la sección 10). La sección 17 («¿Y ahora qué?») no entra: los proyectos son solo con JavaScript, sin librerías ni frameworks.
+- **Hay tres proyectos con servidor** (el chat, el acortador de enlaces y el blog por terminal), hechos con Node sin librerías. Nada con Bun ni con Deno.
+- **El proyecto final usa herramientas:** Vite, Vitest, ESLint y TypeScript. Los demás van sin dependencias.
+- Los huecos de `COBERTURA.md` ya se cubrieron con lecciones; los proyectos los profundizan.
+
+**Pendientes:**
+
 - Si «Proyectos» aparece también en la barra lateral, debajo del temario.
-- Qué huecos de `COBERTURA.md` se cubren con lecciones nuevas antes de los proyectos, y cuáles solo dentro de los proyectos.
+- Cuál es el proyecto piloto.
+- **Después de esta sección, una segunda: «Librerías».** Ya decidida: 10 proyectos con 24 librerías, en [`LIBRERIAS.md`](LIBRERIAS.md).
 
 ## 10. Lista de proyectos
 
-*Por decidir.* Cuando se elija, aquí irá la tabla definitiva con el número, el nombre, de qué trata, el nivel y los temas del curso que toca.
+**Origen de cada idea:** *propio* (idea nueva de este curso), *tuyo* (pedido del autor del sitio) o *mejorado* (la idea existe en [javascript100.dev](https://www.javascript100.dev/), de midudev, y aquí se hace más completa, muchas veces combinando dos o tres proyectos suyos en uno). No se copia ningún proyecto: cada uno tiene su propio diseño, sus pasos y sus temas.
+
+### Fácil
+
+**1. Generador de paletas** · *mejorado*
+La barra espaciadora genera colores armónicos; se pueden fijar los que gustan y deshacer. Calcula el contraste WCAG de cada color, exporta variables CSS y, como paso extra, saca una paleta de una foto tuya.
+Temas: números y operadores (HSL ↔ hex), arrays como pila para deshacer, eventos de teclado, URL y URLSearchParams (la paleta vive en la dirección), portapapeles, Canvas y `getImageData`.
+
+**2. Temporizador Pomodoro** · *mejorado*
+Bloques de trabajo y descanso que no se atrasan aunque la pestaña esté oculta.
+Temas: timers y por qué `setInterval` se atrasa, el event loop, Page Visibility, notificaciones, Wake Lock, vibración, un pitido con Web Audio, `document.title` y guardar datos.
+
+**3. Reto de mecanografía** · *mejorado*
+Escribir un texto contra reloj; cuenta bien los acentos, la ñ y los emojis.
+Temas: texto y Unicode (`Intl.Segmenter`), expresiones regulares, eventos de teclado, `performance.now()` para las palabras por minuto, un gráfico SVG del resultado y récords guardados.
+
+**4. Relojes del mundo** · *mejorado*
+Relojes analógicos en SVG, uno por ciudad elegida, que se reordenan arrastrando.
+Temas: Temporal (con plan B en Date), `Intl.DateTimeFormat` y `Intl.supportedValuesOf`, trigonometría en SVG, `requestAnimationFrame`, arrastrar y soltar y guardar datos.
+
+### Intermedio
+
+**5. Tienda pequeña** · *tuyo*
+Un catálogo de 30 a 40 productos, 10 por página, con la paginación en la URL (el botón Atrás funciona). Al agregar, el número del carrito sube sin recargar, también en otra pestaña. El carrito permite cambiar cantidades, tiene una vista rápida en un popover y termina con un pago simulado («Procesando…» y «¡Pago confirmado!»).
+Temas: clases con campos privados (el carrito extiende `EventTarget`), eventos propios, Map, URLSearchParams y navegación, `Intl.NumberFormat`, formularios y validación, guardar datos y el evento `storage`, diálogos y la Popover API, async con estados de carga y `aria-live`.
+
+**6. Explorador con scroll infinito** · *mejorado*
+Un catálogo de obras de arte con la API abierta del Art Institute of Chicago (imágenes de dominio público), que carga más al llegar al final. Hace par con la tienda: paginación con botones frente a scroll infinito.
+Temas: fetch, `Promise.allSettled`, IntersectionObserver, `<template>`, caché con Map, imágenes con carga diferida, un diálogo de detalle y errores con reintento.
+
+**7. Buscador con autocompletado** · *mejorado*
+Busca en Wikipedia mientras escribes. Es un combobox accesible de verdad, encuentra sin importar las tildes y resalta lo que coincide.
+Temas: debounce con closures, AbortController, patrones asíncronos, `normalize()`, `RegExp.escape` (ES2025), caché con Map, navegación con las flechas y accesibilidad (`aria-activedescendant`).
+
+**8. Notificaciones toast** · *mejorado*
+Una pequeña librería propia, `<zona-toasts>`, que se reutiliza en otros proyectos. `await toast.mostrar()` termina cuando la persona lo cierra.
+Temas: Web Components y Shadow DOM, eventos propios como API, ES Modules, Web Animations, `aria-live`, una cola con promesas, `Promise.withResolvers` (ES2024), deslizar para cerrar (Pointer Events) y template tags para escapar el HTML.
+
+**9. Calendario con eventos** · *mejorado*
+Un calendario mensual para anotar eventos, moverlos de día y exportarlos.
+Temas: Temporal y Date, Intl (en qué día empieza la semana, los nombres de los meses), `Object.groupBy`, una grilla accesible con *roving tabindex*, `<dialog>` con formulario, IndexedDB, arrastrar y soltar, y exportar a `.ics` (Blob).
+
+**10. Control de gastos con reactividad propia** · *mejorado*
+Gastos en varias monedas, con gráfico y filtros que se combinan. El estado es un sistema reactivo hecho con Proxy, la idea de Vue y las signals.
+Temas: Proxy y Reflect, descriptores, `queueMicrotask` para redibujar una sola vez, `Object.freeze` en desarrollo, currificación y composición de filtros, `Object.groupBy`, cambiar sin mutar (`toSorted`), `structuredClone` para deshacer, un gráfico SVG, Intl, tasas de cambio con `fetch` y caché, e importar y exportar CSV.
+
+**11. Puzzle deslizante con tu foto** · *mejorado*
+El clásico rompecabezas de 15 piezas, con tu propia imagen y un desorden que siempre tiene solución.
+Temas: matrices con arrays (inversiones y paridad), archivos (`createObjectURL`), Canvas para cortar la imagen, animación FLIP con Web Animations, teclado y tacto (Pointer Events), cronómetro y récords.
+
+**12. Dividir la cuenta** · *propio*
+Cada persona del grupo anota lo que pagó, y la aplicación dice quién le debe a quién con la menor cantidad de transferencias. Se comparte un solo enlace, sin cuentas ni servidor.
+Temas: `reduce`, `Object.groupBy` y Map para los saldos, montos en centavos y `Math.sumPrecise` (ES2026), `Intl.NumberFormat` e `Intl.ListFormat`, `CompressionStream` y base64url para guardar el estado en la URL, Web Share con plan B de portapapeles, formularios, import maps y un JSON de monedas importado con atributos de importación (sin bundler).
+
+**13. Reserva de asientos** · *propio*
+El mapa de una sala en SVG: eliges butacas, quedan apartadas 5 minutos y al confirmar se descarga la entrada. Si dos pestañas intentan el mismo asiento, solo una lo consigue.
+Temas: SVG creado desde JavaScript, delegación de eventos, una grilla accesible con anuncios `aria-live`, composición de capacidades (accesible, preferencial) en lugar de herencia, métodos de Set (ES2025), timers, Web Locks y BroadcastChannel, la entrada en Canvas con `toBlob` e `Intl.DateTimeFormat`.
+
+**14. Tarjetas de idiomas con voz** · *propio*
+Mazos de vocabulario con repetición espaciada: cada tarjeta vuelve cuando estás por olvidarla. La aplicación pronuncia la palabra y te escucha decirla.
+Temas: Temporal para la próxima repetición, `SpeechSynthesis` y `SpeechRecognition` con plan B, Symbols y el protocolo iterable (el `Mazo` es iterable con `*[Symbol.iterator]()`), generadores, `Intl.Collator`, importar CSV (archivos y regex) e IndexedDB.
+
+**15. Recetario en modo cocina** · *propio*
+Recetas que escalan las porciones y un modo cocina con la pantalla siempre encendida, temporizadores por paso y lectura en voz alta.
+Temas: fracciones y `Intl.NumberFormat` con unidades, temporizadores que corren a la vez (promesas y AbortController), Wake Lock, `SpeechSynthesis`, la lista de compras con `Object.groupBy` y una hoja de estilos para imprimir.
+
+**16. Bitácora de paseos con GPS** · *propio*
+Registra un paseo o una salida en bicicleta y dibuja el recorrido, sin librerías de mapas. Funciona sin conexión y se instala en el teléfono.
+Temas: `geolocation.watchPosition`, la fórmula de Haversine, Wake Lock, el recorrido en SVG con ResizeObserver, `Intl.NumberFormat` con unidades, Temporal, IndexedDB y `navigator.storage.persist()`, exportar a GPX con un template tag y un Service Worker con manifest.
+
+### Avanzado
+
+**17. Galería SPA con compresor** · *mejorado* (junta tres proyectos de javascript100.dev: galería, router y compresor)
+Una galería de una sola página con su propio router y transiciones animadas. Las fotos se suben arrastrándolas, se comprimen sin salir del navegador y se guardan.
+Temas: router propio (History y Navigation API, `URLPattern`), View Transitions, `import()` por ruta, el foco al cambiar de página, un Web Worker con `OffscreenCanvas` y `toBlob` en WebP, comparar antes y después, e IndexedDB.
+
+**18. Editor de Markdown** · *mejorado*
+Un editor con vista previa, varios documentos, abrir y guardar archivos, y el parser escrito por ti.
+Temas: expresiones regulares, recursión y un generador de tokens, sanear el HTML (XSS) y Trusted Types, vista partida con el scroll sincronizado, la barra de formato con `setRangeText`, IndexedDB, File System Access con plan B, contador de palabras y un Web Worker para documentos grandes.
+
+**19. Bóveda de secretos** · *mejorado* (junta el generador de contraseñas y los mensajes cifrados)
+Genera contraseñas seguras y cifra mensajes que se comparten por un enlace.
+Temas: `getRandomValues` y el cálculo de entropía, Web Crypto (AES-GCM y PBKDF2), TextEncoder, base64 de Uint8Array (ES2026, con plan B), el mensaje cifrado en el `#` de la URL, portapapeles que se borra solo y datos binarios.
+
+**20. Visor de JSON gigante** · *mejorado* (junta el visor de JSON y la lista virtual)
+Abre un JSON de cualquier tamaño, lo muestra como un árbol que aguanta 100.000 nodos, busca y copia la ruta de cada dato. Señala la línea exacta de un error de sintaxis.
+Temas: JSON, recursión, generadores e iterator helpers, Web Workers, rendimiento (lista virtual), accesibilidad (`role="tree"`), archivos y `Object.groupBy` para las estadísticas.
+
+**21. Grabador de pantalla y cámara** · *mejorado*
+Graba la pantalla con tu cámara en un recuadro y el micrófono, y descarga el video.
+Temas: `getDisplayMedia` y `getUserMedia`, `MediaRecorder`, Canvas con `captureStream`, mezcla de audio con Web Audio, Blob y descarga, errores de permisos y `using` para apagar todo al terminar.
+
+**22. Editor de subtítulos** · *propio*
+Cargas un video, escribes los subtítulos sobre una línea de tiempo y descargas el archivo `.vtt`.
+Temas: `HTMLMediaElement` y la API de pistas de texto (`TextTrack`, `VTTCue`), Pointer Events para la línea de tiempo, el formato WebVTT con regex, `contenteditable` con Selection y Range (negrita y cursiva), atajos J, K y L, Media Session, Fullscreen y descarga con Blob.
+
+**23. Auditor de accesibilidad** · *propio*
+Un script que se pega en cualquier página y la revisa: imágenes sin `alt`, botones sin nombre, títulos fuera de orden, contraste insuficiente. Marca cada problema y arma un informe.
+Temas: `TreeWalker`, `getComputedStyle` y el contraste de WCAG, clases con herencia (`Regla` → `ReglaContraste`, `ReglaAlt`…), Shadow DOM, MutationObserver y exportar el informe en JSON.
+
+**24. La aplicación rota** · *propio*
+Una aplicación que funciona mal a propósito. Hay que encontrar cada problema con las DevTools y arreglarlo.
+Temas: depurar con DevTools (puntos de interrupción condicionales, paneles Rendimiento y Memoria), consola a fondo, fugas de memoria (listeners con `AbortController`, caché con `WeakMap`), alternar lecturas y escrituras del DOM, promesas rechazadas sin atrapar, `this` perdido en un callback, un `Array.prototype` modificado, la zona muerta temporal, un script que bloquea la carga y medir cada arreglo con `performance.mark`.
+
+**25. Terminal en el navegador** · *propio*
+Una terminal con `ls`, `cd`, `mkdir`, `cat`, `chmod`, redirecciones, tuberías, historial y autocompletado. Los archivos quedan en el sistema de archivos privado del navegador.
+Temas: OPFS (`navigator.storage.getDirectory()`) e iteración asíncrona, un intérprete de comandos con regex, generadores para las tuberías, operadores bit a bit (permisos de `chmod`), `URL` para las rutas, `localStorage`, accesibilidad y errores con mensajes claros.
+
+**26. Chat en tiempo real** · *mejorado* (la parte B es propia)
+Parte A: chat entre pestañas, sin servidor. Parte B: el mismo chat con un servidor Node sin librerías.
+Temas: BroadcastChannel y Web Locks (una pestaña líder), `node:http` y Server-Sent Events, `node:sqlite` para el historial, el event loop de Node, reconexión, «está escribiendo…», `Intl.RelativeTimeFormat` y seguridad (límite de mensajes, texto escapado).
+
+**27. Transferencia de archivos entre dispositivos** · *propio*
+Pasar un archivo del teléfono a la computadora directamente, sin subirlo a ningún servidor.
+Temas: WebRTC (`RTCDataChannel`), el archivo en trozos (`File.slice`, `ArrayBuffer`) con una cabecera binaria en `DataView`, progreso, un hash SHA-256 con `crypto.subtle` y la presentación entre dispositivos con un código o con el servidor del chat.
+
+**28. Acortador de enlaces con estadísticas** · *propio*
+Un servidor Node que acorta enlaces, redirige y cuenta los clics.
+Temas: `node:http` y redirecciones, `node:sqlite`, validar URLs (que nadie lo use para engañar), cookies `HttpOnly` y `SameSite`, CSP y encabezados de seguridad, `--watch` y `--env-file`, un gráfico SVG de los clics y pruebas con `node:test`.
+
+**29. Blog estático por terminal** · *propio*
+Un comando que convierte una carpeta de archivos Markdown en un sitio, reutilizando el parser del proyecto 18.
+Temas: programas de línea de comandos (`parseArgs`, `styleText`), archivos y streams, `for await`, `worker_threads` para las imágenes, el modelo de permisos de Node (`--permission`), ES Modules, pruebas con `node:test`, `npm link` y el campo `bin`.
+
+### Proyecto final
+
+**30. Kanban offline** · *mejorado*
+Un tablero de tareas instalable que funciona sin conexión.
+Temas: Vite, TypeScript, Vitest y ESLint, organizar un proyecto, Web Components, arrastrar y soltar con su alternativa de teclado, IndexedDB, Service Worker y manifest, sincronización entre pestañas, deshacer e importar y exportar.
+
+### Origen
+
+13 son ideas nuevas: uno pedido por el autor (5) y 12 propias (12–16, 22–25, 27–29). Los otros 17 parten de una idea de javascript100.dev y la amplían; el 26 suma una parte propia con servidor.
+
+### Cobertura del temario (secciones 0 a 16)
+
+| Sección | Proyectos |
+|---|---|
+| 0 Antes de empezar | todos (el entorno y las DevTools, de fondo) |
+| 1 Fundamentos | 1, 3, 12, 14, 25 |
+| 2 Control de flujo y errores | 5, 20, 21, 24, 25 |
+| 3 Funciones | 7, 10, 24 |
+| 4 Por dentro (event loop, closures, recursión, memoria) | 2, 7, 18, 20, 24 |
+| 5 Objetos | 10, 20, 24 |
+| 6 Clases | 5, 8, 13, 23 |
+| 7 Colecciones y datos | 9, 10, 11, 12, 13, 19, 27 |
+| 8 Iteradores y generadores | 14, 18, 20, 25, 29 |
+| 9 Asincronía | 5, 6, 7, 8, 10, 15 |
+| 10 Módulos | 8, 12, 17, 29, 30 |
+| 11 Biblioteca estándar | 2, 3, 4, 7, 9, 12, 21, 26 |
+| 12 Metaprogramación | 8, 10, 14 |
+| 13 Navegador | todos |
+| 14 Servidor | 26, 28, 29 |
+| 15 Herramientas | 24, 28, 29, 30 |
+| 16 Novedades | 4, 7, 8, 9, 10, 12, 13, 19, 20, 21 |
+
+**Quedan solo en las lecciones, a propósito:**
+
+- WebSocket. Node no trae servidor de WebSocket; irá en la sección «Proyectos con librerías», con `ws`.
+- La programación precisa del audio (`AudioContext.currentTime`) y la Gamepad API.
+- `break` y `continue` con etiquetas, MessageChannel, SharedArrayBuffer y Atomics. SharedArrayBuffer además exige encabezados de aislamiento.
+- Decorators (todavía son una propuesta), CommonJS, y Deno y Bun.

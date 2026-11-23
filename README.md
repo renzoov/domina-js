@@ -227,7 +227,8 @@ Para agregar una lección:
 
 ## Lo que viene
 
-- **Proyectos:** de 5 a 8 aplicaciones completas para hacer paso a paso, de la más fácil a una final grande. Cada una con su `proyecto-inicial.zip` (HTML y CSS hechos, el JavaScript por escribir) y su `proyecto-final.zip`. El plan está en [`docs/PROYECTOS.md`](docs/PROYECTOS.md).
+- **Proyectos:** 30 aplicaciones completas hechas solo con JavaScript, para hacer paso a paso, de la más fácil a una final grande. Cada una con su `proyecto-inicial.zip` (HTML y CSS hechos, el JavaScript por escribir) y su `proyecto-final.zip`. El plan está en [`docs/PROYECTOS.md`](docs/PROYECTOS.md).
+- **Librerías:** 10 proyectos con las librerías más usadas para hacer aplicaciones (Zod, Prisma, Drizzle, Socket.IO, Chart.js, Leaflet, sharp y otras), sin frameworks de interfaz. Los que llevan servidor se hacen dos veces, con `node:http` y con Express, para comparar. El plan está en [`docs/LIBRERIAS.md`](docs/LIBRERIAS.md).
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).
 

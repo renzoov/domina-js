@@ -3,7 +3,7 @@ import '../styles/global.css';
 import Logo from '../components/Logo.astro';
 import MenuTemario from '../components/MenuTemario.astro';
 import BotonRayosX from '../components/BotonRayosX.astro';
-import BotonProyectos from '../components/BotonProyectos.astro';
+import BotonSeccion from '../components/BotonSeccion.astro';
 import { REPO, PERFIL, REPORTAR } from '../data/sitio';
 import tiza400 from '../fuentes/tiza-domina-400.woff2?url';
 import tiza700 from '../fuentes/tiza-domina-700.woff2?url';
@@ -175,8 +175,15 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
             <a href="/temario" aria-current={ruta === '/temario' ? 'page' : undefined}>Temario</a>
             <a href="/glosario" aria-current={ruta === '/glosario' ? 'page' : undefined}>Glosario</a>
             <BotonRayosX variante="nav" actual={ruta === '/rayos-x'} />
-            <!-- Proyectos todavía no existe: se muestra tachado, con «Próximamente» (plan en docs/PROYECTOS.md) -->
-            <BotonProyectos pronto />
+            <!-- Proyectos y Librerías todavía no existen: se muestran tachados, con «Próximamente» (plan en docs/PROYECTOS.md) -->
+            <BotonSeccion texto="Proyectos" href="/proyectos" color="lila" pronto>
+              <!-- Tres bloques apilados: piezas que se arman -->
+              <svg viewBox="0 0 32 32"><rect x="4" y="17" width="11" height="11" rx="2" /><rect x="17" y="17" width="11" height="11" rx="2" /><rect x="10.5" y="4.5" width="11" height="11" rx="2" /></svg>
+            </BotonSeccion>
+            <BotonSeccion texto="Librerías" href="/librerias" color="naranja" pronto>
+              <!-- Un paquete: lo que se instala con npm -->
+              <svg viewBox="0 0 32 32"><path d="M16 4 27 9.5v13L16 28 5 22.5v-13z" /><path d="M5 9.5 16 15l11-5.5M16 15v13M10.5 6.8 21.5 12.2" /></svg>
+            </BotonSeccion>
           </nav>
         </header>
         <main id="contenido" class="contenido" tabindex="-1">
