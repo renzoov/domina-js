@@ -81,10 +81,21 @@ Para mostrar la foto que alguien acaba de elegir no hace falta leerla. **`URL.cr
 document.body.innerHTML = `<img id="vista" alt="Vista previa de la foto" width="120">`;
 const vista = document.querySelector("#vista");
 
-const foto = new File(["…"], "perfil.png", { type: "image/png" });
+// Para el ejemplo, la "foto" se dibuja en un canvas; en tu página llega del <input type="file">
+const lienzo = document.createElement("canvas");
+lienzo.width = lienzo.height = 120;
+const ctx = lienzo.getContext("2d");
+ctx.fillStyle = "#f7df1e";
+ctx.fillRect(0, 0, 120, 120);
+ctx.fillStyle = "#14201a";
+ctx.font = "bold 56px system-ui";
+ctx.fillText("JS", 26, 84);
+const blob = await new Promise((resolver) => lienzo.toBlob(resolver, "image/png"));
+const foto = new File([blob], "perfil.png", { type: "image/png" });
+
 const direccion = URL.createObjectURL(foto);
 vista.src = direccion;
-console.log(direccion.startsWith("blob:"));
+console.log(foto.name, foto.type, direccion.startsWith("blob:"));
 
 // Cuando ya no la necesites, libérala: si no, el archivo se queda en memoria
 vista.addEventListener("load", () => URL.revokeObjectURL(direccion), { once: true });
