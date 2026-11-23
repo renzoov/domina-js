@@ -4,7 +4,17 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Subrayado from '../../components/Subrayado.astro';
 import Icono from '../../components/Icono.astro';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { proyectos, NIVELES, type Nivel } from '../../data/proyectos';
+import { analizar } from '../../lib/pasos-proyecto.mjs';
+
+// Cuántos pasos tiene cada proyecto publicado: un proyecto está completo cuando están todos hechos
+const pasosDe = (slug: string) => {
+  const carpeta = `${String(proyectos.find((p) => p.slug === slug)!.numero).padStart(2, '0')}-${slug}`;
+  const app = join(process.cwd(), 'proyectos', carpeta, 'final', 'app.js');
+  return existsSync(app) ? analizar(readFileSync(app, 'utf8')).bloques.length : 0;
+};
 
 const grupos = (Object.keys(NIVELES) as Nivel[]).map((nivel) => {
   const lista = proyectos.filter((p) => p.nivel === nivel);
@@ -44,7 +54,7 @@ const FinalTag = etiqueta(final);
             const T = etiqueta(p);
             return (
             <li class:list={['celda', p.tamano]}>
-              <T class:list={['pj', { pronto: !p.publicado }]} href={p.publicado ? `/proyectos/${p.slug}` : undefined} data-proyecto={p.slug}>
+              <T class:list={['pj', { pronto: !p.publicado }]} href={p.publicado ? `/proyectos/${p.slug}` : undefined} data-proyecto={p.slug} data-pasos={p.publicado ? pasosDe(p.slug) : 0}>
                 <span class="fantasma" aria-hidden="true">{String(p.numero).padStart(2, '0')}</span>
                 <span class="arriba">
                   <span class="num"><span class="sr-only">Proyecto </span>{p.numero}</span>
@@ -65,7 +75,7 @@ const FinalTag = etiqueta(final);
 
     <section class="grupo" id="final" style="--c: var(--lila)" aria-labelledby="final-t">
       <h2 id="final-t">Proyecto final<span class="rango">el que junta todo</span></h2>
-      <FinalTag class:list={['pj', 'pj-final', { pronto: !final.publicado }]} href={final.publicado ? `/proyectos/${final.slug}` : undefined} data-proyecto={final.slug}>
+      <FinalTag class:list={['pj', 'pj-final', { pronto: !final.publicado }]} href={final.publicado ? `/proyectos/${final.slug}` : undefined} data-proyecto={final.slug} data-pasos={final.publicado ? pasosDe(final.slug) : 0}>
         <div class="final-texto">
           <span class="arriba">
             <span class="num"><span class="sr-only">Proyecto </span>{final.numero}</span>
@@ -111,17 +121,17 @@ const FinalTag = etiqueta(final);
 </BaseLayout>
 
 <script>
-  // Marca ✓ en los proyectos completados (se guardan en el mismo progreso que los ejercicios)
-  try {
-    const hechos = JSON.parse(localStorage.getItem('domina-js:progreso:v1') || '{}').proyectos || {};
-    document.querySelectorAll<HTMLElement>('[data-proyecto]').forEach((a) => {
-      const marca = a.querySelector<HTMLElement>('[data-hecho]');
-      if (marca && hechos[a.dataset.proyecto!]) {
-        marca.hidden = false;
-        a.classList.add('completo');
-      }
-    });
-  } catch {}
+  // Marca ✓ en los proyectos completados: todos sus pasos marcados como hechos en la guía
+  import { resumen } from '../../scripts/progreso';
+  const hechos = resumen().ejercicios;
+  document.querySelectorAll<HTMLElement>('[data-proyecto]').forEach((tarjeta) => {
+    const pasos = Number(tarjeta.dataset.pasos);
+    if (!pasos) return;
+    const completo = Array.from({ length: pasos }, (_, i) => `proyecto/${tarjeta.dataset.proyecto}/paso-${i + 1}`).every((id) => hechos[id]);
+    const marca = tarjeta.querySelector<HTMLElement>('[data-hecho]');
+    if (marca) marca.hidden = !completo;
+    tarjeta.classList.toggle('completo', completo);
+  });
 </script>
 
 <style>

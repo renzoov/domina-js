@@ -11,7 +11,7 @@ export const REPORTAR = `${REPO}/issues/new/choose`;
  * Abre el formulario «Error en una lección o ejercicio» con la página y el título ya completados.
  * GitHub completa los campos del formulario que se pasan por su id (aquí, «pagina»).
  */
-export function reportarLeccion(ruta: string, titulo: string, tipo: 'Lección' | 'Reto' = 'Lección'): string {
+export function reportarLeccion(ruta: string, titulo: string, tipo: 'Lección' | 'Reto' | 'Proyecto' = 'Lección'): string {
   const q = new URLSearchParams({
     template: '1-error-leccion.yml',
     title: `[${tipo}] ${titulo}: `,

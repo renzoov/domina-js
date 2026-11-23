@@ -1,0 +1,241 @@
+---
+// La guía paso a paso de un proyecto. Sin la barra del temario: arriba, el proyecto (qué es, la
+// captura, las descargas y la demo); abajo, la guía, con «Tu avance» fijo al costado.
+import { getCollection, render } from 'astro:content';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Subrayado from '../../components/Subrayado.astro';
+import Icono from '../../components/Icono.astro';
+import { proyectos, NIVELES } from '../../data/proyectos';
+import { buscarTema } from '../../data/temario';
+import { reportarLeccion } from '../../data/sitio';
+import { analizar } from '../../lib/pasos-proyecto.mjs';
+
+export async function getStaticPaths() {
+  const guias = await getCollection('proyectos');
+  return guias
+    .filter((g) => proyectos.some((p) => p.slug === g.data.slug && p.publicado))
+    .map((guia) => ({ params: { slug: guia.data.slug }, props: { guia } }));
+}
+
+const { guia } = Astro.props;
+const { Content } = await render(guia);
+const datos = proyectos.find((p) => p.slug === guia.data.slug)!;
+const nivel = NIVELES[datos.nivel];
+const an = analizar(readFileSync(join(process.cwd(), 'proyectos', guia.data.carpeta, 'final', 'app.js'), 'utf8'));
+const pasos = an.bloques.map((b) => ({ n: b.n, titulo: b.titulo.charAt(0).toUpperCase() + b.titulo.slice(1) }));
+const ids = pasos.map((p) => `proyecto/${datos.slug}/paso-${p.n}`);
+
+// La captura vive en la carpeta del proyecto (submódulo)
+const capturas = import.meta.glob<{ default: ImageMetadata }>('/proyectos/*/captura.png', { eager: true });
+const captura = capturas[`/proyectos/${guia.data.carpeta}/captura.png`]?.default;
+
+const lecciones = guia.data.lecciones.map((clave) => {
+  const [s, t] = clave.split('/');
+  const tema = buscarTema(s, t);
+  if (!tema) throw new Error(`Proyecto ${datos.slug}: la lección ${clave} no existe en el temario`);
+  return { href: `/${clave}`, titulo: tema.tema.titulo };
+});
+
+const DEMOS = 'https://domina-js-proyectos.pages.dev';
+const demo = `${DEMOS}/${guia.data.carpeta}/final/`;
+const codigo = `https://github.com/renzoov/domina-js-proyectos/tree/main/${guia.data.carpeta}`;
+const urlReporte = reportarLeccion(`/proyectos/${datos.slug}`, datos.titulo, 'Proyecto');
+const siguiente = proyectos.find((p) => p.numero === datos.numero + 1);
+---
+<BaseLayout sinBarra volver={{ href: '/proyectos', texto: 'Todos los proyectos' }} titulo={`${datos.titulo} · Proyectos · domina-js`} descripcion={datos.resumen}>
+  <div class="guia" style={`--c: var(--${nivel.color})`} data-guia data-ids={ids.join(',')} data-pagefind-body data-pagefind-meta="seccion:Proyectos">
+    <header class="apertura">
+      <div class="texto">
+        <p class="meta" data-pagefind-ignore>Proyecto {datos.numero}<i aria-hidden="true">·</i><span class="nivel">{nivel.nombre}</span><i aria-hidden="true">·</i>unas {guia.data.horas} horas<i aria-hidden="true">·</i>{pasos.length} pasos</p>
+        <h1>{datos.titulo}</h1>
+        <Subrayado ancho={420} />
+        <p class="lead" set:html={guia.data.intro} />
+        <div class="acciones" data-pagefind-ignore>
+          <a class="btn btn--y" href={`/proyectos/${datos.slug}/proyecto-inicial.zip`} download>
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
+            Descargar el proyecto inicial
+          </a>
+          <a class="btn" href={demo} target="_blank" rel="noopener">
+            Ver el proyecto terminado<Icono nombre="afuera" /><span class="sr-only"> (se abre en otra pestaña)</span>
+          </a>
+        </div>
+        <p class="otros" data-pagefind-ignore>
+          ¿Solo quieres el código? <a href={`/proyectos/${datos.slug}/proyecto-final.zip`} download>Descarga el proyecto terminado</a> o <a href={codigo} target="_blank" rel="noopener">míralo en GitHub<span class="sr-only"> (se abre en otra pestaña)</span></a>.
+        </p>
+      </div>
+      {captura && (
+        <figure class="captura">
+          <img src={captura.src} width={captura.width} height={captura.height} alt={`Así queda el ${datos.titulo} terminado: cinco chips de color sobre una mesa oscura, cada uno con su ficha técnica.`} loading="eager" />
+        </figure>
+      )}
+    </header>
+
+    <div class="cuerpo">
+      <article class="prosa articulo">
+        {lecciones.length > 0 && (
+          <p class="frescas" data-pagefind-ignore>
+            <span>Conviene tener frescas:</span>
+            {lecciones.map((l) => <a href={l.href}>{l.titulo}</a>)}
+          </p>
+        )}
+        <Content />
+
+        <p class="reporte" data-pagefind-ignore>
+          ¿Viste un error en esta guía? <a href={urlReporte} target="_blank" rel="noopener noreferrer">Avísame en GitHub<span class="sr-only"> (se abre en otra pestaña)</span></a> y lo corrijo.
+        </p>
+
+        {siguiente && (
+          <p class="sigue" data-pagefind-ignore>
+            <span class="sigue-pre">Lo que sigue</span>
+            <span class="sigue-tit">{siguiente.numero}. {siguiente.titulo}</span>
+            <span class="sigue-sec">{siguiente.publicado ? '' : 'Próximamente · '}{siguiente.resumen}</span>
+          </p>
+        )}
+      </article>
+
+      <aside class="avance" aria-labelledby="avance-t" data-pagefind-ignore>
+        <div class="avance-fijo">
+          <h2 id="avance-t">Tu avance</h2>
+          <p class="cuenta" data-cuenta>{pasos.length} pasos</p>
+          <div class="barra" aria-hidden="true"><i data-barra></i></div>
+          <ol class="indice">
+            {pasos.map((p) => (
+              <li><a href={`#paso-${p.n}`} data-enlace-paso={`proyecto/${datos.slug}/paso-${p.n}`}><span class="n">{p.n}</span><span class="t">{p.titulo}</span></a></li>
+            ))}
+          </ol>
+        </div>
+      </aside>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { marcarEjercicio, desmarcarEjercicio, resumen } from '../../scripts/progreso';
+  import { iniciarCodigoVivo } from '../../scripts/codigo-vivo';
+
+  iniciarCodigoVivo();
+
+  const guia = document.querySelector<HTMLElement>('[data-guia]');
+  const ids = (guia?.dataset.ids ?? '').split(',').filter(Boolean);
+
+  // El progreso de cada paso: la casilla, la marca «Hecho», el índice y la cuenta
+  function pintar() {
+    const hechos = resumen().ejercicios;
+    document.querySelectorAll<HTMLInputElement>('[data-hecho-paso]').forEach((casilla) => {
+      const hecho = !!hechos[casilla.dataset.hechoPaso!];
+      casilla.checked = hecho;
+      const paso = casilla.closest('.paso');
+      paso?.classList.toggle('completo', hecho);
+      const marca = paso?.querySelector<HTMLElement>('[data-marca-hecho]');
+      if (marca) marca.hidden = !hecho;
+    });
+    document.querySelectorAll<HTMLElement>('[data-enlace-paso]').forEach((a) => a.classList.toggle('hecho', !!hechos[a.dataset.enlacePaso!]));
+    const cuantos = ids.filter((id) => hechos[id]).length;
+    const cuenta = document.querySelector('[data-cuenta]');
+    if (cuenta) cuenta.textContent = cuantos === ids.length ? `¡Terminaste los ${ids.length} pasos!` : `${cuantos} de ${ids.length} pasos`;
+    document.querySelector<HTMLElement>('[data-barra]')?.style.setProperty('width', `${(cuantos / ids.length) * 100}%`);
+  }
+  document.addEventListener('change', (e) => {
+    const casilla = (e.target as HTMLElement).closest<HTMLInputElement>('[data-hecho-paso]');
+    if (!casilla) return;
+    if (casilla.checked) marcarEjercicio(casilla.dataset.hechoPaso!);
+    else desmarcarEjercicio(casilla.dataset.hechoPaso!);
+  });
+  document.addEventListener('domina:progreso', pintar);
+  pintar();
+
+  // El paso que se está leyendo queda resaltado en el índice
+  const enlaces = new Map([...document.querySelectorAll<HTMLAnchorElement>('[data-enlace-paso]')].map((a) => [a.getAttribute('href')!.slice(1), a]));
+  const observador = new IntersectionObserver((entradas) => {
+    for (const e of entradas) {
+      if (!e.isIntersecting) continue;
+      enlaces.forEach((a) => a.removeAttribute('aria-current'));
+      enlaces.get(e.target.id)?.setAttribute('aria-current', 'step');
+    }
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  document.querySelectorAll('.paso').forEach((p) => observador.observe(p));
+
+  // Copiar el código de un paso
+  document.addEventListener('click', async (e) => {
+    const boton = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-copiar-paso]');
+    if (!boton) return;
+    const texto = boton.querySelector('span')!;
+    try {
+      await navigator.clipboard.writeText(boton.dataset.texto ?? '');
+      texto.textContent = 'Copiado';
+    } catch {
+      texto.textContent = 'No se pudo copiar';
+    }
+    setTimeout(() => (texto.textContent = 'Copiar'), 1600);
+  });
+</script>
+
+<style>
+  .guia { --c: var(--lima); }
+
+  /* ── Apertura: el proyecto ── */
+  .apertura {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: 48px;
+    align-items: center;
+    padding-bottom: 48px;
+    border-bottom: 2px dashed var(--chalk-08);
+  }
+  .meta { margin: 0 0 14px; font: 700 0.78rem/1.4 var(--read); letter-spacing: 0.12em; text-transform: uppercase; color: var(--azul); }
+  .meta i { font-style: normal; margin: 0 9px; color: var(--chalk-45); }
+  .meta .nivel { color: var(--c); }
+  h1 { margin: 0; font: 700 clamp(2.6rem, 5vw, 4.4rem) / 1 var(--hand); text-shadow: 0 0 3px rgba(236, 234, 226, 0.4), 1px 1px 0 rgba(236, 234, 226, 0.2); text-wrap: balance; }
+  .lead { margin: 20px 0 26px; max-width: 52ch; font-size: 1.15rem; line-height: 1.62; color: var(--chalk-70); }
+  .lead :global(b) { color: var(--chalk); }
+  .acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+  .acciones .btn { padding: 13px 18px; font-size: 1rem; }
+  .acciones .ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .acciones :global(svg) { width: 18px; height: 18px; }
+  .otros { margin: 16px 0 0; font-size: 0.95rem; color: var(--chalk-70); }
+  .otros a { color: var(--chalk); font-weight: 700; text-decoration-color: var(--chalk-45); text-underline-offset: 3px; }
+  .otros a:hover, .otros a:focus-visible { color: var(--y); text-decoration-color: var(--y); }
+  .captura { margin: 0; padding: 10px; background: var(--board-lo); border: 2px solid var(--chalk-15); border-radius: var(--r-chalk); transform: rotate(0.6deg); }
+  .captura img { display: block; width: 100%; height: auto; border-radius: 3px; }
+
+  /* ── Cuerpo: la guía y, al costado, «Tu avance» ── */
+  .cuerpo { display: grid; grid-template-columns: minmax(0, 820px) minmax(240px, 1fr); gap: 56px; align-items: start; margin-top: 8px; }
+  .articulo { min-width: 0; }
+  .articulo > :global(:is(p, ul, ol, h2, h3, pre, .astro-code)) { max-width: var(--measure); }
+  .articulo :global(kbd) { font: 600 0.85em var(--mono); padding: 1px 6px; border: 1.5px solid var(--chalk-45); border-radius: 4px; }
+  .articulo > :global(h2#el-paso-a-paso ~ h2) { margin-top: 2.6em; }
+  .frescas { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin: 36px 0 0 !important; font-size: 0.95rem !important; color: var(--chalk-70); }
+  .frescas a { font-weight: 700; color: var(--chalk); text-decoration-color: var(--y); text-underline-offset: 3px; }
+  .frescas a:hover { color: var(--y); }
+
+  .avance { align-self: stretch; }
+  .avance-fijo { position: sticky; top: 20px; margin-top: 44px; padding: 18px 18px 14px; background: var(--board-lo); border: 2px solid var(--chalk-08); border-radius: var(--r-chalk); max-height: calc(100vh - 40px); overflow-y: auto; scrollbar-width: thin; }
+  .avance h2 { margin: 0; font: 700 1.5rem/1 var(--hand); color: var(--chalk); }
+  .cuenta { margin: 6px 0 10px; font-size: 0.9rem; font-weight: 700; color: var(--c); }
+  .barra { height: 6px; background: var(--chalk-08); border-radius: 3px; overflow: hidden; margin-bottom: 14px; }
+  .barra i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 3px; transition: width 300ms var(--ease-out); }
+  .indice { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .indice a { display: flex; align-items: baseline; gap: 10px; padding: 6px 8px; border-radius: var(--r-trazo); color: var(--chalk-70); text-decoration: none; font-size: 0.92rem; line-height: 1.35; }
+  .indice a:hover { color: var(--chalk); background: var(--chalk-04); }
+  .indice a[aria-current='step'] { color: var(--chalk); background: var(--chalk-08); }
+  .indice .n { flex: none; width: 22px; font: 700 1rem/1 var(--hand); color: var(--c); text-align: right; }
+  .indice a.hecho .t { text-decoration: line-through; text-decoration-color: var(--c); text-decoration-thickness: 2px; }
+
+  .reporte { margin: 56px 0 0 !important; padding-top: 16px; border-top: 1px dashed var(--chalk-15); font-size: 0.9rem !important; color: var(--chalk-70); }
+  .reporte a { color: var(--chalk); font-weight: 700; }
+  .sigue { display: flex; flex-direction: column; gap: 4px; margin: 28px 0 0 !important; padding: 20px 22px; border: 2.5px dashed var(--chalk-45); border-radius: var(--r-chalk); }
+  .sigue-pre { font: 700 1.1rem/1 var(--hand); color: var(--chalk-70); }
+  .sigue-tit { font: 700 clamp(1.5rem, 2.2vw, 1.9rem) / 1.1 var(--hand); color: var(--chalk); }
+  .sigue-sec { font-size: 0.92rem; color: var(--azul); font-weight: 700; }
+
+  @media (max-width: 1180px) {
+    .cuerpo { grid-template-columns: minmax(0, 1fr); }
+    .avance { display: none; }
+  }
+  @media (max-width: 980px) {
+    .apertura { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+    .captura { transform: none; }
+  }
+</style>

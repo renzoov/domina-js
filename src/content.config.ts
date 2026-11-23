@@ -43,4 +43,22 @@ const retos = defineCollection({
   }),
 });
 
-export const collections = { lecciones, retos };
+// Proyectos: la guía paso a paso de cada uno. El código vive en proyectos/<carpeta>/ (submódulo
+// domina-js-proyectos); la solución de cada paso se lee de final/app.js (src/lib/pasos-proyecto.mjs)
+const proyectos = defineCollection({
+  loader: glob({ pattern: '**/*.mdx', base: './src/content/proyectos' }),
+  schema: z.object({
+    /** slug de src/data/proyectos.ts */
+    slug: z.string(),
+    /** carpeta dentro de proyectos/ */
+    carpeta: z.string(),
+    /** horas aproximadas */
+    horas: z.number(),
+    /** Párrafo de apertura (HTML simple) */
+    intro: z.string(),
+    /** Lecciones que conviene tener frescas, como sección/tema */
+    lecciones: z.array(z.string()),
+  }),
+});
+
+export const collections = { lecciones, retos, proyectos };

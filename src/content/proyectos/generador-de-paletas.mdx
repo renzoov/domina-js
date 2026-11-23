@@ -1,0 +1,504 @@
+---
+slug: generador-de-paletas
+carpeta: 01-generador-de-paletas
+horas: 3
+intro: 'Una herramienta de verdad: la barra espaciadora genera cinco colores que combinan, fijas los que te gustan, revisas si se leen bien y te llevas la paleta como variables CSS, o la sacas de una foto tuya. <b>El HTML y el CSS ya están hechos</b>: tú escribes el JavaScript en 13 pasos.'
+lecciones: [navegador/dom, navegador/eventos, colecciones/metodos-de-array, objetos/copias, biblioteca-estandar/url, navegador/canvas-y-svg]
+---
+import Paso from '../../components/proyectos/Paso.astro';
+import Comprueba from '../../components/proyectos/Comprueba.astro';
+import Pistas from '../../components/proyectos/Pistas.astro';
+import Nota from '../../components/Nota.astro';
+
+## Lo nuevo de este proyecto
+
+Casi todo lo que vas a usar ya lo viste en las lecciones, y cada paso enlaza a la suya. Hay tres ideas que el curso todavía no cuenta. Ninguna es difícil, y conviene verlas antes de programar.
+
+### Tres formas de escribir un color
+
+En CSS, `#E7C56A`, `rgb(231 197 106)` y `hsl(44 72% 66%)` son **el mismo color**. Cada forma sirve para algo distinto:
+
+- **Hex** es como lo copias y lo pegas: seis dígitos hexadecimales, dos por canal (rojo, verde, azul).
+- **RGB** dice cuánto rojo, verde y azul tiene, de 0 a 255 cada uno. Es lo que necesita la fórmula del contraste.
+- **HSL** dice el **tono** (un ángulo en la rueda de colores, de 0° a 360°), la **saturación** (de gris a intenso) y la **luz** (de negro a blanco). Es el que usamos para inventar colores que combinan, porque girar el tono es sumar grados.
+
+Un hex es, en el fondo, un solo número que guarda los tres canales juntos. Para separarlos se usan los operadores bit a bit que viste en [Operadores](/fundamentos/operadores):
+
+```js
+const hex = "E7C56A";
+const numero = parseInt(hex, 16);   // el hex como número
+console.log(numero);
+console.log((numero >> 16) & 255);  // rojo: los 8 bits de la izquierda
+console.log((numero >> 8) & 255);   // verde: los del medio
+console.log(numero & 255);          // azul: los de la derecha
+```
+
+Y una **armonía** es una receta en la rueda: los colores **análogos** son vecinos (±20°), el **complementario** está enfrente (+180°) y una **tríada** reparte tres tonos a 120°. Pruébalo: cambia el tono y mira los otros dos.
+
+```js
+const tono = 44;
+const triada = [tono, tono + 120, tono + 240].map((h) => h % 360);
+console.log(triada);
+```
+
+### Cuánto contrasta un color con otro
+
+Que un texto «se lea bien» se puede medir. Las pautas de accesibilidad de la web (la **WCAG**) comparan la **luminancia** de dos colores, es decir, cuánta luz llega al ojo. El ojo no ve igual los tres canales: el verde pesa mucho más que el azul. Por eso la luminancia los mezcla en distinta proporción.
+
+El **contraste** va de 1:1 (dos colores iguales) a 21:1 (negro sobre blanco). Para leer texto normal hace falta al menos **4,5:1** (nivel AA), y **7:1** es el nivel AAA. El texto grande se conforma con 3:1.
+
+```js
+// Luminancia de un canal (0 a 255) y del color entero
+const lineal = (c) => (c / 255 <= 0.03928 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4);
+const luminancia = (r, g, b) => 0.2126 * lineal(r) + 0.7152 * lineal(g) + 0.0722 * lineal(b);
+
+const blanco = luminancia(255, 255, 255);
+const amarillo = luminancia(231, 197, 106);
+console.log("blanco sobre amarillo:", ((blanco + 0.05) / (amarillo + 0.05)).toFixed(1));
+console.log("negro sobre amarillo:", ((amarillo + 0.05) / (0 + 0.05)).toFixed(1));
+```
+
+El texto blanco sobre ese amarillo no llega ni a 2:1, y el negro pasa de 12:1. La aplicación lo calcula para cada color, y así sabe de qué color poner el texto encima.
+
+### Agrupar colores parecidos
+
+Para sacar la paleta de una foto hay que responder una pregunta: ¿cuáles son los colores que más se ven? Una foto tiene miles de colores casi iguales, así que primero hay que **agruparlos**. El método más conocido se llama **k-medias** (*k-means*):
+
+1. Eliges *k* puntos de partida, uno por grupo: los **centros**.
+2. Cada elemento se va con el centro que tiene más cerca.
+3. Cada centro se mueve al **promedio** de su grupo.
+4. Repites los pasos 2 y 3 hasta que los centros casi no se mueven.
+
+Con números se ve claro. Aquí hay tres grupos escondidos:
+
+```js
+const datos = [2, 4, 3, 21, 19, 20, 52, 48, 50];
+let centros = [0, 25, 60];
+
+for (let vuelta = 0; vuelta < 5; vuelta++) {
+  const grupos = centros.map(() => []);
+  for (const d of datos) {
+    const cerca = centros.map((c) => Math.abs(d - c));
+    grupos[cerca.indexOf(Math.min(...cerca))].push(d);
+  }
+  centros = grupos.map((g) => g.reduce((a, b) => a + b, 0) / g.length);
+}
+console.log(centros);
+```
+
+En el proyecto, en lugar de números hay píxeles, y en lugar de la distancia entre dos números se usa la distancia entre dos colores: cuánto difieren en rojo, en verde y en azul.
+
+## Antes de empezar
+
+1. **Descarga el proyecto inicial** (el botón de arriba), descomprímelo y abre la carpeta en tu editor.
+2. **Abre `index.html` con doble clic.** Vas a ver la aplicación con cinco colores de ejemplo, pero sin datos y sin que nada funcione. Es normal: todo eso es lo que vas a programar.
+3. **Abre la consola** de las herramientas del navegador (F12). En cada paso hay un «Cómo comprobarlo» que la usa. Cada vez que guardes `app.js`, recarga la página (F5).
+4. **Mira `app.js`.** Tiene un lugar para cada paso, entre `// PASO n` y `// FIN PASO n`, con un comentario que lo explica. Escribe el código de cada paso en su lugar.
+
+En todo el proyecto no hace falta tocar el HTML ni el CSS. El HTML tiene atributos `data-*` (`data-chip`, `data-hex`, `data-fijar`…) para que el JavaScript encuentre cada elemento, y el CSS ya tiene los estilos de cada estado (`.fijo`, `.mejor`, `.visible`…). Tú solo los usas.
+
+<Nota tipo="consejo">
+Intenta cada paso por tu cuenta antes de mirar la solución. Si te trabas, abre las pistas de a una: van de la más general a la más concreta.
+</Nota>
+
+## El paso a paso
+
+<Paso n={1} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+Antes de dibujar nada, decide qué tiene que **recordar** la aplicación. Todo va en un solo objeto, `estado`: los cinco colores (en hex, sin el `#`), cuáles están fijados, qué armonía está elegida y de dónde salió la paleta (de una armonía o de una foto).
+
+La regla que vas a seguir en todo el proyecto: **la página nunca es la fuente de la verdad**. Cuando algo cambia, cambias el `estado` y vuelves a pintar. Así nunca hay que «leer» un color de la pantalla.
+
+Después, busca los elementos que vas a usar con `querySelector` y `querySelectorAll` ([El DOM](/navegador/dom)): los cinco chips, las cinco tiras del logo, los radios de las armonías, los botones y el texto del pie. Busca por los atributos `data-*` del HTML.
+
+<Comprueba>
+
+Recarga y escribe en la consola:
+
+```js
+estado.colores   // un array con 5 colores
+chips.length     // 5
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `querySelectorAll` devuelve una `NodeList`. Con `[...lista]` la conviertes en un array. Lo vas a necesitar en el paso 7 para usar `indexOf`.
+- Un selector de atributo va entre corchetes: `'[data-chip]'`.
+- Para los radios: `'input[name="armonia"]'`. Para un botón: `'[data-generar]'`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={2} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+Ahora las conversiones de [Lo nuevo](#tres-formas-de-escribir-un-color), como cinco funciones pequeñas:
+
+- `hexARgb(hex)` y `rgbAHex(rgb)`, de ida y vuelta entre hex y RGB.
+- `rgbAHsl(rgb)` y `hslARgb(hsl)`, de ida y vuelta entre RGB y HSL.
+- `hslAHex(hsl)`, que junta las dos anteriores: la vas a usar para inventar colores.
+
+Las dos de HSL son fórmulas estándar, y no hace falta memorizarlas. Si prefieres, cópialas de la solución y concéntrate en entender qué entra y qué sale. Las dos de hex sí conviene escribirlas tú.
+
+<Comprueba>
+
+```js
+hexARgb("E7C56A")                 // { r: 231, g: 197, b: 106 }
+rgbAHex({ r: 231, g: 197, b: 106 }) // "E7C56A"
+rgbAHsl({ r: 231, g: 197, b: 106 }) // { h: 44, s: 72, l: 66 }
+hslAHex({ h: 0, s: 100, l: 50 })    // "FF0000", el rojo puro
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `parseInt(hex, 16)` lee el hex como un solo número con los tres canales juntos.
+- `numero >> 16` corre el rojo hasta el final, y `& 255` se queda solo con los últimos 8 bits.
+- Para volver a hex: `canal.toString(16)` puede dar un solo dígito (`"a"`), así que complétalo con `padStart(2, "0")`. Y redondea antes, porque los canales que salen de HSL tienen decimales.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={3} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+Con la fórmula de [Lo nuevo](#cuánto-contrasta-un-color-con-otro), escribe:
+
+- `luminancia(hex)`: cuánta luz tiene un color, de 0 (negro) a 1 (blanco).
+- `contraste(hexA, hexB)`: la razón entre dos colores, con el más claro arriba de la fracción.
+- `nivelWcag(razon)`: `"AAA"` desde 7, `"AA"` desde 4,5, `"AA grande"` desde 3, y nada debajo.
+- `formatearRazon(razon)`: la razón con un decimal y coma, como se escribe en español.
+
+Un detalle importante en el último: **se corta, no se redondea**. Un contraste de 4,48 no llega a AA. Si lo redondearas a «4,5», la aplicación diría que sí.
+
+<Comprueba>
+
+```js
+contraste("FFFFFF", "000000")  // 21
+nivelWcag(5)                   // "AA"
+formatearRazon(4.48)           // "4,4"
+```
+
+</Comprueba>
+
+<Pistas>
+
+- Para que el más claro quede arriba, ordena las dos luminancias de mayor a menor con `sort((a, b) => b - a)`.
+- La potencia se escribe con `**`: `x ** 2.4`.
+- Para cortar a un decimal: `Math.floor(razon * 10) / 10`. Y para la coma: `toLocaleString("es", { minimumFractionDigits: 1, maximumFractionDigits: 1 })`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={4} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+La función central del proyecto: `pintar()` pone en la página todo lo que dice el estado. Recorre los chips y, para cada uno:
+
+- Pone su color en la variable CSS `--tinta-chip`. El CSS ya la usa para pintar la tinta.
+- Elige el color del texto (blanco o negro, el que más contraste) y lo pone en `--texto-chip`.
+- Escribe el hex, el RGB y el HSL en su ficha.
+- Escribe el contraste contra blanco y contra negro, y marca el mejor con la clase `mejor`.
+- Actualiza el botón «Fijar»: su texto, su ícono y `aria-pressed`, que les dice a los lectores de pantalla si está apretado ([Accesibilidad](/navegador/accesibilidad)).
+
+También pinta las tiras del logo, marca el radio de la armonía y escribe el pie: «5 de 5 ranuras · 0 fijadas».
+
+Al final del archivo, fuera de los pasos, va el **arranque**: lo primero que corre al abrir la página. Por ahora es solo `pintar();`.
+
+<Comprueba>
+
+Recarga: cada chip muestra su RGB, su HSL y su contraste, y el mejor de los dos se ve en negro lleno. Después prueba en la consola:
+
+```js
+estado.colores[0] = "000000";
+pintar();   // el primer chip se vuelve negro, con el texto en blanco
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `chips.forEach((chip, i) => { ... })` te da el índice para leer `estado.colores[i]` y `estado.fijados[i]`.
+- Las variables CSS se cambian con `chip.style.setProperty("--tinta-chip", "#" + hex)`.
+- `chip.querySelector("[data-rgb]")` busca solo dentro de ese chip. No hace falta buscar en todo el documento.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={5} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+Ahora sí, a inventar colores. `armonizar(armonia, h, s)` devuelve una receta de cinco colores en HSL, a partir de un tono base `h` y una saturación `s`, usando las armonías de [Lo nuevo](#tres-formas-de-escribir-un-color). Una idea para que la paleta sea útil: que la **luz** vaya de oscuro a claro, así siempre hay de dónde sacar un fondo y un texto.
+
+`generarColores(armonia)` elige el tono base y convierte la receta a hex. Si hay un color fijado, el tono base es el suyo: así la paleta nueva combina con lo que elegiste. Antes de convertir, corrige los valores que se salen de rango (tonos negativos o de más de 360°, luces de más de 100).
+
+Cambia el arranque: antes de `pintar()`, llena `estado.colores` con una paleta generada.
+
+<Comprueba>
+
+Recarga varias veces: cada vez aparece una paleta distinta. Y en la consola:
+
+```js
+generarColores("complementaria")   // 5 hex, dos tonos opuestos
+generarColores("monocromatica")    // 5 hex del mismo tono, de oscuro a claro
+```
+
+</Comprueba>
+
+<Pistas>
+
+- Para un número al azar entre `min` y `max`: `min + Math.random() * (max - min)`.
+- En JavaScript, `-20 % 360` da `-20`. Para llevar cualquier tono a 0–360: `((h % 360) + 360) % 360`.
+- Con un `switch (armonia)` devuelves un array de cinco `{ h, s, l }`. Después, un `map` los pasa a hex con `hslAHex`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={6} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+`generar()` crea una paleta nueva y la pinta. Los colores fijados se quedan donde están: recorre `estado.colores` con `map` y devuelve el color viejo si está fijado, o uno nuevo si no.
+
+Después conecta tres cosas ([Eventos](/navegador/eventos)):
+
+- El botón «Generar», con un `click`.
+- La **barra espaciadora**, con un `keydown` en el documento. Ojo: si el foco está en un botón, el espacio lo aprieta, y no hay que generar además. Ignora la tecla cuando el elemento que la recibe está dentro de un botón o de un control. Y llama a `preventDefault()`, porque si no, el espacio también baja la página.
+- Los radios de armonía: al cambiar, guardan la armonía elegida y generan.
+
+En el arranque agrega una línea más: un `requestAnimationFrame` que pone la clase `listo` en el `body`. El CSS solo anima los cambios de color cuando está esa clase, así la primera pintada no se ve como una transición.
+
+<Comprueba>
+
+Pulsa la barra espaciadora: la paleta cambia, con una transición suave. Elige otra armonía: cambia al momento. Haz clic en «Generar» y pulsa espacio: se genera una sola vez.
+
+</Comprueba>
+
+<Pistas>
+
+- `evento.code` vale `"Space"` sin importar el idioma del teclado.
+- `evento.target.closest("button, input")` te dice si la tecla cayó dentro de un botón o de un control.
+- Para los radios, escucha `change` en cada uno y lee `radio.value`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={7} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+Fijar un color es cambiar `estado.fijados[i]` y volver a pintar. `generar()` ya respeta los fijados desde el paso anterior.
+
+Hay cinco botones «Fijar», pero no hacen falta cinco listeners. Pon **uno solo** en la mesa (`[data-mesa]`) y averigua qué botón se apretó: es la **delegación de eventos** ([Eventos](/navegador/eventos)). Para saber de qué chip es el botón, busca el chip con `closest` y su posición con `indexOf`.
+
+<Comprueba>
+
+Fija el segundo color y pulsa espacio varias veces: no cambia, su botón se ve en negro («Fijado») y su número dice «N.º 02 · fijado». Los demás colores giran alrededor de su tono.
+
+</Comprueba>
+
+<Pistas>
+
+- El clic puede caer en el ícono o en el texto del botón, no en el botón mismo. Por eso usa `evento.target.closest("[data-fijar]")`.
+- Si `closest` devuelve `null`, el clic fue en otro lado. Sal de la función con `return`.
+- `chips.indexOf(boton.closest("[data-chip]"))` da el índice. Funciona porque en el paso 1 convertiste los chips en array.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={8} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+Para deshacer hacen falta dos **pilas** (dos arrays): `atras` guarda las paletas anteriores y `adelante`, las que deshiciste.
+
+- **Antes de cada cambio**, `guardarEnHistorial()` mete una copia de la paleta actual en `atras` y vacía `adelante`.
+- **Deshacer** mueve la paleta actual a `adelante` y saca la última de `atras`.
+- **Rehacer** hace lo contrario.
+
+Guarda una **copia** del array (`[...estado.colores]`), no el array mismo. Si no, todas las entradas del historial apuntarían al mismo array, que va cambiando ([Copias](/objetos/copias)).
+
+Conecta los botones y los atajos (`Ctrl` + `Z`, `Ctrl` + `Y` y `Ctrl` + `Shift` + `Z`). Con `pintarHistorial()`, desactiva cada botón cuando su pila está vacía. Esta vez también hay que agregar una línea en dos funciones que ya escribiste. La solución las marca.
+
+<Comprueba>
+
+Genera tres paletas y pulsa `Ctrl` + `Z` tres veces: vuelves a la primera, y el botón de deshacer queda desactivado. Con `Ctrl` + `Y` vuelves a avanzar.
+
+</Comprueba>
+
+<Pistas>
+
+- `push` guarda al final y `pop` saca el último: justo lo que hace una pila.
+- `generar()` tiene que llamar a `guardarEnHistorial()` **antes** de cambiar los colores, y `pintar()` tiene que llamar a `pintarHistorial()` al final.
+- En Mac el atajo usa `Cmd`: revisa `evento.ctrlKey || evento.metaKey`. Con `Shift` apretado, `evento.key` vale `"Z"` en mayúscula: compara con `evento.key.toLowerCase()`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={9} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+Dos funciones que vas a reutilizar:
+
+- `avisar(mensaje, hex)` muestra un aviso corto abajo (un cuadradito del color, si le pasas uno) y lo esconde a los dos segundos. El elemento del aviso tiene `role="status"`, así que los lectores de pantalla lo leen sin mover el foco.
+- `copiar(texto)` usa el portapapeles ([APIs del dispositivo](/navegador/apis-del-dispositivo)). `navigator.clipboard.writeText` devuelve una promesa que puede fallar si el navegador no da permiso, así que va con `await` dentro de un `try`, y devuelve `true` o `false`.
+
+Después, con delegación como en el paso 7, haz que el botón «Copiar» de cada chip copie su hex y avise.
+
+<Comprueba>
+
+Haz clic en «Copiar» y pega en tu editor: aparece el hex con su `#`. El aviso sale abajo con un cuadradito del color. Si copias dos veces seguidas, el segundo aviso dura sus dos segundos completos.
+
+</Comprueba>
+
+<Pistas>
+
+- La función que usa `await` tiene que ser `async`, y el listener que la llama también.
+- Si llamas a `setTimeout` dos veces, el primero esconde el segundo aviso antes de tiempo. Guarda lo que devuelve `setTimeout` y cancélalo con `clearTimeout` antes de programar otro.
+- Para el cuadradito: crea un `span` con la clase `muestra` y ponle el color de fondo con `style.background`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={10} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+Que la paleta viva en la **dirección** de la página:
+
+```
+index.html?c=1e3a4c-2f7f7a-e7c56a-f2994a-d2553f&a=analoga
+```
+
+Así, si recargas o compartes el enlace, aparece la misma paleta.
+
+- `actualizarUrl()` arma los parámetros con `URLSearchParams` ([URL](/biblioteca-estandar/url)) y cambia la dirección con `history.replaceState`, sin recargar ([Navegación](/navegador/navegacion)). Usa `replaceState` y no `pushState`: si no, cada paleta sumaría una entrada al botón «Atrás».
+- `leerDeUrl()` lee la dirección y devuelve `true` si trae cinco colores válidos. Valida con una [expresión regular](/biblioteca-estandar/expresiones-regulares), porque cualquiera puede escribir cualquier cosa en la dirección.
+
+En el arranque: si la dirección trae una paleta, píntala; si no, genera una como hasta ahora. Y agrega `actualizarUrl()` en `generar()`, `deshacer()` y `rehacer()`.
+
+<Nota>
+Algunos navegadores no dejan cambiar la dirección de un archivo abierto con doble clic (`file://`). Por eso `replaceState` va dentro de un `try`: si falla, la aplicación sigue igual, solo que sin guardar la paleta en la dirección.
+</Nota>
+
+<Comprueba>
+
+Genera una paleta y mira la barra de direcciones: dice `?c=…`. Copia la dirección y ábrela en otra pestaña: aparece la misma paleta. Si cambias una letra del `c` por una `z`, se genera una paleta nueva.
+
+</Comprueba>
+
+<Pistas>
+
+- `new URLSearchParams({ c: "...", a: "analoga" })` convertido a texto da `c=...&a=analoga`.
+- Un color válido cumple `/^[0-9a-f]{6}$/i`. Revisa que sean exactamente cinco con `every`.
+- `leerDeUrl()` devuelve `true` o `false`, así el arranque decide con un `if`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={11} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+El botón «Exportar» abre un `<dialog>` con las cinco variables CSS listas para pegar ([Diálogos y popovers](/navegador/dialogos-y-popovers)). `showModal()` ya trae lo difícil: atrapa el foco, se cierra con `Escape` y oscurece el fondo.
+
+- `textoCss()` arma el texto que se copia.
+- `abrirExportar()` muestra el mismo código, coloreado y con una muestra de cada color. Para eso arma HTML con `innerHTML`. Normalmente eso es peligroso ([Seguridad](/navegador/seguridad)), pero aquí cada hex ya está validado y solo tiene dígitos y letras de la *a* a la *f*.
+- El diálogo también se cierra con el botón ✕ o con un clic en el fondo oscuro.
+- Los dos botones copian el CSS y el enlace, con `copiar` y `avisar` del paso 9.
+
+Hay una trampa: con el diálogo abierto, **el resto de la página queda inerte**. El aviso, que vive fuera del diálogo, quedaría tapado y los lectores de pantalla no lo leerían. Por eso, al abrir, el aviso se muda adentro del diálogo, y vuelve al cerrarlo.
+
+<Comprueba>
+
+Abre «Exportar»: aparecen las cinco variables con su color. Ciérralo con `Escape`, con el ✕ y con un clic afuera. Ábrelo otra vez y copia el CSS: el aviso se ve encima del diálogo.
+
+</Comprueba>
+
+<Pistas>
+
+- Un clic en el fondo oscuro llega con `evento.target === dialogo`, porque el fondo es parte del propio diálogo.
+- `dialogo.append(aviso)` mueve el elemento, no lo copia.
+- El diálogo avisa cuando se cierra con el evento `close`, sin importar cómo se cerró.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={12} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+El paso más largo: sacar la paleta de una foto. Son dos partes.
+
+**`coloresDominantes(imagen, cuantos)`**:
+
+1. Dibuja la imagen, pequeña (100 px de lado como máximo), en un `<canvas>` creado desde JavaScript ([Canvas y SVG](/navegador/canvas-y-svg)).
+2. Lee sus píxeles con `getImageData`. Llegan en un array plano: `[r, g, b, a, r, g, b, a, …]`.
+3. Agrúpalos con k-medias, como en [Lo nuevo](#agrupar-colores-parecidos), pero en tres dimensiones (rojo, verde y azul). Para que el resultado sea estable, arranca con centros repartidos de oscuro a claro, no al azar.
+4. Devuelve los centros en hex, de los grupos más grandes a los más chicos.
+
+**`paletaDeFoto(archivo)`** recibe el archivo:
+
+1. Revisa que sea una imagen.
+2. La carga con `URL.createObjectURL` ([Archivos](/navegador/archivos)) y espera a que esté lista con `imagen.decode()`.
+3. Pone los colores dominantes en las ranuras libres, de oscuro a claro.
+4. Avisa de dónde salió la paleta.
+
+El archivo llega de dos lados: el botón «Desde una foto» (un `<input type="file">` escondido) y **arrastrar y soltar** una imagen en cualquier parte de la página ([Arrastrar y soltar](/navegador/arrastrar-y-soltar)).
+
+<Comprueba>
+
+Elige una foto con «Desde una foto»: la paleta toma sus colores y el aviso dice de qué archivo salió. Arrastra una imagen sobre la página: aparece el recuadro «Suelta la imagen…», y al soltarla cambia la paleta. Si sueltas un archivo que no es una imagen, el aviso lo dice.
+
+</Comprueba>
+
+<Pistas>
+
+- Cada píxel ocupa 4 valores del array. Recórrelo con `for (let p = 0; p < data.length; p += 4)` y salta los casi transparentes (`data[p + 3] < 128`).
+- La distancia entre dos colores es `(r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2`. Para comparar distancias no hace falta la raíz.
+- Libera la imagen con `URL.revokeObjectURL` dentro de un `finally`, así se libera aunque algo falle. Y en el `dragover`, llama a `preventDefault()`: si no, el navegador abre la imagen en lugar de dejarla caer.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={13} proyecto="01-generador-de-paletas" slug="generador-de-paletas">
+
+El toque final. Cuando cambian los colores, los chips se abren como un muestrario de imprenta y se asientan. Se hace con la **Web Animations API**: `elemento.animate(fotogramas, opciones)` ([Estilos y animación](/navegador/estilos-y-animacion)).
+
+- `abanico(indices)` anima solo los chips que cambiaron, cada uno con un giro distinto y un pequeño retraso escalonado. El centro del giro ya está en el CSS (`transform-origin: 50% 130%`, por debajo del chip): por eso parece un abanico.
+- Si la persona pidió **menos movimiento** en su sistema, no se anima nada. Se pregunta con `matchMedia("(prefers-reduced-motion: reduce)")` ([Accesibilidad](/navegador/accesibilidad)).
+
+Para saber qué chips cambiaron, `generar()` los anota en un array, `cambiados`. Y `paletaDeFoto()` anima las ranuras libres.
+
+<Comprueba>
+
+Pulsa espacio: los chips se abren en abanico y se asientan; los fijados no se mueven. Si activas «reducir movimiento» en tu sistema y recargas, la paleta cambia sin animación.
+
+</Comprueba>
+
+<Pistas>
+
+- Los fotogramas son un array de dos objetos: `{ transform: "rotate(6deg)" }` al principio y `{ transform: "rotate(0deg)" }` al final.
+- Para el escalonado, `delay` crece con la posición: `orden * 45`.
+- `fill: "backwards"` aplica el primer fotograma durante el retraso. Sin eso, cada chip se vería un instante en su lugar antes de saltar al giro.
+
+</Pistas>
+
+</Paso>
+
+## Lo que aprendiste
+
+- A guardar todo en un **estado** y a pintar desde él, sin leer nunca la pantalla.
+- Tres formas de escribir un color y a pasar de una a otra, con [operadores bit a bit](/fundamentos/operadores) y fórmulas.
+- A **medir** si un texto se lee bien, con el contraste de la WCAG.
+- **Delegación de eventos** y atajos de teclado que respetan el foco ([Eventos](/navegador/eventos)).
+- Un historial con dos **pilas**, y por qué hay que guardar [copias](/objetos/copias) y no el mismo array.
+- El portapapeles, la dirección como lugar para guardar datos ([URL](/biblioteca-estandar/url)), un `<dialog>` accesible y el aviso que se muda adentro.
+- A leer los píxeles de una imagen y a **agrupar** datos con k-medias.
+- Una animación que respeta a quien pidió menos movimiento.
+
+## Llévalo más lejos
+
+Tres ideas para seguir sin guía:
+
+- **Nombres de colores.** Arma una lista de unos 30 nombres («Azul petróleo», «Arena»…) con su hex, y muestra en cada chip el nombre del más cercano, con la misma distancia del paso 12.
+- **Paletas favoritas.** Un botón que guarde la paleta en `localStorage` y una lista para volver a cargarlas ([Guardar datos](/navegador/guardar-datos)).
+- **Fijar con el teclado.** Que las teclas `1` a `5` fijen o suelten cada color. Cuidado: la página tiene que seguir siendo usable con un lector de pantalla.

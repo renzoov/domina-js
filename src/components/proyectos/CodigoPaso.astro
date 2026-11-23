@@ -1,0 +1,66 @@
+---
+// Código de un paso de proyecto: coloreado, con número de línea y, en los cambios,
+// las líneas nuevas marcadas con «+». Las líneas omitidas («// …») no llevan número.
+import { resaltarLinea } from '../../lib/resaltar';
+
+interface Linea { texto: string; nueva?: boolean; omitido?: boolean }
+interface Props {
+  lineas: Linea[];
+  archivo?: string;
+  /** Muestra el botón Copiar (copia el código sin las líneas omitidas) */
+  copiar?: boolean;
+  /** Marca las líneas nuevas (en los cambios a código que ya existía) */
+  marcar?: boolean;
+}
+const { lineas, archivo = 'app.js', copiar = true, marcar = false } = Astro.props;
+const texto = lineas.filter((l) => !l.omitido).map((l) => l.texto).join('\n');
+// Se arma como un solo texto: dentro de un <pre>, cualquier espacio entre etiquetas se vería
+let numero = 0;
+const html = lineas
+  .map((l) => {
+    if (!l.omitido) numero++;
+    const nueva = marcar && l.nueva;
+    const clase = ['l', nueva && 'nueva', l.omitido && 'omitido'].filter(Boolean).join(' ');
+    // En los cambios los números no ayudan (no son los del archivo): solo se marca lo nuevo
+    const marca = l.omitido ? '' : nueva ? '+' : marcar ? '' : String(numero);
+    return `<span class="${clase}"><i aria-hidden="true">${marca}</i>${nueva ? '<span class="sr-only">Nueva: </span>' : ''}${resaltarLinea(l.texto) || ' '}</span>`;
+  })
+  .join('');
+---
+<figure class="codigo-paso">
+  <figcaption class="barra">
+    <span class="archivo">{archivo}</span>
+    {marcar && <span class="leyenda"><b aria-hidden="true">+</b> líneas nuevas</span>}
+    {copiar && (
+      <button type="button" class="copiar" data-copiar-paso data-texto={texto}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 8.4h10v11.1h-10zM5.5 15.6V4.5h10" /></svg>
+        <span>Copiar</span>
+      </button>
+    )}
+  </figcaption>
+  <pre tabindex="0"><code set:html={html} /></pre>
+</figure>
+
+<style>
+  .codigo-paso { margin: 0 0 1.2em; border: 2px solid var(--chalk-15); border-radius: var(--r-chalk); background: var(--pozo-hondo); overflow: hidden; }
+  .barra { display: flex; align-items: center; gap: 14px; padding: 7px 10px 7px 14px; border-bottom: 1px solid var(--chalk-08); }
+  .archivo { font: 400 0.8rem/1 var(--mono); color: var(--chalk-70); }
+  .leyenda { font-size: 0.82rem; color: var(--chalk-70); }
+  .leyenda b { color: var(--lima); font: 700 0.95rem/1 var(--mono); margin-right: 2px; }
+  .copiar {
+    margin-left: auto;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px;
+    font: 700 0.82rem/1 var(--read); color: var(--chalk-70);
+    background: none; border: 1.5px solid var(--chalk-15); border-radius: var(--r-trazo);
+    cursor: pointer;
+  }
+  .copiar:hover, .copiar:focus-visible { color: var(--chalk); border-color: var(--chalk-45); }
+  .copiar svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  pre { margin: 0; padding: 12px 0; overflow-x: auto; font: 400 0.86rem/1.6 var(--mono); }
+  pre :global(.l) { display: block; white-space: pre; padding-right: 16px; }
+  pre :global(.l i) { display: inline-block; width: 42px; padding-right: 14px; text-align: right; font-style: normal; color: var(--azul); opacity: 0.6; user-select: none; }
+  pre :global(.l.nueva) { background: rgba(196, 236, 140, 0.1); }
+  pre :global(.l.nueva i) { color: var(--lima); opacity: 1; font-weight: 700; }
+  pre :global(.l.omitido) { color: var(--chalk-45); }
+</style>

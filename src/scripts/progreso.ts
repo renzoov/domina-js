@@ -33,6 +33,13 @@ export function marcarEjercicio(id: string) {
   guardar(p);
 }
 
+export function desmarcarEjercicio(id: string) {
+  const p = leer();
+  if (!p.ejercicios[id]) return;
+  delete p.ejercicios[id];
+  guardar(p);
+}
+
 export function ejercicioResuelto(id: string) {
   return !!leer().ejercicios[id];
 }

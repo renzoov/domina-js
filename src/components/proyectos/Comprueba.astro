@@ -1,0 +1,21 @@
+---
+// «Cómo comprobarlo»: qué deberías ver en la página o en la consola al terminar el paso
+---
+<div class="comprueba">
+  <p class="rotulo">Cómo comprobarlo</p>
+  <slot />
+</div>
+
+<style>
+  .comprueba {
+    margin: 6px 0 16px;
+    padding: 14px 18px 4px;
+    background: rgba(143, 208, 247, 0.06);
+    border: 2px dashed rgba(143, 208, 247, 0.35);
+    border-radius: var(--r-chalk);
+  }
+  .rotulo { margin: 0 0 8px; }
+  .comprueba :global(p) { margin: 0 0 10px; font-size: 1rem; line-height: 1.6; }
+  .comprueba :global(pre) { font: 400 0.86rem/1.6 var(--mono); padding: 10px 14px; margin: 0 0 12px; background: var(--pozo-hondo) !important; border: 1.5px solid var(--chalk-15); border-radius: var(--r-trazo); overflow-x: auto; }
+  .comprueba :global(:not(pre) > code) { font: 400 0.9em var(--mono); color: var(--naranja); }
+</style>

@@ -1,0 +1,53 @@
+---
+// Tres pistas, de la más general a la más concreta. Cada una se abre por separado:
+// así se puede pedir solo la ayuda que hace falta. Van como <li> en el MDX.
+---
+<div class="pistas">
+  <p class="rotulo">¿Te trabaste?</p>
+  <div class="lista" data-pistas>
+    <slot />
+  </div>
+</div>
+
+<script>
+  // Cada <li> de la lista pasa a ser un <details> «Pista n»
+  document.querySelectorAll<HTMLElement>('[data-pistas]').forEach((lista) => {
+    const items = [...lista.querySelectorAll(':scope > ul > li, :scope > ol > li')];
+    if (!items.length) return;
+    const contenedor = document.createElement('div');
+    items.forEach((li, i) => {
+      const d = document.createElement('details');
+      d.className = 'pista';
+      const s = document.createElement('summary');
+      s.textContent = `Pista ${i + 1}`;
+      // El contenido va envuelto: así el texto y el código no heredan los estilos del <summary>
+      const cuerpo = document.createElement('div');
+      cuerpo.className = 'texto-pista';
+      cuerpo.append(...li.childNodes);
+      d.append(s, cuerpo);
+      contenedor.append(d);
+    });
+    lista.replaceChildren(contenedor);
+  });
+</script>
+
+<style>
+  .pistas { margin: 4px 0 6px; }
+  .rotulo { margin: 0 0 8px; color: var(--pink); }
+  .lista :global(details.pista) { margin: 0 0 6px; border-left: 0; }
+  .lista :global(summary) {
+    width: fit-content;
+    padding: 6px 12px;
+    font: 700 0.92rem/1.2 var(--read); color: var(--chalk-70);
+    border: 1.5px solid var(--chalk-15); border-radius: var(--r-trazo);
+    cursor: pointer;
+    list-style: none;
+  }
+  .lista :global(summary::-webkit-details-marker) { display: none; }
+  .lista :global(summary:hover), .lista :global(details[open] > summary) { color: var(--chalk); border-color: var(--pink); }
+  .lista :global(.texto-pista) { margin: 8px 0 10px 2px; font-size: 1rem; line-height: 1.6; color: var(--chalk); }
+  .lista :global(.texto-pista > p) { margin: 0 0 0.5em; }
+  .lista :global(.texto-pista code) { font: 400 0.9em var(--mono); color: var(--naranja); padding: 0 0.15em; border-bottom: 1px dashed var(--chalk-45); }
+  /* Sin JavaScript, las pistas quedan como lista */
+  .lista > :global(ul), .lista > :global(ol) { margin: 0; padding-left: 1.3em; }
+</style>
