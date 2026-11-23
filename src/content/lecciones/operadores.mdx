@@ -3,7 +3,7 @@ titulo: Operadores
 seccion: fundamentos
 tema: operadores
 minutos: 14
-resumen: Operadores de comparación, lógicos y su cortocircuito, el ternario, ?? y ?. para datos que pueden faltar, la asignación lógica ??=, ||= y &&= (ES2021), incremento y la precedencia.
+resumen: Operadores de comparación, lógicos y su cortocircuito, el ternario, ?? y ?. para datos que pueden faltar, la asignación lógica ??=, ||= y &&= (ES2021), incremento, los operadores de bits (&, |, ^, ~, <<, >>, >>>) con banderas, y la precedencia.
 intro: 'Los <u>operadores</u> son los símbolos que combinan valores: <code>+</code>, <code>===</code>, <code>&&</code>… Ya usaste varios. En este tema completas la caja de herramientas con los <u>operadores modernos</u> que hacen el código más corto y más seguro: <code>??</code>, <code>?.</code> y la asignación lógica.'
 pizarron: operadoresModernos
 modoPizarron: variables
@@ -138,6 +138,41 @@ console.log("marca" in coche);   // true
 console.log("color" in coche);   // false
 ```
 
+## Operadores de bits
+
+Los operadores **bit a bit** trabajan con la representación binaria de los números, bit por bit. Convierten los operandos a enteros de 32 bits, operan y devuelven un número:
+
+| Operador | Nombre | Qué hace con cada bit |
+|---|---|---|
+| `a & b` | Y | 1 si los dos son 1 |
+| <code>a &#124; b</code> | O | 1 si alguno es 1 |
+| `a ^ b` | O exclusivo | 1 si son distintos |
+| `~a` | NO | Los invierte todos |
+| `a << n` | Desplazar a la izquierda | Los corre `n` lugares (multiplica por 2ⁿ) |
+| `a >> n` | Desplazar a la derecha | Los corre `n` lugares, conservando el signo |
+| `a >>> n` | Desplazar a la derecha sin signo | Igual, pero rellena con ceros |
+
+```js
+console.log(5 & 3, 5 | 3, 5 ^ 3);   // 5 es 101 y 3 es 011 en binario
+console.log(1 << 3, -16 >> 2, -16 >>> 28);
+console.log(~5);
+```
+
+Su uso más común fuera de los datos binarios son las **banderas**: varias opciones de sí o no guardadas en un solo número, una por bit.
+
+```js
+const LEER = 1, ESCRIBIR = 2, BORRAR = 4;   // 001, 010 y 100
+let permisos = LEER | ESCRIBIR;            // 011: tiene las dos
+
+console.log((permisos & ESCRIBIR) !== 0);  // ¿tiene ESCRIBIR?
+permisos &= ~ESCRIBIR;                     // se lo quita
+console.log(permisos, (permisos & BORRAR) !== 0);
+```
+
+<Nota>
+  No confundas `&` con `&&` ni `|` con `||`: `&&` y `||` son los lógicos y cortocircuitan; los de un solo carácter operan bit a bit y siempre evalúan los dos lados. Y verás `x | 0` para quitar decimales: funciona, pero solo hasta 2³¹ y se lee peor que `Math.trunc(x)`.
+</Nota>
+
 ## Precedencia
 
 Cuando hay varios operadores, se aplican en un orden fijo, la **precedencia**. Los aritméticos van antes que las comparaciones, y las comparaciones antes que `&&`, que va antes que `||` y `??`. Pero no hace falta memorizar la tabla: **usa paréntesis** cuando haya dudas. Además, JavaScript no te deja mezclar `??` con `||` o `&&` sin paréntesis, justamente para evitar ambigüedades.
@@ -151,6 +186,7 @@ Cuando hay varios operadores, se aplican en un orden fijo, la **precedencia**. L
 - `?.` lee propiedades, índices o llamadas sin lanzar error si algo falta.
 - `??=`, `||=` y `&&=` (ES2021) asignan solo en el caso que indica su operador.
 - `++` y `--` antes o después cambian lo que devuelve la expresión. Ante la duda, paréntesis.
+- Bit a bit: `&`, `|`, `^`, `~`, `<<`, `>>` y `>>>` trabajan con enteros de 32 bits; sirven para banderas y datos binarios.
 
 <Practica>
 

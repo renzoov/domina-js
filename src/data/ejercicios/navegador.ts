@@ -1762,3 +1762,1482 @@ for (const c of comentarios) {
   explicacion:
     '<p>Los textos que pasan por <code>textContent</code> o por <code>append</code> nunca se interpretan como HTML, sin importar lo que contengan. Así, el ataque de Luis se muestra como un comentario raro, inofensivo. Además, <code>+=</code> sobre <code>innerHTML</code> reconstruye toda la lista en cada vuelta: también es lento.</p>',
 };
+
+/* ── 13.4 Eventos propios ────────────────────────────────── */
+export const propiosAuto = {
+  id: 'eventos-propios-auto',
+  titulo: 'Avisar que algo pasó',
+  preguntas: [
+    {
+      pregunta: '¿Cuándo corren los listeners de un evento que disparas con <code>dispatchEvent</code>?',
+      opciones: ['En la próxima tarea del event loop', 'En ese mismo momento: <code>dispatchEvent</code> no termina hasta que corrieron todos', 'Cuando el navegador tenga tiempo libre'],
+      correcta: 1,
+      explicacion: '<code>dispatchEvent</code> es síncrono. Los eventos del navegador, como un clic, sí llegan como tareas.',
+    },
+    {
+      pregunta: '¿Dónde van los datos que quieres mandar con un evento propio?',
+      opciones: ['En <code>e.target</code>', 'En la opción <code>detail</code> de un <code>CustomEvent</code>, que se lee como <code>e.detail</code>', 'En <code>e.data</code> de cualquier <code>Event</code>'],
+      correcta: 1,
+      explicacion: 'Solo <code>CustomEvent</code> guarda <code>detail</code>; un <code>Event</code> común ignora esa opción.',
+    },
+    {
+      pregunta: 'Disparas <code>new CustomEvent("guardado")</code> sobre un botón y lo escuchas en la lista que lo contiene. ¿Qué pasa?',
+      opciones: ['La lista lo recibe', 'La lista no se entera: los eventos propios no burbujean salvo con <code>bubbles: true</code>', 'Da un error'],
+      correcta: 1,
+      explicacion: 'Con <code>{ bubbles: true }</code> el evento sube por los ancestros, como un clic.',
+    },
+    {
+      pregunta: '¿Qué devuelve <code>dispatchEvent(evento)</code>?',
+      opciones: ['El evento', '<code>false</code> si el evento era <code>cancelable</code> y algún listener llamó a <code>preventDefault()</code>; si no, <code>true</code>', 'Una promesa'],
+      correcta: 1,
+      explicacion: 'Así quien dispara el evento puede preguntar "¿alguien se opone?" antes de seguir.',
+    },
+  ],
+};
+
+export const propiosOrden = {
+  id: 'eventos-propios-orden',
+  titulo: 'Una venta cancelada',
+  codigo: `const tienda = new EventTarget();
+tienda.addEventListener("venta", (e) => console.log("A", e.detail));
+
+console.log("inicio");
+tienda.dispatchEvent(new CustomEvent("venta", { detail: "té" }));
+
+tienda.addEventListener("venta", (e) => {
+  console.log("B", e.detail);
+  e.preventDefault();
+});
+const seguir = tienda.dispatchEvent(new CustomEvent("venta", { detail: "pan", cancelable: true }));
+console.log("seguir:", seguir);`,
+  salida: ['inicio', 'A té', 'A pan', 'B pan', 'seguir: false'],
+  inicio: [3, 0, 4, 1, 2],
+  explicacion:
+    '<code>dispatchEvent</code> es síncrono: cada listener imprime antes de la línea siguiente. El listener B se agregó después de la primera venta, así que solo la segunda lo despierta. Como esa venta es <code>cancelable</code> y B llama a <code>preventDefault()</code>, <code>dispatchEvent</code> devuelve <code>false</code>.',
+};
+
+export const propiosDetective = {
+  id: 'eventos-propios-detective',
+  titulo: 'El carrito sin datos',
+  codigo: `<button id="agregar">Agregar al carrito</button>
+<span id="contador">0</span>
+
+<script>
+  const boton = document.querySelector("#agregar");
+  const contador = document.querySelector("#contador");
+
+  document.addEventListener("carrito:agregado", (e) => {
+    contador.textContent = e.detail.total;
+  });
+
+  let total = 0;
+  boton.addEventListener("click", () => {
+    total++;
+    boton.dispatchEvent(new Event("carrito:agregado", { bubbles: true, detail: { total } }));
+  });
+</script>`,
+  error: `Uncaught TypeError: Cannot read properties of undefined (reading 'total')
+    at HTMLDocument.<anonymous> (index.html:9:38)`,
+  culpable: 15,
+  hallazgo:
+    'El error aparece en la línea 9, pero la causa está en la 15: un <code>Event</code> común no guarda la opción <code>detail</code>, así que <code>e.detail</code> es <code>undefined</code>. Para mandar datos hace falta un <code>CustomEvent</code>.',
+  pista: 'El listener lee <code>e.detail</code>. ¿Qué tipo de evento se está creando, y ese tipo guarda <code>detail</code>?',
+  arreglos: [
+    {
+      texto: 'Crear el evento con <code>new CustomEvent("carrito:agregado", { bubbles: true, detail: { total } })</code>',
+      correcta: true,
+      porque: '<code>CustomEvent</code> es el que lleva <code>detail</code>. El resto queda igual: el evento sube hasta <code>document</code> gracias a <code>bubbles</code>.',
+    },
+    {
+      texto: 'Quitar <code>bubbles: true</code>',
+      correcta: false,
+      porque: 'Sin <code>bubbles</code> el evento no llega a <code>document</code>: el error desaparece, pero solo porque el listener nunca corre. El contador sigue en 0.',
+    },
+    {
+      texto: 'Leer <code>e.target.detail.total</code>',
+      correcta: false,
+      porque: '<code>e.target</code> es el botón, que no tiene <code>detail</code>: el error sería el mismo.',
+    },
+  ],
+};
+
+export const propiosLab = {
+  id: 'eventos-propios-lab',
+  titulo: 'Una lista que avisa',
+  pagina: `<p>Tareas pendientes: <b id="pendientes">0</b></p>
+<p id="aviso"></p>`,
+  inicial: `class Tareas extends EventTarget {
+  #lista = [];
+
+  agregar(texto) {
+    this.#lista.push(texto);
+    // 1. Dispara un CustomEvent "cambio" con detail { total } (cuántas tareas hay)
+    // 2. Si acaba de llegar a 3 tareas, dispara también un evento "llena"
+  }
+}
+
+// La página ya escucha: no hace falta tocar esto
+const tareas = new Tareas();
+const pendientes = document.querySelector("#pendientes");
+const aviso = document.querySelector("#aviso");
+tareas.addEventListener("cambio", (e) => (pendientes.textContent = e.detail.total));
+tareas.addEventListener("llena", () => (aviso.textContent = "Ya tienes 3 tareas: termina alguna antes de sumar más"));
+
+tareas.agregar("Comprar pan");
+`,
+  verificaciones: [
+    { texto: 'Con una tarea, la página muestra <code>1</code>', prueba: 'return pendientes.textContent === "1";' },
+    { texto: 'El aviso aparece justo al llegar a 3 tareas', prueba: 'tareas.agregar("Llamar a Ana"); const antes = aviso.textContent; tareas.agregar("Estudiar"); return antes === "" && pendientes.textContent === "3" && aviso.textContent.startsWith("Ya tienes 3");' },
+    { texto: 'Usa <code>CustomEvent</code> y <code>dispatchEvent</code>', prueba: String.raw`return /new\s+CustomEvent\s*\(/.test(__codigo) && /dispatchEvent\s*\(/.test(__codigo);` },
+  ],
+  pistas: [
+    'Dentro de la clase, el objeto mismo es el <code>EventTarget</code>: <code>this.dispatchEvent(…)</code>.',
+    'El aviso de cambio: <code>this.dispatchEvent(new CustomEvent("cambio", { detail: { total: this.#lista.length } }));</code>',
+    'Y después: <code>if (this.#lista.length === 3) this.dispatchEvent(new Event("llena"));</code>',
+  ] as [string, string, string],
+  solucion: `class Tareas extends EventTarget {
+  #lista = [];
+
+  agregar(texto) {
+    this.#lista.push(texto);
+    this.dispatchEvent(new CustomEvent("cambio", { detail: { total: this.#lista.length } }));
+    if (this.#lista.length === 3) this.dispatchEvent(new Event("llena"));
+  }
+}
+
+const tareas = new Tareas();
+const pendientes = document.querySelector("#pendientes");
+const aviso = document.querySelector("#aviso");
+tareas.addEventListener("cambio", (e) => (pendientes.textContent = e.detail.total));
+tareas.addEventListener("llena", () => (aviso.textContent = "Ya tienes 3 tareas: termina alguna antes de sumar más"));
+
+tareas.agregar("Comprar pan");`,
+  explicacion:
+    '<p>La clase no sabe nada de la página: solo anuncia lo que le pasa. Quien escucha decide qué hacer con el aviso. El evento <code>llena</code> no necesita datos, así que basta un <code>Event</code> común; <code>cambio</code> sí los lleva, en <code>detail</code>.</p>',
+};
+
+/* ── 13.6 Archivos ───────────────────────────────────────── */
+export const archivosWebAuto = {
+  id: 'archivos-web-auto',
+  titulo: 'Archivos que entran y salen',
+  preguntas: [
+    {
+      pregunta: '¿Qué guarda <code>input.files</code> después de que la persona elige archivos?',
+      opciones: ['Las rutas de los archivos en el disco', 'Una lista de objetos <code>File</code>, con nombre, tipo y tamaño, pero sin la ruta', 'El contenido ya leído'],
+      correcta: 1,
+      explicacion: 'La ruta nunca se expone. El contenido se lee después, con <code>text()</code>, <code>arrayBuffer()</code> o <code>stream()</code>.',
+    },
+    {
+      pregunta: '¿Para qué sirve <code>URL.createObjectURL(archivo)</code>?',
+      opciones: ['Para subir el archivo a un servidor', 'Para crear una dirección temporal (<code>blob:…</code>) que apunta al archivo en memoria, y usarla en un <code>&lt;img&gt;</code> o un enlace', 'Para convertirlo en texto'],
+      correcta: 1,
+      explicacion: 'Es la forma más rápida de mostrar una imagen antes de subirla. Cuando ya no la necesites, libérala con <code>URL.revokeObjectURL</code>.',
+    },
+    {
+      pregunta: '¿Cómo se descarga un archivo creado en el navegador?',
+      opciones: ['Con <code>fetch</code>', 'Se arma un <code>Blob</code>, se le crea una dirección y se hace clic en un <code>&lt;a&gt;</code> con el atributo <code>download</code>', 'No se puede'],
+      correcta: 1,
+      explicacion: 'El valor de <code>download</code> es el nombre con que se guarda el archivo.',
+    },
+    {
+      pregunta: 'Quieres mostrar una barra con cuánto se lleva subido. ¿Qué usas?',
+      opciones: ['<code>fetch</code> con la opción <code>progress</code>', '<code>XMLHttpRequest</code> y el evento <code>progress</code> de <code>xhr.upload</code>', '<code>FileReader</code>'],
+      correcta: 1,
+      explicacion: '<code>fetch</code> todavía no informa el progreso de subida. <code>FileReader</code> lee archivos, no los envía.',
+    },
+  ],
+};
+
+export const archivosWebOrden = {
+  id: 'archivos-web-orden',
+  titulo: 'Bytes y letras',
+  codigo: `const archivo = new File(["¡Hola!"], "saludo.txt", { type: "text/plain" });
+
+console.log(archivo.name);
+console.log(archivo.size);
+console.log(archivo instanceof Blob);
+
+const texto = await archivo.text();
+console.log(texto.length);`,
+  salida: ['saludo.txt', '7', 'true', '6'],
+  inicio: [2, 0, 3, 1],
+  explicacion:
+    '<code>size</code> cuenta <b>bytes</b>, no letras: el texto se guarda en UTF-8, donde <code>¡</code> ocupa 2 bytes. Por eso el archivo pesa 7 bytes y el texto leído tiene 6 caracteres. Todo <code>File</code> es también un <code>Blob</code>, con un nombre y una fecha.',
+};
+
+export const archivosWebDetective = {
+  id: 'archivos-web-detective',
+  titulo: 'La vista previa que no llega',
+  codigo: `<input type="file" id="foto" accept="image/*">
+<img id="vista" alt="Vista previa de la foto">
+
+<script>
+  const campo = document.querySelector("#foto");
+  const vista = document.querySelector("#vista");
+
+  campo.addEventListener("change", () => {
+    const archivo = campo.files;
+    vista.src = URL.createObjectURL(archivo);
+  });
+</script>`,
+  error: `Uncaught TypeError: Failed to execute 'createObjectURL' on 'URL': Overload resolution failed.
+    at HTMLInputElement.<anonymous> (index.html:10:21)`,
+  culpable: 9,
+  hallazgo:
+    '<code>campo.files</code> es una <b>lista</b> (<code>FileList</code>), aunque se haya elegido un solo archivo. <code>createObjectURL</code> espera un <code>File</code> o un <code>Blob</code>, y no sabe qué hacer con una lista: por eso "Overload resolution failed".',
+  pista: '¿Qué hay en <code>campo.files</code>: un archivo o una lista de archivos?',
+  arreglos: [
+    {
+      texto: 'Tomar el primero: <code>const archivo = campo.files[0];</code>',
+      correcta: true,
+      porque: 'La lista se indexa como un array. Conviene además comprobar que exista (<code>if (!archivo) return;</code>), porque la persona puede cancelar el diálogo.',
+    },
+    {
+      texto: 'Usar <code>campo.value</code>',
+      correcta: false,
+      porque: '<code>value</code> es un texto como <code>C:\\fakepath\\foto.png</code>: no es el archivo, y la ruta es falsa a propósito.',
+    },
+    {
+      texto: 'Leerlo primero con <code>await campo.files.text()</code>',
+      correcta: false,
+      porque: 'Una <code>FileList</code> no tiene <code>text()</code>, y para mostrar una imagen no hace falta leerla: alcanza con la dirección temporal.',
+    },
+  ],
+};
+
+export const archivosWebLab = {
+  id: 'archivos-web-lab',
+  titulo: 'Antes de subir',
+  pagina: `<input type="file" id="archivos" multiple>
+<ul id="lista"></ul>
+<p id="resumen"></p>`,
+  inicial: `const campo = document.querySelector("#archivos");
+const lista = document.querySelector("#lista");
+const resumen = document.querySelector("#resumen");
+const LIMITE = 1024 * 1024; // 1 MB
+
+// Cuando cambie la selección:
+// - vacía la lista y agrega un <li> por archivo:
+//     "nombre (N KB)", con N redondeado hacia arriba (Math.ceil)
+//     si pesa más que LIMITE: "nombre: pesa demasiado", con la clase "error"
+// - en #resumen escribe "Listos para subir: X" (los que pesan demasiado no cuentan)
+
+// Prueba: simula que se eligieron dos archivos
+const prueba = new DataTransfer();
+prueba.items.add(new File(["a".repeat(3000)], "notas.txt"));
+prueba.items.add(new File([new Uint8Array(2 * LIMITE)], "video.mp4"));
+campo.files = prueba.files;
+campo.dispatchEvent(new Event("change"));
+`,
+  verificaciones: [
+    { texto: 'Muestra <code>notas.txt (3 KB)</code>', prueba: 'return lista.children[0]?.textContent === "notas.txt (3 KB)";' },
+    { texto: 'Marca <code>video.mp4: pesa demasiado</code> con la clase <code>error</code>', prueba: 'const li = lista.children[1]; return li?.textContent === "video.mp4: pesa demasiado" && li.classList.contains("error");' },
+    { texto: 'Cuenta los que se pueden subir y empieza de cero en cada selección', prueba: 'const antes = resumen.textContent; const otra = new DataTransfer(); otra.items.add(new File(["x"], "a.txt")); campo.files = otra.files; campo.dispatchEvent(new Event("change")); return antes === "Listos para subir: 1" && lista.children.length === 1 && lista.children[0].textContent === "a.txt (1 KB)" && resumen.textContent === "Listos para subir: 1";' },
+  ],
+  pistas: [
+    'Escucha <code>change</code> en el campo y empieza con <code>lista.replaceChildren();</code> para vaciarla.',
+    'Recorre <code>for (const archivo of campo.files)</code>; el tamaño en KB es <code>Math.ceil(archivo.size / 1024)</code>.',
+    'Lleva un contador de los que pasan el límite y al final: <code>resumen.textContent = `Listos para subir: ${listos}`;</code>',
+  ] as [string, string, string],
+  solucion: `const campo = document.querySelector("#archivos");
+const lista = document.querySelector("#lista");
+const resumen = document.querySelector("#resumen");
+const LIMITE = 1024 * 1024; // 1 MB
+
+campo.addEventListener("change", () => {
+  lista.replaceChildren();
+  let listos = 0;
+  for (const archivo of campo.files) {
+    const li = document.createElement("li");
+    if (archivo.size > LIMITE) {
+      li.textContent = \`\${archivo.name}: pesa demasiado\`;
+      li.classList.add("error");
+    } else {
+      li.textContent = \`\${archivo.name} (\${Math.ceil(archivo.size / 1024)} KB)\`;
+      listos++;
+    }
+    lista.append(li);
+  }
+  resumen.textContent = \`Listos para subir: \${listos}\`;
+});
+
+const prueba = new DataTransfer();
+prueba.items.add(new File(["a".repeat(3000)], "notas.txt"));
+prueba.items.add(new File([new Uint8Array(2 * LIMITE)], "video.mp4"));
+campo.files = prueba.files;
+campo.dispatchEvent(new Event("change"));`,
+  explicacion:
+    '<p>El navegador ya te dice cuánto pesa cada archivo sin leerlo, así que puedes avisar antes de gastar tiempo y datos en subirlo. Es solo una ayuda para la persona: el servidor tiene que volver a comprobar el tamaño, porque cualquiera puede saltarse tu código.</p>',
+};
+
+/* ── 13.7 Arrastrar y soltar ─────────────────────────────── */
+export const arrastrarAuto = {
+  id: 'arrastrar-auto',
+  titulo: 'De una punta a la otra',
+  preguntas: [
+    {
+      pregunta: 'Arrastras una tarjeta sobre una columna y el cursor muestra el ícono de prohibido. ¿Qué falta?',
+      opciones: ['El atributo <code>draggable</code> en la columna', 'Llamar a <code>e.preventDefault()</code> en el evento <code>dragover</code> de la columna', 'Escuchar <code>dragend</code>'],
+      correcta: 1,
+      explicacion: 'Por defecto ningún elemento acepta que le suelten algo. Cancelar <code>dragover</code> es la forma de decir "aquí sí se puede".',
+    },
+    {
+      pregunta: '¿Para qué sirve <code>e.dataTransfer.setData("text/plain", id)</code> en <code>dragstart</code>?',
+      opciones: ['Para mover el elemento', 'Para guardar qué se está arrastrando y leerlo en <code>drop</code> con <code>getData</code>, usando el mismo tipo', 'Para cambiar el cursor'],
+      correcta: 1,
+      explicacion: 'El <code>dataTransfer</code> es lo único que viaja entre las dos puntas del arrastre.',
+    },
+    {
+      pregunta: 'La persona suelta archivos desde su escritorio. ¿Dónde están?',
+      opciones: ['En <code>e.target.files</code>', 'En <code>e.dataTransfer.files</code>, durante el evento <code>drop</code>', 'En <code>getData("files")</code>'],
+      correcta: 1,
+      explicacion: 'Es una lista de <code>File</code>, igual que la de un <code>&lt;input type="file"&gt;</code>. Cancela el <code>drop</code> para que el navegador no abra el archivo.',
+    },
+    {
+      pregunta: '¿Por qué un tablero con arrastrar y soltar necesita además botones para mover las tarjetas?',
+      opciones: ['No los necesita', 'Porque la API de arrastrar no funciona con el teclado ni con lectores de pantalla, y en pantallas táctiles funciona a medias', 'Porque es más rápido'],
+      correcta: 1,
+      explicacion: 'Arrastrar es un atajo para el mouse; la acción tiene que poder hacerse también de otra forma.',
+    },
+  ],
+};
+
+export const arrastrarOrden = {
+  id: 'arrastrar-orden',
+  titulo: 'Lo que viaja en el arrastre',
+  codigo: `const tarjeta = document.createElement("p");
+tarjeta.id = "tarea-7";
+
+const datos = new DataTransfer();
+datos.setData("text/plain", tarjeta.id);
+datos.setData("application/x-tarea", JSON.stringify({ id: 7, columna: "hoy" }));
+
+console.log(datos.types.length);
+console.log(datos.getData("text/plain"));
+console.log(datos.getData("text/html") === "");
+console.log(JSON.parse(datos.getData("application/x-tarea")).columna);`,
+  salida: ['2', 'tarea-7', 'true', 'hoy'],
+  inicio: [3, 1, 0, 2],
+  explicacion:
+    'Un <code>DataTransfer</code> guarda un texto por cada tipo. Pedir un tipo que no se guardó no da error: devuelve un texto vacío. Para mandar un objeto, conviértelo en JSON.',
+};
+
+export const arrastrarDetective = {
+  id: 'arrastrar-detective',
+  titulo: 'La tarea que no llega',
+  codigo: `<p id="tarea-1" draggable="true">Comprar pan</p>
+<ul id="hecho"></ul>
+
+<script>
+  const tarea = document.querySelector("#tarea-1");
+  const hecho = document.querySelector("#hecho");
+
+  tarea.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("id", tarea.id);
+  });
+  hecho.addEventListener("dragover", (e) => e.preventDefault());
+  hecho.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    hecho.appendChild(document.getElementById(id));
+  });
+</script>`,
+  error: `Uncaught TypeError: Failed to execute 'appendChild' on 'Node': parameter 1 is not of type 'Node'.
+    at HTMLUListElement.<anonymous> (index.html:15:11)`,
+  culpable: 14,
+  hallazgo:
+    'El id se guardó con el tipo <code>"id"</code>, pero se lee con <code>"text/plain"</code>. Como no hay nada guardado con ese tipo, <code>getData</code> devuelve <code>""</code>, <code>getElementById("")</code> devuelve <code>null</code> y <code>appendChild(null)</code> falla.',
+  pista: '¿Con qué tipo se guarda el dato en <code>dragstart</code>, y con cuál se lee en <code>drop</code>?',
+  arreglos: [
+    {
+      texto: 'Leer con el mismo tipo con que se guardó: <code>e.dataTransfer.getData("id")</code>',
+      correcta: true,
+      porque: 'Los dos lados tienen que usar el mismo tipo. También funcionaría guardar con <code>"text/plain"</code> en la línea 9.',
+    },
+    {
+      texto: 'Usar <code>hecho.append(…)</code> en lugar de <code>appendChild</code>',
+      correcta: false,
+      porque: 'El error desaparece, pero <code>append(null)</code> agrega el <b>texto</b> "null" a la lista. El problema es que no se encontró la tarea.',
+    },
+    {
+      texto: 'Leer el id con <code>e.target.id</code>',
+      correcta: false,
+      porque: 'En <code>drop</code>, <code>e.target</code> es donde se soltó (la lista), no lo que se arrastró.',
+    },
+  ],
+};
+
+export const arrastrarLab = {
+  id: 'arrastrar-lab',
+  titulo: 'Un tablero de dos columnas',
+  pagina: `<style>
+  .tablero { display: flex; gap: 12px; }
+  .col { flex: 1; min-height: 120px; padding: 8px; border: 2px dashed rgba(236,234,226,.35); border-radius: 8px; }
+  .tarjeta { padding: 6px 10px; background: rgba(247,223,30,.12); border-radius: 6px; cursor: grab; }
+</style>
+<div class="tablero">
+  <section class="col" id="por-hacer">
+    <h3>Por hacer</h3>
+    <p class="tarjeta" id="t1" draggable="true">Comprar pan</p>
+    <p class="tarjeta" id="t2" draggable="true">Llamar a Ana</p>
+  </section>
+  <section class="col" id="hecho">
+    <h3>Hecho</h3>
+  </section>
+</div>`,
+  inicial: `const columnas = document.querySelectorAll(".col");
+const tarjetas = document.querySelectorAll(".tarjeta");
+
+// 1. Al empezar a arrastrar una tarjeta, guarda su id en e.dataTransfer (tipo "text/plain")
+// 2. En cada columna: permite soltar (dragover) y, al soltar (drop), mueve la tarjeta
+//    al final de esa columna. Ojo: se puede soltar encima del título o de otra tarjeta.
+
+
+// Para probar sin mouse: arrastra una tarjeta y la suelta sobre un elemento
+function arrastrar(idTarjeta, selectorDestino) {
+  const datos = new DataTransfer();
+  document.getElementById(idTarjeta).dispatchEvent(new DragEvent("dragstart", { dataTransfer: datos, bubbles: true }));
+  document.querySelector(selectorDestino).dispatchEvent(new DragEvent("drop", { dataTransfer: datos, bubbles: true, cancelable: true }));
+}
+arrastrar("t1", "#hecho");
+`,
+  verificaciones: [
+    { texto: 'La tarjeta soltada en «Hecho» pasa a esa columna', prueba: 'return document.querySelector("#hecho > #t1") !== null;' },
+    { texto: 'Las columnas aceptan que les suelten algo (cancelan <code>dragover</code>)', prueba: 'const ev = new DragEvent("dragover", { dataTransfer: new DataTransfer(), bubbles: true, cancelable: true }); document.querySelector("#hecho").dispatchEvent(ev); return ev.defaultPrevented;' },
+    { texto: 'Soltar sobre el título también mueve la tarjeta a la columna', prueba: 'arrastrar("t1", "#por-hacer h3"); return document.querySelector("#por-hacer > #t1") !== null && document.querySelector("#por-hacer").lastElementChild.id === "t1";' },
+  ],
+  pistas: [
+    'En cada tarjeta: <code>t.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/plain", t.id));</code>',
+    'En cada columna, <code>dragover</code> solo necesita <code>e.preventDefault()</code>.',
+    'En <code>drop</code>, la columna es <code>e.currentTarget</code> (no <code>e.target</code>, que puede ser el título): <code>e.currentTarget.append(document.getElementById(id));</code>',
+  ] as [string, string, string],
+  solucion: `const columnas = document.querySelectorAll(".col");
+const tarjetas = document.querySelectorAll(".tarjeta");
+
+for (const t of tarjetas) {
+  t.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/plain", t.id));
+}
+for (const col of columnas) {
+  col.addEventListener("dragover", (e) => e.preventDefault());
+  col.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text/plain");
+    e.currentTarget.append(document.getElementById(id));
+  });
+}
+
+function arrastrar(idTarjeta, selectorDestino) {
+  const datos = new DataTransfer();
+  document.getElementById(idTarjeta).dispatchEvent(new DragEvent("dragstart", { dataTransfer: datos, bubbles: true }));
+  document.querySelector(selectorDestino).dispatchEvent(new DragEvent("drop", { dataTransfer: datos, bubbles: true, cancelable: true }));
+}
+arrastrar("t1", "#hecho");`,
+  explicacion:
+    '<p>El evento <code>drop</code> burbujea desde donde se soltó: si cae sobre el título, <code>e.target</code> es el <code>&lt;h3&gt;</code>. <code>e.currentTarget</code>, en cambio, es siempre la columna que tiene el listener. En un tablero real, agrega además un botón o un menú en cada tarjeta para moverla sin arrastrar.</p>',
+};
+
+/* ── 13.8 Texto editable y selección ─────────────────────── */
+export const editableAuto = {
+  id: 'editable-auto',
+  titulo: 'Señalar un trozo de texto',
+  preguntas: [
+    {
+      pregunta: '¿Qué hace el atributo <code>contenteditable="true"</code>?',
+      opciones: ['Permite editar el HTML con las DevTools', 'Convierte el elemento en una caja donde la persona puede escribir, borrar y pegar', 'Lo convierte en un <code>&lt;textarea&gt;</code>'],
+      correcta: 1,
+      explicacion: 'Cada cambio de la persona dispara <code>input</code>. Lo que se pega es HTML: sanéalo antes de guardarlo o mostrarlo.',
+    },
+    {
+      pregunta: 'En un nodo de texto, ¿qué cuentan las posiciones de un <code>Range</code>?',
+      opciones: ['Píxeles', 'Caracteres desde el principio del texto', 'Palabras'],
+      correcta: 1,
+      explicacion: '<code>setStart(texto, 0)</code> y <code>setEnd(texto, 4)</code> abarcan los cuatro primeros caracteres. Si el extremo es un elemento, la posición cuenta hijos.',
+    },
+    {
+      pregunta: '¿Qué devuelve <code>getSelection()</code>?',
+      opciones: ['Solo el texto seleccionado', 'Un objeto <code>Selection</code> con lo que marcó la persona: se lee con <code>toString()</code> y sus rangos con <code>getRangeAt(0)</code>', 'El elemento enfocado'],
+      correcta: 1,
+      explicacion: 'Si no hay nada marcado, la selección está "colapsada" (<code>isCollapsed</code>): es solo la posición del cursor.',
+    },
+    {
+      pregunta: 'En un <code>&lt;textarea&gt;</code>, ¿cómo sabes qué parte del texto está seleccionada?',
+      opciones: ['Con <code>getSelection()</code>', 'Con <code>selectionStart</code> y <code>selectionEnd</code>, posiciones dentro de <code>value</code>', 'No se puede'],
+      correcta: 1,
+      explicacion: '<code>t.value.slice(t.selectionStart, t.selectionEnd)</code> es el texto marcado, y <code>setRangeText</code> lo reemplaza.',
+    },
+  ],
+};
+
+export const editableOrden = {
+  id: 'editable-orden',
+  titulo: 'Un rango que se mueve',
+  codigo: `document.body.innerHTML = \`<p id="p">uno dos tres</p>\`;
+const p = document.querySelector("#p");
+const texto = p.firstChild;
+
+const r = document.createRange();
+r.setStart(texto, 4);
+r.setEnd(texto, 7);
+console.log(r.toString());
+
+r.collapse(true);
+console.log(r.collapsed, r.toString().length);
+
+r.selectNodeContents(p);
+console.log(r.toString().length);
+
+r.setStart(texto, 8);
+console.log(r.toString());`,
+  salida: ['dos', 'true 0', '12', 'tres'],
+  inicio: [2, 3, 0, 1],
+  explicacion:
+    'Del carácter 4 al 7 está "dos". <code>collapse(true)</code> junta el final con el principio: el rango queda vacío, como un cursor. <code>selectNodeContents(p)</code> abarca todo el párrafo, 12 caracteres, y después el principio se mueve al carácter 8, donde empieza "tres".',
+};
+
+export const editableDetective = {
+  id: 'editable-detective',
+  titulo: 'Un resaltador que se traba',
+  codigo: `<p id="texto">Hola <b>mundo</b> cruel</p>
+
+<script>
+  const p = document.querySelector("#texto");
+  const rango = document.createRange();
+  rango.setStart(p.firstChild, 0);                   // al principio de "Hola "
+  rango.setEnd(p.querySelector("b").firstChild, 3);  // a mitad de "mundo"
+  rango.surroundContents(document.createElement("mark"));
+</script>`,
+  error: `Uncaught InvalidStateError: Failed to execute 'surroundContents' on 'Range': The Range has partially selected a non-Text node.
+    at index.html:8:9`,
+  culpable: 8,
+  hallazgo:
+    'El rango empieza fuera del <code>&lt;b&gt;</code> y termina dentro de él: lo abarca <b>a medias</b>. <code>surroundContents</code> solo funciona si cada elemento queda entero dentro del rango o entero fuera, porque no puede envolver medio <code>&lt;b&gt;</code> sin romper el árbol.',
+  pista: 'El rango empieza en "Hola " y termina dentro del <code>&lt;b&gt;</code>. ¿Queda el <code>&lt;b&gt;</code> entero dentro del rango?',
+  arreglos: [
+    {
+      texto: 'Sacar el contenido y envolverlo a mano: <code>const mark = document.createElement("mark"); mark.append(rango.extractContents()); rango.insertNode(mark);</code>',
+      correcta: true,
+      porque: '<code>extractContents</code> sí sabe partir elementos: devuelve "Hola <b>mun</b>" y deja "<b>do</b>" en su lugar. Luego <code>insertNode</code> pone el <code>&lt;mark&gt;</code> donde estaba.',
+    },
+    {
+      texto: 'Usar <code>rango.selectNode(p.querySelector("b"))</code> antes de envolver',
+      correcta: false,
+      porque: 'Deja de fallar, pero resalta solo "mundo": cambia lo que se quería marcar.',
+    },
+    {
+      texto: 'Usar <code>document.execCommand("hiliteColor", false, "yellow")</code>',
+      correcta: false,
+      porque: '<code>execCommand</code> está obsoleto, trabaja sobre la selección (no sobre un rango cualquiera) y cada navegador genera un HTML distinto.',
+    },
+  ],
+};
+
+export const editableLab = {
+  id: 'editable-lab',
+  titulo: 'Resaltar una palabra',
+  pagina: `<p id="texto">Con JavaScript puedes hacer casi todo en el navegador.</p>`,
+  inicial: `const p = document.querySelector("#texto");
+
+// resaltar(palabra): busca la palabra en el texto del párrafo (es un solo nodo de texto)
+// y la envuelve en un <mark> usando un Range. Devuelve true si la encontró y false si no
+// (sin cambiar nada).
+function resaltar(palabra) {
+}
+
+resaltar("JavaScript");
+`,
+  verificaciones: [
+    { texto: 'Envuelve <code>JavaScript</code> en un <code>&lt;mark&gt;</code>', prueba: 'return p.innerHTML === "Con <mark>JavaScript</mark> puedes hacer casi todo en el navegador.";' },
+    { texto: 'Si la palabra no está, devuelve <code>false</code> y no cambia nada', prueba: 'p.textContent = "Hola mundo"; return resaltar("Python") === false && p.innerHTML === "Hola mundo";' },
+    { texto: 'Devuelve <code>true</code> y usa un rango (<code>createRange</code>)', prueba: String.raw`p.textContent = "uno dos tres"; return resaltar("dos") === true && p.innerHTML === "uno <mark>dos</mark> tres" && /createRange\s*\(/.test(__codigo);` },
+  ],
+  pistas: [
+    'La posición de la palabra: <code>const i = p.textContent.indexOf(palabra);</code> (vale <code>-1</code> si no está).',
+    'El rango va de <code>i</code> a <code>i + palabra.length</code> dentro de <code>p.firstChild</code>: <code>rango.setStart(p.firstChild, i); rango.setEnd(p.firstChild, i + palabra.length);</code>',
+    'Para terminar: <code>rango.surroundContents(document.createElement("mark")); return true;</code>',
+  ] as [string, string, string],
+  solucion: `const p = document.querySelector("#texto");
+
+function resaltar(palabra) {
+  const i = p.textContent.indexOf(palabra);
+  if (i === -1) return false;
+  const rango = document.createRange();
+  rango.setStart(p.firstChild, i);
+  rango.setEnd(p.firstChild, i + palabra.length);
+  rango.surroundContents(document.createElement("mark"));
+  return true;
+}
+
+resaltar("JavaScript");`,
+  explicacion:
+    '<p>Como el párrafo es un solo nodo de texto, la posición que da <code>indexOf</code> sirve directamente para el rango. Si el texto tuviera etiquetas dentro, habría que recorrer sus nodos de texto (por ejemplo, con <code>document.createTreeWalker</code>) para encontrar en cuál cae la palabra.</p>',
+};
+
+/* ── 13.9 Diálogos y popovers ────────────────────────────── */
+export const dialogoAuto = {
+  id: 'dialogo-auto',
+  titulo: 'Ventanas que ya vienen hechas',
+  preguntas: [
+    {
+      pregunta: '¿Qué diferencia hay entre <code>dialogo.show()</code> y <code>dialogo.showModal()</code>?',
+      opciones: ['Ninguna', '<code>showModal()</code> lo abre encima de todo, vuelve inerte el resto de la página y lo cierra con Esc; <code>show()</code> lo abre sin bloquear nada', '<code>show()</code> es la versión antigua'],
+      correcta: 1,
+      explicacion: 'Con <code>showModal()</code> también aparece el fondo <code>::backdrop</code> y el foco entra al diálogo.',
+    },
+    {
+      pregunta: 'Dentro de un diálogo hay un <code>&lt;form method="dialog"&gt;</code>. ¿Qué pasa al pulsar uno de sus botones?',
+      opciones: ['Se envía al servidor', 'El diálogo se cierra y el <code>value</code> del botón queda en <code>dialogo.returnValue</code>', 'Se recarga la página'],
+      correcta: 1,
+      explicacion: 'Así se arma una confirmación sin código para cerrar: solo lees la respuesta en el evento <code>close</code>.',
+    },
+    {
+      pregunta: 'La persona pulsa Esc en un diálogo con cambios sin guardar. ¿Cómo lo impides?',
+      opciones: ['No se puede', 'Escuchando <code>cancel</code>, que llega antes de cerrar, y llamando a <code>e.preventDefault()</code>', 'Con <code>close</code>'],
+      correcta: 1,
+      explicacion: '<code>close</code> llega cuando ya se cerró; <code>cancel</code>, antes, y se puede cancelar.',
+    },
+    {
+      pregunta: '¿Qué necesitas para un menú que se abre con un botón y se cierra al hacer clic afuera?',
+      opciones: ['Un <code>&lt;dialog&gt;</code> y bastante JavaScript', 'El atributo <code>popover</code> en el menú y <code>popovertarget</code> en el botón, sin JavaScript', 'Un <code>&lt;select&gt;</code>'],
+      correcta: 1,
+      explicacion: 'Un popover se cierra solo con un clic afuera o con Esc, y el navegador se ocupa del foco y la accesibilidad.',
+    },
+  ],
+};
+
+export const dialogoOrden = {
+  id: 'dialogo-orden',
+  titulo: 'Abrir, cerrar y responder',
+  codigo: `document.body.innerHTML = \`<dialog id="d"><p>¿Guardar los cambios?</p></dialog>\`;
+const d = document.querySelector("#d");
+d.addEventListener("close", () => console.log("close:", d.returnValue));
+
+console.log(d.open);
+d.showModal();
+console.log(d.open);
+d.close("guardar");
+console.log(d.open, d.returnValue);`,
+  salida: ['false', 'true', 'false guardar', 'close: guardar'],
+  inicio: [3, 1, 2, 0],
+  explicacion:
+    '<code>open</code> cambia en el momento, y <code>close("guardar")</code> deja el valor en <code>returnValue</code> enseguida. El evento <code>close</code>, en cambio, llega como una tarea aparte: corre después de todo el código síncrono.',
+};
+
+export const dialogoDetective = {
+  id: 'dialogo-detective',
+  titulo: 'Un aviso ya abierto',
+  codigo: `<dialog id="aviso" open>
+  <p>Tienes cambios sin guardar.</p>
+  <form method="dialog"><button>Entendido</button></form>
+</dialog>
+<button id="mostrar">Mostrar aviso</button>
+
+<script>
+  const aviso = document.querySelector("#aviso");
+  document.querySelector("#mostrar").addEventListener("click", () => {
+    aviso.showModal();
+  });
+</script>`,
+  error: `Uncaught InvalidStateError: Failed to execute 'showModal' on 'HTMLDialogElement': The dialog is already open as a non-modal dialog, and therefore cannot be opened as a modal dialog.
+    at HTMLButtonElement.<anonymous> (index.html:10:11)`,
+  culpable: 1,
+  hallazgo:
+    'El atributo <code>open</code> en el HTML abre el diálogo de entrada, como <b>no modal</b>. Un diálogo abierto así no se puede pasar a modal: <code>showModal()</code> lanza el error. El atributo <code>open</code> no es para abrir diálogos, sino para que el navegador indique si está abierto.',
+  pista: '¿En qué estado está el diálogo cuando se carga la página, antes de pulsar el botón?',
+  arreglos: [
+    {
+      texto: 'Quitar el atributo <code>open</code> del <code>&lt;dialog&gt;</code> y abrirlo solo con <code>showModal()</code>',
+      correcta: true,
+      porque: 'Así el diálogo empieza cerrado y se abre como modal, con el fondo inerte, el foco adentro y Esc para cerrar. Si tiene que verse al cargar, llama a <code>showModal()</code> al iniciar.',
+    },
+    {
+      texto: 'Cambiar <code>showModal()</code> por <code>show()</code>',
+      correcta: false,
+      porque: 'Ya no da error, pero el aviso deja de ser modal: la página de atrás sigue activa y Esc no lo cierra.',
+    },
+    {
+      texto: 'Poner <code>aviso.open = true</code> antes de <code>showModal()</code>',
+      correcta: false,
+      porque: 'Es lo mismo que el atributo: lo deja abierto como no modal, y <code>showModal()</code> vuelve a fallar.',
+    },
+  ],
+};
+
+export const dialogoLab = {
+  id: 'dialogo-lab',
+  titulo: '¿Seguro que quieres borrarlo?',
+  pagina: `<ul id="lista">
+  <li data-nombre="notas.txt">notas.txt <button class="borrar">Borrar</button></li>
+  <li data-nombre="foto.jpg">foto.jpg <button class="borrar">Borrar</button></li>
+</ul>
+<dialog id="confirmar">
+  <form method="dialog">
+    <p>¿Borrar <b id="que"></b>?</p>
+    <button value="no">Cancelar</button>
+    <button value="si">Borrar</button>
+  </form>
+</dialog>`,
+  inicial: `const lista = document.querySelector("#lista");
+const dialogo = document.querySelector("#confirmar");
+const que = document.querySelector("#que");
+let pendiente = null; // el <li> que se quiere borrar
+
+// 1. Al pulsar un botón "Borrar" (con un solo listener en la lista):
+//    guarda su <li> en pendiente, escribe su data-nombre en #que y abre el diálogo como modal
+// 2. Cuando el diálogo se cierre: si la respuesta (returnValue) es "si", borra el <li> pendiente
+`,
+  verificaciones: [
+    { texto: 'Al pulsar «Borrar», abre el diálogo como modal y dice qué se va a borrar', prueba: 'lista.querySelector(".borrar").click(); return dialogo.open && dialogo.matches(":modal") && que.textContent === "notas.txt";' },
+    { texto: 'Con «Cancelar», no borra nada', prueba: 'dialogo.querySelector(\'[value="no"]\').click(); await new Promise((r) => setTimeout(r, 30)); return !dialogo.open && lista.children.length === 2;' },
+    { texto: 'Con «Borrar», quita ese elemento de la lista', prueba: 'lista.querySelectorAll(".borrar")[1].click(); dialogo.querySelector(\'[value="si"]\').click(); await new Promise((r) => setTimeout(r, 30)); return lista.children.length === 1 && lista.children[0].dataset.nombre === "notas.txt";' },
+  ],
+  pistas: [
+    'Delegación: <code>lista.addEventListener("click", (e) => { const boton = e.target.closest(".borrar"); if (!boton) return; … });</code>',
+    'Dentro: <code>pendiente = boton.closest("li"); que.textContent = pendiente.dataset.nombre; dialogo.showModal();</code>',
+    'Y al cerrar: <code>dialogo.addEventListener("close", () => { if (dialogo.returnValue === "si") pendiente.remove(); });</code>',
+  ] as [string, string, string],
+  solucion: `const lista = document.querySelector("#lista");
+const dialogo = document.querySelector("#confirmar");
+const que = document.querySelector("#que");
+let pendiente = null;
+
+lista.addEventListener("click", (e) => {
+  const boton = e.target.closest(".borrar");
+  if (!boton) return;
+  pendiente = boton.closest("li");
+  que.textContent = pendiente.dataset.nombre;
+  dialogo.returnValue = "";   // que no quede la respuesta de la vez anterior
+  dialogo.showModal();
+});
+
+dialogo.addEventListener("close", () => {
+  if (dialogo.returnValue === "si") pendiente?.remove();
+  pendiente = null;
+});`,
+  explicacion:
+    '<p>El formulario con <code>method="dialog"</code> se ocupa de cerrar el diálogo y de dejar la respuesta en <code>returnValue</code>: tu código solo abre y lee. Un detalle: si la persona cierra con Esc, <code>returnValue</code> <b>no cambia</b> y conserva la respuesta anterior. Por eso la solución lo vacía antes de cada <code>showModal()</code>: así un Esc después de un «Borrar» no borra otro archivo.</p>',
+};
+
+/* ── 13.10 Accesibilidad con JavaScript ──────────────────── */
+export const a11yAuto = {
+  id: 'a11y-auto',
+  titulo: 'Una página para todos',
+  preguntas: [
+    {
+      pregunta: 'Necesitas algo que se pulse para guardar. ¿Qué elemento usas?',
+      opciones: ['Un <code>&lt;div&gt;</code> con un listener de <code>click</code>', 'Un <code>&lt;button&gt;</code>: ya se enfoca con Tab, responde a Enter y a la barra espaciadora y se anuncia como botón', 'Un <code>&lt;span&gt;</code> con <code>role="button"</code>'],
+      correcta: 1,
+      explicacion: 'Imitar un botón con otro elemento exige <code>role</code>, <code>tabindex</code> y manejar el teclado a mano, y siempre se escapa algún detalle.',
+    },
+    {
+      pregunta: 'Muestras "Guardado" en la página después de un cambio. ¿Cómo se entera quien usa un lector de pantalla?',
+      opciones: ['Se entera solo', 'Poniendo el mensaje en una región viva (<code>role="status"</code>) que ya existía vacía antes del cambio', 'Con un <code>alert()</code>'],
+      correcta: 1,
+      explicacion: 'La región viva se lee cada vez que cambia su texto, sin mover el foco. Si la creas con el mensaje ya adentro, muchos lectores no la leen.',
+    },
+    {
+      pregunta: '¿Qué hace el atributo <code>inert</code> en un bloque de la página?',
+      opciones: ['Lo oculta', 'Lo vuelve inactivo: no recibe clics ni foco y el lector de pantalla lo ignora', 'Lo hace de solo lectura'],
+      correcta: 1,
+      explicacion: 'Sirve para desactivar el fondo mientras hay un panel encima. <code>showModal()</code> lo hace solo.',
+    },
+    {
+      pregunta: 'Un botón abre y cierra un menú. ¿Qué atributo tienes que mantener al día?',
+      opciones: ['<code>aria-label</code>', '<code>aria-expanded</code>, con <code>"true"</code> o <code>"false"</code> según el menú esté abierto', '<code>tabindex</code>'],
+      correcta: 1,
+      explicacion: 'Es lo que oye quien usa un lector de pantalla: "Opciones, botón, expandido".',
+    },
+  ],
+};
+
+export const a11yOrden = {
+  id: 'a11y-orden',
+  titulo: '¿Quién tiene el foco?',
+  codigo: `document.body.innerHTML = \`
+  <button id="a">A</button>
+  <div id="b">B</div>
+  <div id="c" tabindex="-1">C</div>\`;
+const [a, b, c] = ["#a", "#b", "#c"].map((s) => document.querySelector(s));
+
+a.focus();
+console.log(document.activeElement.id);
+b.focus();
+console.log(document.activeElement.id);
+c.focus();
+console.log(document.activeElement.id);
+console.log(a.tabIndex, b.tabIndex, c.tabIndex);`,
+  salida: ['a', 'a', 'c', '0 -1 -1'],
+  inicio: [2, 3, 0, 1],
+  explicacion:
+    'Un <code>&lt;div&gt;</code> común no se puede enfocar: <code>b.focus()</code> no hace nada y el foco sigue en A. Con <code>tabindex="-1"</code>, C sí se enfoca desde el código, aunque Tab lo salte. El <code>tabIndex</code> de B también es <code>-1</code>, pero por otra razón: es el valor por defecto de los elementos que no se enfocan.',
+};
+
+export const a11yDetective = {
+  id: 'a11y-detective',
+  titulo: 'El foco perdido',
+  codigo: `<button id="abrir">Filtros</button>
+<div id="panel" hidden>
+  <button id="cerrar">Cerrar</button>
+</div>
+
+<script>
+  const panel = document.querySelector("#panel");
+  const anterior = document.querySelector(":focus");
+
+  document.querySelector("#abrir").addEventListener("click", () => {
+    panel.hidden = false;
+    document.querySelector("#cerrar").focus();
+  });
+  document.querySelector("#cerrar").addEventListener("click", () => {
+    panel.hidden = true;
+    anterior.focus();   // devuelve el foco a donde estaba
+  });
+</script>`,
+  error: `Uncaught TypeError: Cannot read properties of null (reading 'focus')
+    at HTMLButtonElement.<anonymous> (index.html:16:14)`,
+  culpable: 8,
+  hallazgo:
+    'El elemento enfocado se guarda <b>al cargar la página</b>, cuando todavía no hay nada enfocado: <code>anterior</code> vale <code>null</code> para siempre. Hay que guardarlo en el momento de abrir el panel, que es cuando se sabe desde dónde se abrió.',
+  pista: '¿En qué momento se ejecuta la línea que guarda el elemento enfocado? ¿Qué tiene el foco en ese momento?',
+  arreglos: [
+    {
+      texto: 'Declarar <code>let anterior;</code> y guardarlo al abrir: <code>anterior = document.activeElement;</code> como primera línea del listener de «Filtros»',
+      correcta: true,
+      porque: 'Así se guarda el botón que abrió el panel, y al cerrar el foco vuelve exactamente ahí, aunque el panel se pueda abrir desde varios lugares.',
+    },
+    {
+      texto: 'Escribir <code>anterior?.focus()</code>',
+      correcta: false,
+      porque: 'El error desaparece, pero el foco no vuelve a ningún lado: al ocultarse el panel, el foco cae al principio de la página y quien usa el teclado pierde su lugar.',
+    },
+    {
+      texto: 'Enfocar el panel: <code>panel.focus()</code>',
+      correcta: false,
+      porque: 'El panel está oculto y además es un <code>&lt;div&gt;</code> sin <code>tabindex</code>: no se puede enfocar.',
+    },
+  ],
+};
+
+export const a11yLab = {
+  id: 'a11y-lab',
+  titulo: 'Un menú para el teclado',
+  pagina: `<button id="menu-boton" aria-expanded="false" aria-controls="menu">Opciones</button>
+<ul id="menu" hidden>
+  <li><button>Editar</button></li>
+  <li><button>Duplicar</button></li>
+  <li><button>Borrar</button></li>
+</ul>`,
+  inicial: `const boton = document.querySelector("#menu-boton");
+const menu = document.querySelector("#menu");
+
+// 1. Al pulsar el botón: abre o cierra el menú (menu.hidden) y actualiza aria-expanded.
+//    Al abrirlo, lleva el foco al primer botón del menú.
+// 2. Si se pulsa Escape con el foco dentro del menú: ciérralo y devuelve el foco al botón.
+`,
+  verificaciones: [
+    { texto: 'Al pulsar «Opciones», se abre, dice <code>aria-expanded="true"</code> y el foco va a «Editar»', prueba: 'boton.click(); return !menu.hidden && boton.getAttribute("aria-expanded") === "true" && document.activeElement?.textContent === "Editar";' },
+    { texto: 'Escape lo cierra y devuelve el foco a «Opciones»', prueba: 'document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); return menu.hidden && boton.getAttribute("aria-expanded") === "false" && document.activeElement === boton;' },
+    { texto: 'Pulsar el botón dos veces lo abre y lo vuelve a cerrar', prueba: 'boton.click(); const abierto = !menu.hidden; boton.click(); return abierto && menu.hidden && boton.getAttribute("aria-expanded") === "false";' },
+  ],
+  pistas: [
+    'Una función para cada cosa ayuda: <code>function abrir() { … }</code> y <code>function cerrar() { … }</code>, y en el clic <code>menu.hidden ? abrir() : cerrar();</code>',
+    'Al abrir: <code>menu.hidden = false; boton.setAttribute("aria-expanded", "true"); menu.querySelector("button").focus();</code>',
+    'Escape: <code>menu.addEventListener("keydown", (e) => { if (e.key === "Escape") { cerrar(); boton.focus(); } });</code>',
+  ] as [string, string, string],
+  solucion: `const boton = document.querySelector("#menu-boton");
+const menu = document.querySelector("#menu");
+
+function abrir() {
+  menu.hidden = false;
+  boton.setAttribute("aria-expanded", "true");
+  menu.querySelector("button").focus();
+}
+function cerrar() {
+  menu.hidden = true;
+  boton.setAttribute("aria-expanded", "false");
+}
+
+boton.addEventListener("click", () => (menu.hidden ? abrir() : cerrar()));
+menu.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    cerrar();
+    boton.focus();
+  }
+});`,
+  explicacion:
+    '<p>Con el mouse, la persona ve el menú y hace clic. Con el teclado, necesita que el foco entre al menú al abrirlo y que vuelva al botón al cerrarlo: si no, al ocultarse el menú el foco cae al principio de la página. <code>aria-expanded</code> es lo que le dice al lector de pantalla si el menú está abierto. Para una versión completa, agrega las flechas para moverse entre las opciones.</p>',
+};
+
+/* ── 13.12 Tiempo real ───────────────────────────────────── */
+export const tiempoRealAuto = {
+  id: 'tiempo-real-auto',
+  titulo: 'Conexiones que se quedan abiertas',
+  preguntas: [
+    {
+      pregunta: 'Quieres mostrar notificaciones apenas el servidor las genera. Tu página no necesita mandarle nada. ¿Qué usas?',
+      opciones: ['WebRTC', 'Server-Sent Events, con <code>EventSource</code>: el servidor escribe los avisos en una respuesta que no cierra', 'Un <code>fetch</code> cada segundo'],
+      correcta: 1,
+      explicacion: 'SSE va en un solo sentido, del servidor al navegador, y se reconecta solo. Es lo más simple para avisos.',
+    },
+    {
+      pregunta: '¿Qué pasa si se corta la conexión de un <code>EventSource</code>? ¿Y la de un <code>WebSocket</code>?',
+      opciones: ['Los dos se reconectan solos', '<code>EventSource</code> se reconecta solo; con un <code>WebSocket</code> tienes que programar la reconexión', 'Ninguno se reconecta'],
+      correcta: 1,
+      explicacion: 'Para el WebSocket, lo habitual es reintentar esperando cada vez un poco más (1 s, 2 s, 4 s…).',
+    },
+    {
+      pregunta: '¿Cuándo puedes llamar a <code>ws.send()</code>?',
+      opciones: ['Apenas creas el WebSocket', 'Cuando la conexión ya está abierta: después del evento <code>open</code> (<code>readyState === 1</code>)', 'Solo dentro de <code>message</code>'],
+      correcta: 1,
+      explicacion: 'Mientras conecta, <code>readyState</code> vale 0 y <code>send</code> lanza un <code>InvalidStateError</code>.',
+    },
+    {
+      pregunta: 'WebRTC conecta dos navegadores directamente. ¿Para qué hace falta igualmente un servidor?',
+      opciones: ['Para pasar el video', 'Para que los dos navegadores se "presenten": intercambian la oferta y la respuesta de la conexión a través de él', 'No hace falta ninguno'],
+      correcta: 1,
+      explicacion: 'Esa "señalización" suele hacerse con un WebSocket. Además, para atravesar routers se usan servidores STUN y TURN.',
+    },
+  ],
+};
+
+export const tiempoRealOrden = {
+  id: 'tiempo-real-orden',
+  titulo: 'Mensajes de varios tipos',
+  codigo: `const canal = new EventTarget();   // en tu página, sería un WebSocket
+canal.addEventListener("message", (e) => {
+  const m = JSON.parse(e.data);
+  switch (m.tipo) {
+    case "chat": console.log(\`\${m.de}: \${m.texto}\`); break;
+    case "escribiendo": console.log(\`\${m.de} está escribiendo…\`); break;
+    default: console.log("tipo desconocido:", m.tipo);
+  }
+});
+
+const llega = (m) => canal.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(m) }));
+llega({ tipo: "escribiendo", de: "Ana" });
+console.log("--");
+llega({ tipo: "chat", de: "Ana", texto: "¡Hola!" });
+llega({ tipo: "reaccion", de: "Luis" });`,
+  salida: ['Ana está escribiendo…', '--', 'Ana: ¡Hola!', 'tipo desconocido: reaccion'],
+  inicio: [2, 3, 0, 1],
+  explicacion:
+    'Cada mensaje llega como texto en <code>e.data</code>: primero se convierte con <code>JSON.parse</code> y después se decide según su <code>tipo</code>. Un <code>default</code> para los tipos que no conoces evita errores cuando el servidor agrega mensajes nuevos.',
+};
+
+export const tiempoRealDetective = {
+  id: 'tiempo-real-detective',
+  titulo: 'Hablar antes de tiempo',
+  codigo: `const ws = new WebSocket("wss://chat.ejemplo.com");
+
+ws.addEventListener("message", (e) => {
+  console.log("llegó:", e.data);
+});
+
+ws.send(JSON.stringify({ tipo: "hola", nombre: "Ana" }));`,
+  error: `Uncaught InvalidStateError: Failed to execute 'send' on 'WebSocket': Still in CONNECTING state.
+    at app.js:7:4`,
+  culpable: 7,
+  hallazgo:
+    'Crear el WebSocket solo <b>empieza</b> a conectar: la conexión tarda un poco en abrirse. En la línea siguiente todavía está en estado <code>CONNECTING</code> (<code>readyState</code> 0), y <code>send</code> no acepta mensajes hasta que se abre.',
+  pista: '¿Ya está abierta la conexión en la línea inmediatamente siguiente a crearla?',
+  arreglos: [
+    {
+      texto: 'Mandar el saludo cuando se abra: <code>ws.addEventListener("open", () => ws.send(JSON.stringify({ tipo: "hola", nombre: "Ana" })));</code>',
+      correcta: true,
+      porque: 'El evento <code>open</code> llega cuando la conexión está lista. Todo lo que se manda al conectar va ahí.',
+    },
+    {
+      texto: 'Esperar un segundo con <code>setTimeout(() => ws.send(…), 1000)</code>',
+      correcta: false,
+      porque: 'Con una red lenta, un segundo puede no alcanzar, y con una rápida es demora de más. Hay que esperar el evento, no un tiempo fijo.',
+    },
+    {
+      texto: 'Usar <code>await new WebSocket(…)</code>',
+      correcta: false,
+      porque: 'El constructor no devuelve una promesa: <code>await</code> no espera nada y el error sigue igual.',
+    },
+  ],
+};
+
+export const tiempoRealLab = {
+  id: 'tiempo-real-lab',
+  titulo: 'El cliente de un chat',
+  pagina: `<ul id="mensajes"></ul>
+<form id="chat"><input name="texto" autocomplete="off" aria-label="Mensaje"> <button disabled>Enviar</button></form>
+<script>
+  // Imita a un WebSocket conectado a un servidor que contesta: aquí no hay red
+  class SocketDePrueba extends EventTarget {
+    readyState = 0;
+    enviados = [];
+    constructor() {
+      super();
+      setTimeout(() => {
+        this.readyState = 1;
+        this.dispatchEvent(new Event("open"));
+      }, 10);
+    }
+    send(datos) {
+      if (this.readyState !== 1) throw new DOMException("Still in CONNECTING state.", "InvalidStateError");
+      this.enviados.push(datos);
+      const m = JSON.parse(datos);
+      const respuesta = { tipo: "chat", de: "Eco", texto: String(m.texto).toUpperCase() };
+      setTimeout(() => this.dispatchEvent(new MessageEvent("message", { data: JSON.stringify(respuesta) })), 10);
+    }
+  }
+</script>`,
+  inicial: `const ws = new SocketDePrueba();   // en tu página: new WebSocket("wss://…")
+const form = document.querySelector("#chat");
+const lista = document.querySelector("#mensajes");
+const boton = form.querySelector("button");
+
+// 1. Cuando se abra la conexión ("open"), habilita el botón
+// 2. Al enviar el formulario: evita la recarga, manda { tipo: "chat", texto } como JSON
+//    y vacía el campo
+// 3. Con cada mensaje que llega ("message"): agrega un <li> con "de: texto"
+`,
+  verificaciones: [
+    { texto: 'Habilita «Enviar» cuando se abre la conexión', prueba: String.raw`return boton.disabled === false && /["']open["']/.test(__codigo);` },
+    { texto: 'Manda el mensaje como JSON y vacía el campo', prueba: 'form.texto.value = "hola"; form.requestSubmit(); const m = JSON.parse(ws.enviados.at(-1) ?? "{}"); return m.tipo === "chat" && m.texto === "hola" && form.texto.value === "";' },
+    { texto: 'Muestra la respuesta que llega: <code>Eco: HOLA</code>', prueba: 'await new Promise((r) => setTimeout(r, 50)); return lista.lastElementChild?.textContent === "Eco: HOLA";' },
+  ],
+  pistas: [
+    '<code>ws.addEventListener("open", () => (boton.disabled = false));</code>',
+    'En el <code>submit</code>: <code>e.preventDefault(); ws.send(JSON.stringify({ tipo: "chat", texto: form.texto.value })); form.texto.value = "";</code>',
+    'En <code>message</code>: <code>const m = JSON.parse(e.data);</code> y después crea el <code>&lt;li&gt;</code> con <code>`${m.de}: ${m.texto}`</code>.',
+  ] as [string, string, string],
+  solucion: `const ws = new SocketDePrueba();
+const form = document.querySelector("#chat");
+const lista = document.querySelector("#mensajes");
+const boton = form.querySelector("button");
+
+ws.addEventListener("open", () => (boton.disabled = false));
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  ws.send(JSON.stringify({ tipo: "chat", texto: form.texto.value }));
+  form.texto.value = "";
+});
+
+ws.addEventListener("message", (e) => {
+  const m = JSON.parse(e.data);
+  const li = document.createElement("li");
+  li.textContent = \`\${m.de}: \${m.texto}\`;
+  lista.append(li);
+});`,
+  explicacion:
+    '<p>Con un <code>WebSocket</code> de verdad, el código es el mismo: solo cambia la primera línea. El botón empieza deshabilitado para que nadie mande nada antes de que la conexión esté abierta, que es justo el error del ejercicio anterior. El mensaje se muestra con <code>textContent</code>, nunca con <code>innerHTML</code>: viene de otra persona y podría traer HTML malicioso.</p>',
+};
+
+/* ── 13.13 APIs del dispositivo ──────────────────────────── */
+export const dispositivoAuto = {
+  id: 'dispositivo-auto',
+  titulo: 'Pedir con cuidado',
+  preguntas: [
+    {
+      pregunta: '¿Cuándo conviene pedir permiso para mandar notificaciones?',
+      opciones: ['Apenas carga la página', 'Cuando la persona pulsa algo como «Avisarme», y se entiende para qué', 'Nunca hace falta pedirlo'],
+      correcta: 1,
+      explicacion: 'Si la persona dice que no, el navegador no vuelve a preguntar. Preguntar al entrar, sin contexto, casi siempre termina en un "no".',
+    },
+    {
+      pregunta: '¿Por qué <code>navigator.clipboard.writeText</code> va con <code>await</code> dentro de un <code>try</code>?',
+      opciones: ['Por estilo', 'Porque devuelve una promesa que puede rechazarse: sin <code>await</code>, el <code>catch</code> no se entera del error', 'Porque es síncrona'],
+      correcta: 1,
+      explicacion: 'Un <code>try/catch</code> solo atrapa los errores de las promesas que espera con <code>await</code>.',
+    },
+    {
+      pregunta: 'Quieres usar el menú de compartir del sistema. ¿Qué haces si <code>navigator.share</code> no existe?',
+      opciones: ['Mostrar un error', 'Ofrecer un plan B, como copiar el enlace al portapapeles', 'Recargar la página'],
+      correcta: 1,
+      explicacion: 'Comprueba antes de usar (<code>"share" in navigator</code> o <code>navigator.canShare?.(datos)</code>) y ten siempre otra salida.',
+    },
+    {
+      pregunta: 'Tu página consulta el servidor cada 10 segundos. ¿Qué API te ayuda a no hacerlo mientras nadie la mira?',
+      opciones: ['Geolocalización', 'Page Visibility: el evento <code>visibilitychange</code> y <code>document.hidden</code>', 'Wake Lock'],
+      correcta: 1,
+      explicacion: 'Cuando la pestaña se esconde, pausa los sondeos; cuando vuelve a la vista, retómalos.',
+    },
+  ],
+};
+
+export const dispositivoOrden = {
+  id: 'dispositivo-orden',
+  titulo: 'Un plan B para cada navegador',
+  codigo: `function planParaCompartir(nav) {
+  if (typeof nav.share === "function") return "menú del sistema";
+  if (nav.clipboard) return "copiar el enlace";
+  return "mostrar el enlace para copiarlo a mano";
+}
+
+// Tres navegadores imaginarios, con distintas APIs
+console.log(planParaCompartir({ clipboard: {} }));
+console.log(planParaCompartir({}));
+console.log(planParaCompartir({ share() {}, clipboard: {} }));
+console.log("share" in { share: undefined });`,
+  salida: ['copiar el enlace', 'mostrar el enlace para copiarlo a mano', 'menú del sistema', 'true'],
+  inicio: [2, 0, 3, 1],
+  explicacion:
+    'La función prueba de la mejor opción a la más simple, y siempre devuelve algo. La última línea es una trampa: <code>in</code> pregunta si la propiedad <b>existe</b>, aunque valga <code>undefined</code>. Por eso, para saber si se puede llamar, es más seguro comprobar que sea una función.',
+};
+
+export const dispositivoDetective = {
+  id: 'dispositivo-detective',
+  titulo: '¡Copiado! (o no)',
+  codigo: `<button id="copiar">Copiar enlace</button>
+
+<script>
+  const boton = document.querySelector("#copiar");
+  boton.addEventListener("click", () => {
+    try {
+      navigator.clipboard.writeText(location.href);
+      boton.textContent = "¡Copiado!";
+    } catch {
+      boton.textContent = "No se pudo copiar";
+    }
+  });
+</script>`,
+  error: `Uncaught (in promise) NotAllowedError: Failed to execute 'writeText' on 'Clipboard': Document is not focused.`,
+  culpable: 7,
+  hallazgo:
+    '<code>writeText</code> devuelve una promesa, y el código no la espera. La línea 8 corre enseguida, antes de saber si se copió, y cuando la promesa se rechaza el <code>try</code> ya terminó: el error queda "sin atrapar" (<i>in promise</i>) y el botón miente.',
+  pista: '¿Qué devuelve <code>writeText</code>? ¿Puede el <code>try</code> atrapar el rechazo de una promesa que no espera?',
+  arreglos: [
+    {
+      texto: 'Hacer async el listener y esperar: <code>boton.addEventListener("click", async () => { try { await navigator.clipboard.writeText(location.href); …</code>',
+      correcta: true,
+      porque: 'Con <code>await</code>, el rechazo se convierte en una excepción en esa línea: la atrapa el <code>catch</code> y el botón dice la verdad.',
+    },
+    {
+      texto: 'Agregar <code>.catch(() => {})</code> después de <code>writeText(…)</code>',
+      correcta: false,
+      porque: 'El error deja de verse, pero el botón sigue diciendo «¡Copiado!» aunque no se haya copiado nada.',
+    },
+    {
+      texto: 'Cambiar a <code>document.execCommand("copy")</code>',
+      correcta: false,
+      porque: 'Está obsoleto, y además necesita un texto seleccionado en la página. La forma actual es la Clipboard API, bien esperada.',
+    },
+  ],
+};
+
+export const dispositivoLab = {
+  id: 'dispositivo-lab',
+  titulo: 'Un «Copiar» a prueba de todo',
+  pagina: `<p>Tu código de invitación: <code id="codigo">JS-2026-ANA</code></p>
+<button id="copiar">Copiar</button>`,
+  inicial: `const boton = document.querySelector("#copiar");
+const codigo = document.querySelector("#codigo").textContent;
+
+// Al hacer clic:
+// - si no existe navigator.clipboard, el botón dice "Cópialo a mano" y no hace nada más
+// - si existe, copia el código con navigator.clipboard.writeText (esperando la promesa)
+// - si se copió, el botón dice "¡Copiado!"; si falló, "No se pudo copiar"
+`,
+  verificaciones: [
+    {
+      texto: 'Si se puede, copia el código y dice <code>¡Copiado!</code>',
+      prueba: 'let copiado = ""; Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async (t) => { copiado = t; } } }); boton.click(); await new Promise((r) => setTimeout(r, 20)); return copiado === "JS-2026-ANA" && boton.textContent === "¡Copiado!";',
+    },
+    {
+      texto: 'Si el navegador se niega, dice <code>No se pudo copiar</code>',
+      prueba: 'Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { throw new DOMException("Write permission denied.", "NotAllowedError"); } } }); boton.click(); await new Promise((r) => setTimeout(r, 20)); return boton.textContent === "No se pudo copiar";',
+    },
+    {
+      texto: 'Si no hay portapapeles, dice <code>Cópialo a mano</code>',
+      prueba: 'Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined }); boton.click(); await new Promise((r) => setTimeout(r, 20)); return boton.textContent === "Cópialo a mano";',
+    },
+  ],
+  pistas: [
+    'El listener tiene que ser <code>async</code> para poder usar <code>await</code> adentro.',
+    'Primero: <code>if (!navigator.clipboard) { boton.textContent = "Cópialo a mano"; return; }</code>',
+    'Después: <code>try { await navigator.clipboard.writeText(codigo); boton.textContent = "¡Copiado!"; } catch { boton.textContent = "No se pudo copiar"; }</code>',
+  ] as [string, string, string],
+  solucion: `const boton = document.querySelector("#copiar");
+const codigo = document.querySelector("#codigo").textContent;
+
+boton.addEventListener("click", async () => {
+  if (!navigator.clipboard) {
+    boton.textContent = "Cópialo a mano";
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(codigo);
+    boton.textContent = "¡Copiado!";
+  } catch {
+    boton.textContent = "No se pudo copiar";
+  }
+});`,
+  explicacion:
+    '<p>Las pruebas reemplazan <code>navigator.clipboard</code> por imitaciones para simular los tres casos, porque aquí no se puede tocar tu portapapeles de verdad. En tu página, el caso "sin portapapeles" aparece en páginas sin <code>https://</code> o en navegadores viejos. Un buen siguiente paso: mostrar el código seleccionado para que la persona lo copie con Ctrl+C.</p>',
+};
+
+/* ── 13.14 Audio, video y cámara ─────────────────────────── */
+export const multimediaAuto = {
+  id: 'multimedia-auto',
+  titulo: 'Sonido, imagen y permisos',
+  preguntas: [
+    {
+      pregunta: '¿Por qué <code>video.play()</code> devuelve una promesa?',
+      opciones: ['Porque descarga el video entero', 'Porque el navegador puede negarse, por ejemplo si quieres reproducir con sonido antes de que la persona interactúe con la página', 'Por compatibilidad con navegadores viejos'],
+      correcta: 1,
+      explicacion: 'Si se rechaza, recibes un <code>NotAllowedError</code>. Un video con <code>muted</code> sí puede empezar solo.',
+    },
+    {
+      pregunta: 'Terminaste de usar la cámara que pediste con <code>getUserMedia</code>. ¿Qué haces?',
+      opciones: ['Nada, se apaga sola', 'Detienes cada pista del flujo: <code>flujo.getTracks().forEach((p) => p.stop())</code>', 'Recargas la página'],
+      correcta: 1,
+      explicacion: 'Mientras alguna pista siga activa, la cámara sigue encendida, con su luz y el aviso del navegador.',
+    },
+    {
+      pregunta: '¿Cómo se muestra en un <code>&lt;video&gt;</code> el flujo de la cámara?',
+      opciones: ['Con <code>video.src = flujo</code>', 'Con <code>video.srcObject = flujo</code>', 'Con <code>URL.createObjectURL(flujo)</code>'],
+      correcta: 1,
+      explicacion: '<code>src</code> es para direcciones de archivos; un flujo en vivo va en <code>srcObject</code>.',
+    },
+    {
+      pregunta: 'Creaste un <code>AudioContext</code> al cargar la página, pero no suena nada. ¿Qué falta?',
+      opciones: ['Subir el volumen', 'Llamar a <code>audio.resume()</code> como respuesta a un gesto de la persona: empieza suspendido', 'Usar un <code>&lt;audio&gt;</code>'],
+      correcta: 1,
+      explicacion: 'La misma regla de la reproducción automática vale para Web Audio: sin un gesto, no hay sonido.',
+    },
+  ],
+};
+
+export const multimediaOrden = {
+  id: 'multimedia-orden',
+  titulo: 'Un video sin archivo',
+  codigo: `document.body.innerHTML = \`<video id="v" muted></video>\`;
+const video = document.querySelector("#v");
+
+console.log("pausado:", video.paused);
+console.log("duración:", video.duration);
+video.volume = 0.25;
+console.log("volumen:", video.volume, "silencio:", video.muted);
+console.log("listo para reproducir:", video.readyState >= HTMLMediaElement.HAVE_ENOUGH_DATA);`,
+  salida: ['pausado: true', 'duración: NaN', 'volumen: 0.25 silencio: true', 'listo para reproducir: false'],
+  inicio: [2, 0, 3, 1],
+  explicacion:
+    'Un video recién creado está en pausa. Sin archivo no se sabe cuánto dura, así que <code>duration</code> es <code>NaN</code>, y <code>readyState</code> está en <code>0</code> (<code>HAVE_NOTHING</code>). El atributo <code>muted</code> del HTML deja la propiedad <code>muted</code> en <code>true</code>, y el volumen se puede cambiar igual, aunque esté en silencio.',
+};
+
+export const multimediaDetective = {
+  id: 'multimedia-detective',
+  titulo: 'La bienvenida que no suena',
+  codigo: `<video id="intro" src="bienvenida.mp4"></video>
+<p id="estado">Cargando…</p>
+
+<script>
+  const video = document.querySelector("#intro");
+  video.addEventListener("loadedmetadata", () => {
+    video.play();
+    document.querySelector("#estado").textContent = "Reproduciendo";
+  });
+</script>`,
+  error: `Uncaught (in promise) NotAllowedError: play() failed because the user didn't interact with the document first. https://goo.gl/xX8pDD`,
+  culpable: 7,
+  hallazgo:
+    'El video tiene sonido y la persona todavía no tocó la página, así que el navegador no deja reproducirlo: la promesa de <code>play()</code> se rechaza. Como nadie la espera, el rechazo queda sin atrapar y la línea 8 escribe «Reproduciendo» de todos modos.',
+  pista: '¿Qué devuelve <code>play()</code>, y qué pasa si el navegador no deja reproducir?',
+  arreglos: [
+    {
+      texto: 'Manejar la promesa: <code>video.play().then(() => (estado.textContent = "Reproduciendo")).catch(() => (estado.textContent = "Pulsa ▶ para ver la bienvenida"))</code>',
+      correcta: true,
+      porque: 'El mensaje dice la verdad en los dos casos, y la persona tiene una forma de empezar el video con un gesto. Si no necesita sonido, también sirve agregar <code>muted</code> al video.',
+    },
+    {
+      texto: 'Envolver <code>video.play()</code> en un <code>try/catch</code>',
+      correcta: false,
+      porque: 'Sin <code>await</code>, el <code>try</code> no atrapa el rechazo de la promesa: todo sigue igual.',
+    },
+    {
+      texto: 'Esperar un poco: <code>setTimeout(() => video.play(), 2000)</code>',
+      correcta: false,
+      porque: 'El tiempo no cambia nada: lo que falta es un gesto de la persona, no que cargue el video.',
+    },
+  ],
+};
+
+export const multimediaLab = {
+  id: 'multimedia-lab',
+  titulo: 'Un reproductor que no miente',
+  pagina: `<audio id="pista" src="data:audio/wav;base64,AAAA"></audio>
+<button id="play">Reproducir</button> <span id="tiempo">0:00</span>
+<p id="aviso" role="status"></p>`,
+  inicial: `const audio = document.querySelector("#pista");
+const boton = document.querySelector("#play");
+const aviso = document.querySelector("#aviso");
+
+// 1. formatearTiempo(segundos) devuelve "m:ss": 5 → "0:05", 65 → "1:05", 600 → "10:00".
+//    Ignora los decimales.
+function formatearTiempo(segundos) {
+}
+
+// 2. Al hacer clic en el botón, espera audio.play():
+//    - si funciona, el botón dice "Pausa"
+//    - si falla (aquí va a fallar: el archivo no sirve), escribe "No se pudo reproducir"
+//      en #aviso y deja el botón como estaba
+`,
+  verificaciones: [
+    { texto: '<code>formatearTiempo</code> devuelve <code>0:05</code>, <code>1:05</code>, <code>10:00</code> y <code>0:59</code> (para 59,9)', prueba: 'return formatearTiempo(5) === "0:05" && formatearTiempo(65) === "1:05" && formatearTiempo(600) === "10:00" && formatearTiempo(59.9) === "0:59";' },
+    { texto: 'Si <code>play()</code> falla, avisa y el botón sigue diciendo «Reproducir»', prueba: 'boton.click(); for (let i = 0; i < 40 && !aviso.textContent; i++) await new Promise((r) => setTimeout(r, 20)); return aviso.textContent === "No se pudo reproducir" && boton.textContent === "Reproducir";' },
+    { texto: 'Si <code>play()</code> funciona, el botón dice «Pausa»', prueba: 'audio.play = async () => {}; boton.click(); await new Promise((r) => setTimeout(r, 20)); return boton.textContent === "Pausa";' },
+  ],
+  pistas: [
+    'Minutos y segundos: <code>const m = Math.floor(segundos / 60); const s = Math.floor(segundos % 60);</code>',
+    'Dos cifras para los segundos: <code>`${m}:${String(s).padStart(2, "0")}`</code>',
+    'El listener: <code>boton.addEventListener("click", async () => { try { await audio.play(); boton.textContent = "Pausa"; } catch { aviso.textContent = "No se pudo reproducir"; } });</code>',
+  ] as [string, string, string],
+  solucion: `const audio = document.querySelector("#pista");
+const boton = document.querySelector("#play");
+const aviso = document.querySelector("#aviso");
+
+function formatearTiempo(segundos) {
+  const m = Math.floor(segundos / 60);
+  const s = Math.floor(segundos % 60);
+  return \`\${m}:\${String(s).padStart(2, "0")}\`;
+}
+
+boton.addEventListener("click", async () => {
+  try {
+    await audio.play();
+    boton.textContent = "Pausa";
+  } catch {
+    aviso.textContent = "No se pudo reproducir";
+  }
+});`,
+  explicacion:
+    '<p>En un reproductor completo, <code>formatearTiempo</code> se usa en el evento <code>timeupdate</code>: <code>tiempo.textContent = formatearTiempo(audio.currentTime)</code>. El aviso va en una región viva (<code>role="status"</code>) para que también lo oiga quien usa un lector de pantalla. La tercera prueba reemplaza <code>audio.play</code> por una imitación que funciona, porque aquí no hay un archivo de verdad.</p>',
+};
+
+/* ── 13.17 Rendimiento de la página ──────────────────────── */
+export const rendimientoAuto = {
+  id: 'rendimiento-auto',
+  titulo: 'Rápida de verdad',
+  preguntas: [
+    {
+      pregunta: 'Al hacer clic en un botón, la página tarda medio segundo en reaccionar. ¿Qué métrica empeora?',
+      opciones: ['LCP', 'INP: el tiempo entre una interacción y el siguiente dibujo de la página', 'CLS'],
+      correcta: 1,
+      explicacion: 'Un buen INP es de hasta 200 ms. La causa típica es una tarea larga de JavaScript que ocupa el hilo.',
+    },
+    {
+      pregunta: 'Tienes que procesar 20.000 elementos y la página se congela. ¿Qué haces?',
+      opciones: ['Usar <code>var</code> en vez de <code>let</code>', 'Partir el trabajo en trozos y ceder el turno entre ellos (<code>await scheduler.yield()</code>), o moverlo a un Web Worker', 'Agregar más <code>console.log</code>'],
+      correcta: 1,
+      explicacion: 'Mientras tu código corre, el navegador no puede atender clics ni pintar. Ceder el turno le da huecos para hacerlo.',
+    },
+    {
+      pregunta: '¿Por qué conviene no alternar <code>elemento.offsetWidth</code> y <code>elemento.style.width = …</code> dentro de un bucle?',
+      opciones: ['No importa', 'Porque cada lectura después de una escritura obliga al navegador a recalcular el diseño en ese momento', 'Porque <code>offsetWidth</code> es asíncrono'],
+      correcta: 1,
+      explicacion: 'Lee todo primero y escribe todo después: así el navegador recalcula una sola vez.',
+    },
+    {
+      pregunta: 'Las imágenes de una página hacen saltar el texto mientras cargan. ¿Qué lo evita?',
+      opciones: ['<code>loading="lazy"</code>', 'Poner <code>width</code> y <code>height</code> en cada imagen, para que el navegador reserve su lugar', 'Comprimirlas más'],
+      correcta: 1,
+      explicacion: 'Eso mejora el CLS. <code>loading="lazy"</code> ayuda a cargar menos, pero no evita el salto.',
+    },
+  ],
+};
+
+export const rendimientoOrden = {
+  id: 'rendimiento-orden',
+  titulo: 'Un fragmento que se muda',
+  codigo: `document.body.innerHTML = \`<ul id="lista"><li>vieja</li></ul>\`;
+const lista = document.querySelector("#lista");
+
+const fragmento = document.createDocumentFragment();
+fragmento.append(document.createElement("li"), document.createElement("li"));
+console.log(fragmento.childNodes.length);
+
+lista.append(fragmento);
+console.log(fragmento.childNodes.length);
+console.log(lista.children.length);
+
+const nuevos = ["a", "b", "c"].map((t) => Object.assign(document.createElement("li"), { textContent: t }));
+lista.replaceChildren(...nuevos);
+console.log(lista.textContent);`,
+  salida: ['2', '0', '3', 'abc'],
+  inicio: [3, 1, 0, 2],
+  explicacion:
+    'Al agregar un fragmento, sus hijos se <b>mudan</b> a la lista y el fragmento queda vacío: la lista pasa a tener la vieja más las dos nuevas. <code>replaceChildren</code> saca todo lo que había y pone los nodos nuevos, también en un solo cambio.',
+};
+
+export const rendimientoDetective = {
+  id: 'rendimiento-detective',
+  titulo: 'Una marca que no existe',
+  codigo: `performance.mark("inicio-carga");
+const datos = Array.from({ length: 50_000 }, (_, i) => ({ id: i, nombre: \`item \${i}\` }));
+const visibles = datos.filter((d) => d.id % 2 === 0);
+performance.mark("fin-carga");
+
+const medida = performance.measure("carga", "inicio-carga", "fin_carga");
+console.log(\`Tardó \${medida.duration.toFixed(1)} ms\`);`,
+  error: `Uncaught SyntaxError: Failed to execute 'measure' on 'Performance': The mark 'fin_carga' does not exist.
+    at app.js:6:28`,
+  culpable: 6,
+  hallazgo:
+    'La marca se llama <code>"fin-carga"</code>, con guion, pero <code>measure</code> pide <code>"fin_carga"</code>, con guion bajo. Como esa marca no existe, <code>measure</code> lanza un error (un <code>SyntaxError</code>, aunque no sea de sintaxis: así lo define la especificación).',
+  pista: 'Compara, letra por letra, los nombres de las marcas de las líneas 1 y 4 con los de la línea 6.',
+  arreglos: [
+    {
+      texto: 'Usar el nombre real: <code>performance.measure("carga", "inicio-carga", "fin-carga")</code>',
+      correcta: true,
+      porque: 'Con los nombres bien escritos, <code>measure</code> calcula el tiempo entre las dos marcas.',
+    },
+    {
+      texto: 'Quitar el tercer argumento: <code>performance.measure("carga", "inicio-carga")</code>',
+      correcta: false,
+      porque: 'Ya no falla, pero mide hasta <b>ahora</b>, no hasta el final de la carga: si agregas código en el medio, el número deja de ser el que querías.',
+    },
+    {
+      texto: 'Usar <code>Date.now()</code> en lugar de las marcas',
+      correcta: false,
+      porque: 'Funcionaría, pero <code>Date.now()</code> tiene menos precisión y puede saltar si cambia el reloj del sistema. El error es solo un nombre mal escrito.',
+    },
+  ],
+};
+
+export const rendimientoLab = {
+  id: 'rendimiento-lab',
+  titulo: 'Mil productos, un solo cambio',
+  pagina: `<ul id="lista"></ul>
+<script>
+  // Cuenta cuántos cambios recibe la lista (cada append, cada innerHTML…)
+  var cambios = 0;
+  new MutationObserver((registros) => (cambios += registros.length)).observe(document.querySelector("#lista"), { childList: true });
+</script>`,
+  inicial: `const lista = document.querySelector("#lista");
+const productos = Array.from({ length: 1000 }, (_, i) => ({ id: i + 1, nombre: \`Producto \${i + 1}\` }));
+
+// Muestra cada producto como un <li> con "1. Producto 1", "2. Producto 2"…
+// Ya funciona, pero hace 1000 cambios en la página: haz que sea UNO solo.
+for (const p of productos) {
+  const li = document.createElement("li");
+  li.textContent = \`\${p.id}. \${p.nombre}\`;
+  lista.append(li);
+}
+`,
+  verificaciones: [
+    { texto: 'La lista tiene los 1000 productos', prueba: 'return lista.children.length === 1000;' },
+    { texto: 'Con el texto correcto, del primero al último', prueba: 'return lista.firstElementChild.textContent === "1. Producto 1" && lista.lastElementChild.textContent === "1000. Producto 1000";' },
+    { texto: 'Con un solo cambio en la página', prueba: 'await new Promise((r) => setTimeout(r, 0)); return cambios === 1;' },
+  ],
+  pistas: [
+    'Crea un fragmento antes del bucle: <code>const fragmento = document.createDocumentFragment();</code>',
+    'Dentro del bucle, agrega cada <code>&lt;li&gt;</code> al fragmento en lugar de a la lista.',
+    'Después del bucle, un solo <code>lista.append(fragmento);</code> (o arma un array de <code>&lt;li&gt;</code> y usa <code>lista.replaceChildren(...items)</code>).',
+  ] as [string, string, string],
+  solucion: `const lista = document.querySelector("#lista");
+const productos = Array.from({ length: 1000 }, (_, i) => ({ id: i + 1, nombre: \`Producto \${i + 1}\` }));
+
+const fragmento = document.createDocumentFragment();
+for (const p of productos) {
+  const li = document.createElement("li");
+  li.textContent = \`\${p.id}. \${p.nombre}\`;
+  fragmento.append(li);
+}
+lista.append(fragmento);`,
+  explicacion:
+    '<p>Un <code>MutationObserver</code> cuenta los cambios que recibe la lista: con el código original son 1000, uno por <code>append</code>. Con el fragmento, todos los <code>&lt;li&gt;</code> llegan juntos en un único cambio. Con <code>lista.replaceChildren(...productos.map(…))</code> también sería uno, y además reemplaza lo que hubiera antes.</p>',
+};

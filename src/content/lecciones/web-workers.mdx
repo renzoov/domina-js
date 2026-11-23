@@ -3,7 +3,7 @@ titulo: Web Workers y mensajería
 seccion: navegador
 tema: web-workers
 minutos: 11
-resumen: Cómo ejecutar trabajo pesado en otro hilo con Web Workers, la comunicación por mensajes (postMessage, clonación estructurada y transferencia), MessageChannel para canales propios y BroadcastChannel para hablar entre pestañas.
+resumen: Cómo ejecutar trabajo pesado en otro hilo con Web Workers, la comunicación por mensajes (postMessage, clonación estructurada y transferencia), MessageChannel para canales propios BroadcastChannel para hablar entre pestañas y Web Locks para darles turnos.
 intro: 'En <b>El event loop</b> viste que un cálculo largo congela la página: el único hilo está ocupado. Un <u>Web Worker</u> es otro hilo, con su propio event loop, donde puedes mandar ese trabajo. La página sigue respondiendo mientras el worker calcula, y los dos se comunican con mensajes.'
 nota: 'Este mismo sitio usa un Web Worker para ejecutar tu código en los laboratorios: si escribes un bucle infinito, se congela el worker, no la página.'
 ejercicios: [workers-auto, workers-orden, workers-detective, workers-lab]
@@ -126,6 +126,20 @@ botonSalir.addEventListener("click", () => {
   Coordinar pedidos y respuestas por mensajes es tedioso: cada respuesta hay que asociarla a su pedido. Librerías como Comlink lo esconden, y te dejan llamar a las funciones del worker como si fueran locales, con `await`. Vas a escribir una versión pequeña en el laboratorio.
 </Nota>
 
+## Turnos entre pestañas: Web Locks
+
+Si la persona tiene tu aplicación abierta en tres pestañas, las tres pueden intentar lo mismo a la vez: sincronizar con el servidor, renovar la sesión, migrar la base de datos local. La **Web Locks API** da turnos: solo quien tiene el "candado" con ese nombre entra, y los demás esperan:
+
+```js
+await navigator.locks.request("sincronizar", async () => {
+  // solo una pestaña (o un worker) a la vez entra aquí; el resto espera su turno
+  await sincronizarConElServidor();
+});
+// el candado se suelta solo cuando termina la función
+```
+
+Con la opción `{ ifAvailable: true }`, si el candado está ocupado la función recibe `null` en lugar de esperar: sirve para "si otra pestaña ya lo está haciendo, no lo hagas".
+
 ## Resumen
 
 - Un **Web Worker** ejecuta código en otro hilo: la página no se congela.
@@ -134,6 +148,7 @@ botonSalir.addEventListener("click", () => {
 - `SharedArrayBuffer` comparte memoria entre hilos; `Atomics.waitAsync` (ES2024) espera un cambio sin congelar la página.
 - `MessageChannel` crea un canal privado de dos puertos; `BroadcastChannel` habla entre pestañas.
 - Para pedidos y respuestas, identifica cada pedido con un `id`.
+- `navigator.locks.request(nombre, fn)` da turnos entre pestañas y workers para lo que no debe correr dos veces a la vez.
 
 <Practica>
 

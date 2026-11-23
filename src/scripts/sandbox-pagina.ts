@@ -112,6 +112,13 @@ function entornoPagina() {
       await new Promise((r) => nativo.setTimeout(r, activos.size ? 8 : 0));
       if (activos.size === 0) {
         await new Promise((r) => nativo.setTimeout(r, 0));
+        // Algunos eventos (el close de un <dialog>, el toggle de un popover) llegan con el siguiente cuadro
+        // (el primer cuadro de una página recién creada tarda; si el iframe no se está dibujando, no hay
+        // cuadros: no se espera más de 250 ms)
+        await new Promise((r) => {
+          nativo.requestAnimationFrame(() => nativo.setTimeout(r, 0));
+          nativo.setTimeout(r, 250);
+        });
         if (activos.size === 0) return;
       }
     }
@@ -217,19 +224,29 @@ export function documentoPagina(html: string): string {
 
 const enCurso = new WeakMap<HTMLIFrameElement, () => void>();
 
+/** ¿El código usa el foco? Entonces el iframe necesita tenerlo mientras corre (ver `enfocar`). */
+export const usaFoco = (texto: string) => /\.focus\s*\(|activeElement|:focus\b/.test(texto);
+
 /**
  * Ejecuta `codigo` en una página con `html` y devuelve la salida de consola y el resultado de las pruebas.
- * Si se pasa un iframe visible, el lector ve la página; si no, se crea uno fuera de la vista.
+ * Si se pasa un iframe visible, el lector ve la página; si no, se crea uno invisible.
+ *
+ * `enfocar`: el iframe es de otro origen, y el navegador no le deja tomar el foco por su cuenta, así que
+ * `elemento.focus()` adentro no haría nada. Con esta opción la página le da el foco mientras el código
+ * corre y después lo devuelve a donde estaba.
  */
-export function ejecutarEnPagina(html: string, codigo: string, pruebas: string[], iframe?: HTMLIFrameElement, limiteMs = 4500): Promise<ResultadoPagina & { tiempo: boolean }> {
+export function ejecutarEnPagina(html: string, codigo: string, pruebas: string[], iframe?: HTMLIFrameElement, limiteMs = 4500, enfocar = false): Promise<ResultadoPagina & { tiempo: boolean }> {
   const propio = !iframe;
   const marco = iframe ?? document.createElement('iframe');
   if (propio) {
     marco.setAttribute('aria-hidden', 'true');
     marco.tabIndex = -1;
-    Object.assign(marco.style, { position: 'fixed', left: '-10000px', top: '0', width: '480px', height: '320px', border: '0' });
+    // Invisible pero dentro de la pantalla: fuera de ella el navegador deja de dibujarlo, y sin cuadros no
+    // llegan algunos eventos (el close de un <dialog>) ni corre requestAnimationFrame
+    Object.assign(marco.style, { position: 'fixed', left: '0', top: '0', width: '480px', height: '320px', border: '0', opacity: '0', pointerEvents: 'none', zIndex: '-1' });
     document.body.append(marco);
   }
+  let anterior: HTMLElement | null = null;
   marco.setAttribute('sandbox', 'allow-scripts allow-forms');
 
   // Una ejecución nueva en el mismo iframe cancela la anterior, que ya no importa
@@ -243,13 +260,21 @@ export function ejecutarEnPagina(html: string, codigo: string, pruebas: string[]
       enCurso.delete(marco);
       window.removeEventListener('message', escuchar);
       clearTimeout(reloj);
+      // Devuelve el foco a donde estaba (el botón «Ejecutar», el editor), si el iframe se lo quedó
+      if (anterior && (document.activeElement === marco || document.activeElement === document.body)) anterior.focus({ preventScroll: true });
       if (propio) marco.remove();
       resolver(r);
     };
     enCurso.set(marco, () => terminar({ salida: [], error: null, resultados: [], tiempo: false }));
     const escuchar = (e: MessageEvent) => {
       if (e.source !== marco.contentWindow || !e.data) return;
-      if (e.data.tipo === 'domina-pagina-lista') marco.contentWindow!.postMessage({ codigo: protegerBucles(codigo), original: codigo, pruebas }, '*');
+      if (e.data.tipo === 'domina-pagina-lista') {
+        if (enfocar) {
+          anterior = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+          marco.focus({ preventScroll: true });
+        }
+        marco.contentWindow!.postMessage({ codigo: protegerBucles(codigo), original: codigo, pruebas }, '*');
+      }
       else if (e.data.tipo === 'domina-pagina') terminar({ ...(e.data as ResultadoPagina), tiempo: false });
     };
     const reloj = window.setTimeout(() => {

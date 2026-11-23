@@ -3,7 +3,7 @@ titulo: Seguridad en el navegador
 seccion: navegador
 tema: seguridad
 minutos: 13
-resumen: Los ataques más comunes contra una página (XSS, CSRF, clickjacking, dependencias de terceros) y sus defensas desde el código y desde el servidor (insertar texto en lugar de HTML, Content Security Policy, Trusted Types, cookies SameSite y HttpOnly, integridad de subrecursos).
+resumen: Los ataques más comunes contra una página (XSS, CSRF, clickjacking, dependencias de terceros) y sus defensas desde el código y desde el servidor (insertar texto en lugar de HTML, Content Security Policy, Trusted Types, cookies SameSite y HttpOnly, integridad de subrecursos), la criptografía del navegador (Web Crypto, randomUUID) y por qué evitar eval y new Function.
 intro: 'Tu página corre en el navegador de otra persona, junto a sus sesiones y sus datos. Si un atacante consigue ejecutar código en ella, puede hacer todo lo que esa persona puede hacer. La buena noticia: los ataques más comunes tienen defensas conocidas, y la mayoría se aplican escribiendo el código de una forma en lugar de otra.'
 ejercicios: [seguridad-auto, seguridad-orden, seguridad-detective, seguridad-lab]
 ---
@@ -72,6 +72,39 @@ Un **CSRF** (*cross-site request forgery*) es hacer que el navegador de la víct
 - **`Secure`**: solo viaja por HTTPS.
 - Para las acciones importantes, un token CSRF que el servidor comprueba.
 
+## Criptografía: Web Crypto
+
+`Math.random()` sirve para un juego, pero **no** para nada que deba ser impredecible: un token, un código de invitación, una contraseña temporal. Sus números se pueden adivinar. Para eso está el objeto `crypto`:
+
+- `crypto.randomUUID()` da un identificador único al azar.
+- `crypto.getRandomValues(new Uint8Array(16))` llena un array con bytes al azar, seguros.
+- `crypto.subtle` es la **Web Crypto API**: hashes (SHA-256), cifrado (AES-GCM), firmas y derivación de claves. Todo devuelve promesas, y solo existe en páginas con `https://`.
+
+```js
+const bytes = new TextEncoder().encode("hola");
+const hash = await crypto.subtle.digest("SHA-256", bytes);
+const hex = [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
+console.log(hex);
+console.log(crypto.randomUUID().length);
+```
+
+Un hash sirve, por ejemplo, para comprobar que un archivo descargado no cambió. Pero **no inventes tu propio cifrado** ni guardes contraseñas en el navegador. Las contraseñas se protegen en el servidor, con algoritmos hechos para eso (como Argon2 o bcrypt).
+
+## eval y new Function
+
+`eval(texto)` ejecuta un texto como si fuera código, y `new Function("a", "b", "return a + b")` hace lo mismo en forma de función. Si ese texto viene, aunque sea en parte, de afuera (un campo, la URL, una respuesta del servidor), es una invitación al XSS. Por eso una CSP bien puesta los **bloquea**, salvo que se agregue `'unsafe-eval'`. Además son lentos, porque el motor no puede optimizar lo que no conoce de antemano.
+
+```js
+eval(textoDelUsuario);                 // ✗ ejecuta lo que sea que escribieron
+setTimeout("actualizar()", 1000);      // ✗ un texto en setTimeout también se evalúa
+setTimeout(actualizar, 1000);          // ✓ pasa la función
+
+const datos = JSON.parse(respuesta);   // ✓ para leer datos, JSON.parse: nunca ejecuta nada
+const valor = objeto[nombreCampo];     // ✓ para leer una propiedad con nombre variable, corchetes
+```
+
+Casi siempre que parece necesario `eval`, hay una forma sin él. Las calculadoras, por ejemplo, interpretan la expresión con su propio código en lugar de ejecutarla.
+
 ## Otros frentes
 
 - **Clickjacking**: tu página se carga, invisible, dentro de un `<iframe>` de otro sitio, y el usuario hace clic en tus botones sin saberlo. Defensa: `frame-ancestors 'none'` en la CSP.
@@ -89,6 +122,8 @@ Un **CSRF** (*cross-site request forgery*) es hacer que el navegador de la víct
 - **CSP** limita de dónde se carga y ejecuta código; **Trusted Types** bloquea las asignaciones peligrosas.
 - Cookies con **`SameSite`**, **`HttpOnly`** y **`Secure`** contra CSRF y el robo de sesión.
 - `frame-ancestors` contra el clickjacking; `integrity` para los scripts de terceros.
+- Para tokens y códigos, `crypto.randomUUID()` y `getRandomValues`, no `Math.random()`; `crypto.subtle` para hashes y cifrado.
+- `eval`, `new Function` y textos en `setTimeout` ejecutan código: evítalos (la CSP los bloquea).
 - Nada en el navegador es secreto ni confiable: el servidor valida todo.
 
 <Practica>

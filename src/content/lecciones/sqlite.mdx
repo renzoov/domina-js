@@ -1,0 +1,148 @@
+---
+titulo: Bases de datos con node:sqlite
+seccion: servidor
+tema: sqlite
+minutos: 12
+resumen: Cómo guardar datos de verdad desde Node.js con la base de datos SQLite que ya viene incluida (node:sqlite). Crear tablas, insertar, consultar con all y get, usar parámetros para evitar la inyección de SQL, agrupar cambios en transacciones y saber cuándo hace falta otra base.
+intro: 'Un archivo JSON alcanza para guardar una lista chica. Cuando los datos crecen, hay que buscarlos, ordenarlos y cambiarlos sin romper nada, y para eso están las <b>bases de datos</b>. Node.js trae una incluida: <u>SQLite</u>, la base de datos más usada del mundo, que guarda todo en un solo archivo y no necesita ningún servidor aparte.'
+ejercicios: [sqlite-auto, sqlite-orden, sqlite-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { sqliteAuto, sqliteOrden, sqliteDetective } from '../../data/ejercicios/servidor';
+
+## Una base en un archivo
+
+SQLite está en tu teléfono, en tu navegador y en miles de programas. Toda la base es **un archivo**: se copia, se respalda y se mueve como cualquier otro. Desde Node 22.13 viene incluida en el módulo `node:sqlite`, sin instalar nada. Todavía está marcada como experimental, así que algún detalle puede cambiar entre versiones.
+
+```js
+import { DatabaseSync } from "node:sqlite";
+
+const db = new DatabaseSync("tareas.db");   // el archivo se crea si no existe; ":memory:" la deja solo en memoria
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tareas (
+    id    INTEGER PRIMARY KEY,
+    texto TEXT NOT NULL,
+    hecha INTEGER NOT NULL DEFAULT 0
+  )
+`);
+```
+
+Los datos se guardan en **tablas**, con columnas de un tipo cada una. Las órdenes se escriben en **SQL**, el lenguaje de casi todas las bases de datos. No hace falta saber mucho SQL para empezar: `CREATE TABLE` crea, `INSERT` agrega, `SELECT` consulta, `UPDATE` cambia y `DELETE` borra.
+
+`exec` ejecuta SQL sin devolver nada: sirve para crear tablas. Para todo lo demás se usan **consultas preparadas**.
+
+## Insertar y consultar
+
+`db.prepare(sql)` prepara una consulta una vez, y después la ejecutas las veces que quieras con distintos valores. Cada `?` es un lugar para un valor:
+
+```js
+const insertar = db.prepare("INSERT INTO tareas (texto) VALUES (?)");
+const r = insertar.run("Comprar pan");
+console.log(r.changes, r.lastInsertRowid);   // 1 1: una fila cambiada, y su id
+insertar.run("Llamar a Ana");
+insertar.run("Estudiar SQL");
+```
+
+Para leer hay tres métodos:
+
+- **`all(...)`** devuelve todas las filas, como un array de objetos.
+- **`get(...)`** devuelve solo la primera, o `undefined` si no hay ninguna.
+- **`iterate(...)`** las recorre de a una, sin cargarlas todas en memoria.
+
+```js
+const pendientes = db.prepare("SELECT id, texto FROM tareas WHERE hecha = 0 ORDER BY id").all();
+for (const t of pendientes) console.log(t.id, t.texto);
+
+const una = db.prepare("SELECT texto FROM tareas WHERE id = ?").get(2);
+console.log(una?.texto);   // Llamar a Ana
+console.log(db.prepare("SELECT texto FROM tareas WHERE id = ?").get(99));   // undefined
+```
+
+También puedes ponerles nombre a los lugares, con `:nombre`, y pasar un objeto:
+
+```js
+const marcar = db.prepare("UPDATE tareas SET hecha = :hecha WHERE id = :id");
+console.log(marcar.run({ hecha: 1, id: 1 }).changes);   // 1
+```
+
+SQLite tiene pocos tipos: los números enteros y decimales llegan como `number`, los textos como `string`, los datos binarios como `Uint8Array` y lo vacío como `null`. No hay booleanos ni fechas: se guardan como `0` y `1`, y como texto ISO (`"2026-11-22T10:00:00Z"`).
+
+## Parámetros, nunca texto pegado
+
+Lo más importante de esta lección: **nunca armes el SQL pegando lo que escribió una persona**. Si el texto trae comillas, puede cambiar el sentido de la consulta. Se llama **inyección de SQL**, y es uno de los ataques más comunes:
+
+```js
+const nombre = "x' OR '1'='1";   // lo que alguien escribió en el buscador
+
+// ✗ Peligroso: la consulta queda ... WHERE nombre = 'x' OR '1'='1', y devuelve TODOS los usuarios
+db.prepare(`SELECT * FROM usuarios WHERE nombre = '${nombre}'`).all();
+
+// ✓ Seguro: el valor viaja aparte y se busca literalmente ese texto
+db.prepare("SELECT * FROM usuarios WHERE nombre = ?").all(nombre);
+```
+
+Con `?` (o `:nombre`), el valor nunca se mezcla con el SQL, contenga lo que contenga. Es la misma idea que `textContent` frente a `innerHTML` en el navegador.
+
+## Transacciones: todo o nada
+
+Algunos cambios van juntos: si pasas dinero de una cuenta a otra, no puede quedar descontado de una y sin sumar en la otra. Una **transacción** agrupa varios cambios: o se guardan todos (`COMMIT`), o ninguno (`ROLLBACK`):
+
+```js
+function transferir(desde, hacia, monto) {
+  db.exec("BEGIN");
+  try {
+    db.prepare("UPDATE cuentas SET saldo = saldo - ? WHERE id = ?").run(monto, desde);
+    db.prepare("UPDATE cuentas SET saldo = saldo + ? WHERE id = ?").run(monto, hacia);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");   // deshace todo lo que se hizo desde BEGIN
+    throw error;
+  }
+}
+```
+
+Además, agrupar muchos `INSERT` en una transacción los hace **mucho** más rápidos, porque el archivo se escribe una vez en lugar de una por fila.
+
+<Nota>
+  `DatabaseSync` es **síncrona**: cada consulta bloquea el event loop mientras corre. Con SQLite eso suele estar bien, porque las consultas sobre un archivo local tardan muy poco. Pero una consulta pesada sobre millones de filas sí puede frenar tu servidor: dale índices a las tablas (`CREATE INDEX`) o llévala a un worker.
+</Nota>
+
+## ¿Y cuándo otra base de datos?
+
+SQLite alcanza para muchísimo: aplicaciones de escritorio, herramientas, sitios con miles de visitas, prototipos. Se queda corta cuando **muchos servidores** tienen que escribir en la misma base a la vez, porque el archivo vive en una sola máquina. Ahí se usan bases con su propio servidor, como **PostgreSQL** o **MySQL**, con librerías como `pg` o `mysql2`. El SQL es casi el mismo. Muchos proyectos usan además un **ORM** o un constructor de consultas (como Drizzle o Prisma), que arma el SQL por ti a partir de objetos de JavaScript.
+
+## Resumen
+
+- `new DatabaseSync("archivo.db")` abre (o crea) una base SQLite; `":memory:"` la deja en memoria.
+- `exec` para crear tablas; `prepare(sql)` para consultas que se repiten.
+- `run` cambia datos y devuelve `changes` y `lastInsertRowid`; `all`, `get` e `iterate` leen.
+- Los valores van siempre como parámetros (`?` o `:nombre`), nunca pegados en el SQL.
+- `BEGIN`, `COMMIT` y `ROLLBACK` agrupan cambios que van juntos.
+- SQLite es síncrona y vive en un archivo; para muchos servidores a la vez, PostgreSQL o MySQL.
+
+<Practica>
+
+<Autoevaluacion id={sqliteAuto.id} numero={1} titulo={sqliteAuto.titulo} preguntas={sqliteAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={sqliteOrden.id} numero={2} titulo={sqliteOrden.titulo} codigo={sqliteOrden.codigo} salida={sqliteOrden.salida} inicio={sqliteOrden.inicio} explicacion={sqliteOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una tabla de notas que se llena y se vacía. Ordena lo que aparecería en la terminal.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={sqliteDetective.id} numero={3} titulo={sqliteDetective.titulo} codigo={sqliteDetective.codigo} error={sqliteDetective.error} culpable={sqliteDetective.culpable} arreglos={sqliteDetective.arreglos} hallazgo={sqliteDetective.hallazgo} pista={sqliteDetective.pista}>
+  <div slot="enunciado">
+    <p>La tabla se crea bien, pero la búsqueda falla. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

@@ -3,7 +3,7 @@ titulo: Guardar datos
 seccion: navegador
 tema: guardar-datos
 minutos: 11
-resumen: Las formas de guardar datos en el navegador (localStorage, sessionStorage, IndexedDB, Cache API y cookies), cuánto duran, cuánto caben, cómo guardar objetos con JSON y qué no conviene guardar ahí.
+resumen: Las formas de guardar datos en el navegador (localStorage, sessionStorage, IndexedDB, Cache API y cookies), cuánto duran, cuánto caben, cómo guardar objetos con JSON, qué no conviene guardar ahí y cuánto espacio queda (navigator.storage).
 intro: 'El tema que eligió alguien, un carrito a medio armar, un borrador sin enviar: hay datos que conviene recordar entre visitas sin pasar por un servidor. El navegador ofrece varios lugares para guardarlos, cada uno pensado para un tamaño y un uso distintos.'
 nota: 'La página de prueba de esta lección está aislada y no tiene almacenamiento: los ejemplos son para leer y copiar, y el laboratorio usa un <code>localStorage</code> simulado que se comporta igual que el real.'
 ejercicios: [guardar-auto, guardar-orden, guardar-detective, guardar-lab]
@@ -87,6 +87,23 @@ const idioma = await cookieStore.get("idioma");
   Nada de lo que guardas en el navegador es secreto ni confiable: el usuario puede verlo y cambiarlo desde las DevTools, y cualquier script que corra en tu página puede leer `localStorage`. No guardes ahí contraseñas, y no confíes en lo que leas sin validarlo.
 </Nota>
 
+## Cuánto espacio hay, y cuánto dura
+
+El navegador reparte un espacio para cada sitio, que comparten IndexedDB, la Cache API y los demás. Con la **Storage API** puedes ver cuánto usas y cuánto queda:
+
+```js
+const { usage, quota } = await navigator.storage.estimate();
+console.log(`Usas ${(usage / 1e6).toFixed(1)} MB de unos ${(quota / 1e6).toFixed(0)} MB`);
+```
+
+Ese espacio es "de buena fe": si el dispositivo se queda sin lugar, el navegador puede **borrar** los datos de los sitios menos usados, sin preguntar. Safari, además, borra los de un sitio que no visitas desde hace unos días, salvo que esté instalado como aplicación. Si tus datos importan (notas sin conexión, un borrador largo), pide que se conserven:
+
+```js
+const conservado = await navigator.storage.persist();   // true si el navegador acepta no borrarlos
+```
+
+Aun así, el navegador no es un lugar para guardar lo único que existe de algo: si es importante, que también esté en un servidor o en un archivo que la persona pueda descargar.
+
 ## Resumen
 
 - `localStorage` (permanente) y `sessionStorage` (por pestaña): síncronos, pequeños y solo de texto. Usa JSON.
@@ -94,6 +111,7 @@ const idioma = await cookieStore.get("idioma");
 - IndexedDB para datos grandes o estructurados; la Cache API para respuestas y archivos.
 - Las cookies viajan al servidor; las `HttpOnly` no las ve JavaScript.
 - Lo guardado en el navegador lo puede ver y cambiar el usuario.
+- `navigator.storage.estimate()` dice cuánto espacio usas; `persist()` pide que no se borre solo.
 
 <Practica>
 

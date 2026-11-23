@@ -1,0 +1,167 @@
+---
+titulo: Texto editable y selección
+seccion: navegador
+tema: texto-editable
+minutos: 11
+resumen: Cómo hacer editable cualquier elemento con contenteditable, leer y cambiar lo que la persona seleccionó con Selection y Range, envolver texto en etiquetas, trabajar con la selección de input y textarea, y controlar lo que se escribe con beforeinput.
+intro: 'Marcar un texto con el mouse y ponerlo en negrita, resaltar una palabra, insertar un emoji donde está el cursor. Para eso el navegador tiene dos piezas: la <b>selección</b>, lo que la persona marcó, y los <b>rangos</b>, trozos del documento que tu código puede <u>señalar y modificar</u>.'
+ejercicios: [editable-auto, editable-orden, editable-detective, editable-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { editableAuto, editableOrden, editableDetective, editableLab } from '../../data/ejercicios/navegador';
+
+## Cualquier elemento, editable
+
+El atributo **`contenteditable`** convierte un elemento en una caja donde la persona puede escribir, borrar y pegar, con el cursor y los atajos de siempre:
+
+```js
+document.body.innerHTML = `<div id="nota" contenteditable="true">Escribe aquí tu nota…</div>`;
+const nota = document.querySelector("#nota");
+
+console.log(nota.isContentEditable);
+nota.addEventListener("input", () => {
+  localStorage.setItem("nota", nota.innerHTML);   // guarda cada cambio
+});
+```
+
+Cada cambio que hace la persona dispara `input`, como en un campo de formulario. Pero ojo: si cambias el contenido desde tu código, `input` **no** se dispara.
+
+<Nota>
+  Lo que alguien escribe o pega en un `contenteditable` es HTML, y puede traer de todo, incluso código malicioso. Antes de guardarlo o mostrarlo en otra página, sanéalo (lo viste en *Seguridad en el navegador*). Si solo necesitas texto, usa `contenteditable="plaintext-only"`.
+</Nota>
+
+## Rangos: señalar un trozo del documento
+
+Un **`Range`** marca un trozo del documento con un **principio** y un **final**. Cada extremo es un nodo y una posición dentro de él. En un nodo de texto, la posición cuenta caracteres:
+
+```js
+document.body.innerHTML = `<p id="frase">JavaScript corre en el navegador</p>`;
+const texto = document.querySelector("#frase").firstChild;   // el nodo de texto, no el <p>
+
+const rango = document.createRange();
+rango.setStart(texto, 0);
+rango.setEnd(texto, 10);
+console.log(rango.toString());
+```
+
+Con un rango puedes **modificar** el documento:
+
+- `deleteContents()` borra lo que abarca y `extractContents()` lo saca y te lo devuelve.
+- `insertNode(nodo)` inserta un nodo al principio del rango.
+- `surroundContents(elemento)` envuelve el contenido en un elemento.
+
+```js
+document.body.innerHTML = `<p id="frase">Aprender JavaScript es divertido</p>`;
+const texto = document.querySelector("#frase").firstChild;
+
+const rango = document.createRange();
+rango.setStart(texto, 9);
+rango.setEnd(texto, 19);
+rango.surroundContents(document.createElement("mark"));
+console.log(document.querySelector("#frase").innerHTML);
+```
+
+## La selección
+
+Lo que la persona marcó con el mouse o el teclado es la **selección**, y se lee con `getSelection()`. Por dentro, la selección es un rango, y también puedes armarla desde tu código:
+
+```js
+document.body.innerHTML = `<p id="frase">Lo importante es entender</p>`;
+const texto = document.querySelector("#frase").firstChild;
+
+const rango = document.createRange();
+rango.setStart(texto, 3);
+rango.setEnd(texto, 13);
+
+const seleccion = getSelection();
+seleccion.removeAllRanges();
+seleccion.addRange(rango);   // como si la persona lo hubiera marcado
+console.log(seleccion.toString(), seleccion.rangeCount);
+```
+
+Para reaccionar mientras la persona selecciona, escucha **`selectionchange`** en `document`. Así funciona, por ejemplo, la barrita que aparece sobre un texto marcado:
+
+```js
+document.addEventListener("selectionchange", () => {
+  const seleccion = getSelection();
+  barra.hidden = seleccion.isCollapsed;   // "colapsada" = no hay nada marcado, solo el cursor
+  if (seleccion.isCollapsed) return;
+  const caja = seleccion.getRangeAt(0).getBoundingClientRect();
+  barra.style.top = `${caja.top - 40}px`;   // la barra, justo encima del texto
+  barra.style.left = `${caja.left}px`;
+});
+```
+
+<Nota tipo="consejo">
+  Para poner en negrita lo seleccionado verás `document.execCommand("bold")` en código viejo. Está **obsoleto**: todavía funciona, pero no se mantiene y cada navegador genera un HTML distinto. Hoy se trabaja con rangos.
+</Nota>
+
+## En input y textarea
+
+En los campos de texto la selección es más simple: son posiciones dentro de `value`, con `selectionStart` y `selectionEnd`. `setRangeText` reemplaza un trozo y `setSelectionRange` mueve el cursor:
+
+```js
+document.body.innerHTML = `<textarea id="t">Hola mundo</textarea>`;
+const t = document.querySelector("#t");
+
+t.setSelectionRange(5, 10);
+console.log(t.value.slice(t.selectionStart, t.selectionEnd));
+t.setRangeText("JavaScript");
+console.log(t.value);
+```
+
+## Controlar lo que se escribe
+
+El evento **`beforeinput`** llega *antes* del cambio, con `e.inputType` diciendo qué va a pasar (`insertText`, `insertParagraph`, `deleteContentBackward`, `insertFromPaste`…). Si lo cancelas, el cambio no ocurre:
+
+```js
+titulo.addEventListener("beforeinput", (e) => {
+  if (e.inputType === "insertParagraph") e.preventDefault();   // un título sin saltos de línea
+});
+```
+
+<Nota tipo="error">
+  Un editor de texto enriquecido completo (con deshacer, listas, pegar desde Word, colaboración) es **muy** difícil de hacer bien. Para eso existen librerías como ProseMirror o Lexical. Lo que viste aquí alcanza para lo chico: resaltar, insertar, limitar.
+</Nota>
+
+## Resumen
+
+- `contenteditable` hace editable cualquier elemento; `input` avisa de cada cambio de la persona.
+- Un `Range` marca un trozo del documento; sus posiciones cuentan caracteres en los nodos de texto.
+- Con rangos: `deleteContents`, `extractContents`, `insertNode` y `surroundContents`.
+- `getSelection()` devuelve lo que marcó la persona; `selectionchange` avisa cuando cambia.
+- En `input` y `textarea`: `selectionStart`, `selectionEnd`, `setRangeText` y `setSelectionRange`.
+- `beforeinput` llega antes del cambio y se puede cancelar.
+
+<Practica>
+
+<Autoevaluacion id={editableAuto.id} numero={1} titulo={editableAuto.titulo} preguntas={editableAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={editableOrden.id} numero={2} titulo={editableOrden.titulo} codigo={editableOrden.codigo} salida={editableOrden.salida} inicio={editableOrden.inicio} explicacion={editableOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un rango que se mueve por una frase. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={editableDetective.id} numero={3} titulo={editableDetective.titulo} codigo={editableDetective.codigo} error={editableDetective.error} culpable={editableDetective.culpable} arreglos={editableDetective.arreglos} hallazgo={editableDetective.hallazgo} pista={editableDetective.pista}>
+  <div slot="enunciado">
+    <p>El resaltador falla con algunos textos. Encuentra la línea del error y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={editableLab.id} numero={4} titulo={editableLab.titulo} pagina={editableLab.pagina} inicial={editableLab.inicial} verificaciones={editableLab.verificaciones} pistas={editableLab.pistas} solucion={editableLab.solucion} explicacion={editableLab.explicacion}>
+  <div slot="enunciado">
+    <p>Escribe una función que resalte una palabra del párrafo con un rango.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

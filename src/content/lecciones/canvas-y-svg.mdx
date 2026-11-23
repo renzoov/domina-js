@@ -3,7 +3,7 @@ titulo: 'Gráficos: Canvas y SVG'
 seccion: navegador
 tema: canvas-y-svg
 minutos: 12
-resumen: Las dos formas de dibujar en la web, Canvas (píxeles, con la API 2D) y SVG (formas que son elementos del DOM), cómo se usan desde JavaScript, cómo animar y cuándo conviene cada una.
+resumen: Las dos formas de dibujar en la web, Canvas (píxeles, con la API 2D) y SVG (formas que son elementos del DOM), cómo se usan desde JavaScript, cómo animar, transformar y trabajar con píxeles, exportar el dibujo como imagen, armar gráficos de datos y cuándo conviene cada una.
 intro: 'Un gráfico de barras, un juego, un editor de imágenes, un ícono animado: para dibujar, la web ofrece dos tecnologías muy distintas. <u>Canvas</u> es un lienzo de píxeles que pintas con comandos; <u>SVG</u> es un dibujo hecho de elementos, como el HTML. Elegir bien entre las dos ahorra mucho trabajo.'
 ejercicios: [graficos-auto, graficos-orden, graficos-detective, graficos-lab]
 ---
@@ -68,6 +68,78 @@ requestAnimationFrame(cuadro);
 
 En pantallas de alta densidad, para que no se vea borroso, el tamaño interno del canvas tiene que multiplicarse por `devicePixelRatio`, y después escalar el contexto con `ctx.scale(dpr, dpr)`.
 
+## Transformaciones
+
+En lugar de calcular cada coordenada, puedes **mover, girar y escalar el sistema de coordenadas** y dibujar siempre alrededor del `(0, 0)`. `save()` guarda el estado del contexto (las transformaciones, los colores, el grosor) y `restore()` lo recupera:
+
+```js
+document.body.innerHTML = `<canvas id="lienzo" width="300" height="150"></canvas>`;
+const ctx = document.querySelector("#lienzo").getContext("2d");
+
+function aspa(color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(-40, -8, 80, 16);   // siempre alrededor del (0, 0)
+}
+
+ctx.save();
+ctx.translate(80, 75);              // el (0, 0) pasa al centro del primer dibujo
+aspa("#f7df1e");
+ctx.rotate(Math.PI / 2);            // gira 90° alrededor del nuevo origen
+aspa("#f7df1e");
+ctx.restore();                      // vuelve a como estaba antes del save()
+
+ctx.translate(220, 75);
+ctx.rotate(Math.PI / 4);
+aspa("#8fd0f7");
+ctx.rotate(Math.PI / 2);
+aspa("#8fd0f7");
+console.log(ctx.getTransform().e, ctx.getTransform().f);   // dónde quedó el origen
+```
+
+`ctx.scale(x, y)` agranda o achica, y se combina con las otras. Es lo mismo que usaste para el `devicePixelRatio`.
+
+## Imágenes y píxeles
+
+`ctx.drawImage(imagen, x, y, ancho, alto)` pinta una imagen, un video (el cuadro actual) u otro canvas. Y con **`getImageData`** obtienes los píxeles mismos: un array con cuatro números por píxel (rojo, verde, azul y transparencia, de 0 a 255) que puedes cambiar y volver a pintar con `putImageData`. Así funcionan los filtros de fotos:
+
+```js
+document.body.innerHTML = `<canvas id="lienzo" width="200" height="100"></canvas>`;
+const ctx = document.querySelector("#lienzo").getContext("2d", { willReadFrequently: true });
+ctx.fillStyle = "#f7df1e";
+ctx.fillRect(0, 0, 100, 100);
+ctx.fillStyle = "#8fd0f7";
+ctx.fillRect(100, 0, 100, 100);
+
+const imagen = ctx.getImageData(0, 0, 200, 100);
+const p = imagen.data;   // [r, g, b, a, r, g, b, a, …]
+console.log(p.length, p[0], p[1], p[2], p[3]);
+
+for (let i = 0; i < p.length; i += 4) {   // a escala de grises
+  const gris = Math.round(0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]);
+  p[i] = p[i + 1] = p[i + 2] = gris;
+}
+ctx.putImageData(imagen, 0, 0);
+console.log(ctx.getImageData(150, 50, 1, 1).data.join(","));
+```
+
+<Nota>
+  Si pintas una imagen de **otro sitio** sin permiso, el canvas queda "contaminado" y `getImageData` lanza un `SecurityError`: así ninguna página puede leer imágenes ajenas a través de un canvas. El otro sitio tiene que permitirlo con CORS, y la imagen se carga con `img.crossOrigin = "anonymous"`.
+</Nota>
+
+## Exportar el dibujo
+
+Un canvas se convierte en un archivo de imagen con **`toBlob`**, y se descarga como cualquier `Blob` (lo viste en *Archivos*):
+
+```js
+lienzo.toBlob((blob) => {
+  const enlace = document.createElement("a");
+  enlace.href = URL.createObjectURL(blob);
+  enlace.download = "dibujo.png";
+  enlace.click();
+  URL.revokeObjectURL(enlace.href);
+}, "image/png");   // también "image/jpeg" o "image/webp", con la calidad como tercer argumento
+```
+
 ## SVG
 
 En SVG, cada forma es un **elemento**, con atributos, estilos de CSS y eventos. Se crean con `createElementNS`, porque pertenecen al espacio de nombres de SVG:
@@ -93,6 +165,40 @@ console.log(circulo.getAttribute("fill"));
 
 El `viewBox` define un sistema de coordenadas propio: el dibujo se escala al tamaño que le des, siempre nítido. Para dibujos fijos, como íconos, lo habitual es escribir el SVG directamente en el HTML y cambiar algún atributo o clase desde JavaScript.
 
+Un SVG también se exporta: `new XMLSerializer().serializeToString(svg)` lo convierte en texto, que guardas en un `Blob` de tipo `"image/svg+xml"`.
+
+## Gráficos de datos
+
+Un gráfico de barras no es más que rectángulos con un alto proporcional a cada valor. Con SVG, cada barra es un elemento: puede llevar su `<title>` (el lector de pantalla y el mouse lo muestran) y reaccionar a eventos:
+
+```js
+const datos = [["Ene", 30], ["Feb", 45], ["Mar", 20]];
+const SVG = "http://www.w3.org/2000/svg";
+const svg = document.createElementNS(SVG, "svg");
+svg.setAttribute("viewBox", "0 0 150 60");
+svg.setAttribute("width", "300");
+svg.setAttribute("role", "img");
+svg.setAttribute("aria-label", "Ventas por mes: enero 30, febrero 45, marzo 20");
+
+const maximo = Math.max(...datos.map(([, valor]) => valor));
+datos.forEach(([mes, valor], i) => {
+  const alto = (valor / maximo) * 50;
+  const barra = document.createElementNS(SVG, "rect");
+  for (const [k, v] of Object.entries({ x: 10 + i * 45, y: 55 - alto, width: 30, height: alto, fill: "#f7df1e" })) {
+    barra.setAttribute(k, v);
+  }
+  const titulo = document.createElementNS(SVG, "title");
+  titulo.textContent = `${mes}: ${valor}`;
+  barra.append(titulo);
+  svg.append(barra);
+});
+
+document.body.append(svg);
+console.log(svg.querySelectorAll("rect").length, "barras");
+```
+
+Para gráficos con ejes, escalas, animaciones y leyendas, hay librerías que hacen el trabajo pesado: D3 te da las piezas para armarlos en SVG, y Chart.js los dibuja en un canvas con poca configuración.
+
 ## ¿Cuál uso?
 
 | <span class="sr-only">Aspecto</span> | Canvas | SVG |
@@ -113,6 +219,8 @@ El `viewBox` define un sistema de coordenadas propio: el dibujo se escala al tam
 - **Canvas**: un lienzo de píxeles; dibujas con un contexto (`getContext("2d")`) y no guarda objetos.
 - Para animar un canvas, repinta en cada `requestAnimationFrame`.
 - **SVG**: formas que son elementos, creadas con `createElementNS`; escalan sin perder calidad.
+- `save`/`restore`, `translate`, `rotate` y `scale` mueven el sistema de coordenadas.
+- `getImageData` y `putImageData` leen y cambian píxeles; `toBlob` exporta el dibujo como imagen.
 - Canvas para muchísimos objetos o píxeles; SVG para gráficos interactivos, íconos y diagramas.
 
 <Practica>

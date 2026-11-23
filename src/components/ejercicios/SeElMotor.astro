@@ -18,7 +18,7 @@ const lineas = resaltar(codigo);
 <Ejercicio id={id} numero={numero} formato="Sé el motor" titulo={titulo}>
   <slot name="enunciado" slot="enunciado" />
   <div class="motor" data-motor data-id={id}>
-    <pre class="codigo caja"><code>{lineas.map((html, i) => (<span class="l" data-l={i + 1}><i aria-hidden="true">{i + 1}</i><Fragment set:html={html || ' '} /></span>))}</code></pre>
+    <pre class="codigo caja" tabindex="0"><code>{lineas.map((html, i) => (<span class="l" data-l={i + 1}><i aria-hidden="true">{i + 1}</i><Fragment set:html={html || ' '} /></span>))}</code></pre>
     <div class="lado">
       <p class="rotulo cima">Tu pila<Icono nombre="subir" />cima</p>
       <ol class="marcos" data-pila aria-label="Tu pila, de abajo hacia arriba"></ol>

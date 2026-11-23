@@ -663,3 +663,191 @@ Error: Access to this API has been restricted. Use --allow-fs-read to manage per
     },
   ],
 };
+
+/* ── 14.5 Bases de datos con node:sqlite ─────────────────── */
+export const sqliteAuto = {
+  id: 'sqlite-auto',
+  titulo: 'Datos que se guardan de verdad',
+  preguntas: [
+    {
+      pregunta: 'Una persona escribe su nombre en un buscador. ¿Cómo lo usas en la consulta?',
+      opciones: ['Pegándolo en el SQL con un template literal', 'Como parámetro: <code>db.prepare("… WHERE nombre = ?").all(nombre)</code>', 'Quitándole las comillas antes de pegarlo'],
+      correcta: 1,
+      explicacion: 'Con parámetros, el valor nunca se mezcla con el SQL. Pegarlo abre la puerta a la inyección de SQL, y "limpiarlo" a mano siempre deja algún hueco.',
+    },
+    {
+      pregunta: '¿Qué devuelve <code>consulta.get(…)</code> si ninguna fila cumple la condición?',
+      opciones: ['Un error', '<code>undefined</code>', 'Un array vacío'],
+      correcta: 1,
+      explicacion: '<code>get</code> devuelve la primera fila o <code>undefined</code>. <code>all</code>, en cambio, devuelve siempre un array, que puede estar vacío.',
+    },
+    {
+      pregunta: 'Después de un <code>INSERT</code>, ¿cómo sabes qué id recibió la fila nueva?',
+      opciones: ['Con otra consulta <code>SELECT MAX(id)</code>', 'Con el <code>lastInsertRowid</code> que devuelve <code>run()</code>', 'No se puede saber'],
+      correcta: 1,
+      explicacion: '<code>run()</code> devuelve <code>{ changes, lastInsertRowid }</code>: cuántas filas cambiaron y el id de la última insertada.',
+    },
+    {
+      pregunta: 'Tienes que descontar de una cuenta y sumar en otra. ¿Por qué usar una transacción?',
+      opciones: ['Para que sea más legible', 'Para que se guarden los dos cambios o ninguno: si el segundo falla, <code>ROLLBACK</code> deshace el primero', 'Porque SQLite lo exige'],
+      correcta: 1,
+      explicacion: '<code>BEGIN</code>, los cambios, y <code>COMMIT</code> si todo salió bien o <code>ROLLBACK</code> si algo falló.',
+    },
+  ],
+};
+
+export const sqliteOrden = {
+  id: 'sqlite-orden',
+  titulo: 'Una tabla de notas',
+  codigo: `import { DatabaseSync } from "node:sqlite";
+const db = new DatabaseSync(":memory:");
+db.exec("CREATE TABLE notas (id INTEGER PRIMARY KEY, texto TEXT NOT NULL)");
+
+const insertar = db.prepare("INSERT INTO notas (texto) VALUES (?)");
+console.log(insertar.run("uno").lastInsertRowid);
+insertar.run("dos");
+insertar.run("tres");
+
+console.log(db.prepare("SELECT COUNT(*) AS total FROM notas").get().total);
+console.log(db.prepare("SELECT texto FROM notas WHERE id = ?").get(5));
+console.log(db.prepare("SELECT texto FROM notas ORDER BY id DESC").get().texto);
+console.log(db.prepare("DELETE FROM notas WHERE id > ?").run(1).changes);`,
+  salida: ['1', '3', 'undefined', 'tres', '2'],
+  inicio: [3, 0, 4, 1, 2],
+  explicacion:
+    'La primera fila recibe el id 1. Después hay tres notas, ninguna con id 5 (<code>get</code> devuelve <code>undefined</code>), y ordenadas de mayor a menor la primera es "tres". El <code>DELETE</code> borra las de id mayor que 1: <code>changes</code> dice que fueron 2.',
+};
+
+export const sqliteDetective = {
+  id: 'sqlite-detective',
+  titulo: 'Una tabla que no existe',
+  codigo: `import { DatabaseSync } from "node:sqlite";
+
+const db = new DatabaseSync("tienda.db");
+db.exec("CREATE TABLE IF NOT EXISTS productos (id INTEGER PRIMARY KEY, nombre TEXT, precio REAL)");
+
+const baratos = db.prepare("SELECT * FROM producto WHERE precio < ?");
+console.log(baratos.all(100));`,
+  error: `Error: no such table: producto
+    at file:///tienda.js:6:19 {
+  code: 'ERR_SQLITE_ERROR',
+  errcode: 1,
+  errstr: 'SQL logic error'
+}`,
+  culpable: 6,
+  hallazgo:
+    'La tabla se llama <code>productos</code>, en plural, y la consulta busca <code>producto</code>. SQLite revisa la consulta al prepararla, por eso el error salta en <code>prepare</code>, antes de ejecutarla.',
+  pista: 'Compara el nombre de la tabla en el <code>CREATE TABLE</code> con el de la consulta.',
+  arreglos: [
+    {
+      texto: 'Usar el nombre real: <code>SELECT * FROM productos WHERE precio &lt; ?</code>',
+      correcta: true,
+      porque: 'Con el nombre correcto, la consulta se prepara y devuelve los productos de menos de 100.',
+    },
+    {
+      texto: 'Agregar <code>CREATE TABLE IF NOT EXISTS producto (…)</code>',
+      correcta: false,
+      porque: 'El error desaparece, pero ahora hay dos tablas: la consulta lee una vacía y devuelve <code>[]</code>, mientras los productos siguen en la otra.',
+    },
+    {
+      texto: 'Envolver la consulta en un <code>try/catch</code> que devuelva <code>[]</code>',
+      correcta: false,
+      porque: 'Esconde el error: la búsqueda nunca va a encontrar nada y no sabrás por qué.',
+    },
+  ],
+};
+
+/* ── 14.7 Programas de línea de comandos ─────────────────── */
+export const cliAuto = {
+  id: 'cli-auto',
+  titulo: 'Un buen comando',
+  preguntas: [
+    {
+      pregunta: 'Tu comando imprime un resultado y también mensajes de progreso. ¿Dónde va cada cosa?',
+      opciones: ['Todo con <code>console.log</code>', 'El resultado a stdout (<code>console.log</code>) y los mensajes a stderr (<code>console.error</code>)', 'Todo con <code>console.error</code>'],
+      correcta: 1,
+      explicacion: 'Así, con <code>&gt; archivo.txt</code>, el resultado va al archivo y los mensajes siguen en la pantalla.',
+    },
+    {
+      pregunta: 'Con <code>parseArgs</code>, ¿qué tipo tiene el valor de una opción <code>{ type: "string" }</code> que recibió <code>-n 5</code>?',
+      opciones: ['<code>number</code>', '<code>string</code>: los argumentos siempre llegan como texto', 'Depende del valor'],
+      correcta: 1,
+      explicacion: 'Si esperas un número, conviértelo con <code>Number(…)</code> y comprueba que no sea <code>NaN</code>.',
+    },
+    {
+      pregunta: '¿Cómo lee tu programa lo que le llega con <code>cat notas.txt | node contar.js</code>?',
+      opciones: ['Con <code>process.argv</code>', 'Recorriendo <code>process.stdin</code> con <code>for await</code>', 'Con <code>readFile("notas.txt")</code>'],
+      correcta: 1,
+      explicacion: 'La salida de <code>cat</code> se convierte en la entrada de tu programa, que es un stream.',
+    },
+    {
+      pregunta: 'Tu comando encontró un error al final. ¿Cómo se lo dices a quien lo ejecutó (o a otro programa)?',
+      opciones: ['Con un mensaje en mayúsculas', 'Con un mensaje en stderr y un código de salida distinto de 0: <code>process.exitCode = 1</code>', 'No hace falta'],
+      correcta: 1,
+      explicacion: 'Los scripts y la integración continua miran el código de salida para saber si el paso salió bien.',
+    },
+  ],
+};
+
+export const cliOrden = {
+  id: 'cli-orden',
+  titulo: 'Argumentos de prueba',
+  codigo: `import { parseArgs } from "node:util";
+
+const { values, positionals } = parseArgs({
+  args: ["notas.txt", "-n", "5", "--ordenar", "otro.txt"],
+  options: {
+    n: { type: "string", short: "n", default: "10" },
+    ordenar: { type: "boolean" },
+    invertir: { type: "boolean", default: false },
+  },
+  allowPositionals: true,
+});
+
+console.log(positionals.join(" + "));
+console.log(values.n, typeof values.n);
+console.log(values.ordenar, values.invertir);
+console.log(Number(values.n) * 2);`,
+  salida: ['notas.txt + otro.txt', '5 string', 'true false', '10'],
+  inicio: [2, 3, 0, 1],
+  explicacion:
+    'Los argumentos sin guion son posicionales, estén donde estén. <code>-n 5</code> reemplaza el valor por defecto, pero llega como el texto <code>"5"</code>: hay que convertirlo para hacer cuentas. <code>invertir</code> no se pasó, así que toma su <code>default</code>.',
+};
+
+export const cliDetective = {
+  id: 'cli-detective',
+  titulo: 'Una opción de más',
+  codigo: `import { parseArgs } from "node:util";
+
+const { values } = parseArgs({
+  options: {
+    salida: { type: "string", short: "o" },
+  },
+});
+
+console.log("guardando en", values.salida ?? "resultado.txt");`,
+  error: `TypeError [ERR_PARSE_ARGS_UNKNOWN_OPTION]: Unknown option '--verbose'
+    at checkOptionUsage (node:internal/util/parse_args/parse_args:102:13)
+    at file:///exportar.js:3:20`,
+  culpable: 4,
+  hallazgo:
+    'Se ejecutó con <code>--verbose</code>, pero esa opción no está declarada en <code>options</code>. <code>parseArgs</code> es estricto por defecto: ante una opción desconocida, lanza un error en lugar de ignorarla.',
+  pista: '¿Qué opciones acepta el programa, y cuáles se le pasaron?',
+  arreglos: [
+    {
+      texto: 'Declararla: <code>verbose: { type: "boolean", short: "v" }</code> dentro de <code>options</code>',
+      correcta: true,
+      porque: 'Así <code>--verbose</code> (o <code>-v</code>) se acepta y queda en <code>values.verbose</code>. Lo estricto es bueno: un error de tipeo como <code>--salda</code> no pasa en silencio.',
+    },
+    {
+      texto: 'Pasar <code>strict: false</code> a <code>parseArgs</code>',
+      correcta: false,
+      porque: 'Deja de fallar, pero acepta cualquier cosa: <code>--salda datos.csv</code> (mal escrito) se ignoraría y el archivo se guardaría en otro lado sin aviso.',
+    },
+    {
+      texto: 'Leer las opciones directamente de <code>process.argv</code>',
+      correcta: false,
+      porque: 'Vuelves a interpretar todo a mano, que es justo lo que <code>parseArgs</code> resuelve.',
+    },
+  ],
+};

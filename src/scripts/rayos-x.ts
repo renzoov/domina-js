@@ -24,6 +24,8 @@ export function iniciarRayosX() {
     doc: respaldo.value,
     extensions: [...extensionesTiza, EditorView.contentAttributes.of({ 'aria-label': 'Tu código' })],
   });
+  // Si una línea no entra, el editor se desplaza de lado: con el teclado también tiene que poder hacerse
+  vista.scrollDOM.tabIndex = 0;
   respaldo.remove();
   contenedor.append(vista.dom);
   const leer = () => vista.state.doc.toString();

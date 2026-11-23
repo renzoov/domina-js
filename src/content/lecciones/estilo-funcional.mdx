@@ -3,7 +3,7 @@ titulo: Estilo funcional
 seccion: funciones
 tema: estilo-funcional
 minutos: 11
-resumen: Funciones puras y efectos secundarios, por qué no mutar los datos, transformar listas con map, filter y reduce encadenados, componer funciones pequeñas y aplicación parcial.
+resumen: Funciones puras y efectos secundarios, por qué no mutar los datos, transformar listas con map, filter y reduce encadenados, componer funciones pequeñas, aplicación parcial, currificación y cómo cambiar datos anidados sin mutarlos.
 intro: 'El estilo funcional es una forma de escribir programas como una cadena de <u>transformaciones</u>: tomas datos, les aplicas funciones pequeñas que no cambian nada a su alrededor, y obtienes datos nuevos. No es una regla que haya que seguir siempre, sino una caja de herramientas que hace el código más <u>predecible y fácil de probar</u>.'
 ejercicios: [funcional-auto, funcional-orden, funcional-detective, funcional-lab]
 ---
@@ -117,6 +117,47 @@ console.log([1, 2, 3].map(doble));
 console.log([1, 2, 3].map(triple));
 ```
 
+## Currificación
+
+**Currificar** es convertir una función de varios parámetros en una cadena de funciones de un parámetro: `f(a, b, c)` pasa a ser `f(a)(b)(c)`. Es la aplicación parcial llevada a todos los parámetros, y se puede hacer con una función que envuelve a cualquier otra:
+
+```js
+const curry = (fn) =>
+  function curried(...args) {
+    // si ya llegaron todos los argumentos que espera fn, la llama; si no, espera más
+    return args.length >= fn.length ? fn(...args) : (...mas) => curried(...args, ...mas);
+  };
+
+const saludar = (saludo, signo, nombre) => `${saludo}, ${nombre}${signo}`;
+const hola = curry(saludar)("Hola");
+
+console.log(hola("!")("Ana"));
+console.log(["Luis", "Marta"].map(hola("?")));
+console.log(curry(saludar)("Chau", ".", "Sofía"));
+```
+
+Fíjate en el orden de los parámetros: lo que se fija antes (el saludo) va primero, y **el dato va al final**. Así `hola("?")` queda lista para pasarla a `map`.
+
+`fn.length` cuenta solo los parámetros sin valor por defecto y antes de un `...rest`, así que `curry` no sirve para esas funciones. En JavaScript la currificación se usa menos que en otros lenguajes: muchas veces una flecha (`(nombre) => saludar("Hola", "!", nombre)`) se lee más fácil.
+
+## Cambios profundos sin mutar
+
+Con datos anidados, como el estado de una aplicación, no mutar significa copiar **solo el camino** hasta lo que cambia. Lo demás se **comparte** entre la versión vieja y la nueva:
+
+```js
+const estado = { usuario: { nombre: "Ana", ajustes: { tema: "oscuro", idioma: "es" } }, carrito: [1, 2] };
+
+const nuevo = {
+  ...estado,
+  usuario: { ...estado.usuario, ajustes: { ...estado.usuario.ajustes, tema: "claro" } },
+};
+
+console.log(nuevo.usuario.ajustes.tema, estado.usuario.ajustes.tema);
+console.log(nuevo.carrito === estado.carrito, nuevo.usuario === estado.usuario);
+```
+
+Compartir lo que no cambió ahorra memoria y tiene una ventaja más: para saber si algo cambió, basta comparar referencias (`nuevo.carrito === estado.carrito`), sin recorrerlo. Muchas librerías de interfaz se basan en eso. Cuando el anidado es muy profundo, librerías como Immer te dejan escribir el cambio "como si mutaras" y arman la copia por ti. (Las formas de congelar objetos las viste en *Inmutabilidad*.)
+
 ## Resumen
 
 - Una función **pura** depende solo de sus argumentos y no cambia nada de afuera.
@@ -124,6 +165,8 @@ console.log([1, 2, 3].map(triple));
 - No mutes: devuelve valores nuevos con spread, `map`, `filter`, `toSorted`…
 - `map` transforma, `filter` selecciona, `reduce` combina. Siempre con valor inicial en `reduce`.
 - **Componer** y **aplicar parcialmente** construyen funciones complejas a partir de piezas simples.
+- **Currificar**: `f(a, b, c)` pasa a ser `f(a)(b)(c)`; el dato va al final.
+- Con datos anidados, copia solo el camino hasta el cambio y comparte el resto.
 
 <Practica>
 

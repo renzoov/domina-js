@@ -1,0 +1,175 @@
+---
+titulo: Archivos
+seccion: navegador
+tema: archivos
+minutos: 13
+resumen: Cómo elegir archivos con input type=file, leer su contenido (text, arrayBuffer, FileReader), mostrar una imagen antes de subirla con createObjectURL, crear y descargar archivos con Blob, subirlos con progreso y qué ofrece la File System Access API.
+intro: 'Subir una foto de perfil, importar una planilla, exportar tus datos: los archivos entran y salen de la página todo el tiempo. El navegador nunca le da a tu código acceso libre al disco. La persona <u>elige</u> qué archivos entregar, y tú recibes objetos <code>File</code> que puedes leer, mostrar, enviar o crear desde cero.'
+ejercicios: [archivos-web-auto, archivos-web-orden, archivos-web-detective, archivos-web-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { archivosWebAuto, archivosWebOrden, archivosWebDetective, archivosWebLab } from '../../data/ejercicios/navegador';
+
+## Elegir archivos
+
+Un `<input type="file">` abre el diálogo del sistema. Con `multiple` se pueden elegir varios, y `accept` sugiere qué tipos mostrar (`image/*`, `.pdf,.csv`). Lo elegido queda en `input.files`, una lista de objetos **`File`**:
+
+```js
+document.body.innerHTML = `<input type="file" id="fotos" multiple accept="image/*">`;
+const campo = document.querySelector("#fotos");
+
+campo.addEventListener("change", () => {
+  for (const archivo of campo.files) {
+    console.log(archivo.name, archivo.type, `${archivo.size} bytes`);
+  }
+});
+
+// Simula que el usuario eligió dos archivos (en tu página los elige con el diálogo)
+const elegidos = new DataTransfer();
+elegidos.items.add(new File(["abc"], "playa.jpg", { type: "image/jpeg" }));
+elegidos.items.add(new File(["abcdef"], "perro.png", { type: "image/png" }));
+campo.files = elegidos.files;
+campo.dispatchEvent(new Event("change"));
+```
+
+Cada `File` trae su nombre, su tipo MIME, su tamaño en bytes y la fecha de modificación (`lastModified`). No trae la ruta en el disco: esa nunca se expone.
+
+<Nota>
+  `accept` solo filtra el diálogo: la persona puede cambiar el filtro y elegir cualquier cosa. Comprueba el tipo y el tamaño en tu código, y **otra vez en el servidor**.
+</Nota>
+
+## Leer el contenido
+
+Un `File` es un `Blob` con nombre, y los dos tienen métodos que devuelven promesas:
+
+- **`text()`**: el contenido como texto.
+- **`arrayBuffer()`** o **`bytes()`**: los bytes crudos, para trabajarlos con arrays tipados (lo viste en *Datos binarios*).
+- **`stream()`**: de a trozos, para archivos enormes.
+
+```js
+const archivo = new File(["nombre,edad\nAna,31\nLuis,28"], "personas.csv", { type: "text/csv" });
+
+const texto = await archivo.text();
+const filas = texto.split("\n").slice(1).map((linea) => linea.split(","));
+console.log(filas);
+```
+
+En código más antiguo verás **`FileReader`**, que hace lo mismo con eventos en lugar de promesas. Su única ventaja hoy es `readAsDataURL`, que convierte el archivo en una URL `data:` con el contenido dentro:
+
+```js
+const archivo = new File(["hola"], "saludo.txt", { type: "text/plain" });
+
+const url = await new Promise((resolver, rechazar) => {
+  const lector = new FileReader();
+  lector.onload = () => resolver(lector.result);
+  lector.onerror = () => rechazar(lector.error);
+  lector.readAsDataURL(archivo);
+});
+console.log(url);
+```
+
+## Mostrar una imagen antes de subirla
+
+Para mostrar la foto que alguien acaba de elegir no hace falta leerla. **`URL.createObjectURL(archivo)`** crea una dirección temporal que apunta al archivo en memoria, y sirve en un `<img>`, un `<video>` o un enlace:
+
+```js
+document.body.innerHTML = `<img id="vista" alt="Vista previa de la foto" width="120">`;
+const vista = document.querySelector("#vista");
+
+const foto = new File(["…"], "perfil.png", { type: "image/png" });
+const direccion = URL.createObjectURL(foto);
+vista.src = direccion;
+console.log(direccion.startsWith("blob:"));
+
+// Cuando ya no la necesites, libérala: si no, el archivo se queda en memoria
+vista.addEventListener("load", () => URL.revokeObjectURL(direccion), { once: true });
+```
+
+## Crear un archivo y descargarlo
+
+Al revés también funciona: armas el contenido en un **`Blob`**, le creas una dirección y la descargas con un enlace que tiene el atributo `download`:
+
+```js
+const datos = [{ nombre: "Ana", puntos: 31 }, { nombre: "Luis", puntos: 28 }];
+const csv = ["nombre,puntos", ...datos.map((d) => `${d.nombre},${d.puntos}`)].join("\n");
+
+const blob = new Blob([csv], { type: "text/csv" });
+console.log(blob.size, "bytes,", blob.type);
+
+const enlace = document.createElement("a");
+enlace.href = URL.createObjectURL(blob);
+enlace.download = "puntos.csv";   // el nombre con que se guarda
+// enlace.click();                // en tu página, esto inicia la descarga
+URL.revokeObjectURL(enlace.href);
+```
+
+Así funciona, por ejemplo, el botón «Descargar copia» de *Tu progreso*, en el temario de este sitio.
+
+## Subir archivos
+
+Un archivo se sube como cualquier otro campo de un formulario, dentro de un `FormData` (lo viste en *Formularios y validación*):
+
+```js
+const datos = new FormData();
+datos.append("titulo", "Vacaciones");
+datos.append("foto", campo.files[0]);
+await fetch("/api/fotos", { method: "POST", body: datos });
+```
+
+`fetch` todavía no informa **cuánto se subió**. Para una barra de progreso hay que usar el viejo `XMLHttpRequest`, que tiene el evento `progress` en `xhr.upload`:
+
+```js
+const xhr = new XMLHttpRequest();
+xhr.upload.addEventListener("progress", (e) => {
+  if (e.lengthComputable) barra.value = e.loaded / e.total;   // de 0 a 1
+});
+xhr.addEventListener("load", () => console.log("subido:", xhr.status));
+xhr.open("POST", "/api/fotos");
+xhr.send(datos);
+```
+
+## Abrir y guardar como una aplicación
+
+La **File System Access API** va un paso más allá: `showOpenFilePicker()` y `showSaveFilePicker()` abren los diálogos del sistema y devuelven un "manejador" con el que tu página puede **volver a guardar en el mismo archivo**, como un editor de verdad. Por ahora solo existe en Chrome, Edge y otros navegadores basados en Chromium, así que úsala comprobando primero que exista (`if ("showSaveFilePicker" in window)`) y con el `<input>` y la descarga como plan B.
+
+## Resumen
+
+- `<input type="file" multiple accept>` deja elegir archivos; quedan en `input.files` como objetos `File`.
+- Léelos con `text()`, `arrayBuffer()`, `bytes()` o `stream()`; `FileReader` es la forma antigua.
+- `URL.createObjectURL` da una dirección temporal para mostrar o descargar; libérala con `revokeObjectURL`.
+- Crea archivos con `new Blob([contenido], { type })` y descárgalos con `<a download>`.
+- Súbelos dentro de un `FormData`; para ver el progreso, `XMLHttpRequest` con `xhr.upload`.
+- El tipo y el tamaño se comprueban siempre en el servidor.
+
+<Practica>
+
+<Autoevaluacion id={archivosWebAuto.id} numero={1} titulo={archivosWebAuto.titulo} preguntas={archivosWebAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={archivosWebOrden.id} numero={2} titulo={archivosWebOrden.titulo} codigo={archivosWebOrden.codigo} salida={archivosWebOrden.salida} inicio={archivosWebOrden.inicio} explicacion={archivosWebOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un archivo de texto, sus datos y su contenido. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={archivosWebDetective.id} numero={3} titulo={archivosWebDetective.titulo} codigo={archivosWebDetective.codigo} error={archivosWebDetective.error} culpable={archivosWebDetective.culpable} arreglos={archivosWebDetective.arreglos} hallazgo={archivosWebDetective.hallazgo} pista={archivosWebDetective.pista}>
+  <div slot="enunciado">
+    <p>Al elegir un archivo, la consola muestra un error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={archivosWebLab.id} numero={4} titulo={archivosWebLab.titulo} pagina={archivosWebLab.pagina} inicial={archivosWebLab.inicial} verificaciones={archivosWebLab.verificaciones} pistas={archivosWebLab.pistas} solucion={archivosWebLab.solucion} explicacion={archivosWebLab.explicacion}>
+  <div slot="enunciado">
+    <p>Cuando la persona elige archivos, muestra la lista con su tamaño y rechaza los que pesan demasiado.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -2,7 +2,7 @@
 
 > Revisión del 2026-11-22, buscando cada tema en las 111 lecciones.
 > Sirve para decidir, paso a paso, qué se agrega como **lección nueva**, como **sección nueva** o dentro de un **proyecto** (ver [`PROYECTOS.md`](PROYECTOS.md)).
-> Estado de cada fila: **por decidir**, salvo que diga otra cosa.
+> Las secciones 2 y 3 quedaron hechas el 2026-11-22; lo que falta está marcado como pendiente o descartado.
 
 ## 1. Lo que el curso ya cubre bien
 
@@ -10,47 +10,48 @@
 - **Navegador:** DOM, eventos, `fetch`, formularios y `FormData`, almacenamiento (`localStorage`, IndexedDB, cookies), navegación (History y Navigation API), observers, estilos y animación (Web Animations, View Transitions), Canvas y SVG (una lección), Web Components, Web Workers (`BroadcastChannel`, `SharedArrayBuffer`), Service Workers y seguridad (XSS, CSP, CSRF).
 - **Servidor y herramientas:** Node.js hoy, archivos y streams, servidor HTTP, el event loop de Node, procesos e hilos, seguridad, Deno y Bun, DevTools, lint, npm, testing, TypeScript y Vite.
 
-## 2. APIs del navegador que faltan
+## 2. APIs del navegador (hecho el 2026-11-22)
 
-| Tema | Hoy | Dónde podría ir |
-|---|---|---|
-| **Archivos:** `input type=file multiple`, `File`, `FileReader`, `URL.createObjectURL`, descargas con `Blob` y `<a download>`, progreso de subida (`XMLHttpRequest.upload`), File System Access API | Solo `FormData` y una mención de `blob()` | Lección nueva en la sección 13 y un proyecto (galería que sube fotos) |
-| **Tiempo real:** `WebSocket`, Server-Sent Events (`EventSource`), WebRTC | `WebSocket` solo se menciona; SSE y WebRTC no aparecen | Lección nueva en la sección 13 y un proyecto (chat) |
-| **Arrastrar y soltar** (la API de drag & drop de HTML) | No aparece | Lección nueva en la sección 13. La necesita el Kanban |
-| **APIs del dispositivo:** portapapeles, notificaciones, ubicación, compartir (Web Share), pantalla completa, Page Visibility, vibración, Screen Wake Lock | No aparecen | Lección nueva en la sección 13 |
-| **Multimedia:** Web Audio, cámara y micrófono (`getUserMedia`), grabar (`MediaRecorder`), `<video>` y `<audio>` desde JS | No aparecen | Lección nueva o un proyecto |
-| **Elementos de HTML con API:** `<dialog>` (`showModal`) y la Popover API | No aparecen | Dentro de una lección de accesibilidad o del DOM |
-| **Web Crypto:** `crypto.subtle` (hash, cifrado), `getRandomValues`, `randomUUID` en el navegador | `randomUUID` solo se menciona en Node | Ampliar «Seguridad en el navegador» |
-| **Texto editable:** `contenteditable`, Selection y Range | No aparecen | Dentro de un proyecto (un editor) |
-| **Otras:** Compression Streams, Storage API (`navigator.storage`), Web Locks, `requestIdleCallback` y `scheduler.yield()` | No aparecen | Menciones dentro de lecciones existentes |
+| Tema | Cómo quedó |
+|---|---|
+| **Archivos** | Lección nueva *Archivos* (13): `input type=file`, `File`, `text()`/`arrayBuffer()`, `FileReader`, `createObjectURL`, descargas con `Blob`, subida con progreso (`XMLHttpRequest.upload`) y la File System Access API |
+| **Tiempo real** | Lección nueva *Tiempo real: SSE, WebSocket y WebRTC* (13) |
+| **Arrastrar y soltar** | Lección nueva *Arrastrar y soltar* (13), con archivos soltados y la alternativa con teclado |
+| **APIs del dispositivo** | Lección nueva *APIs del dispositivo* (13): portapapeles, Web Share, notificaciones, ubicación, pantalla completa, Page Visibility, Wake Lock y vibración |
+| **Multimedia** | Lección nueva *Audio, video y cámara* (13): `HTMLMediaElement`, la política de reproducción, `getUserMedia`, `getDisplayMedia`, `MediaRecorder` y Web Audio |
+| **`<dialog>` y Popover** | Lección nueva *Diálogos y popovers* (13) |
+| **Web Crypto** | Ampliada *Seguridad en el navegador*: `getRandomValues`, `randomUUID`, `crypto.subtle.digest` |
+| **Texto editable** | Lección nueva *Texto editable y selección* (13): `contenteditable`, Range, Selection, la selección en `input`/`textarea` y `beforeinput` |
+| **Otras** | Compression Streams en *Datos binarios*; Storage API en *Guardar datos*; Web Locks en *Web Workers y mensajería*; `requestIdleCallback` y `scheduler.yield()` en *Rendimiento de la página* |
 
-## 3. Temas de JavaScript (no APIs) que faltan
+## 3. Temas de JavaScript (hecho el 2026-11-22, salvo lo indicado)
 
-| Tema | Hoy | Dónde podría ir |
-|---|---|---|
-| **Accesibilidad con JavaScript:** manejo del foco, teclado, `aria-live`, `inert`, `<dialog>` accesible, no romper la navegación | No hay lección | Lección nueva en la sección 13. Es importante: toca cualquier interfaz |
-| **Eventos propios:** `EventTarget`, `CustomEvent`, `dispatchEvent`, el patrón publicar/suscribir | Solo se menciona | Lección nueva («Eventos propios y comunicación entre partes») |
-| **Patrones de diseño y arquitectura sin frameworks:** módulo, fábrica, observador, estado de la aplicación, separar datos y vista | No hay lección | Sección nueva (ver 5) |
-| **Algoritmos y estructuras de datos:** Big O, buscar y ordenar, pila, cola, lista enlazada, árbol, grafo, memoización, cuándo usar Map o Set por rendimiento | Big O aparece de pasada; la memoización solo en un reto | Sección nueva (ver 5) |
-| **Programación funcional, más a fondo:** currificación, composición, inmutabilidad estructural | Composición y aplicación parcial, sin currificación | Ampliar «Estilo funcional» |
-| **Operadores bit a bit** (`&`, `|`, `^`, `<<`, `>>>`) y banderas con bits | No aparecen | Ampliar «Operadores» o «Datos binarios» |
-| **`arguments`, `eval` y `new Function`:** qué son y por qué evitarlos | Menciones sueltas | Ampliar «Parámetros» y «Seguridad» |
-| **Rendimiento web:** reflow y repintado, `DocumentFragment` y lotes, Web Vitals (LCP, INP, CLS), carga diferida | El panel Rendimiento de DevTools, sin profundidad | Lección nueva en la sección 13 o en la 15 |
-| **Gráficos a fondo:** Canvas (transformaciones, imágenes, píxeles, exportar PNG con `toBlob`) y SVG desde JavaScript (formas editables, exportar), gráficos de datos | Una sola lección | Dos proyectos: «Pizarra para dibujar» con Canvas y su versión con SVG, y el gráfico del control de gastos |
-| **WebGL, WebGPU y WebAssembly** | Solo se mencionan | Una lección de orientación («Qué más hay»), sin entrar a fondo |
-| **Pruebas de punta a punta** (Playwright) | Solo se mencionan | Ampliar «Testing» |
-| **Bases de datos en Node** (`node:sqlite`) y **herramientas de línea de comandos** (`parseArgs`, `process.stdin`) | Solo se mencionan | Lecciones nuevas en la sección 14, o un proyecto |
-| **Después del curso:** frameworks (React, Vue, Svelte), signals y qué aprender después | Se mencionan sueltos | Una lección de cierre («¿Y ahora qué?») |
+| Tema | Cómo quedó |
+|---|---|
+| **Accesibilidad con JavaScript** | Lección nueva *Accesibilidad con JavaScript* (13): el elemento correcto, mover y devolver el foco, regiones vivas, estados ARIA, `inert` y *roving tabindex* |
+| **Eventos propios** | Lección nueva *Eventos propios* (13): `CustomEvent`, `dispatchEvent`, `bubbles`, `cancelable`, `EventTarget` en clases y publicar/suscribir |
+| **Patrones de diseño y arquitectura** | **Descartado**: va en otro sitio, dedicado a esos temas |
+| **Algoritmos y estructuras de datos** | **Descartado**: va en otro sitio, dedicado a esos temas |
+| **Programación funcional, más a fondo** | Ampliada *Estilo funcional*: currificación y cambios profundos sin mutar (compartir lo que no cambió) |
+| **Operadores bit a bit** | Ampliada *Operadores*: la tabla de operadores y las banderas con bits |
+| **`arguments`, `eval` y `new Function`** | Ampliadas *Parámetros* (`arguments`) y *Seguridad en el navegador* (`eval`, `new Function`, textos en `setTimeout`) |
+| **Rendimiento web** | Lección nueva *Rendimiento de la página* (13): Web Vitals, tareas largas, reflow, lotes con `DocumentFragment`, carga diferida y medición |
+| **Gráficos a fondo** | Ampliada *Gráficos: Canvas y SVG*: transformaciones, píxeles, exportar con `toBlob`, CORS en el canvas y un gráfico de barras en SVG. Una pizarra completa queda para Proyectos |
+| **WebGL, WebGPU y WebAssembly** | Pendiente: irán en la sección nueva «¿Y ahora qué?» (ver 5) |
+| **Pruebas de punta a punta** | Ampliada *Testing*: Playwright, localizadores por rol y `expect` que espera |
+| **Bases de datos en Node y línea de comandos** | Lecciones nuevas *Bases de datos con node:sqlite* y *Programas de línea de comandos* (14) |
+| **Después del curso** | Pendiente: la sección nueva «¿Y ahora qué?» (ver 5) |
+
+También se agregaron al glosario: CustomEvent, Blob, Foco, Región viva, Popover, WebSocket, Tarea larga, Web Vitals, Inyección de SQL y Currificación.
 
 ## 4. La web en sí (no el contenido)
 
 **Todo hecho el 2026-11-22:** página 404 propia, vista previa al compartir (Open Graph y Twitter, con `og.jpg`), `sitemap.xml`, `robots.txt` y URL canónica, exportar e importar el progreso («Tu progreso», en el temario), buscador (Pagefind, en la barra lateral) y revisión de accesibilidad con axe (0 fallas en las 132 páginas). El detalle está en el README.
 
-## 5. Secciones nuevas posibles
+## 5. Secciones nuevas
 
-- **Patrones y arquitectura:** eventos propios, patrones de diseño en JS, estado de una aplicación sin frameworks, separar datos y vista, cómo organizar un proyecto mediano. Prepara para el proyecto final.
-- **Algoritmos y estructuras de datos en JavaScript:** Big O explicado con el pizarrón, buscar y ordenar, pila, cola, árbol y grafo, recursión aplicada, memoización. Encaja con Rayos X, que puede mostrar la pila de la recursión.
-- **Más allá del curso (cierre):** frameworks, signals, WebAssembly, WebGL y WebGPU, y qué aprender después.
+- **Patrones y arquitectura** y **Algoritmos y estructuras de datos:** descartadas para este sitio (2026-11-22). Esos temas tendrán su propio sitio.
+- **«¿Y ahora qué?» (cierre):** aprobada la idea, pendiente de aprobar el contenido. Qué aprender después de JavaScript, a alto nivel: TypeScript con un ejemplo de JS y su versión con tipos, React (y Next.js), Vue (y Nuxt), Angular, Svelte y otras librerías conocidas, más WebAssembly, WebGL y WebGPU. Sin profundizar: cada uno de esos temas tendrá su propio sitio.
 
 ## 6. Cómo decidir
 

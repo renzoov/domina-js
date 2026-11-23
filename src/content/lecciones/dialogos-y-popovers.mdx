@@ -1,0 +1,142 @@
+---
+titulo: Diálogos y popovers
+seccion: navegador
+tema: dialogos-y-popovers
+minutos: 11
+resumen: El elemento dialog (show, showModal, close, returnValue y los formularios con method=dialog) y la Popover API (el atributo popover, popovertarget, showPopover y el evento toggle), dos piezas de HTML que reemplazan los modales y menús hechos a mano.
+intro: 'Durante años, cada página armaba sus ventanas modales a mano: un <code>&lt;div&gt;</code> encima de todo, un fondo oscuro, código para atrapar el foco y para cerrar con Esc… y casi siempre se olvidaba algo. Hoy HTML trae <code>&lt;dialog&gt;</code> y los <b>popovers</b>, que <u>ya resuelven todo eso</u>. Tu JavaScript solo decide cuándo abrir y qué hacer con la respuesta.'
+ejercicios: [dialogo-auto, dialogo-orden, dialogo-detective, dialogo-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { dialogoAuto, dialogoOrden, dialogoDetective, dialogoLab } from '../../data/ejercicios/navegador';
+
+## El elemento dialog
+
+Un `<dialog>` está oculto hasta que lo abres. Hay dos formas:
+
+- **`showModal()`** lo abre como **modal**: queda encima de todo, el resto de la página se vuelve inerte (no se puede hacer clic ni llegar con Tab), aparece un fondo que se estiliza con `::backdrop` y la tecla Esc lo cierra.
+- **`show()`** lo abre sin bloquear la página, como un panel flotante.
+
+```js
+document.body.innerHTML = `
+  <button id="abrir">Borrar cuenta</button>
+  <dialog id="confirmar">
+    <form method="dialog">
+      <p>¿Seguro? No se puede deshacer.</p>
+      <button value="no">Cancelar</button>
+      <button value="si">Sí, borrar</button>
+    </form>
+  </dialog>`;
+const dialogo = document.querySelector("#confirmar");
+
+document.querySelector("#abrir").addEventListener("click", () => dialogo.showModal());
+dialogo.addEventListener("close", () => console.log("respuesta:", dialogo.returnValue));
+
+document.querySelector("#abrir").click();
+console.log("abierto:", dialogo.open);
+dialogo.querySelector('[value="si"]').click();   // como si la persona pulsara «Sí, borrar»
+console.log("abierto:", dialogo.open);
+```
+
+Fíjate en el formulario: con **`method="dialog"`**, enviarlo no va a ningún servidor, sino que **cierra el diálogo**, y el `value` del botón pulsado queda en `dialogo.returnValue`. Así se arma una confirmación sin una sola línea para cerrar.
+
+El evento **`close`** llega después, como una tarea aparte: por eso la respuesta se imprime al final. También se cierra con `dialogo.close(valor)`, que deja ese valor en `returnValue`.
+
+## Lo que ya viene resuelto
+
+Un `showModal()` hace solo lo que antes costaba mucho código:
+
+- Lleva el **foco** adentro del diálogo, al primer elemento que se puede enfocar (o al que tenga `autofocus`).
+- Al cerrarse, **devuelve el foco** al elemento que lo abrió.
+- Con **Esc** se cierra. Antes dispara el evento `cancel`, que puedes cancelar si hay cambios sin guardar.
+- El lector de pantalla anuncia que se abrió un diálogo, con su título si lo tiene (usa `aria-labelledby` apuntando al encabezado).
+
+```js
+editor.addEventListener("cancel", (e) => {
+  if (hayCambios && !confirm("¿Descartar los cambios?")) e.preventDefault();   // sigue abierto
+});
+```
+
+<Nota tipo="consejo">
+  Para que un clic en el fondo cierre el diálogo, aprovecha que esos clics llegan con `e.target === dialogo`. Deja el `<dialog>` sin `padding` y pon el contenido en un elemento interno: así los clics de adentro tienen otro objetivo y solo el fondo cierra.
+</Nota>
+
+## Popovers: sin JavaScript
+
+Un **popover** es un elemento que aparece encima de todo (un menú, una ayuda, un aviso) y se cierra solo al hacer clic afuera o con Esc. Lo mejor: no necesita JavaScript. Basta el atributo `popover` en el contenido y `popovertarget` en el botón que lo abre:
+
+```html
+<button popovertarget="ayuda">¿Qué es esto?</button>
+<div id="ayuda" popover>
+  Un popover se abre encima de todo y se cierra al hacer clic afuera o con Esc.
+</div>
+```
+
+El botón ya sabe abrirlo y cerrarlo, y el navegador le avisa al lector de pantalla si está abierto. Desde JavaScript tienes `showPopover()`, `hidePopover()` y `togglePopover()`, la pseudoclase `:popover-open` y el evento **`toggle`**:
+
+```js
+document.body.innerHTML = `
+  <button popovertarget="menu">Opciones</button>
+  <div id="menu" popover><button>Editar</button> <button>Borrar</button></div>`;
+const menu = document.querySelector("#menu");
+
+menu.addEventListener("toggle", (e) => console.log("toggle:", e.oldState, "→", e.newState));
+document.querySelector('[popovertarget="menu"]').click();
+console.log("abierto:", menu.matches(":popover-open"));
+```
+
+Hay tres tipos:
+
+- **`popover`** (o `popover="auto"`): se cierra solo al hacer clic afuera o con Esc, y al abrir otro se cierra el anterior. Es el de los menús.
+- **`popover="manual"`**: solo se cierra con su botón o desde tu código. Sirve para avisos que deben quedarse a la vista.
+- **`popover="hint"`**: para ayudas tipo *tooltip*, que no cierran los otros popovers abiertos. Es el más nuevo y todavía no está en todos los navegadores.
+
+## ¿Diálogo o popover?
+
+| <span class="sr-only">Aspecto</span> | `<dialog>` con `showModal()` | `popover` |
+|---|---|---|
+| ¿Bloquea la página? | Sí: el resto queda inerte | No |
+| Clic afuera | No lo cierra (salvo que lo programes) | Lo cierra |
+| ¿Necesita JavaScript? | Sí, para abrirlo | No |
+| Ideal para | Decisiones que no pueden esperar: confirmar, iniciar sesión, un formulario corto | Menús, ayudas, selectores, avisos |
+
+## Resumen
+
+- `showModal()` abre un diálogo modal: fondo inerte, foco adentro, Esc para cerrar y el foco de vuelta al salir.
+- Un `<form method="dialog">` lo cierra, y el `value` del botón queda en `returnValue`.
+- `close` llega después de cerrarse; `cancel` llega antes de cerrar con Esc, y se puede impedir.
+- El atributo `popover` con `popovertarget` hace menús y avisos sin JavaScript.
+- `showPopover`, `hidePopover`, `togglePopover` y el evento `toggle` los controlan desde el código.
+
+<Practica>
+
+<Autoevaluacion id={dialogoAuto.id} numero={1} titulo={dialogoAuto.titulo} preguntas={dialogoAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={dialogoOrden.id} numero={2} titulo={dialogoOrden.titulo} codigo={dialogoOrden.codigo} salida={dialogoOrden.salida} inicio={dialogoOrden.inicio} explicacion={dialogoOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un diálogo que se abre y se cierra con un valor. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={dialogoDetective.id} numero={3} titulo={dialogoDetective.titulo} codigo={dialogoDetective.codigo} error={dialogoDetective.error} culpable={dialogoDetective.culpable} arreglos={dialogoDetective.arreglos} hallazgo={dialogoDetective.hallazgo} pista={dialogoDetective.pista}>
+  <div slot="enunciado">
+    <p>Al pulsar «Mostrar aviso», la consola muestra un error. Encuentra la línea que lo causa y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={dialogoLab.id} numero={4} titulo={dialogoLab.titulo} pagina={dialogoLab.pagina} inicial={dialogoLab.inicial} verificaciones={dialogoLab.verificaciones} pistas={dialogoLab.pistas} solucion={dialogoLab.solucion} explicacion={dialogoLab.explicacion}>
+  <div slot="enunciado">
+    <p>Antes de borrar un archivo de la lista, pide confirmación con un diálogo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -9,11 +9,11 @@
 | | |
 |---|---|
 | **17 secciones** | de «Antes de empezar» a las novedades de cada edición de ECMAScript |
-| **111 lecciones** | todas publicadas |
-| **464 ejercicios** | 400 en las lecciones y 64 en los Retos del motor, con corrección automática y progreso guardado en el navegador |
+| **123 lecciones** | todas publicadas |
+| **510 ejercicios** | 446 en las lecciones y 64 en los Retos del motor, con corrección automática y progreso guardado en el navegador |
 | **34 pizarrones** | visualizadores paso a paso de la pila, los scopes, la memoria y el event loop |
 | **Rayos X** | tu propio pizarrón: 12 pizarrones para modificar y 12 desafíos de refuerzo, también con asincronía |
-| **119 términos** | en un glosario enlazado a las lecciones |
+| **129 términos** | en un glosario enlazado a las lecciones |
 
 ## Qué lo hace distinto
 
@@ -80,7 +80,9 @@ Las secciones 1 a 16 terminan con un **Reto del motor**. No es un examen: son cu
 
 ### Ejemplos que se ejecutan
 
-Los bloques de código de las lecciones tienen un botón **Ejecutar**. El código corre aislado, en un Web Worker o en un iframe con *sandbox*, con un tiempo máximo y la consola capturada.
+Los bloques de código de las lecciones tienen un botón **Ejecutar**. El código corre aislado, en un Web Worker o en un iframe con *sandbox*, con un tiempo máximo y la consola capturada. Los ejemplos que necesitan lo que ese iframe no tiene (red en vivo, permisos, cámara, sonido, una base de datos de Node) quedan solo para copiar.
+
+Dos detalles del iframe: como es de otro origen, el navegador no le deja tomar el foco por su cuenta, así que en los ejemplos y laboratorios que usan `focus()` la página se lo presta mientras el código corre y después lo devuelve. Y como fuera de la pantalla no se dibuja (y sin cuadros no llegan eventos como el `close` de un `<dialog>`), la vista del ejemplo se acerca a la pantalla al ejecutar, y la copia oculta donde corren las verificaciones queda invisible pero dentro de ella.
 
 ### Al día con el lenguaje
 
@@ -136,7 +138,7 @@ El progreso vive solo en tu navegador, sin cuentas ni servidor. Al final del [te
 - Todo se usa con el teclado: el pizarrón avanza con las flechas, los bloques de código que se desplazan reciben el foco y el foco siempre se ve, con una raya amarilla discontinua.
 - Las explicaciones del pizarrón y los avisos de los ejercicios se anuncian a los lectores de pantalla (`aria-live`).
 - Con «reducir movimiento» activado, las animaciones de tiza son instantáneas.
-- Las 132 páginas pasan [axe](https://github.com/dequelabs/axe-core) (WCAG 2.2 AA y buenas prácticas) sin fallas, en escritorio y en móvil, con el progreso vacío y con todo resuelto. La última revisión fue el 22 de noviembre de 2026.
+- Las 144 páginas pasan [axe](https://github.com/dequelabs/axe-core) (WCAG 2.2 AA y buenas prácticas) sin fallas, en escritorio y en móvil, con el progreso vacío y con todo resuelto. La última revisión fue el 22 de noviembre de 2026.
 
 ## Al compartir y en los buscadores
 
@@ -220,6 +222,7 @@ Para agregar una lección:
 
 ## Lo que viene
 
+- **«¿Y ahora qué?»:** una sección de cierre, a alto nivel, sobre qué aprender después de JavaScript: TypeScript, React y Next.js, Vue y Nuxt, Angular, Svelte, otras librerías conocidas, WebAssembly, WebGL y WebGPU.
 - **Proyectos:** de 5 a 8 aplicaciones completas para hacer paso a paso, de la más fácil a una final grande. Cada una con su `proyecto-inicial.zip` (HTML y CSS hechos, el JavaScript por escribir) y su `proyecto-final.zip`. El plan está en [`docs/PROYECTOS.md`](docs/PROYECTOS.md).
 
 El detalle está en [`docs/PLAN.md`](docs/PLAN.md).

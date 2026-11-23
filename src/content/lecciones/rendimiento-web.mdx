@@ -1,0 +1,176 @@
+---
+titulo: Rendimiento de la página
+seccion: navegador
+tema: rendimiento
+minutos: 13
+resumen: Qué hace que una página se sienta lenta y cómo evitarlo desde JavaScript. Las Web Vitals (LCP, INP y CLS), las tareas largas y cómo partirlas con scheduler.yield, el costo de tocar el DOM (reflow y lotes con DocumentFragment), cargar menos y más tarde, y medir con performance.mark.
+intro: 'Una página lenta no se siente lenta "en general": tarda en <b>mostrar</b> lo importante, tarda en <b>responder</b> a un clic o se <b>mueve</b> mientras la lees. Son tres problemas distintos, con causas distintas. JavaScript suele estar detrás de los dos últimos, porque corre en el mismo hilo que dibuja la página y <u>atiende a la persona</u>.'
+ejercicios: [rendimiento-auto, rendimiento-orden, rendimiento-detective, rendimiento-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { rendimientoAuto, rendimientoOrden, rendimientoDetective, rendimientoLab } from '../../data/ejercicios/navegador';
+
+## Lo que se siente: las Web Vitals
+
+Google y los navegadores miden la experiencia con tres números, las **Core Web Vitals**:
+
+| Métrica | Qué mide | Bueno |
+|---|---|---|
+| **LCP** (*Largest Contentful Paint*) | Cuánto tarda en verse lo más grande de la pantalla: la foto principal, el título | Hasta 2,5 s |
+| **INP** (*Interaction to Next Paint*) | Cuánto tarda la página en reaccionar a un clic, un toque o una tecla | Hasta 200 ms |
+| **CLS** (*Cumulative Layout Shift*) | Cuánto se mueve el contenido mientras cargas: el botón que se corre justo antes de tocarlo | Hasta 0,1 |
+
+Se miden con personas reales, en sus teléfonos y sus redes. Un sitio rápido en tu computadora puede ser lento en un teléfono barato con mala señal. Las DevTools (panel *Rendimiento* y *Lighthouse*) te dan una primera idea; la librería `web-vitals` las mide en tu página real.
+
+## Un solo hilo
+
+Tu JavaScript, el cálculo de estilos, el dibujo de la página y la respuesta a los clics comparten **un hilo** (lo viste en *El event loop*). Mientras una función corre, nada más puede pasar: si tarda 300 ms, un clic en ese momento espera 300 ms. Las tareas de más de **50 ms** se llaman **tareas largas**, y son la causa principal de un mal INP.
+
+Dos salidas:
+
+- **Mover el trabajo pesado a otro hilo**, con un Web Worker (lo viste en *Web Workers y mensajería*).
+- **Partirlo en trozos** y devolverle el turno al navegador entre uno y otro, para que atienda los clics y pinte.
+
+`scheduler.yield()` devuelve una promesa que se cumple después de que el navegador atendió lo pendiente. Como no está en todos los navegadores, conviene un plan B con `setTimeout`:
+
+```js
+const ceder = () =>
+  globalThis.scheduler?.yield ? scheduler.yield() : new Promise((resolver) => setTimeout(resolver, 0));
+
+async function procesarTodo(items) {
+  let ultimo = performance.now();
+  for (const item of items) {
+    procesar(item);
+    if (performance.now() - ultimo > 40) {   // cada ~40 ms, deja pasar al navegador
+      await ceder();
+      ultimo = performance.now();
+    }
+  }
+}
+```
+
+Para trabajo que no tiene apuro (guardar estadísticas, precargar algo), `requestIdleCallback(fn)` lo corre cuando el navegador está libre. Tampoco está en todos los navegadores: comprueba que exista.
+
+## El costo de tocar el DOM
+
+Cuando cambias algo que afecta el tamaño o la posición de los elementos, el navegador tiene que **recalcular el diseño** de la página (*layout* o *reflow*) y después volver a pintar. No lo hace en cada cambio: espera a que tu código termine y lo hace una vez. Salvo que tú le **pidas una medida** (`offsetWidth`, `getBoundingClientRect()`, `scrollTop`…) después de cambiar algo: ahí tiene que recalcular en ese mismo momento para darte el número exacto.
+
+Si dentro de un bucle alternas lecturas y escrituras, lo obligas a recalcular en cada vuelta. Separarlas, primero todas las lecturas y después todas las escrituras, evita ese trabajo:
+
+```js
+document.body.innerHTML = `<ul>${"<li>elemento</li>".repeat(400)}</ul>`;
+const items = [...document.querySelectorAll("li")];
+
+let t = performance.now();
+for (const li of items) li.style.width = `${li.offsetWidth - 1}px`;   // lee, escribe, lee, escribe…
+const mezclado = performance.now() - t;
+
+t = performance.now();
+const anchos = items.map((li) => li.offsetWidth);                     // primero, todas las lecturas
+items.forEach((li, i) => (li.style.width = `${anchos[i] - 1}px`));   // después, todas las escrituras
+const separado = performance.now() - t;
+
+console.log(separado < mezclado ? "separar lecturas y escrituras fue más rápido" : "esta vez no se notó la diferencia");
+```
+
+## Cambios en lote
+
+Agregar mil elementos de a uno no es tan grave como antes, porque el navegador agrupa el dibujo, pero sigue siendo más trabajo que agregarlos de una vez. Arma todo fuera de la página y agrégalo en **un solo cambio**: con un `DocumentFragment`, con `append(...nodos)` o con `replaceChildren(...nodos)`:
+
+```js
+document.body.innerHTML = `<ul id="lista"></ul>`;
+const lista = document.querySelector("#lista");
+
+const fragmento = document.createDocumentFragment();
+for (const nombre of ["Ana", "Luis", "Marta", "Sofía"]) {
+  const li = document.createElement("li");
+  li.textContent = nombre;
+  fragmento.append(li);
+}
+lista.append(fragmento);   // un solo cambio en la página
+
+console.log(lista.children.length, fragmento.childNodes.length);
+```
+
+Un fragmento es una "caja" sin elemento propio: al agregarlo, se mudan sus hijos y él queda vacío.
+
+Para listas **enormes** (miles de filas), ni así alcanza: se muestra solo lo que entra en la pantalla y se reemplaza al hacer scroll (*virtualización*). Y en CSS, `content-visibility: auto` le dice al navegador que no dibuje las partes que están fuera de la vista.
+
+<Nota tipo="consejo">
+  Para animar, cambia `transform` y `opacity`: el navegador los resuelve sin recalcular el diseño, con la tarjeta gráfica. Animar `width`, `top` o `margin` obliga a recalcular en cada cuadro.
+</Nota>
+
+## Cargar menos y más tarde
+
+El código más rápido es el que no se descarga:
+
+- **Imágenes e iframes fuera de la vista** con `loading="lazy"`: se descargan cuando la persona se acerca.
+- **`width` y `height` en las imágenes**, para que el navegador reserve el lugar y nada salte al cargar (CLS).
+- **`fetchpriority="high"`** en la imagen principal, para que llegue antes (LCP).
+- **`import()` dinámico** para el código que solo se usa a veces (lo viste en *ES Modules*). El buscador de este sitio, por ejemplo, descarga su índice recién cuando tocas el campo.
+- **`defer` o `type="module"`** en los scripts, para que no frenen la lectura del HTML (lo viste en *Cómo carga una página*).
+
+## Medir
+
+Antes de optimizar, **mide**: muchas veces lo lento no es lo que uno sospecha. `performance.now()` da el tiempo con precisión de fracciones de milisegundo, y `performance.mark` y `measure` dejan marcas con nombre, que además aparecen en el panel *Rendimiento* de las DevTools:
+
+```js
+performance.mark("inicio");
+let suma = 0;
+for (let i = 0; i < 1_000_000; i++) suma += i;
+performance.mark("fin");
+
+const medida = performance.measure("sumar", "inicio", "fin");
+console.log(medida.name, medida.duration >= 0);
+```
+
+Con `PerformanceObserver` puedes recibir las métricas del propio navegador, como el LCP o las tareas largas, y mandarlas a tu servidor:
+
+```js
+new PerformanceObserver((lista) => {
+  const ultima = lista.getEntries().at(-1);
+  console.log("LCP:", Math.round(ultima.startTime), "ms", ultima.element);
+}).observe({ type: "largest-contentful-paint", buffered: true });
+```
+
+## Resumen
+
+- Tres métricas: **LCP** (cuánto tarda en verse), **INP** (cuánto tarda en responder) y **CLS** (cuánto se mueve).
+- Las **tareas largas** (más de 50 ms) bloquean la respuesta: pártelas con `scheduler.yield()` o muévelas a un Worker.
+- No alternes lecturas y escrituras del DOM en un bucle: lee todo primero, escribe todo después.
+- Agrega muchos elementos en un solo cambio: `DocumentFragment`, `append(...)` o `replaceChildren(...)`.
+- Anima `transform` y `opacity`; carga con `loading="lazy"`, `import()` y `defer`.
+- Mide con `performance.mark`, `measure` y `PerformanceObserver` antes de optimizar.
+
+<Practica>
+
+<Autoevaluacion id={rendimientoAuto.id} numero={1} titulo={rendimientoAuto.titulo} preguntas={rendimientoAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={rendimientoOrden.id} numero={2} titulo={rendimientoOrden.titulo} codigo={rendimientoOrden.codigo} salida={rendimientoOrden.salida} inicio={rendimientoOrden.inicio} explicacion={rendimientoOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un fragmento que se muda a una lista. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={rendimientoDetective.id} numero={3} titulo={rendimientoDetective.titulo} codigo={rendimientoDetective.codigo} error={rendimientoDetective.error} culpable={rendimientoDetective.culpable} arreglos={rendimientoDetective.arreglos} hallazgo={rendimientoDetective.hallazgo} pista={rendimientoDetective.pista}>
+  <div slot="enunciado">
+    <p>Querías medir cuánto tarda la carga de datos, pero la consola muestra un error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={rendimientoLab.id} numero={4} titulo={rendimientoLab.titulo} pagina={rendimientoLab.pagina} inicial={rendimientoLab.inicial} verificaciones={rendimientoLab.verificaciones} pistas={rendimientoLab.pistas} solucion={rendimientoLab.solucion} explicacion={rendimientoLab.explicacion}>
+  <div slot="enunciado">
+    <p>El código ya muestra los mil productos, pero con mil cambios en la página. Haz que sea uno solo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

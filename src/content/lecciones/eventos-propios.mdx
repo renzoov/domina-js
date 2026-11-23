@@ -1,0 +1,165 @@
+---
+titulo: Eventos propios
+seccion: navegador
+tema: eventos-propios
+minutos: 11
+resumen: Cómo crear y disparar tus propios eventos con CustomEvent y dispatchEvent, hacer que suban por el árbol, darle eventos a tus clases con EventTarget y comunicar partes de una aplicación con el patrón publicar/suscribir.
+intro: 'Los eventos no son solo del navegador. Tu código también puede <u>anunciar que algo pasó</u> ("se agregó un producto", "se inició sesión") y dejar que otras partes reaccionen, sin que unas sepan de las otras. Se hace con las mismas piezas que ya conoces: <code>addEventListener</code> para escuchar y <code>dispatchEvent</code> para avisar.'
+ejercicios: [eventos-propios-auto, eventos-propios-orden, eventos-propios-detective, eventos-propios-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { propiosAuto, propiosOrden, propiosDetective, propiosLab } from '../../data/ejercicios/navegador';
+
+## Crear y disparar un evento
+
+Un evento propio se crea con `new CustomEvent(tipo, opciones)` y se dispara sobre un elemento con `dispatchEvent`. Los datos que quieras mandar van en **`detail`**:
+
+```js
+const boton = document.createElement("button");
+boton.addEventListener("guardado", (e) => {
+  console.log("se guardó:", e.detail.nombre);
+});
+
+console.log("antes");
+boton.dispatchEvent(new CustomEvent("guardado", { detail: { nombre: "nota.txt" } }));
+console.log("después");
+```
+
+Fíjate en el orden: **`dispatchEvent` es síncrono**. Los listeners corren en ese mismo momento, uno tras otro, y recién después sigue la línea siguiente. Con los eventos del navegador (un clic, una tecla) es distinto: llegan como tareas, a través del event loop.
+
+<Nota>
+  Solo `CustomEvent` lleva `detail`. Si creas un `new Event("guardado", { detail: … })`, el navegador ignora esa opción y `e.detail` vale `undefined`.
+</Nota>
+
+## Que suba por el árbol
+
+Por defecto, un evento propio **no burbujea**: solo lo oyen los listeners del elemento donde se disparó. Con `bubbles: true` sube por los ancestros, como un clic, y puedes escucharlo en un contenedor:
+
+```js
+document.body.innerHTML = `<ul id="lista"><li><button>Agregar</button></li></ul>`;
+const lista = document.querySelector("#lista");
+const boton = lista.querySelector("button");
+
+lista.addEventListener("producto:agregado", (e) => {
+  console.log("la lista se enteró del producto", e.detail.id);
+});
+
+boton.dispatchEvent(new CustomEvent("producto:agregado", { detail: { id: 7 } }));
+console.log("sin bubbles, la lista no se enteró del 7");
+boton.dispatchEvent(new CustomEvent("producto:agregado", { detail: { id: 8 }, bubbles: true }));
+```
+
+Usa nombres con un prefijo, como `producto:agregado` o `sesion:cerrada`, para que no choquen con los eventos del navegador (`change`, `input`…) ni con los de otras partes de la página.
+
+## Preguntar antes de hacer algo
+
+Con `cancelable: true`, un listener puede **impedir** la acción llamando a `preventDefault()`, igual que con un enlace o un formulario. `dispatchEvent` devuelve `false` cuando alguien lo hizo:
+
+```js
+const notas = new EventTarget();
+notas.addEventListener("antes-de-borrar", (e) => {
+  if (e.detail.importante) e.preventDefault();
+});
+
+function borrar(nota) {
+  const evento = new CustomEvent("antes-de-borrar", { detail: nota, cancelable: true });
+  const seguir = notas.dispatchEvent(evento);
+  console.log(seguir ? `borrada: ${nota.titulo}` : `se canceló: ${nota.titulo}`);
+}
+
+borrar({ titulo: "compras", importante: false });
+borrar({ titulo: "contraseñas", importante: true });
+```
+
+## Eventos en tus propias clases
+
+`EventTarget` no es solo para elementos: es una clase que puedes crear (`new EventTarget()`, como arriba) o **extender**. Así un objeto cualquiera puede avisar de sus cambios a quien le interese:
+
+```js
+class Carrito extends EventTarget {
+  #productos = [];
+
+  agregar(producto) {
+    this.#productos.push(producto);
+    this.dispatchEvent(new CustomEvent("cambio", { detail: { total: this.#productos.length } }));
+  }
+}
+
+const carrito = new Carrito();
+carrito.addEventListener("cambio", (e) => console.log("ícono del carrito:", e.detail.total));
+carrito.addEventListener("cambio", (e) => console.log("resumen:", e.detail.total, "productos"));
+
+carrito.agregar("té");
+carrito.agregar("pan");
+```
+
+El carrito no sabe que existen el ícono ni el resumen. Mañana puedes sumar un tercer interesado sin tocar la clase.
+
+## Publicar y suscribir
+
+Llevado a toda una aplicación, esto es el patrón **publicar/suscribir** (*pub/sub*): un objeto central, el "bus", por donde las partes publican avisos y se suscriben a los que les importan. Con `AbortController` (lo viste en *Eventos*), una parte deja de escuchar de una vez:
+
+```js
+const bus = new EventTarget();
+const publicar = (tipo, datos) => bus.dispatchEvent(new CustomEvent(tipo, { detail: datos }));
+const suscribir = (tipo, fn, opciones) => bus.addEventListener(tipo, (e) => fn(e.detail), opciones);
+
+const control = new AbortController();
+suscribir("sesion:iniciada", (u) => console.log("menú: hola,", u.nombre));
+suscribir("sesion:iniciada", (u) => console.log("historial:", u.nombre, "entró"), { signal: control.signal });
+
+publicar("sesion:iniciada", { nombre: "Ana" });
+control.abort();   // el historial deja de escuchar
+publicar("sesion:iniciada", { nombre: "Luis" });
+```
+
+<Nota tipo="consejo">
+  Los eventos desacoplan, pero también esconden el camino: al leer `publicar("sesion:iniciada")` no se ve quién reacciona. Úsalos para avisos entre partes **independientes**. Si una función siempre tiene que llamar a otra, llámala directamente.
+</Nota>
+
+Dos detalles más:
+
+- Si un listener lanza un error, el navegador lo informa en la consola, pero los **demás listeners siguen corriendo**.
+- En `detail` manda **datos** (un id, un objeto simple), no elementos del DOM ni funciones: así quien escucha no depende de cómo está armada la página.
+
+## Resumen
+
+- `new CustomEvent(tipo, { detail })` crea un evento con datos; `dispatchEvent` lo dispara.
+- `dispatchEvent` es **síncrono**: los listeners corren antes de la línea siguiente.
+- Los eventos propios no burbujean salvo con `bubbles: true`.
+- Con `cancelable: true`, un listener puede impedir la acción y `dispatchEvent` devuelve `false`.
+- Extiende `EventTarget` para que tus clases avisen de sus cambios.
+- **Publicar/suscribir**: un bus central desacopla las partes de una aplicación.
+
+<Practica>
+
+<Autoevaluacion id={propiosAuto.id} numero={1} titulo={propiosAuto.titulo} preguntas={propiosAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={propiosOrden.id} numero={2} titulo={propiosOrden.titulo} codigo={propiosOrden.codigo} salida={propiosOrden.salida} inicio={propiosOrden.inicio} explicacion={propiosOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Dos ventas, dos listeners y uno que cancela. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={propiosDetective.id} numero={3} titulo={propiosDetective.titulo} codigo={propiosDetective.codigo} error={propiosDetective.error} culpable={propiosDetective.culpable} arreglos={propiosDetective.arreglos} hallazgo={propiosDetective.hallazgo} pista={propiosDetective.pista}>
+  <div slot="enunciado">
+    <p>Al pulsar «Agregar al carrito», el contador no cambia y la consola muestra un error. Encuentra la línea que lo causa y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={propiosLab.id} numero={4} titulo={propiosLab.titulo} pagina={propiosLab.pagina} inicial={propiosLab.inicial} verificaciones={propiosLab.verificaciones} pistas={propiosLab.pistas} solucion={propiosLab.solucion} explicacion={propiosLab.explicacion}>
+  <div slot="enunciado">
+    <p>Completa la clase <code>Tareas</code> para que avise de sus cambios con eventos propios. La página ya está escuchando.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

@@ -20,7 +20,7 @@ const lineas = resaltar(codigo);
 <Ejercicio id={id} numero={numero} formato="Ordena la salida" titulo={titulo}>
   <slot name="enunciado" slot="enunciado" />
   <div class="ordena" data-ordena data-id={id}>
-    <pre class="codigo caja"><code>{lineas.map((html, i) => (<span class="l"><i aria-hidden="true">{i + 1}</i><Fragment set:html={html || ' '} /></span>))}</code></pre>
+    <pre class="codigo caja" tabindex="0"><code>{lineas.map((html, i) => (<span class="l"><i aria-hidden="true">{i + 1}</i><Fragment set:html={html || ' '} /></span>))}</code></pre>
     <div class="lado">
       <p class="rotulo">Consola, de arriba abajo</p>
       <ol class="tarjetas" data-lista aria-label="Líneas de la consola. Usa los botones para moverlas.">

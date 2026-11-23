@@ -1,7 +1,7 @@
 // Convierte los bloques de código de la lección en "pizarras de prueba":
 // barra con nombre de archivo, botón Copiar y, si el ejemplo imprime algo, botón Ejecutar.
 
-import { ejecutarEnPagina } from './sandbox-pagina';
+import { ejecutarEnPagina, usaFoco } from './sandbox-pagina';
 
 const LIMITE_MS = 3000;
 const NOMBRES: Record<string, string> = { js: 'ejemplo.js', javascript: 'ejemplo.js', bash: 'terminal', sh: 'terminal', html: 'index.html', css: 'estilos.css', json: 'datos.json' };
@@ -41,6 +41,11 @@ export function iniciarCodigoVivo(raiz: ParentNode = document) {
       /\bimport\s*(\.\s*meta\b|\()|\brequire\s*\(/.test(codigo) ||
       // Código de servidor: Node.js, Deno y Bun
       /\b(process|Deno|Bun|__dirname|__filename)\b/.test(codigo) ||
+      // Continuación de un ejemplo de Node con una base de datos (node:sqlite) abierta más arriba
+      /\b(DatabaseSync|db\.(prepare|exec))\b/.test(codigo) ||
+      // APIs que el iframe aislado no tiene o no deja usar: red en vivo, permisos, cámara, sonido
+      /\bnavigator\.(clipboard|share|geolocation|wakeLock|mediaDevices|locks|storage|permissions)\b/.test(codigo) ||
+      /\b(new Notification|Notification\.|WebSocket|EventSource|RTCPeerConnection|MediaRecorder|AudioContext|XMLHttpRequest|PerformanceObserver|showOpenFilePicker|showSaveFilePicker|requestFullscreen)\b/.test(codigo) ||
       // Propuestas que los navegadores todavía no ejecutan: decorators y chunking de iteradores
       /^\s*@\w/m.test(codigo) ||
       /\.(chunks|windows)\s*\(/.test(codigo);
@@ -90,7 +95,10 @@ export function iniciarCodigoVivo(raiz: ParentNode = document) {
           vistaPagina.title = 'La página que arma el ejemplo';
           figura.insertBefore(vistaPagina, salida);
         }
-        const r = usaPagina ? await ejecutarEnPagina('', codigo, [], vistaPagina!, LIMITE_MS) : await ejecutar(codigo);
+        // Que la página del ejemplo quede a la vista: fuera de la pantalla el navegador no la dibuja,
+        // y sin cuadros no llegan algunos eventos (el close de un <dialog>)
+        vistaPagina?.scrollIntoView({ block: 'nearest' });
+        const r = usaPagina ? await ejecutarEnPagina('', codigo, [], vistaPagina!, LIMITE_MS, usaFoco(codigo)) : await ejecutar(codigo);
         correr.disabled = false;
         salida!.hidden = false;
         salida!.classList.toggle('error', !!r.error || r.tiempo);

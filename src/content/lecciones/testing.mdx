@@ -3,7 +3,7 @@ titulo: Testing
 seccion: herramientas
 tema: testing
 minutos: 12
-resumen: Para qué sirven las pruebas automáticas, cómo escribirlas con node:test y Vitest (describe, it, expect, assert), ganchos, mocks, pruebas asíncronas, cobertura, y los tipos de prueba (unitarias, de integración y de extremo a extremo).
+resumen: Para qué sirven las pruebas automáticas, cómo escribirlas con node:test y Vitest (describe, it, expect, assert), ganchos, mocks, pruebas asíncronas, cobertura, los tipos de prueba (unitarias, de integración y de extremo a extremo) y cómo probar la página entera con Playwright.
 intro: 'Cambiar código da miedo cuando no sabes qué puedes romper. Las <u>pruebas automáticas</u> son código que comprueba tu código: las ejecutas en segundos, cada vez que cambias algo, y te avisan si algo dejó de funcionar. Con ellas puedes mejorar un programa sin miedo.'
 ejercicios: [testing-auto, testing-orden, testing-detective, testing-lab]
 ---
@@ -113,6 +113,31 @@ Prueba el **comportamiento** (qué devuelve, qué muestra), no los detalles inte
   La **cobertura** (`node --test --experimental-test-coverage`, `vitest --coverage`) dice qué líneas ejecutaron las pruebas. Es útil para encontrar zonas sin probar, pero un 100 % no garantiza nada: una línea ejecutada no es una línea comprobada.
 </Nota>
 
+## De extremo a extremo con Playwright
+
+**Playwright** abre un navegador de verdad (Chromium, Firefox o WebKit), carga tu página y la usa como una persona: escribe, hace clic y comprueba lo que se ve. Se instala con `npm init playwright@latest`, que crea la configuración y una carpeta de pruebas:
+
+```js
+// tests/tareas.spec.js
+import { test, expect } from "@playwright/test";
+
+test("se puede agregar una tarea", async ({ page }) => {
+  await page.goto("http://localhost:5173");
+  await page.getByLabel("Nueva tarea").fill("Comprar pan");
+  await page.getByRole("button", { name: "Agregar" }).click();
+  await expect(page.getByRole("listitem")).toHaveText(["Comprar pan"]);
+});
+```
+
+```bash
+npx playwright test          # corre todas las pruebas, sin ventana
+npx playwright test --ui     # con una ventana para ver cada paso y depurar
+```
+
+- Busca los elementos **como los encuentra una persona**: por su rol y su nombre (`getByRole`), su etiqueta (`getByLabel`) o su texto (`getByText`), no por clases de CSS. Si un botón no se encuentra por su rol, probablemente tampoco lo encuentre un lector de pantalla.
+- `expect` **espera** solo: reintenta hasta que se cumpla o se acabe el tiempo, así no hacen falta pausas a mano.
+- Son lentas comparadas con las unitarias: úsalas para los recorridos importantes (registrarse, comprar, guardar) y deja los detalles a las pruebas unitarias.
+
 ## Resumen
 
 - Una prueba ejecuta código y **comprueba** el resultado; corre en segundos cada vez que cambias algo.
@@ -120,6 +145,7 @@ Prueba el **comportamiento** (qué devuelve, qué muestra), no los detalles inte
 - `toBe` compara con `===`; `toEqual`, el contenido.
 - Pruebas asíncronas con `async/await`; `beforeEach` para empezar limpio; mocks para la red, el tiempo y las dependencias.
 - Muchas unitarias, algunas de integración, pocas E2E. Prueba el comportamiento y los casos borde.
+- **Playwright** prueba la página entera en un navegador real; busca por rol y etiqueta, y `expect` espera solo.
 
 <Practica>
 

@@ -1,0 +1,162 @@
+---
+titulo: Programas de línea de comandos
+seccion: servidor
+tema: linea-de-comandos
+minutos: 11
+resumen: Cómo escribir herramientas para la terminal con Node.js. Leer opciones con parseArgs, separar la salida en stdout y stderr, leer lo que llega por una tubería con process.stdin, hacer preguntas con readline, mostrar progreso y colores, y convertir el script en un comando con el campo bin.
+intro: 'Muchas de las herramientas que usas cada día son programas de terminal escritos en JavaScript: npm, Vite, ESLint, Prettier. Con lo que ya sabes puedes hacer los tuyos, para renombrar fotos, convertir datos o automatizar algo que repites. La clave es <u>portarse como un buen comando</u>: opciones claras, mensajes donde corresponden y un código de salida honesto.'
+ejercicios: [cli-auto, cli-orden, cli-detective]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Nota from '../../components/Nota.astro';
+import { cliAuto, cliOrden, cliDetective } from '../../data/ejercicios/servidor';
+
+## Opciones con parseArgs
+
+En *Procesos e hilos* viste que los argumentos llegan en `process.argv`, como textos sueltos. Interpretarlos a mano (¿`-o` lleva un valor? ¿`-dv` son dos opciones?) es tedioso. **`parseArgs`**, de `node:util`, lo hace por ti:
+
+```js
+import { parseArgs } from "node:util";
+
+const { values, positionals } = parseArgs({
+  options: {
+    salida:  { type: "string",  short: "o", default: "resumen.txt" },
+    detalle: { type: "boolean", short: "d" },
+    ayuda:   { type: "boolean", short: "h" },
+  },
+  allowPositionals: true,   // acepta argumentos sin guion, como nombres de archivo
+});
+
+// node contar.js notas.txt -d -o total.txt
+// values      → { salida: "total.txt", detalle: true }
+// positionals → [ "notas.txt" ]
+```
+
+- Las opciones `"string"` llevan un valor (`-o total.txt` o `--salida=total.txt`); las `"boolean"`, no.
+- Los valores llegan siempre como **texto**: si esperas un número, conviértelo y comprueba que lo sea.
+- Si alguien escribe una opción que no existe, `parseArgs` lanza un error. Es bueno: los errores de tipeo no pasan en silencio.
+- Para probarlo sin la terminal, pásale `args: ["notas.txt", "-d"]` y no lee `process.argv`.
+
+Un buen comando también explica cómo se usa:
+
+```js
+if (values.ayuda) {
+  console.log(`Uso: contar <archivo> [opciones]
+
+  -o, --salida <archivo>  dónde guardar el resumen (resumen.txt)
+  -d, --detalle           muestra el conteo por línea
+  -h, --ayuda             muestra esta ayuda`);
+  process.exit(0);
+}
+```
+
+## stdout y stderr
+
+Un programa de terminal tiene **dos salidas**:
+
+- **stdout** (`console.log`, `process.stdout.write`): el **resultado**, lo que otro programa podría usar.
+- **stderr** (`console.error`, `console.warn`): los **mensajes** para la persona, como avisos, progreso y errores.
+
+La diferencia importa cuando se redirige la salida: con `node contar.js notas.txt > total.txt`, el resultado va al archivo y los mensajes siguen apareciendo en la pantalla, sin ensuciar el archivo.
+
+Y al terminar, el **código de salida** dice si salió bien: `0` es éxito y cualquier otro número es un error. `process.exitCode = 1` lo fija sin cortar el programa (lo viste en *Procesos e hilos*).
+
+## Leer lo que llega por una tubería
+
+Con una tubería (`|`), la salida de un programa se convierte en la **entrada** del siguiente. En Node, esa entrada es `process.stdin`, un stream que se puede recorrer con `for await` (los streams los viste en *Archivos y streams*):
+
+```js
+// contar-palabras.js — uso: cat notas.txt | node contar-palabras.js
+process.stdin.setEncoding("utf8");
+
+let texto = "";
+for await (const trozo of process.stdin) texto += trozo;
+
+const palabras = texto.split(/\s+/).filter(Boolean).length;
+console.log(`${palabras} palabras`);
+```
+
+Si nadie conectó una tubería, `process.stdin.isTTY` vale `true`: es la persona escribiendo en la terminal. Así puedes decidir si leer la entrada o pedir un archivo.
+
+## Hacer preguntas
+
+Para un programa que conversa, como un asistente que pide datos paso a paso, está **`readline/promises`**:
+
+```js
+import { createInterface } from "node:readline/promises";
+
+const rl = createInterface({ input: process.stdin, output: process.stdout });
+const nombre = await rl.question("¿Cómo te llamas? ");
+const edad = Number(await rl.question("¿Cuántos años tienes? "));
+console.log(`Hola, ${nombre}. En 10 años tendrás ${edad + 10}.`);
+rl.close();   // si no lo cierras, el programa se queda esperando
+```
+
+## Progreso y colores
+
+Para un indicador de progreso que se actualiza en la misma línea, escribe sin salto de línea y vuelve al principio con `\r`:
+
+```js
+for (let i = 1; i <= total; i++) {
+  await procesar(i);
+  process.stderr.write(`\rProcesando ${i} de ${total}…`);
+}
+process.stderr.write("\n");
+```
+
+Los colores, con `styleText` (lo viste en *Node.js hoy*), ayudan a leer: verde para lo que salió bien, rojo para los errores. Pero úsalos con medida. En las versiones recientes de Node, `styleText` ya los quita solo cuando la salida no es una terminal (si va a un archivo, por ejemplo) o cuando la persona definió la variable `NO_COLOR`.
+
+## Que sea un comando
+
+Para escribir `contar notas.txt` en lugar de `node contar.js notas.txt`:
+
+1. La primera línea del archivo es el **hashbang**: `#!/usr/bin/env node` (lo viste en *Node.js hoy*).
+2. En el `package.json`, el campo **`bin`** dice qué nombre tiene el comando y qué archivo ejecuta:
+
+```json
+{
+  "name": "contar-palabras",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "contar": "./contar.js" }
+}
+```
+
+3. `npm link` lo instala en tu computadora mientras lo desarrollas. Si lo publicas en npm, cualquiera puede usarlo con `npx contar-palabras` o instalarlo con `npm install -g contar-palabras`.
+
+<Nota tipo="consejo">
+  Lee las rutas relativas a la carpeta **desde donde se ejecuta** el comando (`process.cwd()`), no a la del script: quien escribe `contar notas.txt` se refiere a la carpeta en la que está parado.
+</Nota>
+
+## Resumen
+
+- `parseArgs` interpreta opciones (`string` y `boolean`, con `short` y `default`) y argumentos sueltos (`allowPositionals`).
+- El resultado va a **stdout**; los mensajes, a **stderr**. El código de salida dice si todo salió bien.
+- `process.stdin` se lee con `for await`; `isTTY` dice si hay una tubería conectada.
+- `readline/promises` hace preguntas; `\r` actualiza una línea; `styleText` da color con medida.
+- Hashbang más el campo `bin` del `package.json` lo convierten en un comando.
+
+<Practica>
+
+<Autoevaluacion id={cliAuto.id} numero={1} titulo={cliAuto.titulo} preguntas={cliAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={cliOrden.id} numero={2} titulo={cliOrden.titulo} codigo={cliOrden.codigo} salida={cliOrden.salida} inicio={cliOrden.inicio} explicacion={cliOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Unos argumentos de prueba pasan por <code>parseArgs</code>. Ordena lo que aparecería en la terminal.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={cliDetective.id} numero={3} titulo={cliDetective.titulo} codigo={cliDetective.codigo} error={cliDetective.error} culpable={cliDetective.culpable} arreglos={cliDetective.arreglos} hallazgo={cliDetective.hallazgo} pista={cliDetective.pista}>
+  <div slot="enunciado">
+    <p>El comando se ejecutó con <code>node exportar.js --salida datos.csv --verbose</code> y falló. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+</Practica>

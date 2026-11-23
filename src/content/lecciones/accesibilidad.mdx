@@ -1,0 +1,199 @@
+---
+titulo: Accesibilidad con JavaScript
+seccion: navegador
+tema: accesibilidad
+minutos: 14
+resumen: Cómo no romper la página para quien usa el teclado o un lector de pantalla cuando JavaScript la cambia. Usar los elementos correctos, mover y devolver el foco, anunciar cambios con aria-live, mantener al día aria-expanded y compañía, desactivar el fondo con inert y manejar las flechas en componentes compuestos.
+intro: 'Mucha gente usa la web sin mouse: con el teclado, con un lector de pantalla que lee en voz alta, con un control por voz o con la pantalla muy ampliada. El HTML bien escrito ya funciona para todos. El riesgo aparece cuando JavaScript <u>cambia la página</u> sin avisar: un panel que se abre y nadie se entera, un foco que se pierde, un botón que solo responde al clic.'
+ejercicios: [a11y-auto, a11y-orden, a11y-detective, a11y-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { a11yAuto, a11yOrden, a11yDetective, a11yLab } from '../../data/ejercicios/navegador';
+
+## Empieza por el elemento correcto
+
+La regla número uno no es de JavaScript: **usa el elemento que corresponde**. Un `<button>` ya se puede enfocar con Tab, se activa con Enter y con la barra espaciadora, y el lector de pantalla lo anuncia como "botón". Un `<div>` con un listener de `click` no hace nada de eso:
+
+```js
+document.body.innerHTML = `<div id="falso">Guardar</div> <button id="real">Guardar</button>`;
+const falso = document.querySelector("#falso");
+const real = document.querySelector("#real");
+
+console.log("¿se llega con Tab?", falso.tabIndex >= 0, real.tabIndex >= 0);
+```
+
+Para que el `<div>` funcione igual habría que agregarle `role="button"`, `tabindex="0"` y un listener de `keydown` para Enter y para la barra espaciadora… y aun así le faltarían detalles. Lo mismo vale para los enlaces (`<a href>` para ir a otra página, `<button>` para hacer algo en esta), los formularios (`<label>` para cada campo) y los encabezados en orden.
+
+## Mover el foco
+
+El **foco** es dónde está parado el teclado. Cuando tu código cambia la página de golpe, a veces hay que llevarlo a un lugar nuevo con `elemento.focus()`:
+
+- Al abrir un panel o un menú, al primer elemento de adentro.
+- Al cerrarlo, **de vuelta** al botón que lo abrió (guárdalo en `document.activeElement` al abrir).
+- Después de una búsqueda o de cambiar de "página" sin recargar, al título de los resultados.
+
+Un elemento que normalmente no se enfoca, como un título, se puede enfocar desde el código si le pones `tabindex="-1"`. El `-1` significa "enfocable con `focus()`, pero Tab lo salta":
+
+```js
+document.body.innerHTML = `
+  <button id="buscar">Buscar</button>
+  <h2 id="resultados" tabindex="-1">12 resultados</h2>`;
+const titulo = document.querySelector("#resultados");
+
+document.querySelector("#buscar").addEventListener("click", () => {
+  // …muestra los resultados y lleva el foco al título, para que se anuncie
+  titulo.focus();
+});
+
+document.querySelector("#buscar").click();
+console.log(document.activeElement.id, titulo.tabIndex);
+```
+
+<Nota>
+  No quites el contorno del foco (`outline: none`) sin poner otro en su lugar: es la única forma de saber dónde está el teclado. Con `:focus-visible` en el CSS se muestra al usar el teclado y no al hacer clic.
+</Nota>
+
+## Anunciar los cambios
+
+Si un mensaje aparece en la página ("Agregado al carrito", "3 resultados", "Guardado"), quien ve la pantalla se entera, pero el lector de pantalla no lo lee si el foco está en otro lado. Para eso están las **regiones vivas**: un elemento con `role="status"` (o `aria-live="polite"`) se lee en voz alta cada vez que cambia su texto, sin mover el foco:
+
+```js
+document.body.innerHTML = `
+  <button id="agregar">Agregar al carrito</button>
+  <p id="estado" role="status"></p>`;
+const estado = document.querySelector("#estado");
+let total = 0;
+
+document.querySelector("#agregar").addEventListener("click", () => {
+  total++;
+  estado.textContent = `Agregado. Tienes ${total} productos en el carrito.`;
+});
+
+document.querySelector("#agregar").click();
+console.log(estado.textContent);
+```
+
+- La región tiene que **existir antes** del cambio, vacía. Si la creas con el mensaje adentro, muchos lectores no la leen.
+- `role="status"` espera a que el lector termine lo que estaba diciendo; `role="alert"` (`aria-live="assertive"`) interrumpe, y se reserva para errores urgentes.
+
+## Estados que cambian con JavaScript
+
+Los atributos ARIA describen lo que el HTML no puede decir solo. Si tu código cambia el estado de algo, **actualiza el atributo**, porque es lo que oye quien usa un lector de pantalla:
+
+- **`aria-expanded`**: si un botón tiene abierto lo que controla (un menú, una sección plegable).
+- **`aria-pressed`**: si un botón de dos estados está activado ("Negrita", "Favorito").
+- **`aria-current`**: cuál es el elemento actual de un grupo (`aria-current="page"` en el menú).
+- **`aria-invalid`** y **`aria-describedby`**: un campo con error, y dónde está el texto que lo explica.
+
+```js
+document.body.innerHTML = `
+  <button id="mas" aria-expanded="false" aria-controls="detalles">Ver detalles</button>
+  <div id="detalles" hidden>Envío gratis en compras grandes.</div>`;
+const boton = document.querySelector("#mas");
+const detalles = document.querySelector("#detalles");
+
+boton.addEventListener("click", () => {
+  const abierto = boton.getAttribute("aria-expanded") === "true";
+  boton.setAttribute("aria-expanded", String(!abierto));
+  detalles.hidden = abierto;
+});
+
+boton.click();
+console.log(boton.getAttribute("aria-expanded"), detalles.hidden);
+```
+
+## Desactivar el fondo: inert
+
+Mientras hay un panel encima, lo de atrás no debería poder enfocarse. El atributo **`inert`** vuelve inerte todo un bloque: no recibe clics ni foco, y el lector de pantalla lo ignora. (`showModal()` lo hace solo, como viste en *Diálogos y popovers*.)
+
+```js
+document.body.innerHTML = `
+  <main><a href="#inicio">Inicio</a> <button>Comprar</button></main>
+  <aside id="panel"><button>Cerrar panel</button></aside>`;
+const principal = document.querySelector("main");
+
+principal.inert = true;
+principal.querySelector("button").focus();   // no funciona: está inerte
+console.log(document.activeElement.tagName);
+```
+
+## Las flechas del teclado
+
+Tab va de un control al siguiente. Pero en un grupo de **pestañas**, un menú o una lista de opciones, Tab entra una sola vez y las **flechas** se mueven adentro. La técnica se llama *roving tabindex*: el elemento activo tiene `tabindex="0"`, los demás `-1`, y las flechas mueven el foco y el `0`:
+
+```js
+document.body.innerHTML = `
+  <div role="tablist">
+    <button role="tab" aria-selected="true">Uno</button>
+    <button role="tab" aria-selected="false" tabindex="-1">Dos</button>
+    <button role="tab" aria-selected="false" tabindex="-1">Tres</button>
+  </div>`;
+const pestanas = [...document.querySelectorAll('[role="tab"]')];
+
+document.querySelector('[role="tablist"]').addEventListener("keydown", (e) => {
+  const paso = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+  if (!paso) return;
+  const i = pestanas.indexOf(document.activeElement);
+  const siguiente = pestanas[(i + paso + pestanas.length) % pestanas.length];
+  for (const p of pestanas) {
+    p.tabIndex = p === siguiente ? 0 : -1;
+    p.setAttribute("aria-selected", String(p === siguiente));
+  }
+  siguiente.focus();
+});
+
+pestanas[0].focus();
+pestanas[0].dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }));
+console.log(document.activeElement.textContent);
+```
+
+Cada tipo de componente tiene un comportamiento de teclado esperado (qué hacen las flechas, Inicio, Fin, Esc). La guía de patrones de ARIA del W3C (*ARIA Authoring Practices*) los describe uno por uno.
+
+## Cómo probarlo
+
+- **Desenchufa el mouse**: recorre la página solo con Tab, Shift+Tab, Enter, la barra espaciadora y Esc. ¿Llegas a todo? ¿Ves siempre dónde estás?
+- **Prueba un lector de pantalla**: NVDA en Windows (gratis), VoiceOver en macOS e iPhone, TalkBack en Android.
+- **Usa un revisor automático**, como axe (también dentro de Lighthouse, en las DevTools). Encuentra muchos errores, pero no todos: la prueba con el teclado no se reemplaza.
+- **Respeta las preferencias**: `matchMedia("(prefers-reduced-motion: reduce)").matches` te dice si la persona pidió menos animaciones.
+
+## Resumen
+
+- Primero el elemento correcto: `<button>`, `<a href>`, `<label>`. El HTML trae la accesibilidad gratis.
+- Mueve el foco cuando la página cambia de golpe, y devuélvelo al cerrar.
+- `tabindex="-1"` hace enfocable desde el código; nunca quites el contorno del foco sin reemplazo.
+- Las regiones vivas (`role="status"`) leen los mensajes; tienen que existir antes del cambio.
+- Mantén al día `aria-expanded`, `aria-pressed`, `aria-current` y `aria-invalid`.
+- `inert` desactiva un bloque entero; en grupos de controles, las flechas mueven el foco.
+
+<Practica>
+
+<Autoevaluacion id={a11yAuto.id} numero={1} titulo={a11yAuto.titulo} preguntas={a11yAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={a11yOrden.id} numero={2} titulo={a11yOrden.titulo} codigo={a11yOrden.codigo} salida={a11yOrden.salida} inicio={a11yOrden.inicio} explicacion={a11yOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Tres elementos y tres intentos de enfocarlos. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={a11yDetective.id} numero={3} titulo={a11yDetective.titulo} codigo={a11yDetective.codigo} error={a11yDetective.error} culpable={a11yDetective.culpable} arreglos={a11yDetective.arreglos} hallazgo={a11yDetective.hallazgo} pista={a11yDetective.pista}>
+  <div slot="enunciado">
+    <p>Al cerrar el panel de filtros, la consola muestra un error y el foco se pierde. Encuentra la línea que lo causa y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={a11yLab.id} numero={4} titulo={a11yLab.titulo} pagina={a11yLab.pagina} inicial={a11yLab.inicial} verificaciones={a11yLab.verificaciones} pistas={a11yLab.pistas} solucion={a11yLab.solucion} explicacion={a11yLab.explicacion}>
+  <div slot="enunciado">
+    <p>Un menú desplegable que funcione igual con el mouse y con el teclado.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

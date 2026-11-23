@@ -1,0 +1,156 @@
+---
+titulo: Audio, video y cámara
+seccion: navegador
+tema: audio-video-y-camara
+minutos: 12
+resumen: Cómo controlar video y audio desde JavaScript (play, pause, eventos y la política de reproducción automática), usar la cámara y el micrófono con getUserMedia, grabar con MediaRecorder, compartir la pantalla y generar sonido con Web Audio.
+intro: 'Un reproductor con tus propios botones, una foto de perfil sacada con la cámara, una nota de voz, un pitido cuando llega un mensaje. Los elementos <code>&lt;video&gt;</code> y <code>&lt;audio&gt;</code> ya traen controles, y desde JavaScript puedes <u>manejarlos, grabar y hasta generar sonido</u>.'
+ejercicios: [multimedia-auto, multimedia-orden, multimedia-detective, multimedia-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { multimediaAuto, multimediaOrden, multimediaDetective, multimediaLab } from '../../data/ejercicios/navegador';
+
+## Video y audio desde JavaScript
+
+`<video>` y `<audio>` comparten la misma API, la de `HTMLMediaElement`:
+
+- **Métodos**: `play()` y `pause()`.
+- **Propiedades**: `currentTime` (dónde va, en segundos), `duration`, `paused`, `volume` (de 0 a 1), `muted` y `playbackRate` (la velocidad).
+- **Eventos**: `loadedmetadata` (ya se sabe la duración), `timeupdate` (avanzó), `play`, `pause`, `ended` y `error`.
+
+```js
+document.body.innerHTML = `<video id="v" width="240" muted></video>`;
+const video = document.querySelector("#v");
+
+console.log(video.paused, video.currentTime, video.duration);
+video.playbackRate = 1.5;
+video.volume = 0.5;
+console.log(video.playbackRate, video.volume, video.muted);
+```
+
+Sin un archivo cargado, `duration` vale `NaN`: todavía no se sabe. Espera el evento `loadedmetadata` antes de mostrarla.
+
+## play() devuelve una promesa
+
+Los navegadores no dejan que una página **reproduzca con sonido** por su cuenta: hace falta que la persona haya interactuado con ella (un clic, una tecla). Por eso `play()` devuelve una promesa, que se **rechaza** si el navegador no lo permite:
+
+```js
+async function reproducir() {
+  try {
+    await video.play();
+    botonPlay.textContent = "Pausa";
+  } catch (e) {
+    // NotAllowedError: falta un gesto de la persona. NotSupportedError: el archivo no sirve.
+    botonPlay.textContent = "Reproducir";
+  }
+}
+```
+
+Un video **sin sonido** (`muted`) sí puede empezar solo: así funcionan los videos de fondo, con `<video autoplay muted loop playsinline>`.
+
+## Cámara y micrófono
+
+`navigator.mediaDevices.getUserMedia` pide permiso para usar la cámara, el micrófono o los dos, y devuelve un **flujo** (`MediaStream`) que se puede mostrar en un `<video>`:
+
+```js
+const flujo = await navigator.mediaDevices.getUserMedia({ video: { width: 640 }, audio: false });
+video.srcObject = flujo;   // srcObject, no src
+await video.play();
+
+// Al terminar, apaga la cámara: si no, la luz sigue encendida
+for (const pista of flujo.getTracks()) pista.stop();
+```
+
+- Si la persona no da permiso, la promesa se rechaza con `NotAllowedError`; si no hay cámara, con `NotFoundError`.
+- `navigator.mediaDevices.enumerateDevices()` lista las cámaras y los micrófonos, para dejar elegir.
+- Para **sacar una foto**, dibuja el cuadro actual del video en un canvas con `ctx.drawImage(video, 0, 0)` y conviértelo en un archivo con `canvas.toBlob` (lo verás en *Gráficos: Canvas y SVG*).
+- **`getDisplayMedia()`** funciona igual, pero comparte la **pantalla** o una ventana, como en una videollamada.
+
+## Grabar
+
+`MediaRecorder` graba un flujo (de la cámara, del micrófono o de un canvas) y entrega la grabación en trozos, que juntas en un `Blob`:
+
+```js
+const grabadora = new MediaRecorder(flujo);
+const trozos = [];
+
+grabadora.addEventListener("dataavailable", (e) => trozos.push(e.data));
+grabadora.addEventListener("stop", () => {
+  const grabacion = new Blob(trozos, { type: grabadora.mimeType });
+  reproductor.src = URL.createObjectURL(grabacion);   // escúchala, o descárgala como en «Archivos»
+});
+
+grabadora.start();
+setTimeout(() => grabadora.stop(), 5000);   // cinco segundos
+```
+
+## Generar sonido: Web Audio
+
+La **Web Audio API** es un pequeño estudio de sonido: conectas **nodos** en cadena (fuentes, filtros, volumen) hasta los parlantes. Un oscilador genera una onda, y con eso alcanza para un pitido:
+
+```js
+const audio = new AudioContext();
+
+function pitido(frecuencia = 440, segundos = 0.2) {
+  const oscilador = audio.createOscillator();   // genera la onda
+  const volumen = audio.createGain();           // controla el volumen
+  oscilador.frequency.value = frecuencia;
+  volumen.gain.setValueAtTime(0.2, audio.currentTime);
+  volumen.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + segundos);
+  oscilador.connect(volumen).connect(audio.destination);   // oscilador → volumen → parlantes
+  oscilador.start();
+  oscilador.stop(audio.currentTime + segundos);
+}
+
+boton.addEventListener("click", async () => {
+  await audio.resume();   // el audio arranca recién con un gesto de la persona
+  pitido(660);
+});
+```
+
+Con otros nodos puedes cargar sonidos (`decodeAudioData`), mezclarlos, ubicarlos en el espacio o analizarlos (`AnalyserNode`) para dibujar las barras de un ecualizador. Para algo más que efectos simples, hay librerías como Tone.js.
+
+<Nota>
+  Todo lo que suena o graba necesita, otra vez, un **gesto de la persona** y un contexto seguro (`https://`). Y cuando grabes, que se note: muestra un indicador mientras la cámara o el micrófono están encendidos.
+</Nota>
+
+## Resumen
+
+- `<video>` y `<audio>`: `play()`, `pause()`, `currentTime`, `duration`, `volume` y sus eventos.
+- `play()` devuelve una promesa; con sonido, solo después de un gesto de la persona. Sin sonido (`muted`) puede empezar solo.
+- `getUserMedia` da un flujo de cámara o micrófono; se muestra con `srcObject` y se apaga con `track.stop()`.
+- `MediaRecorder` graba el flujo en trozos que se juntan en un `Blob`.
+- Web Audio conecta nodos hasta `audio.destination`; arranca con `audio.resume()` tras un gesto.
+
+<Practica>
+
+<Autoevaluacion id={multimediaAuto.id} numero={1} titulo={multimediaAuto.titulo} preguntas={multimediaAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={multimediaOrden.id} numero={2} titulo={multimediaOrden.titulo} codigo={multimediaOrden.codigo} salida={multimediaOrden.salida} inicio={multimediaOrden.inicio} explicacion={multimediaOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un video todavía sin archivo. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={multimediaDetective.id} numero={3} titulo={multimediaDetective.titulo} codigo={multimediaDetective.codigo} error={multimediaDetective.error} culpable={multimediaDetective.culpable} arreglos={multimediaDetective.arreglos} hallazgo={multimediaDetective.hallazgo} pista={multimediaDetective.pista}>
+  <div slot="enunciado">
+    <p>El video de bienvenida no arranca, la página dice «Reproduciendo» y la consola muestra un error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={multimediaLab.id} numero={4} titulo={multimediaLab.titulo} pagina={multimediaLab.pagina} inicial={multimediaLab.inicial} verificaciones={multimediaLab.verificaciones} pistas={multimediaLab.pistas} solucion={multimediaLab.solucion} explicacion={multimediaLab.explicacion}>
+  <div slot="enunciado">
+    <p>Dos piezas de un reproductor propio: el tiempo en formato <code>m:ss</code> y un botón que no se rompe si el navegador no deja reproducir.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

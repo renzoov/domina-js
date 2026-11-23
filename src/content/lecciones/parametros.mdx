@@ -88,6 +88,20 @@ console.log(crearVentana());
 
 Cada opción tiene nombre, el orden no importa y las que no pasas toman su valor por defecto.
 
+## El viejo arguments
+
+Antes de que existiera el parámetro rest, cada función recibía un objeto **`arguments`** con todos los argumentos. Lo vas a ver en código antiguo:
+
+```js
+function sumar() {
+  console.log(arguments.length, Array.isArray(arguments));
+  return Array.from(arguments).reduce((a, b) => a + b, 0);
+}
+console.log(sumar(1, 2, 3));
+```
+
+Tiene sus mañas: parece un array, pero no lo es (no tiene `map` ni `reduce` hasta que lo conviertes), y **las funciones flecha no tienen el suyo**, así que dentro de una flecha `arguments` es el de la función que la rodea. Hoy `...args` hace lo mismo, con un array de verdad y un nombre que dice qué contiene.
+
 ## Cómo se pasan los argumentos
 
 Pasar un argumento funciona como una **asignación**: el parámetro recibe una copia del valor. Con primitivos, una copia independiente; con objetos, una copia de la **referencia**, así que la función puede modificar el objeto original:
@@ -117,6 +131,7 @@ Por eso es buena práctica que las funciones **no modifiquen** los objetos que r
 - `...resto`, siempre al final, junta los argumentos sobrantes en un array.
 - Con muchas opciones, recibe un **objeto** y desestructúralo con valores por defecto.
 - Los objetos se pasan por **referencia compartida**: la función puede modificarlos.
+- `arguments` es la forma antigua de leer todos los argumentos: no es un array y las flechas no lo tienen. Usa `...args`.
 
 <Practica>
 

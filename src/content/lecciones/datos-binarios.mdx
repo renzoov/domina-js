@@ -3,7 +3,7 @@ titulo: Datos binarios
 seccion: colecciones
 tema: datos-binarios
 minutos: 12
-resumen: ArrayBuffer, arrays tipados (Uint8Array, Float32Array…) y DataView, cómo se desbordan los valores, buffers redimensionables y transfer (ES2024), Float16Array (ES2025) y la conversión a base64 y hexadecimal en Uint8Array (ES2026).
+resumen: ArrayBuffer, arrays tipados (Uint8Array, Float32Array…) y DataView, cómo se desbordan los valores, buffers redimensionables y transfer (ES2024), Float16Array (ES2025) y la conversión a base64 y hexadecimal en Uint8Array (ES2026), y cómo comprimir con CompressionStream.
 intro: 'Imágenes, audio, archivos, mensajes de red, criptografía: por debajo, todo son <u>bytes</u>. Para trabajar con ellos de forma eficiente, JavaScript tiene un conjunto de herramientas propio: un bloque de memoria cruda y distintas "lentes" para leerlo como números de distintos tamaños.'
 ejercicios: [binarios-auto, binarios-orden, binarios-detective, binarios-lab]
 ---
@@ -116,6 +116,24 @@ console.log(Uint8Array.fromHex("4a53"));
   La forma antigua, `btoa` y `atob`, trabaja con textos y no con bytes: falla o rompe los caracteres fuera del inglés, como `¡` o `ñ`. Con bytes, usa los métodos nuevos.
 </Nota>
 
+## Comprimir: Compression Streams
+
+`CompressionStream` y `DecompressionStream` comprimen y descomprimen datos en formato `"gzip"`, `"deflate"` o `"deflate-raw"`, sin librerías. Son streams, así que se conectan con `pipeThrough`:
+
+```js
+const texto = "hola ".repeat(1000);
+const bytes = new TextEncoder().encode(texto);
+
+const flujo = new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip"));
+const comprimido = new Uint8Array(await new Response(flujo).arrayBuffer());
+console.log(bytes.length, "→", comprimido.length, "bytes");
+
+const vuelta = new Blob([comprimido]).stream().pipeThrough(new DecompressionStream("gzip"));
+console.log((await new Response(vuelta).text()) === texto);
+```
+
+`new Response(flujo)` es un truco cómodo para juntar un stream entero y leerlo como `arrayBuffer()` o `text()`. Sirve para guardar datos grandes en IndexedDB ocupando menos, o para mandar al servidor un archivo comprimido.
+
 ## Resumen
 
 - `ArrayBuffer` guarda bytes; las **vistas** (arrays tipados, `DataView`) los interpretan.
@@ -124,6 +142,7 @@ console.log(Uint8Array.fromHex("4a53"));
 - ES2024: buffers redimensionables (`resize`) y `transfer`.
 - ES2025: `Float16Array`. ES2026: `toBase64`, `fromBase64`, `toHex` y `fromHex`.
 - `TextEncoder` y `TextDecoder` convierten entre texto y bytes UTF-8.
+- `CompressionStream` y `DecompressionStream` comprimen con gzip o deflate, como streams.
 
 <Practica>
 

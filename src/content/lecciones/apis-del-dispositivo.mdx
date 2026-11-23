@@ -1,0 +1,185 @@
+---
+titulo: APIs del dispositivo
+seccion: navegador
+tema: apis-del-dispositivo
+minutos: 12
+resumen: Las APIs que conectan la página con el dispositivo (portapapeles, compartir, notificaciones, ubicación, pantalla completa, visibilidad de la pestaña, Wake Lock y vibración) y las reglas que comparten. Contexto seguro, gesto de la persona, permisos y comprobar antes de usar.
+intro: 'Copiar un enlace, abrir el menú de compartir del teléfono, avisar con una notificación, saber dónde estás. El navegador le da a la página acceso a partes del dispositivo, pero <u>con cuidado</u>: casi todas piden un gesto de la persona o su permiso explícito, y no todas existen en todos los navegadores.'
+ejercicios: [dispositivo-auto, dispositivo-orden, dispositivo-detective, dispositivo-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { dispositivoAuto, dispositivoOrden, dispositivoDetective, dispositivoLab } from '../../data/ejercicios/navegador';
+
+## Las reglas que comparten
+
+Antes de ver cada API, cuatro reglas que valen para casi todas:
+
+1. **Contexto seguro.** Solo funcionan en páginas con `https://` (o en `localhost`, mientras desarrollas). `window.isSecureContext` te dice si lo estás.
+2. **Un gesto de la persona.** Muchas solo funcionan como respuesta a un clic o una tecla, no apenas carga la página, para que ningún sitio pueda abrir ventanas o hacer ruido por su cuenta.
+3. **Permisos.** Las que tocan datos personales (ubicación, notificaciones, cámara) le preguntan a la persona. Pide el permiso **cuando se entienda para qué**, por ejemplo al pulsar «Usar mi ubicación», nunca al entrar.
+4. **Comprueba antes de usar.** Si una API no existe en ese navegador, ofrece otra cosa:
+
+```js
+console.log("contexto seguro:", window.isSecureContext);
+console.log("¿hay ubicación?", "geolocation" in navigator);
+console.log("¿se puede compartir?", "share" in navigator);
+console.log("¿hay notificaciones?", "Notification" in window);
+```
+
+Con la **Permissions API** puedes consultar en qué quedó un permiso sin volver a preguntar: `(await navigator.permissions.query({ name: "geolocation" })).state` vale `"granted"`, `"denied"` o `"prompt"` (todavía no se preguntó).
+
+## Portapapeles
+
+`navigator.clipboard.writeText(texto)` copia, y `readText()` lee lo copiado (este último pide permiso). Las dos devuelven promesas, y pueden fallar: por eso van con `await` dentro de un `try`:
+
+```js
+boton.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(enlace);
+    boton.textContent = "¡Copiado!";
+  } catch {
+    boton.textContent = "No se pudo copiar";
+  }
+});
+```
+
+Así funcionan los botones «Copiar» de los ejemplos de este curso. Si quieres reaccionar cuando la persona copia o pega por su cuenta, escucha los eventos `copy` y `paste`, que traen los datos en `e.clipboardData`.
+
+## Compartir
+
+La **Web Share API** abre el menú de compartir del sistema, el mismo que usan las aplicaciones del teléfono, con WhatsApp, el correo y lo demás:
+
+```js
+botonCompartir.addEventListener("click", async () => {
+  const datos = { title: "domina-js", text: "Aprende cómo funciona JavaScript", url: location.href };
+  if (navigator.canShare?.(datos)) {
+    try {
+      await navigator.share(datos);
+    } catch (e) {
+      if (e.name !== "AbortError") throw e;   // AbortError: la persona cerró el menú sin compartir
+    }
+  } else {
+    await navigator.clipboard.writeText(datos.url);   // plan B: copiar el enlace
+  }
+});
+```
+
+Existe sobre todo en teléfonos. En computadoras, no está en todos los navegadores: ten siempre un plan B.
+
+## Notificaciones
+
+```js
+const permiso = await Notification.requestPermission();   // "granted", "denied" o "default"
+if (permiso === "granted") {
+  new Notification("Recordatorio", { body: "Tu clase empieza en 5 minutos" });
+}
+```
+
+Si la persona dice que no, el navegador **no vuelve a preguntar**: solo ella puede cambiarlo desde la configuración. Por eso es tan importante preguntar en el momento justo. Estas notificaciones solo aparecen con la página abierta. Para avisar con la página cerrada hace falta un Service Worker y la Push API (lo viste en *Service Workers y PWA*).
+
+## Ubicación
+
+```js
+navigator.geolocation.getCurrentPosition(
+  (pos) => console.log(pos.coords.latitude, pos.coords.longitude, `±${pos.coords.accuracy} m`),
+  (error) => console.log("sin ubicación:", error.message),   // no dio permiso, sin señal o tardó demasiado
+  { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
+);
+```
+
+`watchPosition` hace lo mismo pero avisa cada vez que la posición cambia (para un mapa que sigue a la persona), y `clearWatch` lo detiene. La ubicación es un dato sensible: pídela solo si la vas a usar, y explica para qué.
+
+## Pantalla completa
+
+Cualquier elemento puede ocupar toda la pantalla, por ejemplo un video, un juego o una presentación. Hace falta un gesto de la persona:
+
+```js
+botonGrande.addEventListener("click", () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else reproductor.requestFullscreen();
+});
+document.addEventListener("fullscreenchange", () => {
+  botonGrande.textContent = document.fullscreenElement ? "Salir" : "Pantalla completa";
+});
+```
+
+## ¿Está mirando la pestaña?
+
+La **Page Visibility API** te dice si la página está a la vista o escondida, porque se cambió de pestaña o se minimizó la ventana. Úsala para pausar lo que no tiene sentido sin nadie mirando: videos, animaciones, sondeos al servidor.
+
+```js
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) console.log("pausar el video y los sondeos");
+  else console.log("seguir");
+});
+console.log(document.visibilityState);
+```
+
+`visibilitychange` es también el último momento seguro para guardar algo cuando la persona se va de la página, sobre todo en teléfonos.
+
+## Que la pantalla no se apague
+
+Para una receta de cocina o un mapa, conviene que el teléfono no apague la pantalla mientras se usa. Eso hace la **Screen Wake Lock API**:
+
+```js
+let candado = null;
+botonCocinar.addEventListener("click", async () => {
+  try {
+    candado = await navigator.wakeLock.request("screen");
+  } catch (e) {
+    console.log("no se pudo:", e.message);   // por ejemplo, con la batería muy baja
+  }
+});
+// El candado se suelta solo al esconder la pestaña; para soltarlo antes: candado.release()
+```
+
+Y en algunos teléfonos (Android, no iPhone) la página puede hacerlos **vibrar**: `navigator.vibrate?.([100, 50, 100])` vibra, hace una pausa y vuelve a vibrar, en milisegundos.
+
+## Resumen
+
+| <span class="sr-only">API</span> | Para qué | ¿Pide permiso? |
+|---|---|---|
+| Portapapeles | Copiar y pegar texto | Copiar no (con un gesto); leer sí |
+| Web Share | El menú de compartir del sistema | No (con un gesto) |
+| Notificaciones | Avisos del sistema | Sí |
+| Geolocalización | Dónde está el dispositivo | Sí |
+| Pantalla completa | Un elemento ocupa toda la pantalla | No (con un gesto) |
+| Page Visibility | Saber si la pestaña está a la vista | No |
+| Wake Lock y vibración | Pantalla encendida, vibrar | No |
+
+- Contexto seguro (`https://`), un gesto de la persona y su permiso, en el momento justo.
+- Comprueba que la API exista (`"share" in navigator`) y ten un plan B.
+- Casi todas devuelven promesas que pueden rechazarse: `await` dentro de un `try`.
+
+<Practica>
+
+<Autoevaluacion id={dispositivoAuto.id} numero={1} titulo={dispositivoAuto.titulo} preguntas={dispositivoAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={dispositivoOrden.id} numero={2} titulo={dispositivoOrden.titulo} codigo={dispositivoOrden.codigo} salida={dispositivoOrden.salida} inicio={dispositivoOrden.inicio} explicacion={dispositivoOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Una función que elige cómo compartir según lo que tenga el navegador. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={dispositivoDetective.id} numero={3} titulo={dispositivoDetective.titulo} codigo={dispositivoDetective.codigo} error={dispositivoDetective.error} culpable={dispositivoDetective.culpable} arreglos={dispositivoDetective.arreglos} hallazgo={dispositivoDetective.hallazgo} pista={dispositivoDetective.pista}>
+  <div slot="enunciado">
+    <p>El botón dice «¡Copiado!», pero no copió nada, y la consola muestra un error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={dispositivoLab.id} numero={4} titulo={dispositivoLab.titulo} pagina={dispositivoLab.pagina} inicial={dispositivoLab.inicial} verificaciones={dispositivoLab.verificaciones} pistas={dispositivoLab.pistas} solucion={dispositivoLab.solucion} explicacion={dispositivoLab.explicacion}>
+  <div slot="enunciado">
+    <p>Un botón «Copiar» que funcione en todos los casos: cuando se puede, cuando el navegador se niega y cuando no hay portapapeles.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

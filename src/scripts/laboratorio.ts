@@ -1,7 +1,7 @@
 import { EditorView } from 'codemirror';
 import { extensionesTiza } from './editor-tiza';
 import { marcarEjercicio } from './progreso';
-import { ejecutarEnPagina } from './sandbox-pagina';
+import { ejecutarEnPagina, usaFoco } from './sandbox-pagina';
 
 const LIMITE_MS = 4500;
 
@@ -50,6 +50,8 @@ function iniciar(el: HTMLElement) {
       }),
     ],
   });
+  // Si una línea no entra, el editor se desplaza de lado: con el teclado también tiene que poder hacerse
+  vista.scrollDOM.tabIndex = 0;
   respaldo.remove();
   setTimeout(ejecutar, 0);
   contenedor.querySelector('label')?.remove();
@@ -79,7 +81,8 @@ function iniciar(el: HTMLElement) {
       const codigo = vista.state.doc.toString();
       Promise.all([
         ejecutarEnPagina(config.pagina, codigo, [], marcoPagina, LIMITE_MS),
-        ejecutarEnPagina(config.pagina, codigo, config.verificaciones, undefined, LIMITE_MS),
+        // Si el ejercicio trata del foco, la copia de las verificaciones lo necesita mientras corre
+        ejecutarEnPagina(config.pagina, codigo, config.verificaciones, undefined, LIMITE_MS, usaFoco(codigo + config.verificaciones.join(' '))),
       ]).then(([visible, oculta]) => {
         if (mio !== turno) return;
         const r = { ...visible, resultados: oculta.resultados, tiempo: visible.tiempo || oculta.tiempo };

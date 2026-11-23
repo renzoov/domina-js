@@ -1,0 +1,157 @@
+---
+titulo: 'Tiempo real: SSE, WebSocket y WebRTC'
+seccion: navegador
+tema: tiempo-real
+minutos: 13
+resumen: Cómo recibir datos en cuanto ocurren, sin preguntar a cada rato. Server-Sent Events (EventSource) para avisos del servidor, WebSocket para conversar en los dos sentidos, WebRTC para conectar navegadores entre sí, y cuál elegir en cada caso.
+intro: 'Con <code>fetch</code>, el navegador pregunta y el servidor responde. Pero un chat, un marcador en vivo o un documento que editan varias personas necesitan lo contrario: que el servidor <u>avise apenas pasa algo</u>. Preguntar cada pocos segundos funciona, pero gasta mucho y siempre llega tarde. Para eso existen conexiones que se quedan abiertas.'
+ejercicios: [tiempo-real-auto, tiempo-real-orden, tiempo-real-detective, tiempo-real-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { tiempoRealAuto, tiempoRealOrden, tiempoRealDetective, tiempoRealLab } from '../../data/ejercicios/navegador';
+
+## Preguntar a cada rato
+
+La solución más simple es el **sondeo** (*polling*): pedir los datos nuevos cada cierto tiempo.
+
+```js
+setInterval(async () => {
+  const respuesta = await fetch("/api/mensajes?desde=" + ultimoId);
+  mostrar(await respuesta.json());
+}, 5000);
+```
+
+Funciona en cualquier servidor, pero tiene dos problemas: casi todas las peticiones vuelven vacías, y un mensaje puede tardar hasta cinco segundos en aparecer. Para que llegue al instante, la conexión tiene que quedarse abierta.
+
+## Server-Sent Events: el servidor avisa
+
+Con **Server-Sent Events** (SSE), el navegador abre una petición HTTP que el servidor **no cierra**: cada vez que tiene algo nuevo, lo escribe en esa misma respuesta. Del lado del navegador se usa **`EventSource`**:
+
+```js
+const fuente = new EventSource("/api/precios");
+
+fuente.addEventListener("message", (e) => {
+  const { simbolo, precio } = JSON.parse(e.data);
+  console.log(simbolo, precio);
+});
+fuente.addEventListener("error", () => {
+  console.log("se cortó la conexión; el navegador vuelve a intentarlo solo");
+});
+// fuente.close() deja de escuchar
+```
+
+Del lado del servidor es una respuesta con el tipo `text/event-stream`, donde cada mensaje es una línea `data:` seguida de una línea en blanco. Con Node.js:
+
+```js
+import { createServer } from "node:http";
+
+createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" });
+  const reloj = setInterval(() => {
+    const precio = (100 + Math.random() * 5).toFixed(2);
+    res.write(`data: ${JSON.stringify({ simbolo: "JS", precio })}\n\n`);
+  }, 1000);
+  req.on("close", () => clearInterval(reloj));   // la persona cerró la página
+}).listen(3000);
+```
+
+- Con una línea `event: oferta` antes de `data:`, el mensaje llega como un evento con nombre, y se escucha con `addEventListener("oferta", …)`.
+- Si la conexión se corta, `EventSource` **se reconecta solo**. Si cada mensaje lleva una línea `id:`, al reconectar el navegador manda el último que recibió (en el encabezado `Last-Event-ID`) y el servidor puede seguir desde ahí.
+- Solo va en **un sentido**, del servidor al navegador, y solo texto. Para mandar algo al servidor sigues usando `fetch`.
+
+Es la forma más simple de tiempo real: notificaciones, precios, el progreso de un trabajo largo, o las respuestas de un asistente que se escriben palabra por palabra.
+
+## WebSocket: una conversación
+
+Un **WebSocket** es una conexión abierta en **los dos sentidos**: navegador y servidor se mandan mensajes cuando quieren, con muy poca demora. Es la base de los chats, los juegos en línea y la edición colaborativa:
+
+```js
+const ws = new WebSocket("wss://chat.ejemplo.com");
+
+ws.addEventListener("open", () => {
+  ws.send(JSON.stringify({ tipo: "hola", nombre: "Ana" }));
+});
+ws.addEventListener("message", (e) => {
+  const mensaje = JSON.parse(e.data);
+  console.log(`${mensaje.de}: ${mensaje.texto}`);
+});
+ws.addEventListener("close", (e) => console.log("conexión cerrada, código", e.code));
+```
+
+- La dirección empieza con `wss://` (con cifrado, como `https://`) o `ws://`.
+- Solo puedes llamar a `send` cuando la conexión ya está abierta: `ws.readyState` vale `0` mientras conecta, `1` abierta, `2` cerrándose y `3` cerrada.
+- Los mensajes son texto o datos binarios. Por convención se manda JSON con un campo `tipo`, y quien recibe decide qué hacer según ese tipo.
+
+A diferencia de `EventSource`, un WebSocket **no se reconecta solo**. Lo habitual es reintentar esperando cada vez un poco más, para no saturar al servidor si se cayó:
+
+```js
+function conectar(intento = 0) {
+  const ws = new WebSocket("wss://chat.ejemplo.com");
+  ws.addEventListener("open", () => (intento = 0));
+  ws.addEventListener("close", () => {
+    const espera = Math.min(30_000, 1000 * 2 ** intento);   // 1 s, 2 s, 4 s… hasta 30 s
+    setTimeout(() => conectar(intento + 1), espera);
+  });
+  return ws;
+}
+```
+
+<Nota>
+  Node.js (desde la versión 22), Deno y Bun ya traen el cliente `WebSocket` igual que el navegador. Para el **servidor**, Deno y Bun lo traen incluido; en Node.js se usa casi siempre la librería `ws`.
+</Nota>
+
+## WebRTC: de navegador a navegador
+
+**WebRTC** conecta dos navegadores **directamente**, sin que los datos pasen por tu servidor. Es lo que usan las videollamadas: audio y video en vivo con la menor demora posible, y también canales de datos para mandar archivos o mensajes.
+
+Conectar dos navegadores es más complicado de lo que parece. Primero tienen que intercambiar una "oferta" y una "respuesta" con los datos de la conexión, y eso se hace a través de un servidor propio, casi siempre con un WebSocket. Además, para atravesar los routers de cada casa hacen falta servidores especiales (STUN y TURN). La pieza central es `RTCPeerConnection`, y la cámara y el micrófono salen de `getUserMedia` (lo verás en *Audio, video y cámara*). En la práctica, casi todos usan una librería o un servicio que resuelve estas partes.
+
+## ¿Cuál elijo?
+
+| <span class="sr-only">Aspecto</span> | Sentido | Se reconecta | Ideal para |
+|---|---|---|---|
+| `fetch` (con sondeo) | El navegador pregunta | No hace falta | Datos que cambian poco |
+| Server-Sent Events | Servidor → navegador | Sí, solo | Avisos, precios, progreso, texto que llega de a poco |
+| WebSocket | En los dos sentidos | No: hay que programarlo | Chats, juegos, edición colaborativa |
+| WebRTC | Navegador ↔ navegador | No | Videollamadas, archivos entre personas |
+
+## Resumen
+
+- El sondeo con `fetch` es simple, pero gasta y llega tarde.
+- **SSE** (`EventSource`): el servidor escribe mensajes en una respuesta que no cierra; se reconecta solo.
+- **WebSocket**: mensajes en los dos sentidos; `send` solo cuando está abierto; la reconexión es tuya.
+- Manda JSON con un campo `tipo` y decide según el tipo al recibir.
+- **WebRTC** conecta navegadores directamente; necesita un servidor para presentarlos.
+
+<Practica>
+
+<Autoevaluacion id={tiempoRealAuto.id} numero={1} titulo={tiempoRealAuto.titulo} preguntas={tiempoRealAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={tiempoRealOrden.id} numero={2} titulo={tiempoRealOrden.titulo} codigo={tiempoRealOrden.codigo} salida={tiempoRealOrden.salida} inicio={tiempoRealOrden.inicio} explicacion={tiempoRealOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un chat que recibe mensajes de varios tipos. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={tiempoRealDetective.id} numero={3} titulo={tiempoRealDetective.titulo} codigo={tiempoRealDetective.codigo} error={tiempoRealDetective.error} culpable={tiempoRealDetective.culpable} arreglos={tiempoRealDetective.arreglos} hallazgo={tiempoRealDetective.hallazgo} pista={tiempoRealDetective.pista}>
+  <div slot="enunciado">
+    <p>El chat falla apenas carga la página. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={tiempoRealLab.id} numero={4} titulo={tiempoRealLab.titulo} pagina={tiempoRealLab.pagina} inicial={tiempoRealLab.inicial} verificaciones={tiempoRealLab.verificaciones} pistas={tiempoRealLab.pistas} solucion={tiempoRealLab.solucion} explicacion={tiempoRealLab.explicacion}>
+  <div slot="enunciado">
+    <p>El cliente de un chat. Como aquí no hay red, <code>SocketDePrueba</code> imita a un <code>WebSocket</code> conectado a un servidor que devuelve lo que le mandas, en mayúsculas.</p>
+  </div>
+</Laboratorio>
+
+</Practica>

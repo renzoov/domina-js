@@ -1,0 +1,145 @@
+---
+titulo: Arrastrar y soltar
+seccion: navegador
+tema: arrastrar-y-soltar
+minutos: 11
+resumen: La API de arrastrar y soltar de HTML (draggable, dragstart, dragover, drop y dataTransfer), cómo recibir archivos soltados desde el escritorio y por qué siempre hace falta una alternativa con teclado.
+intro: 'Mover una tarjeta entre columnas, reordenar una lista, soltar fotos en una zona para subirlas: arrastrar y soltar se siente natural con el mouse. HTML trae una API para eso, con una regla que hay que <u>recordar siempre</u>: por defecto, ningún elemento acepta que le suelten algo encima.'
+ejercicios: [arrastrar-auto, arrastrar-orden, arrastrar-detective, arrastrar-lab]
+---
+import Practica from '../../components/ejercicios/Practica.astro';
+import Autoevaluacion from '../../components/ejercicios/Autoevaluacion.astro';
+import OrdenaSalida from '../../components/ejercicios/OrdenaSalida.astro';
+import Detective from '../../components/ejercicios/Detective.astro';
+import Laboratorio from '../../components/ejercicios/Laboratorio.astro';
+import Nota from '../../components/Nota.astro';
+import { arrastrarAuto, arrastrarOrden, arrastrarDetective, arrastrarLab } from '../../data/ejercicios/navegador';
+
+## Las dos puntas
+
+Un arrastre tiene dos protagonistas, y cada uno recibe sus propios eventos:
+
+| <span class="sr-only">Aspecto</span> | Lo que se arrastra | Donde se suelta |
+|---|---|---|
+| Qué necesita | El atributo `draggable="true"` (los enlaces, las imágenes y el texto seleccionado ya lo son) | Llamar a `preventDefault()` en `dragover` |
+| Sus eventos | `dragstart` al empezar, `drag` mientras se mueve y `dragend` al terminar | `dragenter` al entrar, `dragover` mientras está encima, `dragleave` al salir y `drop` al soltar |
+
+Entre las dos puntas viaja **`e.dataTransfer`**: en `dragstart` guardas qué se está arrastrando con `setData(tipo, texto)`, y en `drop` lo lees con `getData(tipo)`:
+
+```js
+document.body.innerHTML = `
+  <p id="tarjeta" draggable="true">Comprar pan</p>
+  <div id="hecho" style="min-height: 40px; border: 2px dashed">Hecho</div>`;
+const tarjeta = document.querySelector("#tarjeta");
+const hecho = document.querySelector("#hecho");
+
+tarjeta.addEventListener("dragstart", (e) => {
+  e.dataTransfer.setData("text/plain", tarjeta.id);
+  e.dataTransfer.effectAllowed = "move";
+});
+
+hecho.addEventListener("dragover", (e) => e.preventDefault());   // "aquí se puede soltar"
+hecho.addEventListener("drop", (e) => {
+  e.preventDefault();
+  const id = e.dataTransfer.getData("text/plain");
+  hecho.append(document.getElementById(id));
+  console.log("soltaste", id, "en", hecho.id);
+});
+
+// Simula el arrastre (en tu página, lo hace la persona con el mouse)
+const datos = new DataTransfer();
+tarjeta.dispatchEvent(new DragEvent("dragstart", { dataTransfer: datos, bubbles: true }));
+hecho.dispatchEvent(new DragEvent("drop", { dataTransfer: datos, bubbles: true, cancelable: true }));
+```
+
+<Nota>
+  La regla que más se olvida: si no llamas a `preventDefault()` en `dragover`, el navegador entiende que ahí **no** se puede soltar, muestra el cursor de prohibido y el evento `drop` nunca llega.
+</Nota>
+
+El tipo es un texto libre: `"text/plain"` lo entienden todos (también otras aplicaciones, si sueltas fuera del navegador), y puedes inventar los tuyos, como `"application/x-tarea"`, para mandar un JSON. Por seguridad, `getData` solo devuelve el contenido en `drop`: mientras se arrastra, solo se ven los tipos (`e.dataTransfer.types`).
+
+## Mostrar dónde se puede soltar
+
+`dragenter` y `dragleave` sirven para resaltar la zona mientras el elemento está encima. Con `dropEffect` eliges el cursor: `"move"`, `"copy"` o `"link"`.
+
+```js
+document.body.innerHTML = `<div id="zona" style="padding: 20px; border: 2px dashed">Suelta aquí</div>`;
+const zona = document.querySelector("#zona");
+
+zona.addEventListener("dragenter", () => zona.classList.add("activo"));
+zona.addEventListener("dragleave", () => zona.classList.remove("activo"));
+zona.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+});
+zona.addEventListener("drop", () => zona.classList.remove("activo"));
+
+zona.dispatchEvent(new DragEvent("dragenter"));
+console.log(zona.className);
+```
+
+`dragleave` también se dispara al pasar sobre un **hijo** de la zona, lo que hace parpadear el resaltado. Un truco común es ponerle `pointer-events: none` a los hijos mientras dura el arrastre.
+
+## Soltar archivos
+
+Cuando la persona suelta archivos desde su escritorio, llegan en **`e.dataTransfer.files`**, una lista de `File` como la del `<input type="file">` (lo viste en *Archivos*):
+
+```js
+document.body.innerHTML = `<div id="zona">Suelta tus fotos aquí</div>`;
+const zona = document.querySelector("#zona");
+
+zona.addEventListener("dragover", (e) => e.preventDefault());
+zona.addEventListener("drop", (e) => {
+  e.preventDefault();   // si no, el navegador abre el archivo y se va de tu página
+  const fotos = [...e.dataTransfer.files].filter((f) => f.type.startsWith("image/"));
+  console.log("fotos recibidas:", fotos.map((f) => f.name));
+});
+
+const datos = new DataTransfer();
+datos.items.add(new File(["…"], "gato.jpg", { type: "image/jpeg" }));
+datos.items.add(new File(["…"], "notas.txt", { type: "text/plain" }));
+zona.dispatchEvent(new DragEvent("drop", { dataTransfer: datos, cancelable: true }));
+```
+
+## Teclado y pantallas táctiles
+
+La API de arrastrar y soltar está pensada para el mouse. **No funciona con el teclado**, y en muchas pantallas táctiles funciona a medias. Por eso:
+
+- Ofrece **siempre otra forma** de hacer lo mismo: un botón «Mover a Hecho», un menú, o flechas para subir y bajar en una lista. Así tampoco dejas fuera a quien usa un lector de pantalla.
+- Si el arrastre tiene que funcionar bien con el dedo, se programa a mano con **Pointer Events** (`pointerdown`, `pointermove` y `pointerup`), que unifican mouse, dedo y lápiz. Es más trabajo, por eso muchas páginas usan una librería para esto.
+
+## Resumen
+
+- Lo que se arrastra necesita `draggable="true"`; recibe `dragstart`, `drag` y `dragend`.
+- Donde se suelta tiene que llamar a `preventDefault()` en `dragover`; si no, no hay `drop`.
+- `e.dataTransfer.setData(tipo, texto)` en `dragstart` y `getData(tipo)` en `drop`, con el mismo tipo.
+- Los archivos soltados llegan en `e.dataTransfer.files`; cancela el `drop` para que el navegador no los abra.
+- Siempre una alternativa sin arrastre, para el teclado y el tacto.
+
+<Practica>
+
+<Autoevaluacion id={arrastrarAuto.id} numero={1} titulo={arrastrarAuto.titulo} preguntas={arrastrarAuto.preguntas}>
+  <div slot="enunciado">
+    <p>Elige una respuesta en cada pregunta.</p>
+  </div>
+</Autoevaluacion>
+
+<OrdenaSalida id={arrastrarOrden.id} numero={2} titulo={arrastrarOrden.titulo} codigo={arrastrarOrden.codigo} salida={arrastrarOrden.salida} inicio={arrastrarOrden.inicio} explicacion={arrastrarOrden.explicacion}>
+  <div slot="enunciado">
+    <p>Un <code>DataTransfer</code> con dos tipos de datos. Ordena lo que aparecería en la consola.</p>
+  </div>
+</OrdenaSalida>
+
+<Detective id={arrastrarDetective.id} numero={3} titulo={arrastrarDetective.titulo} codigo={arrastrarDetective.codigo} error={arrastrarDetective.error} culpable={arrastrarDetective.culpable} arreglos={arrastrarDetective.arreglos} hallazgo={arrastrarDetective.hallazgo} pista={arrastrarDetective.pista}>
+  <div slot="enunciado">
+    <p>Al soltar la tarea en «Hecho», la consola muestra un error. Encuentra la línea y elige el arreglo.</p>
+  </div>
+</Detective>
+
+<Laboratorio id={arrastrarLab.id} numero={4} titulo={arrastrarLab.titulo} pagina={arrastrarLab.pagina} inicial={arrastrarLab.inicial} verificaciones={arrastrarLab.verificaciones} pistas={arrastrarLab.pistas} solucion={arrastrarLab.solucion} explicacion={arrastrarLab.explicacion}>
+  <div slot="enunciado">
+    <p>Un tablero con dos columnas: haz que las tarjetas se puedan mover de una a otra. También puedes probarlo arrastrando con el mouse en la página de abajo.</p>
+  </div>
+</Laboratorio>
+
+</Practica>
