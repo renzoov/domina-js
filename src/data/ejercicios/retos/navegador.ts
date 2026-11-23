@@ -42,6 +42,24 @@ export const retoNavAuto = {
       correcta: 1,
       explicacion: 'Los módulos se difieren siempre: se descargan en paralelo y se ejecutan con el DOM ya armado, antes de <code>DOMContentLoaded</code>. Por eso pueden buscar elementos del <code>&lt;body&gt;</code> aunque estén en el <code>&lt;head&gt;</code>.',
     },
+    {
+      pregunta: '¿Qué imprime?<br><code>const tienda = new EventTarget();</code><br><code>tienda.addEventListener("venta", () => console.log("B"));</code><br><code>console.log("A");</code><br><code>tienda.dispatchEvent(new Event("venta"));</code><br><code>console.log("C");</code>',
+      opciones: ['<code>A C B</code>: el evento llega como una tarea', '<code>A B C</code>', '<code>A C</code>: un <code>EventTarget</code> suelto no dispara eventos'],
+      correcta: 1,
+      explicacion: '<code>dispatchEvent</code> es síncrono: corre los listeners en ese momento, antes de la línea siguiente. Los eventos del navegador, como un clic, sí llegan como tareas.',
+    },
+    {
+      pregunta: 'Arrastras una tarjeta sobre una columna que tiene un listener de <code>drop</code>, pero al soltarla no pasa nada y el cursor muestra el ícono de prohibido. ¿Qué falta?',
+      opciones: ['<code>draggable="true"</code> en la columna', 'Llamar a <code>e.preventDefault()</code> en el <code>dragover</code> de la columna', 'Usar <code>dragend</code> en lugar de <code>drop</code>'],
+      correcta: 1,
+      explicacion: 'Por defecto ningún elemento acepta que le suelten algo. Cancelar <code>dragover</code> es la forma de decir "aquí sí se puede", y recién entonces llega el <code>drop</code>.',
+    },
+    {
+      pregunta: '¿Qué pasa?<br><code>const ws = new WebSocket("wss://chat.ejemplo.com");</code><br><code>ws.send("hola");</code>',
+      opciones: ['Se manda el mensaje en cuanto conecte', 'Lanza un <code>InvalidStateError</code>: la conexión todavía se está abriendo', 'No pasa nada: el mensaje se pierde en silencio'],
+      correcta: 1,
+      explicacion: 'Crear el WebSocket solo empieza a conectar. Lo que se manda al conectar va dentro del evento <code>open</code>.',
+    },
   ],
 };
 

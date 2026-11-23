@@ -110,7 +110,7 @@ Error: Access to this API has been restricted. Use --allow-fs-write to manage pe
 
 export const retoServAuto2 = {
   id: 'reto-serv-auto-2',
-  titulo: 'Archivos, procesos e hilos',
+  titulo: 'Archivos, procesos, datos y comandos',
   preguntas: [
     {
       pregunta: 'Tienes que procesar un archivo de registro de 4 GB. ¿Qué conviene?',
@@ -151,6 +151,18 @@ export const retoServAuto2 = {
       ],
       correcta: 0,
       explicacion: 'Desde Node 22 viene incluido: ya no hace falta instalar <code>nodemon</code> para reiniciar al guardar.',
+    },
+    {
+      pregunta: 'Alguien escribe <code>x\' OR \'1\'=\'1</code> en el buscador. ¿Cuál de estas consultas es segura?<br><code>A: db.prepare(`SELECT * FROM usuarios WHERE nombre = \'${nombre}\'`).all()</code><br><code>B: db.prepare("SELECT * FROM usuarios WHERE nombre = ?").all(nombre)</code>',
+      opciones: ['Las dos', 'Solo B: el valor viaja como parámetro y nunca se mezcla con el SQL', 'Solo A, porque usa comillas'],
+      correcta: 1,
+      explicacion: 'En A, el texto cambia la consulta (queda <code>… OR \'1\'=\'1\'</code>) y devuelve todos los usuarios: inyección de SQL. Con <code>?</code>, se busca literalmente ese texto.',
+    },
+    {
+      pregunta: 'Con <code>parseArgs</code> y la opción <code>{ n: { type: "string", short: "n" } }</code>, ejecutas <code>node contar.js -n 5</code>. ¿Qué es <code>values.n</code>?',
+      opciones: ['El número <code>5</code>', 'El texto <code>"5"</code>', '<code>true</code>'],
+      correcta: 1,
+      explicacion: 'Los argumentos de la terminal siempre llegan como texto: para hacer cuentas hay que convertirlo con <code>Number(values.n)</code> y comprobar que no sea <code>NaN</code>.',
     },
   ],
 };

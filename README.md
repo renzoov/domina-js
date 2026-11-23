@@ -4,7 +4,7 @@
 
 **👉 [domina-js.pages.dev](https://domina-js.pages.dev)**
 
-![Portada de domina-js: el título «Aprende JavaScript viendo lo que hace el motor» junto a un pizarrón con código y la pila de llamadas, el botón Rayos X en la navegación y, debajo, la tarjeta de Rayos X](docs/capturas/portada.webp)
+![Portada de domina-js: el título «Aprende JavaScript viendo lo que hace el motor» junto a un pizarrón con código y la pila de llamadas, el botón Rayos X en la navegación, la tarjeta de Rayos X y, a la izquierda, el temario con sus secciones cerradas](docs/capturas/portada.webp)
 
 | | |
 |---|---|
@@ -35,7 +35,7 @@ En [`/rayos-x`](https://domina-js.pages.dev/rayos-x) eliges uno de los pizarrone
 - con código asíncrono, **el event loop**: los temporizadores que cuenta el runtime, la cola de tareas, la de microtareas y las funciones `async` en pausa por un `await`;
 - una explicación en español de cada paso.
 
-![La página Rayos X: el título, las ocho tarjetas de pizarrones listos y el editor](docs/capturas/rayos-x.webp)
+![La página Rayos X: el título, las tarjetas de los doce pizarrones listos y el editor](docs/capturas/rayos-x.webp)
 
 ![El pizarrón que arma Rayos X con un closure: contar() en la pila, con «cuenta = 1 (recordada)», y la gráfica de profundidad](docs/capturas/rayos-x-pizarron.webp)
 
@@ -123,7 +123,7 @@ Arriba del temario, en todas las páginas, hay un buscador que recorre las lecci
 16. Novedades por edición
 17. ¿Y ahora qué?
 
-![La página del temario: las lecciones de cada sección, sus insignias de edición y, al final, el Reto del motor con la etiqueta «cierre de sección»](docs/capturas/temario.webp)
+![La página del temario: Novedades por edición, con su Reto del motor como «cierre de sección», y la sección 17, «¿Y ahora qué?», con sus diez lecciones](docs/capturas/temario.webp)
 
 ## También en el teléfono
 
