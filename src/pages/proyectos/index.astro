@@ -1,0 +1,300 @@
+---
+// Portada de la sección Proyectos: los 30 proyectos en una cuadrícula tipo bento, agrupados por nivel.
+// No es parte de las lecciones, así que va sin la barra del temario (BaseLayout con sinBarra).
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Subrayado from '../../components/Subrayado.astro';
+import Icono from '../../components/Icono.astro';
+import { proyectos, NIVELES, type Nivel } from '../../data/proyectos';
+
+const grupos = (Object.keys(NIVELES) as Nivel[]).map((nivel) => {
+  const lista = proyectos.filter((p) => p.nivel === nivel);
+  return { nivel, ...NIVELES[nivel], lista, desde: lista[0].numero, hasta: lista.at(-1)!.numero };
+});
+const final = proyectos.find((p) => p.nivel === 'final')!;
+// Mientras un proyecto no tenga su guía, su tarjeta no es un enlace
+const etiqueta = (p: { publicado?: boolean }) => (p.publicado ? 'a' : 'div');
+const FinalTag = etiqueta(final);
+---
+<BaseLayout sinBarra titulo="Proyectos · domina-js" descripcion="30 aplicaciones completas para construir solo con JavaScript, de la más fácil al proyecto final. El HTML y el CSS ya vienen hechos: tú escribes el JavaScript, paso a paso, con pistas y la solución.">
+  <div class="pj-pagina" data-proyectos>
+    <header class="cab">
+      <p class="sello">¿Listo para construir?</p>
+      <h1>Proyectos</h1>
+      <Subrayado ancho={300} />
+      <p class="lead">30 aplicaciones completas, de la más fácil a la más difícil, hechas <b>solo con JavaScript</b>. Son para cuando ya terminaste las lecciones, o casi. El HTML y el CSS vienen hechos: tú escribes el JavaScript paso a paso, con pistas y la solución a mano.</p>
+
+      <ol class="como" aria-label="Cómo funciona cada proyecto">
+        <li><span class="n" aria-hidden="true">1</span><span><b>Descarga el inicial.</b> El HTML, el CSS y un <code>app.js</code> con un comentario por paso.</span></li>
+        <li><span class="n" aria-hidden="true">2</span><span><b>Aprende lo nuevo.</b> Una mini lección con lo que el proyecto usa y el curso todavía no vio.</span></li>
+        <li><span class="n" aria-hidden="true">3</span><span><b>Construye paso a paso.</b> Cada paso dice qué lograr y cómo comprobarlo, con pistas y la solución.</span></li>
+      </ol>
+
+      <ul class="leyenda" aria-label="Proyectos por nivel">
+        {grupos.map((g) => (
+          <li style={`--c: var(--${g.color})`}><a href={`#${g.nivel}`}><i aria-hidden="true"></i>{g.nivel === 'final' ? '1 proyecto final' : `${g.lista.length} ${g.plural.toLowerCase()}`}</a></li>
+        ))}
+      </ul>
+    </header>
+
+    {grupos.filter((g) => g.nivel !== 'final').map((g) => (
+      <section class="grupo" id={g.nivel} style={`--c: var(--${g.color})`} aria-labelledby={`${g.nivel}-t`}>
+        <h2 id={`${g.nivel}-t`}>{g.nombre}<span class="rango">proyectos {g.desde} a {g.hasta}</span></h2>
+        <ul class="bento" role="list">
+          {g.lista.map((p) => {
+            const T = etiqueta(p);
+            return (
+            <li class:list={['celda', p.tamano]}>
+              <T class:list={['pj', { pronto: !p.publicado }]} href={p.publicado ? `/proyectos/${p.slug}` : undefined} data-proyecto={p.slug}>
+                <span class="fantasma" aria-hidden="true">{String(p.numero).padStart(2, '0')}</span>
+                <span class="arriba">
+                  <span class="num"><span class="sr-only">Proyecto </span>{p.numero}</span>
+                  {p.servidor && <span class="node" title="Necesita Node">Node</span>}
+                  <span class="hecho" data-hecho hidden><Icono nombre="ok" /><span class="sr-only">Completado</span></span>
+                  {!p.publicado && <span class="aviso">Próximamente</span>}
+                </span>
+                <h3>{p.titulo}</h3>
+                <p class="resumen">{p.resumen}</p>
+                {p.puntos && <ul class="puntos">{p.puntos.map((t) => <li>{t}</li>)}</ul>}
+                <span class="temas"><span class="sr-only">Temas: </span>{p.temas.map((t) => <code>{t}</code>)}</span>
+              </T>
+            </li>
+          ); })}
+        </ul>
+      </section>
+    ))}
+
+    <section class="grupo" id="final" style="--c: var(--lila)" aria-labelledby="final-t">
+      <h2 id="final-t">Proyecto final<span class="rango">el que junta todo</span></h2>
+      <FinalTag class:list={['pj', 'pj-final', { pronto: !final.publicado }]} href={final.publicado ? `/proyectos/${final.slug}` : undefined} data-proyecto={final.slug}>
+        <div class="final-texto">
+          <span class="arriba">
+            <span class="num"><span class="sr-only">Proyecto </span>{final.numero}</span>
+            <span class="hecho" data-hecho hidden><Icono nombre="ok" /><span class="sr-only">Completado</span></span>
+            {!final.publicado && <span class="aviso">Próximamente</span>}
+          </span>
+          <h3>{final.titulo}</h3>
+          <p class="resumen">{final.resumen}</p>
+          <p class="extra">Junta temas de casi todas las secciones del curso: módulos, clases, asincronía, el navegador a fondo y las herramientas.</p>
+          <span class="temas"><span class="sr-only">Temas: </span>{final.temas.map((t) => <code>{t}</code>)}</span>
+          {final.publicado && <span class="ir">Ver el proyecto final<Icono nombre="der" /></span>}
+        </div>
+        <!-- Un tablero kanban dibujado con tiza -->
+        <svg class="tablero" viewBox="0 0 360 230" aria-hidden="true">
+          <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="6" width="348" height="218" rx="8" stroke="rgba(236,234,226,.25)" stroke-width="2" stroke-dasharray="10 4 18 3" />
+            <path d="M122 20v190M238 20v190" stroke="rgba(236,234,226,.18)" stroke-width="2" stroke-dasharray="6 5" />
+            <g stroke-width="2.4">
+              <path d="M28 32h70" stroke="#ECEAE2" opacity=".7" />
+              <path d="M144 32h64" stroke="#ECEAE2" opacity=".7" />
+              <path d="M260 32h50" stroke="#ECEAE2" opacity=".7" />
+            </g>
+            <g stroke="#CDB0FF" stroke-width="2">
+              <rect x="22" y="50" width="86" height="40" rx="5" /><path d="M32 64h52M32 76h34" opacity=".7" />
+              <rect x="22" y="100" width="86" height="40" rx="5" /><path d="M32 114h44M32 126h58" opacity=".7" />
+              <rect x="22" y="150" width="86" height="40" rx="5" /><path d="M32 164h60" opacity=".7" />
+            </g>
+            <g stroke="#8FD0F7" stroke-width="2">
+              <rect x="138" y="50" width="86" height="40" rx="5" /><path d="M148 64h50M148 76h28" opacity=".7" />
+              <rect x="146" y="104" width="86" height="40" rx="5" transform="rotate(-6 189 124)" stroke-dasharray="7 3" /><path d="M156 118h40" opacity=".7" transform="rotate(-6 189 124)" />
+            </g>
+            <g stroke="#C4EC8C" stroke-width="2">
+              <rect x="254" y="50" width="86" height="40" rx="5" /><path d="M264 64h46" opacity=".7" /><path d="M318 74l5 5 9-11" stroke-width="2.6" />
+              <rect x="254" y="100" width="86" height="40" rx="5" /><path d="M264 114h54" opacity=".7" /><path d="M318 124l5 5 9-11" stroke-width="2.6" />
+            </g>
+            <path d="M200 100c18-26 42-30 58-14" stroke="#F2A7B8" stroke-width="2.4" stroke-dasharray="5 4" />
+            <path d="M250 80l8 6-9 4" stroke="#F2A7B8" stroke-width="2.4" />
+          </g>
+        </svg>
+      </FinalTag>
+    </section>
+  </div>
+</BaseLayout>
+
+<script>
+  // Marca ✓ en los proyectos completados (se guardan en el mismo progreso que los ejercicios)
+  try {
+    const hechos = JSON.parse(localStorage.getItem('domina-js:progreso:v1') || '{}').proyectos || {};
+    document.querySelectorAll<HTMLElement>('[data-proyecto]').forEach((a) => {
+      const marca = a.querySelector<HTMLElement>('[data-hecho]');
+      if (marca && hechos[a.dataset.proyecto!]) {
+        marca.hidden = false;
+        a.classList.add('completo');
+      }
+    });
+  } catch {}
+</script>
+
+<style>
+  /* ── Cabecera ── */
+  .sello { margin: 0 0 8px; width: fit-content; font: 700 1.2rem/1 var(--hand); color: var(--lila); transform: rotate(-2deg); }
+  h1 { margin: 0; font: 700 clamp(2.8rem, 5.4vw, 4.8rem) / 1 var(--hand); text-shadow: 0 0 3px rgba(236, 234, 226, 0.4); }
+  .lead { margin: 18px 0 0; max-width: 64ch; font-size: 1.12rem; line-height: 1.6; color: var(--chalk-70); }
+  .lead b { color: var(--chalk); }
+
+  .como {
+    list-style: none; margin: 36px 0 0; padding: 0;
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 36px;
+    max-width: 1080px;
+  }
+  .como li { display: flex; gap: 14px; font-size: 0.98rem; line-height: 1.55; color: var(--chalk-70); }
+  .como b { color: var(--chalk); }
+  .como .n {
+    flex: none; display: grid; place-items: center; width: 34px; height: 34px; margin-top: -3px;
+    font: 700 1.25rem/1 var(--hand); color: var(--lila);
+    border: 2px solid var(--lila);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  }
+
+  .leyenda { list-style: none; display: flex; flex-wrap: wrap; gap: 10px 12px; margin: 32px 0 0; padding: 0; }
+  .leyenda a {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; font: 700 0.9rem/1 var(--read); color: var(--chalk-70); text-decoration: none;
+    border: 2px solid color-mix(in srgb, var(--c) 35%, transparent); border-radius: var(--r-chalk);
+    transition: color 150ms var(--ease-out), border-color 150ms var(--ease-out);
+  }
+  .leyenda a:hover, .leyenda a:focus-visible { color: var(--chalk); border-color: var(--c); }
+  .leyenda i { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 6px var(--c); }
+
+  /* ── Grupos por nivel ── */
+  .grupo { margin-top: 72px; scroll-margin-top: 24px; }
+  h2 {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 16px;
+    margin: 0 0 22px; padding-bottom: 10px;
+    font: 700 clamp(1.9rem, 3vw, 2.5rem) / 1 var(--hand); color: var(--c);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--c) 35%, transparent);
+    border-bottom: 2px dashed color-mix(in srgb, var(--c) 30%, transparent);
+  }
+  .rango { font: 400 0.95rem/1 var(--read); color: var(--chalk-70); text-shadow: none; }
+
+  /* ── Bento: 12 columnas; los destacados ocupan 6 columnas y 2 filas, y el hueco lo llenan cuatro chicos ── */
+  .bento {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-rows: minmax(196px, auto);
+    grid-auto-flow: row dense;
+    gap: 18px;
+  }
+  .celda { display: flex; grid-column: span 3; }
+  .destacado { grid-column: 1 / span 6; grid-row: span 2; }
+  .destacado-der { grid-column: 7 / span 6; grid-row: span 2; }
+  .ancho { grid-column: span 6; }
+  .tercio { grid-column: span 4; }
+
+  /* ── Tarjeta ── */
+  .pj {
+    position: relative; isolation: isolate; overflow: hidden;
+    flex: 1; display: flex; flex-direction: column; gap: 10px;
+    padding: 18px 20px 20px;
+    color: var(--chalk); text-decoration: none;
+    background:
+      radial-gradient(110% 90% at 100% 0%, color-mix(in srgb, var(--c) 7%, transparent), transparent 60%),
+      var(--board-lo);
+    border: 2px solid color-mix(in srgb, var(--c) 32%, transparent);
+    border-radius: var(--r-chalk);
+    transition: transform 200ms var(--ease-out), border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+  }
+  a.pj:hover, a.pj:focus-visible {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--c) 80%, transparent);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35), 0 0 18px color-mix(in srgb, var(--c) 14%, transparent);
+  }
+  a.pj:focus-visible { outline: 3px solid var(--y); outline-offset: 3px; }
+
+  .fantasma {
+    position: absolute; z-index: -1; right: 14px; top: 6px;
+    font: 700 6.5rem/1 var(--hand); color: var(--c); opacity: 0.07;
+    pointer-events: none; user-select: none;
+  }
+  .arriba { display: flex; align-items: center; gap: 10px; }
+  .num {
+    display: grid; place-items: center; min-width: 36px; height: 36px; padding: 0 4px;
+    font: 700 1.25rem/1 var(--hand); color: var(--c);
+    border: 2px solid var(--c);
+    border-radius: 48% 52% 45% 55% / 55% 45% 52% 48%;
+  }
+  .node {
+    padding: 3px 8px; font: 400 0.75rem/1.2 var(--mono); color: var(--lima);
+    border: 1px solid color-mix(in srgb, var(--lima) 45%, transparent); border-radius: var(--r-trazo);
+  }
+  /* Todavía sin guía: borde discontinuo, sin enlace y con «Próximamente», como el botón de la navegación */
+  .pronto { border-style: dashed; border-color: color-mix(in srgb, var(--c) 24%, transparent); cursor: not-allowed; }
+  .pronto h3 { color: var(--chalk-70); }
+  .pronto .num { opacity: 0.75; }
+  .aviso {
+    margin-left: auto; padding: 3px 9px;
+    font: 700 0.78rem/1.2 var(--read); color: var(--pink);
+    border: 1px dashed color-mix(in srgb, var(--pink) 55%, transparent); border-radius: var(--r-trazo);
+    transform: rotate(-2deg);
+  }
+  .hecho { margin-left: auto; display: inline-flex; color: var(--ok); }
+  .hecho :global(svg) { width: 24px; height: 24px; }
+  .completo { border-style: solid; border-color: color-mix(in srgb, var(--ok) 55%, transparent); }
+
+  h3 { margin: 4px 0 0; font: 700 1.5rem/1.1 var(--hand); text-wrap: balance; }
+  .resumen { flex: 1; margin: 0; font-size: 0.96rem; line-height: 1.5; color: var(--chalk-70); }
+  .temas { display: flex; flex-wrap: wrap; gap: 6px; }
+  .temas code {
+    padding: 3px 8px; font: 400 0.76rem/1.3 var(--mono); color: var(--chalk-70);
+    background: var(--pozo); border: 1px solid var(--chalk-08); border-radius: var(--r-trazo);
+  }
+
+  /* Destacados: más aire y letra más grande */
+  .destacado .pj, .destacado-der .pj { padding: 26px 28px 28px; gap: 14px; }
+  .destacado h3, .destacado-der h3 { font-size: clamp(1.9rem, 2.6vw, 2.5rem); max-width: 14ch; }
+  .destacado .resumen, .destacado-der .resumen { flex: 0 1 auto; font-size: 1.08rem; max-width: 40ch; }
+  .destacado .temas, .destacado-der .temas { margin-top: auto; }
+  .destacado .fantasma, .destacado-der .fantasma { font-size: 13rem; right: 22px; top: -6px; opacity: 0.08; }
+  .puntos { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 10px; max-width: 46ch; }
+  .puntos li { position: relative; padding-left: 28px; font-size: 1rem; line-height: 1.45; color: var(--chalk); }
+  .puntos li::before {
+    content: ''; position: absolute; left: 2px; top: 0.3em; width: 14px; height: 8px;
+    border-left: 2.5px solid var(--c); border-bottom: 2.5px solid var(--c);
+    transform: rotate(-45deg); filter: url(#tiza);
+  }
+  .destacado .num, .destacado-der .num { min-width: 44px; height: 44px; font-size: 1.5rem; }
+
+  /* ── Proyecto final ── */
+  .pj-final.pronto { border-style: dashed; border-color: rgba(205, 176, 255, 0.4); }
+  .pj-final {
+    --c: var(--lila);
+    flex-direction: row; align-items: center; gap: 40px;
+    padding: 34px 40px;
+    background:
+      radial-gradient(70% 120% at 100% 0%, rgba(205, 176, 255, 0.14), transparent 60%),
+      repeating-linear-gradient(97deg, rgba(236, 234, 226, 0.012) 0 2px, transparent 2px 7px),
+      var(--board-lo);
+    border-color: rgba(205, 176, 255, 0.55);
+    box-shadow: 0 0 0 4px rgba(205, 176, 255, 0.06), 0 0 30px rgba(205, 176, 255, 0.1);
+  }
+  .final-texto { flex: 1; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .pj-final .num { min-width: 48px; height: 48px; font-size: 1.6rem; }
+  .pj-final h3 { font-size: clamp(2.4rem, 4vw, 3.6rem); color: var(--chalk); text-shadow: 0 0 14px rgba(205, 176, 255, 0.35); }
+  .pj-final .resumen { flex: 0 1 auto; font-size: 1.12rem; max-width: 52ch; color: var(--chalk); }
+  .extra { margin: 0; max-width: 56ch; font-size: 0.98rem; line-height: 1.55; color: var(--chalk-70); }
+  .ir { display: inline-flex; align-items: center; gap: 8px; margin-top: 6px; font: 700 1.35rem/1 var(--hand); color: var(--lila); }
+  .ir :global(svg) { width: 24px; height: 24px; transition: transform 200ms var(--ease-out); }
+  a.pj-final:hover .ir :global(svg) { transform: translateX(4px); }
+  .tablero { flex: none; width: min(380px, 38%); height: auto; filter: url(#tiza); }
+
+  /* ── Tableta: 6 columnas ── */
+  @media (max-width: 1100px) {
+    .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .celda, .ancho { grid-column: span 3; }
+    .destacado, .destacado-der { grid-column: 1 / -1; grid-row: auto; }
+    .tercio { grid-column: span 2; }
+    .destacado .fantasma, .destacado-der .fantasma { font-size: 9rem; }
+    .como { grid-template-columns: minmax(0, 1fr); max-width: 60ch; }
+  }
+  /* ── Teléfono: una sola columna, en orden ── */
+  @media (max-width: 720px) {
+    .bento { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
+    .celda, .ancho, .tercio, .destacado, .destacado-der { grid-column: 1 / -1; }
+    .pj-final { flex-direction: column; align-items: stretch; padding: 24px 22px; }
+    .tablero { width: 100%; max-width: 360px; align-self: center; }
+    .grupo { margin-top: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pj, .ir :global(svg) { transition: none; }
+    a.pj:hover, a.pj:focus-visible { transform: none; }
+  }
+</style>

@@ -119,6 +119,42 @@
         ],
         "createdAt": "2026-11-20T19:09:22.214Z",
         "reason": "agent: archived decision sketch (exploration fixture kept for sister sites), not shipped UI"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "barlow",
+        "files": [
+          "proyectos/01-generador-de-paletas/final/estilos.css"
+        ],
+        "createdAt": "2026-11-23T17:33:10.962Z",
+        "reason": "Proyecto 1 es una app independiente con su propio mundo visual (Abanico de imprenta), elegido por el usuario; DESIGN.md describe solo el sitio domina-js"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "barlow condensed",
+        "files": [
+          "proyectos/01-generador-de-paletas/final/estilos.css"
+        ],
+        "createdAt": "2026-11-23T17:33:11.110Z",
+        "reason": "Proyecto 1 es una app independiente con su propio mundo visual (Abanico de imprenta), elegido por el usuario; DESIGN.md describe solo el sitio domina-js"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "barlow",
+        "files": [
+          "proyectos/01-generador-de-paletas/final/index.html"
+        ],
+        "createdAt": "2026-11-23T17:38:19.566Z",
+        "reason": "Proyecto 1 es una app independiente con su propio mundo visual (Abanico de imprenta), elegido por el usuario; DESIGN.md describe solo el sitio domina-js"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "barlow condensed",
+        "files": [
+          "proyectos/01-generador-de-paletas/final/index.html"
+        ],
+        "createdAt": "2026-11-23T17:38:19.750Z",
+        "reason": "Proyecto 1 es una app independiente con su propio mundo visual (Abanico de imprenta), elegido por el usuario; DESIGN.md describe solo el sitio domina-js"
       }
     ]
   }

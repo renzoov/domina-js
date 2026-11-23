@@ -4,6 +4,7 @@ import Logo from '../components/Logo.astro';
 import MenuTemario from '../components/MenuTemario.astro';
 import BotonRayosX from '../components/BotonRayosX.astro';
 import BotonSeccion from '../components/BotonSeccion.astro';
+import Icono from '../components/Icono.astro';
 import { REPO, PERFIL, REPORTAR } from '../data/sitio';
 import tiza400 from '../fuentes/tiza-domina-400.woff2?url';
 import tiza700 from '../fuentes/tiza-domina-700.woff2?url';
@@ -34,8 +35,10 @@ interface Props {
   actual?: { seccion: string; tema: string };
   /** La página no debe aparecer en buscadores (la 404) */
   noindex?: boolean;
+  /** Secciones que no son lecciones (Proyectos): sin la barra del temario, con un enlace de vuelta al inicio */
+  sinBarra?: boolean;
 }
-const { titulo, descripcion = 'Aprende JavaScript en español, paso a paso, viendo lo que hace el motor por dentro.', actual, noindex = false } = Astro.props;
+const { titulo, descripcion = 'Aprende JavaScript en español, paso a paso, viendo lo que hace el motor por dentro.', actual, noindex = false, sinBarra = false } = Astro.props;
 const ruta = Astro.url.pathname.replace(/\/$/, '');
 // Dirección canónica (sin .html, como la sirve Cloudflare Pages) e imagen para las vistas previas al compartir
 const canonica = new URL(Astro.url.pathname.replace(/\.html$/, '').replace(/\/index$/, '/'), Astro.site).href;
@@ -70,7 +73,7 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
     <link rel="sitemap" href="/sitemap.xml" />
     <!-- No pintar hasta que la barra lateral tenga su progreso y su scroll (ver el script tras .lado-fijo);
          si no, Chromium la muestra un instante a medio armar al navegar entre temas -->
-    <link rel="expect" href="#barra-lista" blocking="render" />
+    {!sinBarra && <link rel="expect" href="#barra-lista" blocking="render" />}
     {fuentes.map(([, , url]) => <link rel="preload" href={url} as="font" type="font/woff2" crossorigin />)}
   </head>
   <body>
@@ -86,9 +89,9 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
         <feComposite in="desplazado" in2="huecos" operator="in" />
       </filter>
     </svg>
-    <div class="pizarron">
+    <div class:list={['pizarron', { 'sin-barra': sinBarra }]}>
       <!-- Barra lateral fija: logo y temario, con su propio scroll -->
-      <aside class="lado" aria-label="Barra lateral: temario">
+      {!sinBarra && <aside class="lado" aria-label="Barra lateral: temario">
         <div class="lado-fijo">
           <Logo />
           <MenuTemario actual={actual} />
@@ -166,17 +169,23 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
           })();
         </script>
         <span id="barra-lista" hidden></span>
-      </aside>
+      </aside>}
 
       <div class="area">
         <header class="cabecera">
+          {sinBarra && (
+            <div class="vuelta">
+              <Logo />
+              <a class="inicio" href="/"><Icono nombre="izq" />Volver al inicio</a>
+            </div>
+          )}
           <slot name="esquina" />
           <nav aria-label="Principal" class="principal">
             <a href="/temario" aria-current={ruta === '/temario' ? 'page' : undefined}>Temario</a>
             <a href="/glosario" aria-current={ruta === '/glosario' ? 'page' : undefined}>Glosario</a>
             <BotonRayosX variante="nav" actual={ruta === '/rayos-x'} />
             <!-- Proyectos y Librerías todavía no existen: se muestran tachados, con «Próximamente» (plan en docs/PROYECTOS.md) -->
-            <BotonSeccion texto="Proyectos" href="/proyectos" color="lila" icono="bloques" pronto />
+            <BotonSeccion texto="Proyectos" href="/proyectos" color="lila" icono="bloques" pronto={!ruta.startsWith('/proyectos')} actual={ruta.startsWith('/proyectos')} />
             <BotonSeccion texto="Librerías" href="/librerias" color="naranja" icono="paquete" pronto />
           </nav>
         </header>
@@ -205,7 +214,7 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
 </html>
 
 <style>
-  :root { --ancho-lado: 300px; }
+  :root { --ancho-lado: 300px; --ancho-sin-barra: 1440px; }
 
   .pizarron { display: grid; grid-template-columns: var(--ancho-lado) minmax(0, 1fr); }
 
@@ -234,6 +243,26 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
     /* La posición la controla el script de la barra; el anclaje automático la corría 1px al terminar de cargar */
     overflow-anchor: none;
   }
+
+  /* Sin barra lateral: una sola columna, y el logo con «Volver al inicio» arriba a la izquierda */
+  .sin-barra { grid-template-columns: minmax(0, 1fr); }
+  /* Cabecera, contenido y pie en una misma columna centrada: el logo queda alineado con el borde
+     izquierdo del contenido y la navegación con el derecho; en pantallas anchas sobra aire a los dos lados */
+  .sin-barra .cabecera, .sin-barra .contenido, .sin-barra .pie {
+    width: 100%;
+    max-width: calc(var(--ancho-sin-barra) + 2 * var(--gutter));
+    margin-inline: auto;
+  }
+  .vuelta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 28px; }
+  .inicio {
+    display: inline-flex; align-items: center; gap: 6px;
+    font: 700 0.95rem/1 var(--read); color: var(--chalk-70); text-decoration: none;
+    padding: 8px 12px 8px 8px;
+    border: 2px solid var(--chalk-15); border-radius: var(--r-chalk);
+    transition: color 150ms var(--ease-out), border-color 150ms var(--ease-out);
+  }
+  .inicio :global(svg) { width: 18px; height: 18px; }
+  .inicio:hover, .inicio:focus-visible { color: var(--chalk); border-color: var(--y); }
 
   .area { min-width: 0; display: flex; flex-direction: column; min-height: calc(100vh - 24px); }
   .cabecera {

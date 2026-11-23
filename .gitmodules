@@ -1,0 +1,3 @@
+[submodule "proyectos"]
+	path = proyectos
+	url = https://github.com/renzoov/domina-js-proyectos.git
