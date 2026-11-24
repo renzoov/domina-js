@@ -173,7 +173,7 @@ Un catálogo de 30 a 40 productos, 10 por página, con la paginación en la URL 
 Temas: clases con campos privados (el carrito extiende `EventTarget`), eventos propios, Map, URLSearchParams y navegación, `Intl.NumberFormat`, formularios y validación, guardar datos y el evento `storage`, diálogos y la Popover API, async con estados de carga y `aria-live`.
 
 **6. Explorador con scroll infinito** · *mejorado*
-Un catálogo de obras de arte con la API abierta del Art Institute of Chicago (imágenes de dominio público), que carga más al llegar al final. Hace par con la tienda: paginación con botones frente a scroll infinito.
+Un catálogo de obras de arte con la API abierta del Cleveland Museum of Art (imágenes de dominio público, CC0), que carga más al llegar al final, y una sala propia donde cuelgas tus favoritas. Hace par con la tienda: paginación con botones frente a scroll infinito.
 Temas: fetch, `Promise.allSettled`, IntersectionObserver, `<template>`, caché con Map, imágenes con carga diferida, un diálogo de detalle y errores con reintento.
 
 **7. Buscador con autocompletado** · *mejorado*

@@ -1,0 +1,413 @@
+---
+slug: explorador-de-arte
+carpeta: 06-explorador-de-arte
+horas: 6
+intro: 'Miles de pinturas de dominio público del Cleveland Museum of Art, que llegan de su API de a doce, solas, cuando llegas al final de la lista. Las que más te gusten se cuelgan en <b>tu propia sala</b>, una sala en miniatura que te espera la próxima vez. Es el par de la tienda: allá la paginación era con botones, aquí es <b>scroll infinito</b>, y los datos ya no están en tu archivo sino en un servidor que puede tardar o fallar. <b>El HTML y el CSS ya están hechos</b>: tú escribes el JavaScript en 11 pasos.'
+lecciones: [navegador/fetch, asincronia/async-await, asincronia/promesas, biblioteca-estandar/url, colecciones/map-y-set, navegador/observers, navegador/dom, control-de-flujo/errores-y-excepciones, navegador/dialogos-y-popovers, navegador/canvas-y-svg, navegador/guardar-datos]
+---
+import Paso from '../../components/proyectos/Paso.astro';
+import Comprueba from '../../components/proyectos/Comprueba.astro';
+import Pistas from '../../components/proyectos/Pistas.astro';
+import Nota from '../../components/Nota.astro';
+
+## Lo nuevo de este proyecto
+
+Cada pieza tiene su lección, y cada paso la enlaza. Lo nuevo es trabajar con datos que **no están en tu archivo**: vienen de un servidor, tardan, y a veces no llegan. Dos ideas recorren todo el proyecto.
+
+### Un centinela en vez del evento scroll
+
+Para saber cuándo la persona llegó al final de la lista, la idea obvia es escuchar el evento `scroll` y calcular posiciones. Funciona, pero `scroll` se dispara decenas de veces por segundo, y cada cálculo de posición obliga al navegador a medir la página.
+
+La alternativa es poner un elemento vacío al final de la lista, un **centinela**, y pedirle al navegador que avise cuando se vea. Eso hace `IntersectionObserver` ([Observers](/navegador/observers)): el navegador ya sabe qué está en pantalla, así que avisar le cuesta casi nada.
+
+```js
+const centinela = document.querySelector("#centinela");
+
+const observador = new IntersectionObserver(([entrada]) => {
+  if (entrada.isIntersecting) console.log("llegaste al final: pide más");
+}, { rootMargin: "0px 0px 800px 0px" });
+
+observador.observe(centinela);
+```
+
+`rootMargin` agranda la zona que cuenta como «a la vista»: con 800 px abajo, el aviso llega antes de que la persona vea el final, y la tanda siguiente ya está en camino cuando llega.
+
+### fetch falla de dos maneras
+
+`fetch` solo **rechaza** la promesa cuando no hubo respuesta: sin red, o si se cortó la espera. Si el servidor responde con un error (un 404, un 500), para `fetch` eso es una respuesta normal, y la promesa **se cumple** ([fetch](/navegador/fetch)). Por eso siempre hay que mirar `respuesta.ok`:
+
+```js
+async function pedir(url) {
+  const respuesta = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!respuesta.ok) throw new Error(`El servidor respondió ${respuesta.status}`);
+  return respuesta.json();
+}
+```
+
+Con eso, los dos fallos terminan en el mismo `catch`, y la página puede decir qué pasó y ofrecer **Reintentar**. Y cuando se piden varias cosas a la vez, `Promise.allSettled` ([Promesas](/asincronia/promesas)) espera a todas, salgan bien o mal. `Promise.all`, en cambio, se rinde con el primer fallo y pierde las que sí llegaron.
+
+## Antes de empezar
+
+1. **Descarga el proyecto inicial** (el botón de arriba), descomprímelo y abre la carpeta en tu editor.
+2. **Abre `index.html` con doble clic.** Vas a ver la sala vacía y el panel «Obras del museo», todavía sin obras. Este proyecto **necesita internet**: las obras llegan de la API del museo.
+3. **Abre la consola** de las herramientas del navegador (F12). Cada paso tiene un «Cómo comprobarlo» que la usa. Cada vez que guardes `app.js`, recarga la página (F5). La pestaña **Red** (Network) también te va a servir: ahí ves cada pedido al museo.
+4. **Mira `app.js`.** Tiene un lugar para cada paso, entre `// PASO n` y `// FIN PASO n`, con un comentario que lo explica. Escribe el código de cada paso en su lugar.
+
+En todo el proyecto no hace falta tocar el HTML ni el CSS. El HTML trae:
+
+- la **sala**, un SVG con dos paredes y un piso. Tiene seis lugares (`.lugar`), cada uno con un rectángulo punteado (`.hueco`) que marca dónde va el cuadro;
+- la **lista** vacía (`#lista`), el lugar para los avisos (`#estado-carga`) y el **centinela** (`#centinela`);
+- una **plantilla** `<template>` para cada obra;
+- la **ficha**, un `<dialog>`;
+- los **íconos**, como `<symbol>` de SVG.
+
+<Nota tipo="consejo">
+La API es la del [Cleveland Museum of Art](https://openaccess-api.clevelandart.org/), abierta y sin clave. Sus títulos y descripciones vienen en inglés; el HTML ya los marca con `lang="en"` para que un lector de pantalla los pronuncie bien.
+</Nota>
+
+## El paso a paso
+
+<Paso n={1} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+Las constantes:
+
+- `API`: la dirección de las obras, `'https://openaccess-api.clevelandart.org/api/artworks/'`.
+- `CAMPOS`: los campos que vas a pedir, separados por comas. La API manda muchos más si no se lo dices.
+- `POR_TANDA`: 12. `LUGARES`: 6, los lugares de la sala.
+
+El `estado` de la lista: desde qué obra pedir la próxima tanda (`desde`, empieza en 0), el `total` de la colección (`null` hasta la primera respuesta), si hay una tanda `cargando`, si el final está a la vista (`alFinal`) y el último `error`.
+
+Busca los elementos con `querySelector`: la lista, la cuenta, el lugar de los avisos, el centinela, la plantilla, la ficha, la cuenta y el aviso de la sala. Los seis lugares, con `querySelectorAll`, en un array.
+
+Por último, un `Intl.NumberFormat('es-PE')` para escribir los números ([Intl](/biblioteca-estandar/intl)).
+
+<Comprueba>
+
+Recarga y escribe en la consola:
+
+```js
+estado              // { desde: 0, total: null, cargando: false, alFinal: false, error: null }
+lugares.length      // 6
+numero.format(3964) // "3,964"
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `[...document.querySelectorAll('.lugar')]` convierte la lista de nodos en un array de verdad.
+- Los campos que usa este proyecto son `id,accession_number,title,creation_date,creators,technique,description,images`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={2} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+`pedirTanda(desde)` trae una tanda de pinturas. Es una función `async` ([async/await](/asincronia/async-await)):
+
+1. Arma los parámetros con `URLSearchParams` ([URL](/biblioteca-estandar/url)): `type: 'Painting'`, `cc0: 1` (solo dominio público), `has_image: 1`, `limit: POR_TANDA`, `skip: desde` y `fields: CAMPOS`. `URLSearchParams` escribe cada uno bien, con sus `&` y sus caracteres especiales codificados.
+2. Pide con `fetch`, con `signal: AbortSignal.timeout(15000)` para no esperar para siempre ([AbortController](/asincronia/abortcontroller)).
+3. Si `respuesta.ok` es `false`, lanza un `Error` con el código.
+4. Lee el JSON. La respuesta trae `info.total` (cuántas hay en total) y `data` (las obras). Devuelve `{ total, datos }`.
+
+<Comprueba>
+
+En la consola (`await` funciona directo ahí):
+
+```js
+const { total, datos } = await pedirTanda(0);
+total                 // 3964 (o un número parecido: el museo agrega obras)
+datos.length          // 12
+datos[0].title        // el título de la primera
+```
+
+En la pestaña Red vas a ver el pedido, con todos sus parámetros en la dirección.
+
+</Comprueba>
+
+<Pistas>
+
+- `` `${API}?${parametros}` `` pega la dirección con los parámetros: un `URLSearchParams` se convierte solo en texto.
+- `const { info, data } = await respuesta.json();` saca las dos partes de una vez.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={3} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+Lo que manda la API tiene nombres en inglés y muchos datos anidados. `aObra(dato)` arma un objeto con **solo lo que usas**, con nombres tuyos:
+
+- `id`, `titulo`, `fecha`, `tecnica`, `inventario` (`accession_number`).
+- `autor`: el creador viene como `'Claude Monet (French, 1840–1926)'`. Para la lista basta el nombre: corta en `' ('`. Guarda también el texto completo (`autorCompleto`) para la ficha. Si no hay creador, `'Autor desconocido'`.
+- `anio`: el primer número de cuatro cifras de la fecha (`'c. 1868–73'` da `'1868'`), con una expresión regular.
+- `descripcion`: a veces trae etiquetas HTML (`<i>`); quítalas con `replace(/<[^>]+>/g, '')`.
+- `imagen`: de `images.web`, la dirección y el tamaño. La API manda el ancho y el alto **como texto**: conviértelos con `Number`. Si no hay imagen, `null`.
+
+`obras` es un `Map` ([Map y Set](/colecciones/map-y-set)) que guarda cada obra por su `id`: es la **caché**. `guardarObra(dato)` arma la obra, la guarda en el Map y la devuelve. Con eso, abrir la ficha o colgar una obra nunca vuelve a pedírsela al museo.
+
+<Comprueba>
+
+```js
+const { datos } = await pedirTanda(0);
+const obra = guardarObra(datos[0]);
+obra                       // { id, titulo, autor, anio, imagen: { url, ancho, alto }, … }
+obras.get(obra.id) === obra // true
+```
+
+</Comprueba>
+
+<Pistas>
+
+- El encadenamiento opcional evita errores con datos que faltan: `dato.creators?.[0]?.description ?? ''`.
+- `'c. 1868–73'.match(/\d{4}/)?.[0]` da `'1868'`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={4} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+`crearTarjeta(obra)` arma el `<li>` de una obra a partir de la plantilla ([DOM](/navegador/dom)):
+
+1. Copia la plantilla: `plantilla.content.firstElementChild.cloneNode(true)`.
+2. Guarda el id en `dataset.id`: los clics de los pasos 8 y 9 lo van a leer.
+3. Llena el título, el autor y el año con `textContent`. Nunca con `innerHTML`: los datos vienen de afuera, y `textContent` jamás los interpreta como HTML.
+4. Al botón de ver ponle un `aria-label`, «Ver la ficha: …», porque adentro solo tiene una imagen.
+5. La imagen: primero sus oyentes de `load` (agrega la clase `lista`, que la hace aparecer) y de `error` (la clase `rota`). Después, `width`, `height` y por último `src`.
+
+La plantilla trae `loading="lazy"`: el navegador descarga cada imagen **recién cuando se acerca a la pantalla**. Y con `width` y `height` reserva su lugar antes de que llegue, así la lista no salta mientras cargan ([Rendimiento web](/navegador/rendimiento)).
+
+<Comprueba>
+
+```js
+const { datos } = await pedirTanda(0);
+lista.append(crearTarjeta(guardarObra(datos[0])));
+```
+
+Aparece la primera obra en el panel, con su miniatura enmarcada, su título y el botón «Colgar» (que todavía no hace nada).
+
+</Comprueba>
+
+<Pistas>
+
+- Los oyentes van antes del `src`: si la imagen ya estaba en la caché del navegador, `load` puede llegar enseguida.
+- `{ once: true }` quita el oyente después de la primera vez.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={5} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+`cargarMas()` trae la tanda siguiente y la agrega a la lista:
+
+1. Si ya hay una tanda en camino o ya no quedan obras, no hace nada. Sin esa guarda, dos llamadas seguidas pedirían **la misma tanda dos veces**.
+2. Marca `estado.cargando`, pone `aria-busy` en la lista y muestra dos **esqueletos**: tarjetas vacías que avisan que algo viene. Agrégales un texto solo para lectores de pantalla, «Cargando más obras…».
+3. Pide con `pedirTanda(estado.desde)`, guarda el total, suma lo que llegó a `estado.desde` y agrega las tarjetas a la lista de una vez, con `append(...tarjetas)`.
+4. En `finally`, pase lo que pase: `cargando` vuelve a `false`, se quita `aria-busy` y se actualiza la cuenta, «24 de 3,964».
+
+El arranque, al final del archivo, llama a `cargarMas()`.
+
+<Comprueba>
+
+Recarga: llegan las primeras 12 obras, y la cuenta dice «12 de 3,964». En la consola:
+
+```js
+cargarMas(); cargarMas();   // dos llamadas seguidas…
+```
+
+…y en la pestaña Red, **un solo** pedido nuevo.
+
+</Comprueba>
+
+<Pistas>
+
+- `terminado()` es `estado.total !== null && estado.desde >= estado.total`.
+- Si una tanda llega vacía, termina ahí: guarda `estado.total = estado.desde`. Así nunca queda pidiendo para siempre.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={6} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+El scroll infinito. Crea un `IntersectionObserver` que, cuando el centinela entra en la zona visible (con `rootMargin` de 800 px abajo), guarde `estado.alFinal = true` y llame a `cargarMas()`. En el arranque, `observador.observe(centinela)`.
+
+Hay un caso fino: en una pantalla muy alta, después de agregar una tanda **el centinela sigue a la vista**. El observador no vuelve a avisar, porque solo avisa cuando algo **cambia**. Por eso, al terminar `cargarMas()`, si `estado.alFinal` sigue en `true`, pide otra.
+
+Y cuando ya no quedan obras, `mostrarFin()` desconecta el observador y muestra un aviso: «Llegaste al final». Escribe `crearAviso(titulo, texto, clase)`, que arma el aviso; lo vas a usar de nuevo en el paso 7.
+
+<Comprueba>
+
+Recarga y baja por la lista: al acercarte al final, aparecen los esqueletos y llegan 12 obras más, sin tocar nada. La cuenta sube: «24 de 3,964», «36 de 3,964»…
+
+</Comprueba>
+
+<Pistas>
+
+- La función que recibe el observador recibe un array de entradas; con un solo elemento observado, `([entrada]) => …` toma la primera.
+- `entrada.isIntersecting` dice si el centinela está en la zona.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={7} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+Si la tanda falla, la lista tiene que decirlo, y dejar reintentar ([Errores](/control-de-flujo/errores-y-excepciones)). En el `catch` de `cargarMas()`, guarda el error en `estado.error` y llama a `mostrarError(error)`:
+
+- Sin red, `fetch` rechaza con un `TypeError`; si se acabó el tiempo, con un error de nombre `TimeoutError`. En los dos casos: «No se pudo llegar al museo. Revisa tu conexión e inténtalo otra vez».
+- Si el museo respondió mal, es el `Error` que lanzaste en el paso 2: «El museo no respondió bien», con su mensaje.
+
+El aviso lleva un botón **Reintentar**, que borra `estado.error` y vuelve a llamar a `cargarMas()`, que pide la misma tanda: `estado.desde` no se movió.
+
+Mientras haya un error, `cargarMas()` no hace nada. Si no, cada movimiento del scroll volvería a pedir, y a fallar, sin que la persona lo decida.
+
+<Comprueba>
+
+Abre la pestaña Red y elige **Offline** (Sin conexión) en el menú de velocidad. Baja hasta el final: aparece el aviso en rojo con «Reintentar». Vuelve a poner la red y toca «Reintentar»: llega la tanda.
+
+</Comprueba>
+
+<Pistas>
+
+- `error instanceof TypeError` y `error.name === 'TimeoutError'` distinguen los casos.
+- La línea `if (estado.error) return;` va al principio de `cargarMas()`, junto a la otra guarda.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={8} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+La ficha, en el `<dialog>` ([Diálogos y popovers](/navegador/dialogos-y-popovers)). `abrirFicha(id)` saca la obra del Map (sin pedir nada al museo), llena la imagen grande con su `alt`, el título, el autor completo, la fecha, la técnica, el inventario, la descripción y el enlace al museo (`https://www.clevelandart.org/art/` más el inventario). Después la abre con `showModal()`.
+
+`showModal()` hace mucho solo: deja el resto de la página inerte, Escape la cierra y, al cerrarse, el foco vuelve al botón que la abrió.
+
+Para abrirla usa **delegación** ([Eventos](/navegador/eventos)): un solo oyente en la lista atiende el clic de todas las tarjetas, también de las que todavía no llegaron. Con `evento.target.closest('[data-ver]')` sabes si el clic fue en un botón de ver, y con `closest('.obra').dataset.id`, de qué obra.
+
+Para cerrar: el botón con la X llama a `ficha.close()`, y un clic en el fondo oscuro también. Ese clic llega con `evento.target === ficha`, porque fuera de la caja no hay nada más que el propio diálogo.
+
+<Comprueba>
+
+Toca una obra: se abre su ficha con la imagen grande y sus datos. Ciérrala con Escape, con la X y con un clic afuera.
+
+</Comprueba>
+
+<Pistas>
+
+- `dataset.id` es texto, y las claves del Map son números: `Number(...)` antes de `obras.get`.
+- Guarda la obra abierta en una variable (`obraEnFicha`): el paso 9 la necesita.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={9} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+La sala. `sala` es un array con los ids de las obras colgadas, en el orden de los lugares.
+
+`alternar(id)` cuelga la obra si no está, o la descuelga si ya estaba, y devuelve qué pasó: `'colgada'`, `'descolgada'` o `'llena'` si no queda lugar. Después llama a `actualizarSala(id)`, que repinta todo: la pared, la cuenta y todos los botones.
+
+`pintarBoton(boton, id)` deja cada botón en su estado: «Colgar», «En tu sala» (con su marca de listo) o «Sala llena», con `aria-disabled`. En la ficha dice la acción completa: «Colgar en mi sala» o «Descolgar de mi sala».
+
+Lo nuevo está en la pared ([Canvas y SVG](/navegador/canvas-y-svg)). Cada lugar es un `<g>` del SVG, dentro de un grupo con una **matriz** que lo inclina al plano de su pared. Para colgar, `dibujarCuadro(lugar, obra)` lee la posición y el tamaño del hueco punteado, calcula el cuadro para que la pintura entre entera sin deformarse, y agrega el hilo, la sombra, el marco, la imagen y el clavo. Como dibujas dentro del grupo inclinado, el cuadro sale inclinado solo.
+
+Los elementos SVG se crean con `document.createElementNS('http://www.w3.org/2000/svg', 'rect')`: con `createElement` saldrían como HTML y no se dibujarían.
+
+Un cuadro colgado también abre su ficha: dale `tabindex="0"`, `role="button"` y un `aria-label`, y escucha `click` y las teclas Enter y Espacio.
+
+<Comprueba>
+
+Toca «Colgar» en tres obras: aparecen en la pared, con su clavo y su hilo, y los botones dicen «En tu sala». Cuelga seis: los demás botones dicen «Sala llena». Toca un cuadro de la pared: se abre su ficha, y «Descolgar de mi sala» lo quita.
+
+</Comprueba>
+
+<Pistas>
+
+- Para que la pintura entre en el hueco sin deformarse: `escala = Math.min(anchoHueco / anchoImagen, altoHueco / altoImagen)`.
+- Antes de dibujar, borra lo que había en cada lugar, menos el hueco: `lugar.querySelectorAll(':scope > :not(.hueco)')`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={10} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+El cuadro se asienta en la pared ([Estilos y animación](/navegador/estilos-y-animacion)). `animarCuadro(cuadro)` usa `cuadro.animate()`, la Web Animations API: cae un poco desde arriba, gira hacia un lado, rebota hacia el otro y se queda quieto. El CSS ya pone el punto de giro arriba, en el clavo.
+
+Llámala desde `pintarSala`, solo para la obra recién colgada.
+
+Si la persona pidió **menos movimiento** en su sistema, no se anima: `matchMedia('(prefers-reduced-motion: reduce)').matches` lo dice.
+
+<Comprueba>
+
+Cuelga una obra: el cuadro cae y se balancea hasta quedar quieto. Las que ya estaban no se mueven.
+
+</Comprueba>
+
+<Pistas>
+
+- `animate` recibe una lista de fotogramas (`{ transform: 'translateY(-36px) rotate(-7deg)', opacity: 0 }`, …) y las opciones: `{ duration: 700, easing: 'cubic-bezier(.2, .8, .2, 1)' }`.
+- `offset: 0.5` pone un fotograma a la mitad de la animación.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={11} proyecto="06-explorador-de-arte" slug="explorador-de-arte">
+
+La sala se guarda ([Guardar datos](/navegador/guardar-datos)). En `localStorage` guarda **solo los ids**, con `JSON.stringify`: ocupan poco, y los datos de cada obra se piden frescos al museo. `actualizarSala` llama a `guardarSala()`.
+
+Al abrir la página, `restaurarSala()` lee los ids y pide cada obra con `pedirObra(id)`, que primero mira la caché y si no la tiene pide a `${API}${id}`. Las pide **todas a la vez**, con `Promise.allSettled`, que espera a que cada una termine, bien o mal ([Promesas](/asincronia/promesas)):
+
+- las que llegaron (`status: 'fulfilled'`) se cuelgan;
+- las que fallaron (`status: 'rejected'`) quedan **pendientes**: se siguen guardando, y un aviso con «Reintentar» las vuelve a pedir.
+
+Con `Promise.all`, una sola obra que no llegara dejaría la sala entera vacía.
+
+Lee con cuidado: lo que hay en `localStorage` pudo escribirlo cualquiera. Si no es un array de números enteros, empieza con la sala vacía.
+
+<Comprueba>
+
+Cuelga tres obras y recarga: «Colgando tus obras…» y vuelven a la pared. Para ver una pendiente, en la consola:
+
+```js
+localStorage.setItem("domina-js:mi-sala", JSON.stringify([999999999]));
+```
+
+Recarga: el museo responde 404 para esa obra, y aparece «No se pudo traer 1 de tus obras. Sigue guardada», con «Reintentar».
+
+</Comprueba>
+
+<Pistas>
+
+- `Promise.allSettled(ids.map(pedirObra))` da un array de resultados, en el mismo orden que los ids: `resultados[i]` es el de `ids[i]`.
+- Guarda `[...sala, ...pendientes]`, así las pendientes no se pierden.
+- `try { … } catch { … }` alrededor de `JSON.parse` y de `localStorage`: en modo privado estricto, `localStorage` puede lanzar un error.
+
+</Pistas>
+
+</Paso>
+
+## Lo que aprendiste
+
+- A pedir datos a una API con `fetch`, `URLSearchParams` y `AbortSignal.timeout`, revisando `respuesta.ok`.
+- A quedarte con lo que usas de una respuesta, y a guardarlo en una caché con `Map`.
+- Scroll infinito con un centinela e `IntersectionObserver`, en vez del evento `scroll`.
+- A mostrar cada estado de la carga: esqueletos, fin de la colección, y errores con Reintentar.
+- `<template>` y `cloneNode`, imágenes diferidas con `loading="lazy"` y su tamaño reservado.
+- Delegación de eventos y `<dialog>` con `showModal`.
+- SVG creado con `createElementNS`, dentro de grupos inclinados con una matriz.
+- Animaciones con `animate()` que respetan `prefers-reduced-motion`.
+- `Promise.allSettled` para pedir varias cosas a la vez sin perder las que sí llegaron.
+
+## Llévalo más lejos
+
+Tres ideas para seguir sin guía:
+
+- **Buscar.** La API acepta `q=` para buscar por palabra (`q=flowers`). Un campo de búsqueda que vacíe la lista y empiece de nuevo desde `skip=0`, con un `AbortController` que cancele la búsqueda anterior si escribes otra.
+- **Filtros.** Por época o por departamento, con los parámetros `created_after` y `department` de la API.
+- **Reacomodar la sala.** Mover un cuadro de un lugar a otro arrastrándolo, y guardar el orden nuevo.

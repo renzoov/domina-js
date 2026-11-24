@@ -281,6 +281,15 @@
         ],
         "createdAt": "2026-11-24T17:58:17.342Z",
         "reason": "Falso positivo: Inter Tight está declarada en el DESIGN.md propio del proyecto 4 (proyectos/04-relojes-del-mundo/DESIGN.md); el detector compara con el DESIGN.md del sitio"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "proyectos/06-explorador-de-arte/final/index.html"
+        ],
+        "createdAt": "2026-11-24T21:18:04.485Z",
+        "reason": "agent: the <img> elements are inside a <template> and a <dialog>; app.js sets their src at runtime"
       }
     ]
   }
