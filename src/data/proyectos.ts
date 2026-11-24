@@ -54,7 +54,7 @@ export const proyectos: Proyecto[] = [
     temas: ['Temporal', 'Intl', 'Arrastrar'] },
 
   // ── Intermedio ──
-  { numero: 5, slug: 'tienda-pequena', titulo: 'Tienda pequeña', nivel: 'intermedio', tamano: 'destacado',
+  { numero: 5, slug: 'tienda-pequena', titulo: 'Tienda pequeña', nivel: 'intermedio', tamano: 'destacado', publicado: true,
     resumen: 'Un catálogo con la paginación en la URL, un carrito que se sincroniza entre pestañas y un pago simulado.',
     puntos: ["10 productos por página, y el botón Atrás funciona", "El número del carrito sube sin recargar, también en otra pestaña", "Vista rápida en un popover y cantidades editables", "Un pago simulado: «Procesando…» y «¡Pago confirmado!»"],
     temas: ['Clases', 'Eventos propios', 'Popover'] },

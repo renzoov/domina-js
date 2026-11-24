@@ -1,0 +1,413 @@
+---
+slug: tienda-pequena
+carpeta: 05-tienda-pequena
+horas: 6
+intro: 'La Ferretería Don Lucho: cuarenta herramientas colgadas de un tablero, una caja que se llena sin recargar y un pago de prueba. Es el primer proyecto intermedio, y se nota en la forma: ya no es una sola función grande, sino <b>piezas que se avisan entre sí</b>. El carrito es una clase que lanza su propio evento, y todo lo demás lo escucha, también otra pestaña. <b>El HTML y el CSS ya están hechos</b>: tú escribes el JavaScript en 11 pasos.'
+lecciones: [clases/campos-privados, clases/herencia, navegador/eventos-propios, colecciones/map-y-set, biblioteca-estandar/url, navegador/navegacion, navegador/guardar-datos, navegador/dialogos-y-popovers, navegador/formularios, asincronia/async-await]
+---
+import Paso from '../../components/proyectos/Paso.astro';
+import Comprueba from '../../components/proyectos/Comprueba.astro';
+import Pistas from '../../components/proyectos/Pistas.astro';
+import Nota from '../../components/Nota.astro';
+
+## Lo nuevo de este proyecto
+
+Cada pieza que vas a usar tiene su lección, y cada paso la enlaza. Lo nuevo es cómo se arman juntas. Hay dos ideas de diseño que este proyecto usa todo el tiempo.
+
+### Una sola fuente de verdad que avisa
+
+Hay cuatro lugares que muestran lo que hay en la caja: el contador de la barra, la marca «En tu caja» de cada producto, la caja de abajo y, si está abierta, otra pestaña. La tentación es que el botón «Agregar» actualice los cuatro. Pero entonces el botón de la vista rápida también tiene que actualizar los cuatro, y los botones − y + también, y cada lugar nuevo obliga a tocar todos los botones.
+
+La salida es que **solo el carrito sepa lo que hay**, y que **avise** cada vez que cambia. Los botones le hablan al carrito; los lugares que muestran la caja escuchan su aviso. El aviso es un evento propio ([Eventos propios](/navegador/eventos-propios)): el carrito extiende `EventTarget`, así que puede lanzar eventos y recibir oyentes, como un botón.
+
+```js
+class Contador extends EventTarget {
+  #valor = 0;
+  sumar() {
+    this.#valor++;
+    this.dispatchEvent(new CustomEvent("cambio", { detail: { valor: this.#valor } }));
+  }
+}
+
+const contador = new Contador();
+contador.addEventListener("cambio", (e) => console.log("la barra ve:", e.detail.valor));
+contador.addEventListener("cambio", (e) => console.log("la caja ve:", e.detail.valor));
+
+contador.sumar();
+contador.sumar();
+```
+
+El que suma no sabe quién escucha, y los que escuchan no saben quién sumó. Por eso agregar un lugar nuevo, como otra pestaña, es agregar un oyente, sin tocar nada más.
+
+### Enlaces de verdad, mejorados con JavaScript
+
+Las secciones y los pasillos podrían ser botones. Pero un botón no se puede abrir en otra pestaña ni copiar, y si el JavaScript falla, no hace nada. Por eso son **enlaces** con su dirección: `?seccion=pinturas&pagina=2`. Al abrir la página, el código lee esa dirección.
+
+Encima de eso, JavaScript mejora el clic normal: lo cancela con `preventDefault()` para no recargar la página, cambia lo que se ve y escribe la dirección nueva con `history.pushState` ([Navegación e historial](/navegador/navegacion)). Solo hay que respetar los clics que la persona hace a propósito para abrir otra pestaña:
+
+```js
+enlace.addEventListener("click", (evento) => {
+  // Ctrl o Cmd (abrir en otra pestaña), Shift (otra ventana) o la rueda del mouse: que decida el navegador
+  if (evento.ctrlKey || evento.metaKey || evento.shiftKey || evento.button !== 0) return;
+  evento.preventDefault();
+  // …cambiar lo que se ve y escribir la dirección con history.pushState
+});
+```
+
+## Antes de empezar
+
+1. **Descarga el proyecto inicial** (el botón de arriba), descomprímelo y abre la carpeta en tu editor.
+2. **Abre `index.html` con doble clic.** Vas a ver la barra, un tablero vacío y la caja. Todo eso lo vas a llenar tú.
+3. **Abre la consola** de las herramientas del navegador (F12). Cada paso tiene un «Cómo comprobarlo» que la usa. Cada vez que guardes `app.js`, recarga la página (F5).
+4. **Mira `app.js`.** Tiene un lugar para cada paso, entre `// PASO n` y `// FIN PASO n`, con un comentario que lo explica. Escribe el código de cada paso en su lugar.
+
+En todo el proyecto no hace falta tocar el HTML ni el CSS. El HTML trae:
+
+- los **dibujos** de las herramientas, como `<symbol>` de SVG. Cada producto usa uno con `<use href="#d-martillo">`, y su color sale de la variable CSS `--c`;
+- una **plantilla** `<template>` para cada producto;
+- la **vista rápida**, un elemento con el atributo `popover`;
+- el **formulario de pago**, dentro de un `<dialog>`.
+
+El CSS ya tiene cada estado: `.balanceo`, `.cambio`, `aria-current` en los enlaces y `aria-invalid` en los campos.
+
+<Nota tipo="consejo">
+Desde el paso 8, la caja se guarda en `localStorage`. Para empezar de cero, escribe `localStorage.clear()` en la consola y recarga.
+</Nota>
+
+## El paso a paso
+
+<Paso n={1} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+Primero, los datos de la tienda:
+
+- `SECCIONES`: un objeto con la clave y el nombre de cada sección (`jardin: 'Jardín'`).
+- `PRODUCTOS`: un array con los 40 productos. Cada uno tiene `id`, `nombre`, `seccion`, `precio` (un número, en soles), `dibujo` (el nombre del `<symbol>`), `color` y una `descripcion` corta. La solución trae los 40; puedes copiarlos.
+- `POR_PAGINA`: 10.
+
+Y lo que la página está mostrando, en `estado`: la `seccion` (`'todo'` o una clave de `SECCIONES`) y la `pagina`, que en la ferretería se llama **pasillo**.
+
+Por último, busca los elementos con `querySelector`: el tablero, la plantilla, el título, el resumen y la región `data-anuncio`.
+
+<Comprueba>
+
+Recarga y escribe en la consola:
+
+```js
+PRODUCTOS.length                                   // 40
+PRODUCTOS.filter((p) => p.seccion === "jardin").length   // 10
+estado                                             // { seccion: "todo", pagina: 1 }
+```
+
+</Comprueba>
+
+<Pistas>
+
+- Los ids pueden ser `'p01'` a `'p40'`: cortos, únicos y fáciles de leer en la consola.
+- Escribe los precios como números (`24.9`), nunca como texto (`'S/ 24.90'`): con texto no se puede sumar.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={2} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+El tablero. Tres funciones calculan qué mostrar:
+
+- `productosDeLaSeccion()`: todos, o los de la sección elegida, con `filter`.
+- `totalPasillos()`: cuántas páginas hacen falta, con `Math.ceil(cantidad / POR_PAGINA)`, y nunca menos de 1.
+- `productosDelPasillo()`: el trozo de la página actual. La página 1 va del producto 0 al 9, la 2 del 10 al 19: `slice(desde, desde + POR_PAGINA)` con `desde = (pagina - 1) * POR_PAGINA`.
+
+`crearProducto(producto)` copia la plantilla y la llena: el nombre, el precio, el `href` del `<use>` (`#d-martillo`) y la variable `--c` con su color, que el dibujo usa para pintarse. Guarda también el id en `dataset.id`: lo vas a necesitar desde el paso 6.
+
+El precio se escribe con `Intl.NumberFormat` ([Intl](/biblioteca-estandar/intl)) en soles: `new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' })` da `"S/ 24.90"`.
+
+`pintarTablero()` pone los productos, el título de la sección y el resumen: «40 productos · pasillo 1 de 4». El arranque, al final del archivo, llama a `pintarTablero()`.
+
+<Comprueba>
+
+Recarga: el tablero muestra diez herramientas colgadas, cada una con su etiqueta. En la consola:
+
+```js
+estado.pagina = 4;
+pintarTablero();   // las últimas diez: del candado al aspersor
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `item.style.setProperty('--c', producto.color)` pone la variable CSS en el elemento; el `<use>` de adentro la hereda.
+- El `<use>` se cambia con `setAttribute('href', '#d-' + producto.dibujo)`.
+- Pon a cada botón una etiqueta que diga qué hace, como «Agregar Martillo de uña a la caja»: con diez botones «Agregar», un lector de pantalla no sabría cuál es cuál.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={3} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+La navegación, con lo de [Lo nuevo](#enlaces-de-verdad-mejorados-con-javascript):
+
+- `direccion(seccion, pagina)` arma la dirección con `URLSearchParams` ([URL](/biblioteca-estandar/url)). Sin sección ni página, queda solo `"?"`.
+- `pintarNavegacion()` crea los enlaces de las cinco secciones (Todo y las cuatro) y los de los pasillos. El actual lleva `aria-current="page"`: el CSS lo marca, y el lector de pantalla dice «página actual».
+- `irA(seccion, pagina)` cambia el estado y vuelve a pintar.
+
+Un oyente en cada `<nav>` atiende los clics de sus enlaces: cancela el clic normal y llama a `irA` con los datos que guardaste en el enlace.
+
+<Comprueba>
+
+Toca «Pinturas»: el tablero cambia sin recargar, y solo queda el pasillo 1. Toca «Todo» y después el pasillo 3. Ahora haz Ctrl+clic (o Cmd+clic) en «Jardín»: se abre en otra pestaña, todavía sin filtrar, porque la página aún no lee su dirección. Eso viene en el paso 4.
+
+</Comprueba>
+
+<Pistas>
+
+- Guarda la sección y la página en cada enlace con `dataset`, para leerlas en el clic sin tener que desarmar su `href`.
+- Para recorrer las secciones con «Todo» primero: `Object.entries({ todo: 'Todo', ...SECCIONES })`.
+- Al cambiar de sección, vuelve al pasillo 1: el pasillo 3 de «Todo» no existe en «Pinturas».
+
+</Pistas>
+
+</Paso>
+
+<Paso n={4} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+Ahora la dirección manda ([Navegación e historial](/navegador/navegacion)):
+
+- `leerURL()` lee `seccion` y `pagina` de `location.search` con `URLSearchParams`, y las **revisa**: la dirección la puede escribir cualquiera. Una sección que no existe es `'todo'`, y una página fuera de rango se acerca a la más cercana.
+- `escribirURL()` guarda la dirección nueva con `history.pushState`, sin recargar. Se llama al final de `irA`.
+- El evento `popstate` llega cuando la persona usa **Atrás** o **Adelante**: ahí se vuelve a leer la URL y se pinta.
+
+El arranque lee la URL antes de pintar.
+
+<Comprueba>
+
+Toca «Herramientas» y después el pasillo 2: la dirección termina en `?seccion=herramientas&pagina=2`. Pulsa Atrás: vuelves al pasillo 1. Recarga: sigues donde estabas. Prueba también una dirección rota, como `?seccion=nada&pagina=99`: abre «Todo», en el último pasillo.
+
+</Comprueba>
+
+<Pistas>
+
+- Para saber si una sección existe usa `Object.hasOwn(SECCIONES, seccion)`, no `seccion in SECCIONES`: `'toString' in SECCIONES` da `true`.
+- `Number(null)` es `0` y `Number('abc')` es `NaN`: revisa con `Number.isInteger(pagina) && pagina >= 1`.
+- No guardes una entrada repetida: si la dirección nueva es igual a la actual, no llames a `pushState`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={5} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+El carrito, la fuente de verdad de [Lo nuevo](#una-sola-fuente-de-verdad-que-avisa). Es una clase que **extiende `EventTarget`** ([Herencia](/clases/herencia)) y guarda lo elegido en un `Map` de id a cantidad ([Map y Set](/colecciones/map-y-set)). Ese `Map` es un **campo privado**, `#items` ([Campos públicos y privados](/clases/campos-privados)): desde afuera nadie puede cambiarlo sin pasar por los métodos, y por eso nadie puede olvidarse de avisar.
+
+- `cantidadDe(id)`, `cambiar(id, cantidad)` (con 0 o menos, lo quita), `agregar(id, cuantos)`, `vaciar()` y `reemplazar(pares)`.
+- Tres **getters**, que se leen como propiedades, sin paréntesis: `cantidad`, `total` e `items`.
+- `toJSON()`, que `JSON.stringify` usa solo: devuelve los pares `[id, cantidad]`.
+- Un método privado, `#avisar()`, que lanza el evento `cambio`. Todos los métodos que cambian algo lo llaman al final.
+
+Para encontrar un producto por su id sin recorrer el array, arma antes un `Map` con todos: `porId`.
+
+<Comprueba>
+
+En la consola:
+
+```js
+const prueba = new Carrito();
+prueba.addEventListener("cambio", (e) => console.log("cambió:", e.detail.cantidad));
+prueba.agregar("p01");
+prueba.agregar("p05", 3);
+prueba.total             // 68.4
+JSON.stringify(prueba)   // '[["p01",1],["p05",3]]'
+Object.keys(prueba)      // []: #items no es una propiedad que se pueda usar desde afuera
+```
+
+La consola de Chrome sí te deja mirar `prueba.#items`, para depurar; tu código, no.
+
+</Comprueba>
+
+<Pistas>
+
+- Una clase que extiende otra tiene que llamar a `super()` si escribe su propio `constructor`. Si no escribe ninguno, lo hace sola.
+- Al sumar precios con decimales pueden quedar restos como `68.40000000001`: redondea el total con `Math.round(suma * 100) / 100`.
+- `[...mapa]` da los pares `[clave, valor]` de un `Map`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={6} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+Ahora la tienda usa el carrito:
+
+- Un oyente en el tablero atiende los botones «Agregar» de todos los productos, con `closest()`. Llama a `carrito.agregar(id)` y escribe en la región `aria-live` qué pasó.
+- Un oyente del evento `cambio` del carrito pinta el contador de la barra y la marca «En tu caja: 2» de cada producto.
+
+Fíjate en que el botón **no** pinta el contador: solo le habla al carrito. Lo pinta el oyente.
+
+Dos movimientos: el producto se balancea en su gancho (clase `balanceo`) y el número del contador salta (clase `cambio`). Para que una animación de CSS corra otra vez, quita la clase, fuerza al navegador a mirar el elemento con `void elemento.offsetWidth` y ponla de nuevo. El contador queda marcado en naranja hasta que lo miras: al pasar el mouse o darle el foco, se quita la clase.
+
+El arranque pinta el contador.
+
+<Comprueba>
+
+Toca «Agregar» en el martillo: se balancea, el contador pasa a 1 y aparece «En tu caja: 1». Agrégalo otra vez: «En tu caja: 2». En la consola, `carrito.vaciar()`: el contador vuelve a 0 y las marcas desaparecen, aunque no tocaste ningún botón.
+
+</Comprueba>
+
+<Pistas>
+
+- `pintarEnCaja()` recorre los productos del tablero y usa `carrito.cantidadDe(item.dataset.id)`.
+- Llama a `pintarEnCaja()` también al final de `pintarTablero()`: al cambiar de pasillo, las marcas tienen que estar.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={7} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+La caja de abajo: un oyente más del mismo evento `cambio`. `pintarCaja()` crea una fila por producto, con su dibujo, su nombre, los botones − y + con la cantidad en medio, y su subtotal. También escribe el total y activa el botón «Pagar» solo si hay algo.
+
+Los botones − y + se atienden con un solo oyente en la lista. Cuando un producto llega a 0, `cambiar` lo quita del carrito.
+
+Un detalle de accesibilidad: como la caja se vuelve a pintar entera, el botón que tocaste desaparece y el foco se pierde. Después de cada cambio, busca el mismo botón en la caja nueva y devuélvele el foco. Si el producto ya no está, el foco pasa al título de la caja.
+
+<Comprueba>
+
+Agrega dos productos y usa + y − en la caja. Con el teclado, pulsa Tab hasta un + y luego Enter varias veces: el foco no se mueve del botón. Baja a 0: el producto sale de la caja y, si no queda nada, aparece «Todavía está vacía» y «Pagar» se apaga.
+
+</Comprueba>
+
+<Pistas>
+
+- Guarda en cada botón el id y la acción: `data-id="p01" data-accion="mas"`.
+- Para encontrarlo después: ``listaCaja.querySelector(`[data-id="${id}"][data-accion="${accion}"]`)``.
+- El botón − de un producto con 1 unidad quita el producto: su etiqueta tiene que decirlo, «Quitar Martillo de uña».
+
+</Pistas>
+
+</Paso>
+
+<Paso n={8} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+Guardar la caja y compartirla ([Guardar datos](/navegador/guardar-datos)):
+
+- Otro oyente de `cambio` guarda el carrito en `localStorage` con `JSON.stringify(carrito)`, que usa el `toJSON` del paso 5.
+- `leerGuardado(texto)` lo recupera con `JSON.parse` y se queda solo con los pares válidos: un id que existe y una cantidad entera mayor que 0.
+- El evento **`storage`** llega a las **otras** pestañas de la misma página cuando una guarda algo. Ahí se lee el valor nuevo y se pasa a `carrito.reemplazar(…)`: el carrito avisa su cambio y todo se vuelve a pintar solo.
+
+El arranque carga la caja guardada.
+
+<Comprueba>
+
+Abre la tienda en dos pestañas, una al lado de la otra. Agrega algo en una: el contador de la otra sube y queda marcado en naranja. Recarga cualquiera de las dos: la caja sigue llena.
+
+</Comprueba>
+
+<Pistas>
+
+- El evento `storage` no llega a la pestaña que guardó, solo a las demás. Por eso no hay un bucle infinito.
+- Revisa `evento.key`: otras partes de la página podrían guardar otras cosas.
+- Envuelve el `JSON.parse` en `try`/`catch`: lo guardado se puede romper.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={9} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+La vista rápida ([Diálogos y popovers](/navegador/dialogos-y-popovers)). Es un elemento con el atributo `popover`: aparece por encima de todo con `showPopover()`, y se cierra solo con Escape o tocando afuera, sin escribir nada.
+
+- Al tocar el dibujo de un producto, `abrirVista(id)` llena el popover (dibujo, nombre, descripción y precio), guarda el id en `vista.dataset.id` y lo abre. El foco va al botón «Agregar a la caja».
+- Ese botón agrega, cierra el popover con `hidePopover()`, hace balancear el producto y devuelve el foco a su dibujo, para seguir desde donde estaba.
+
+<Comprueba>
+
+Toca el dibujo del taladro: aparece la vista rápida con su descripción. Pulsa Escape: se cierra. Ábrela otra vez y toca «Agregar a la caja»: se cierra, el taladro se balancea y el contador sube.
+
+</Comprueba>
+
+<Pistas>
+
+- El botón «Cerrar» no necesita JavaScript: en el HTML tiene `popovertarget="vista"` y `popovertargetaction="hide"`.
+- `vista.matches(':popover-open')` dice si está abierta.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={10} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+El formulario de pago, dentro de un `<dialog>` que se abre con `showModal()`. Tiene `novalidate`: el navegador no muestra sus globos de error, pero **sigue revisando** cada campo con lo que dice el HTML (`required`, `type="email"`, `pattern`, `minlength`). Tú lees el resultado ([Formularios](/navegador/formularios)):
+
+- `mensajeDe(campo)` mira `campo.validity` (`valueMissing`, `typeMismatch`, `patternMismatch`…) y devuelve un mensaje en español **que diga cómo arreglarlo**: no «Formato inválido», sino «Escribe el mes y el año así: 08/27».
+- `revisarVencimiento(campo)`: un vencimiento como `01/20` tiene buena forma pero está en el pasado. Eso lo revisa JavaScript, y lo marca con `setCustomValidity('La tarjeta está vencida.')`.
+- `validarCampo(campo)` escribe el mensaje debajo del campo y pone `aria-invalid`.
+
+Al enviar, se validan todos. Si alguno falla, el foco va al primero con error. Cada campo se revisa al salir de él, y mientras escribes, el error se borra apenas el campo queda bien.
+
+Dos ayudas mientras escribes: la tarjeta se separa de a cuatro cifras (`4111 1111 1111 1111`) y el vencimiento pone su barra solo.
+
+<Comprueba>
+
+Agrega algo, toca «Pagar» y luego «Pagar» en el formulario sin llenar nada: cada campo dice «Falta completar este campo». Escribe `lucia` en el correo y sal del campo: te pide un correo completo. Escribe `0120` en el vencimiento: «La tarjeta está vencida».
+
+</Comprueba>
+
+<Pistas>
+
+- `campo.checkValidity()` devuelve `true` o `false` según todas las reglas, incluida la de `setCustomValidity`. Con `''` quitas el error propio.
+- Para separar la tarjeta: quita todo lo que no sea cifra con `replace(/\D/g, '')` y agrega un espacio después de cada grupo de cuatro con `replace(/(\d{4})(?=\d)/g, '$1 ')`.
+- Los campos de un formulario se alcanzan por su nombre: `formulario.tarjeta`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={11} proyecto="05-tienda-pequena" slug="tienda-pequena">
+
+Pagar ([async/await](/asincronia/async-await)). El pago es de prueba: `procesarPago(datos)` devuelve una **promesa** que, a los 1,5 segundos, se cumple con un número de pedido, o se rechaza con un error si la tarjeta termina en `0000`.
+
+`pagar()` es una función `async`:
+
+1. Marca el formulario como ocupado: `aria-busy`, los botones desactivados, los campos de solo lectura y «Procesando…» en el botón.
+2. Espera con `await procesarPago(datos)`. La página no se congela mientras espera.
+3. Si sale bien: vacía el carrito, muestra «¡Pago confirmado!» con el pedido, la cantidad y el total, y lleva el foco al título. Como es de prueba, no promete nada que no pase: dice adónde iría la boleta, y que no se envió.
+4. Si sale mal (`catch`): el problema es de la tarjeta, así que el error va **en su campo**, como los demás, con `aria-invalid`; el estado del pago, que es una región `role="status"`, dice «No se pudo pagar», y el foco vuelve a la tarjeta.
+5. Pase lo que pase (`finally`): devuelve el formulario a la normalidad.
+
+Mientras procesa, Escape no debe cerrar el diálogo: cancela su evento `cancel`.
+
+<Comprueba>
+
+Paga con la tarjeta `4111 1111 1111 0000`: «Procesando…» y, después, «La tarjeta fue rechazada» debajo del campo de la tarjeta. Cámbiala por `4111 1111 1111 1111` y paga: «¡Pago confirmado!», y el contador de la barra vuelve a 0.
+
+</Comprueba>
+
+<Pistas>
+
+- Una promesa que espera: `new Promise((cumplir, rechazar) => setTimeout(() => cumplir(valor), 1500))`.
+- `Object.fromEntries(new FormData(formulario))` da un objeto con los campos: `{ nombre, correo, tarjeta… }`.
+- Guarda el total **antes** de vaciar el carrito: después ya es 0.
+
+</Pistas>
+
+</Paso>
+
+## Lo que aprendiste
+
+- A diseñar con **una sola fuente de verdad** que avisa con un evento propio, y vistas que escuchan.
+- Clases que extienden `EventTarget`, con campos y métodos privados, getters y `toJSON`.
+- Paginación con `slice`, y la sección y la página en la dirección, con `URLSearchParams`, `history.pushState` y `popstate`.
+- Enlaces de verdad mejorados con JavaScript, que respetan Ctrl+clic.
+- A sincronizar pestañas con `localStorage` y el evento `storage`.
+- La Popover API y `<dialog>`, cada uno para lo suyo.
+- A validar formularios con la validación del navegador y mensajes propios que dicen cómo arreglar cada error.
+- A esperar una tarea larga con `async`, `await`, `try`, `catch` y `finally`, mostrando cada estado.
+
+## Llévalo más lejos
+
+Tres ideas para seguir sin guía:
+
+- **Buscar.** Un campo que filtre los productos por nombre, sin importar las tildes, y que también vaya en la dirección: `?buscar=brocha`.
+- **Cupón.** Un campo opcional en el pago: «DONLUCHO10» descuenta el 10 %. Valídalo con `setCustomValidity`.
+- **Mis pedidos.** Guarda cada pedido confirmado, con la fecha y el total, y muéstralos en un `<dialog>` con `Intl.DateTimeFormat`.
