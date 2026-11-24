@@ -159,7 +159,7 @@ Bloques de trabajo y descanso que no se atrasan aunque la pestaña esté oculta.
 Temas: timers y por qué `setInterval` se atrasa, el event loop, Page Visibility, notificaciones, Wake Lock, vibración, un pitido con Web Audio, `document.title` y guardar datos.
 
 **3. Reto de mecanografía** · *mejorado*
-Escribir un texto contra reloj; cuenta bien los acentos, la ñ y los emojis.
+Escribir un texto contra reloj; cuenta bien los acentos, la ñ, la ü y los signos de apertura (¿ ¡), aunque lleguen escritos de dos formas distintas en Unicode.
 Temas: texto y Unicode (`Intl.Segmenter`), expresiones regulares, eventos de teclado, `performance.now()` para las palabras por minuto, un gráfico SVG del resultado y récords guardados.
 
 **4. Relojes del mundo** · *mejorado*

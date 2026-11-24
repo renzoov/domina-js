@@ -1,0 +1,448 @@
+---
+slug: mecanografia
+carpeta: 03-mecanografia
+horas: 3
+intro: 'Un reto para escribir rápido y bien: un texto en español contra reloj, que se enciende letra por letra en un cartel de neón. Lo difícil está escondido en las letras: <b>una «é» puede llegar como un carácter o como dos</b>, y con una tecla muerta son dos pulsaciones para una sola letra. Este reto las cuenta bien, mide tus palabras por minuto, dibuja tu ritmo y guarda tus récords. <b>El HTML y el CSS ya están hechos</b>: tú escribes el JavaScript en 11 pasos.'
+lecciones: [biblioteca-estandar/unicode, biblioteca-estandar/expresiones-regulares, navegador/eventos, asincronia/microtareas, colecciones/map-y-set, navegador/canvas-y-svg, navegador/guardar-datos, navegador/dialogos-y-popovers]
+---
+import Paso from '../../components/proyectos/Paso.astro';
+import Comprueba from '../../components/proyectos/Comprueba.astro';
+import Pistas from '../../components/proyectos/Pistas.astro';
+import Nota from '../../components/Nota.astro';
+
+## Lo nuevo de este proyecto
+
+Casi todo lo que vas a usar ya lo viste en las lecciones, y cada paso enlaza a la suya. Lo de partir el texto en letras de verdad, con `normalize` e `Intl.Segmenter`, está en [Unicode](/biblioteca-estandar/unicode). Hay dos ideas que el curso todavía no cuenta, y conviene verlas antes de programar.
+
+### Escuchar lo escrito, no las teclas
+
+Para saber qué escribió la persona, lo primero que se le ocurre a cualquiera es escuchar `keydown` y mirar `e.key`. Con letras sueltas funciona. Pero en un teclado en español, la «é» se escribe con **dos teclas**: primero la tilde, que no escribe nada (es una *tecla muerta*), y después la «e». Y en algunos sistemas, mientras tanto, el campo muestra una tilde provisional que todavía no es texto.
+
+Este ejemplo hace lo mismo que el navegador cuando escribes «é» con una tecla muerta: dos `keydown` y, al final, un solo `input` con la letra ya armada.
+
+```js
+document.body.innerHTML = `<input id="campo">`;
+const campo = document.querySelector("#campo");
+
+campo.addEventListener("keydown", (e) => console.log("keydown:", e.key));
+campo.addEventListener("input", () => console.log("input:", campo.value));
+
+// Lo que llega al escribir «é» con la tecla muerta de la tilde
+campo.dispatchEvent(new KeyboardEvent("keydown", { key: "Dead" }));
+campo.dispatchEvent(new KeyboardEvent("keydown", { key: "e" }));
+campo.value = "é";
+campo.dispatchEvent(new InputEvent("input", { data: "é" }));
+```
+
+`keydown` ve `"Dead"` y `"e"`, y ninguna de las dos es la letra. `input` ve `"é"`. Por eso el reto no escucha las teclas: escucha el **valor del campo**, con el evento `input`.
+
+Falta un detalle. Cuando la letra se arma en varios pasos, el navegador avisa con eventos de **composición**: `compositionstart` al empezar, `compositionend` al terminar, y mientras dura, cada `input` trae `isComposing: true`. Un `input` a medio componer se ignora, y se lee cuando llega `compositionend`:
+
+```js
+campo.addEventListener("input", (e) => {
+  if (e.isComposing) return;   // la letra todavía se está armando
+  leer();
+});
+campo.addEventListener("compositionend", leer);
+```
+
+### Medir con performance.now()
+
+En el proyecto 2 el tiempo se medía con `Date.now()`, la hora del reloj del sistema. Para medir **cuánto tardas** hay algo mejor: `performance.now()`. Cuenta los milisegundos desde que se abrió la página, con decimales, y nunca va hacia atrás, aunque alguien cambie la hora del sistema a mitad del reto.
+
+```js
+const antes = performance.now();
+let suma = 0;
+for (let i = 0; i < 1_000_000; i++) suma += i;
+const despues = performance.now();
+
+console.log("tardó", (despues - antes).toFixed(2), "ms");
+console.log("Date.now():", Date.now());
+console.log("desde el comienzo:", Math.round(performance.now()), "ms");
+```
+
+Y para mostrar el reloj, en vez de un `setInterval` vas a usar `requestAnimationFrame` ([Microtareas y macrotareas](/asincronia/microtareas)): llama a tu función justo antes de cada cuadro, unas 60 veces por segundo, y le pasa la hora del cuadro **en la misma escala que `performance.now()`**. Así, restar la hora del cuadro menos la hora de la primera letra da el tiempo que pasó.
+
+## Antes de empezar
+
+1. **Descarga el proyecto inicial** (el botón de arriba), descomprímelo y abre la carpeta en tu editor.
+2. **Abre `index.html` con doble clic.** Vas a ver el cartel de neón vacío, las cifras en las esquinas y las pastillas de duración. Nada funciona todavía: eso es lo que vas a programar.
+3. **Abre la consola** de las herramientas del navegador (F12). En cada paso hay un «Cómo comprobarlo» que la usa. Cada vez que guardes `app.js`, recarga la página (F5).
+4. **Mira `app.js`.** Tiene un lugar para cada paso, entre `// PASO n` y `// FIN PASO n`, con un comentario que lo explica. Escribe el código de cada paso en su lugar.
+
+En todo el proyecto no hace falta tocar el HTML ni el CSS. El HTML tiene atributos `data-*` (`data-texto`, `data-entrada`, `data-quedan`…) para que el JavaScript encuentre cada elemento, y el CSS ya tiene los estilos de cada estado: `.ok` para la letra bien escrita, `.err` para el error, `.cursor` para la siguiente, y `data-fase` en el cartel. Tú solo los usas.
+
+<Nota tipo="consejo">
+Para probar el final no hace falta esperar un minuto. Desde el paso 4, empieza a escribir y pon en la consola `estado.inicio -= 55000`: es como si hubieran pasado 55 segundos, y el reto termina a los 5.
+</Nota>
+
+## El paso a paso
+
+<Paso n={1} proyecto="03-mecanografia" slug="mecanografia">
+
+Primero, los **textos**: un array `TEXTOS` con frases en español que tengan de todo, como tildes, ñ, ü, mayúsculas, comas, puntos y signos de apertura (¿ y ¡). Solo letras y signos de puntuación. La solución trae 27; puedes usar esas o escribir las tuyas.
+
+Después, lo que el reto tiene que **recordar**, en un objeto `estado`:
+
+- `duracion`: cuántos segundos dura, 60 al empezar.
+- `fase`: `'listo'` (esperando la primera letra), `'escribiendo'` o `'terminado'`.
+- `objetivo` y `escrito`: el texto que hay que escribir y lo que lleva escrito, **letra por letra**, como arrays.
+- `inicio`: el momento de la primera letra.
+- `aciertos` y `errores`: cuántas letras escribió bien y mal, contando también las que después borró.
+
+Como en los proyectos anteriores, **la página nunca es la fuente de la verdad**: cambias el `estado` y vuelves a pintar.
+
+Por último, busca los elementos con `querySelector` ([El DOM](/navegador/dom)): el campo de texto, el cartel, el párrafo del texto, las cifras de las esquinas y los radios de duración.
+
+<Comprueba>
+
+Recarga y escribe en la consola:
+
+```js
+TEXTOS.length          // 27, o las que hayas escrito
+estado.fase            // "listo"
+radiosDuracion.length  // 3
+```
+
+</Comprueba>
+
+<Pistas>
+
+- El campo de texto es un `<input>` invisible que está encima del cartel: búscalo con `'[data-entrada]'`.
+- Los radios se buscan con `'input[name="duracion"]'`. Conviértelos en array con `[...lista]`.
+- Hay un párrafo escondido, `data-texto-leible`, para los lectores de pantalla: lo vas a llenar en el paso 2.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={2} proyecto="03-mecanografia" slug="mecanografia">
+
+Ahora, el texto en el cartel. Tres funciones:
+
+- `grafemas(cadena)`: normaliza con `normalize('NFC')` y parte la cadena en grafemas con `Intl.Segmenter` ([Unicode](/biblioteca-estandar/unicode)). Devuelve un array de letras de verdad: una «ñ» que llegó en dos partes es un solo elemento.
+- `textoAlAzar()`: mezcla las frases al azar y las une con un espacio. Para mezclar, usa el algoritmo de **Fisher-Yates**: recorre el array de atrás hacia adelante y cambia cada elemento por uno al azar de los que quedan antes.
+- `pintarTexto()`: crea un `<span>` por letra dentro del párrafo del texto, y los guarda en el array `letras` para encontrarlos rápido después.
+
+Si cada letra es un `<span>` suelto, el navegador puede partir una palabra al final del renglón. Para evitarlo, **agrupa las letras de cada palabra** en otro `<span class="palabra">`, que el CSS no deja partir, y deja los espacios afuera: ahí sí puede saltar de línea.
+
+Al final del archivo va el **arranque**: elige un texto al azar y píntalo.
+
+<Comprueba>
+
+Recarga: el cartel muestra un texto distinto cada vez. Y en la consola:
+
+```js
+"cigüeña".length          // 9: la ü y la ñ vienen en dos partes
+grafemas("cigüeña").length // 7: cigüeña tiene 7 letras
+letras.length === estado.objetivo.length // true
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `[...segmentador.segment(texto)]` da objetos con la propiedad `segment`: pásalos por `map`.
+- Para cambiar dos elementos de lugar: `[a[i], a[j]] = [a[j], a[i]]` ([Desestructuración](/objetos/desestructuracion-y-spread)).
+- Empieza un `<span class="palabra">` nuevo en la primera letra después de un espacio. Los espacios llevan la clase `espacio`, para que el CSS pueda marcar un espacio mal escrito.
+- `replaceChildren()` sin argumentos vacía el párrafo antes de volver a llenarlo.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={3} proyecto="03-mecanografia" slug="mecanografia">
+
+A escribir. Con lo de [Lo nuevo](#escuchar-lo-escrito-no-las-teclas), el reto escucha el evento `input` del campo y, cuando llega, llama a `leer()`:
+
+1. Parte el valor del campo en grafemas, sin pasar del largo del texto.
+2. Busca **desde dónde cambió**: compara letra por letra con lo que había antes, hasta encontrar la primera distinta. Lo anterior a eso quedó igual.
+3. Guarda lo nuevo en `estado.escrito` y pinta las letras desde ese punto.
+
+Si la fase es `'terminado'`, `leer()` no hace nada: el tiempo se acabó.
+
+`pintarLetras(desde, hasta)` le pone a cada `<span>` la clase `ok` si la letra escrita coincide, `err` si no, y `cursor` a la siguiente por escribir.
+
+Tres detalles más:
+
+- Ignora los `input` con `isComposing` y lee en `compositionend`.
+- **Pegar no vale**: cancela los eventos `paste` y `drop` con `preventDefault()`.
+- Un clic en cualquier parte del cartel le da el foco al campo. Y al abrir la página, el foco ya está ahí: agrégalo al arranque.
+
+<Comprueba>
+
+Recarga y escribe: cada letra bien escrita se enciende en amarillo, y un error queda en rojo, mostrando la letra que iba. Borra con la tecla de retroceso: la letra se apaga y el cursor vuelve. Escribe una «é» con la tecla de la tilde y luego la «e»: cuenta como una letra.
+
+</Comprueba>
+
+<Pistas>
+
+- Para encontrar desde dónde cambió: `while (desde < antes.length && desde < nuevo.length && antes[desde] === nuevo[desde]) desde++;`
+- `classList.toggle('ok', condicion)` agrega la clase si la condición es verdadera y la quita si es falsa.
+- Pinta hasta una letra más allá de la última que cambió: ahí estaba el cursor y hay que quitárselo.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={4} proyecto="03-mecanografia" slug="mecanografia">
+
+El reloj, con lo de [Lo nuevo](#medir-con-performancenow):
+
+- `empezar()` pasa a la fase `'escribiendo'`, guarda `performance.now()` en `estado.inicio` y pide el primer cuadro con `requestAnimationFrame(tic)`.
+- `tic(ahora)` calcula cuánto pasó, escribe lo que queda en la esquina y, si se acabó el tiempo, llama a `terminar()`. Si no, pide otro cuadro.
+- `terminar()` pasa a `'terminado'` y le quita el foco al campo.
+- `reiniciar(textoNuevo)` vuelve todo a cero, con el mismo texto o con uno nuevo.
+
+El reloj arranca con **la primera letra**, no al abrir la página: en `leer()`, si la fase es `'listo'` y ya hay algo escrito, llama a `empezar()`.
+
+También conecta los radios de duración: al cambiar, guardan los segundos en `estado.duracion` y reinician con el mismo texto. El arranque escribe la duración en la esquina.
+
+<Comprueba>
+
+Escribe la primera letra: la esquina de «Quedan» empieza a bajar. Después pon `estado.inicio -= 55000` en la consola: a los 5 segundos llega a `0:00` y ya no puedes escribir. Elige 30 s abajo: el reloj vuelve a `0:30` y el texto se vacía.
+
+</Comprueba>
+
+<Pistas>
+
+- `formatear(segundos)` es casi la del Pomodoro: redondea hacia arriba con `Math.ceil` y rellena con `padStart(2, '0')`.
+- Lo que pasó es `ahora - estado.inicio`, en milisegundos. Lo que queda, en segundos: `estado.duracion - pasado / 1000`.
+- `tic` revisa la fase al empezar: si ya no es `'escribiendo'`, no pide otro cuadro, y el reloj se detiene solo.
+- En `reiniciar`, vacía también `entrada.value`. Si no, la próxima letra se sumaría a lo que había.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={5} proyecto="03-mecanografia" slug="mecanografia">
+
+Las dos cifras que importan:
+
+- **Palabras por minuto (ppm).** En mecanografía, una «palabra» mide **5 letras**, contando espacios y signos. Así, un texto con palabras largas no sale más lento que uno con palabras cortas. Las ppm son las letras que están bien ahora mismo, entre 5, por minuto.
+- **Precisión.** De todas las letras que escribiste, qué parte estaba bien. Cuenta también las que borraste: un error corregido sigue siendo un error.
+
+`contar(indice, letra)` suma un acierto o un error. `leer()` la llama por cada letra nueva, desde el punto donde cambió el texto. Después vienen `letrasBien()`, `ppm(pasado)`, `precision()` y `pintarCifras()`, que escribe las dos cifras en sus esquinas. La precisión se escribe con `Intl.NumberFormat` ([Intl](/biblioteca-estandar/intl)), que en español da «96 %».
+
+`pintarCifras()` va al final de `leer()`, en cada `tic` y en `reiniciar()`. La solución marca esas líneas.
+
+<Comprueba>
+
+Escribe unas palabras: las ppm suben. Equivócate a propósito y corrige: la precisión baja y no vuelve a 100 %. En la consola:
+
+```js
+estado.aciertos   // las letras bien escritas
+estado.errores    // las mal escritas, aunque las hayas borrado
+ppm(60000)        // tus ppm si hubiera pasado un minuto
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `letrasBien()` es un `filter` que compara cada letra escrita con la del objetivo en el mismo índice ([Arrays](/colecciones/arrays)).
+- Durante el primer segundo, cuenta como un segundo entero con `Math.max(pasado, 1000)`: si no, una letra a los 0,1 s daría 120 ppm.
+- Sin ninguna letra escrita, la precisión es 1 (100 %), no una división por cero.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={6} proyecto="03-mecanografia" slug="mecanografia">
+
+El cartel muestra tres renglones, pero el texto es mucho más largo. Cuando escribes el tercero, todo el texto tiene que **subir un renglón**, para que el que escribes quede siempre en el medio.
+
+`seguirCursor()` busca el `<span>` del cursor y mira su `offsetTop`: a qué altura está dentro del párrafo. Dividido por el alto de un renglón, da en qué renglón está. Si es el tercero o más, mueve el párrafo hacia arriba con `transform: translateY(...)`. El CSS ya tiene la transición, así que sube suave.
+
+Llama a `seguirCursor()` al final de `leer()`, en `reiniciar()` y cuando cambia el tamaño de la ventana (evento `resize`), porque las palabras se acomodan distinto.
+
+<Comprueba>
+
+Escribe hasta pasar el segundo renglón: el texto sube y el renglón que escribes queda en el medio. Achica la ventana: el texto se reacomoda y el cursor sigue a la vista.
+
+</Comprueba>
+
+<Pistas>
+
+- El alto del renglón sale del CSS: `parseFloat(getComputedStyle(texto).lineHeight)`.
+- Si el cursor está en el renglón `r`, el párrafo sube `r - 1` renglones, y nunca menos de cero: `Math.max(0, r - 1)`.
+- `offsetTop` se mide desde el párrafo porque tiene `position: relative` en el CSS. El `transform` no cambia `offsetTop`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={7} proyecto="03-mecanografia" slug="mecanografia">
+
+El teclado ([Eventos](/navegador/eventos)):
+
+- **Esc** empieza de nuevo con el mismo texto, en cualquier momento.
+- **Enter**, al terminar, trae un texto nuevo. Pero si el foco está en un botón, Enter pulsa ese botón, como siempre.
+- **Las flechas** no mueven el cursor del campo: se escribe siempre al final.
+- **Bloq Mayús**: `evento.getModifierState('CapsLock')` dice si está activado. Muestra u oculta el aviso en cada `keydown` y `keyup`.
+- **Una letra fuera del cartel**: si pulsas una letra con el foco en otro lado, como en una pastilla de duración, el foco salta al campo y la letra se escribe ahí. Si cambias el foco durante el `keydown`, la letra llega al elemento nuevo.
+
+Con un diálogo abierto, los atajos no hacen nada.
+
+<Comprueba>
+
+Escribe unas letras y pulsa Esc: el texto se vacía. Activa Bloq Mayús: aparece el aviso en rojo bajo el cartel. Haz clic en «30 s» y escribe una letra: se escribe en el cartel.
+
+</Comprueba>
+
+<Pistas>
+
+- Una letra es una tecla con `evento.key.length === 1`, sin Ctrl, Alt ni Cmd. Deja fuera el espacio, que en un botón o un radio tiene su propio trabajo.
+- Para saber si hay un diálogo abierto: `document.querySelector('dialog[open]')`.
+- Las flechas se frenan en el `keydown` del campo, con `preventDefault()`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={8} proyecto="03-mecanografia" slug="mecanografia">
+
+No todos los errores son iguales. Escribir «e» en lugar de «é» es olvidar la tilde, no equivocarse de tecla. Para saberlo, separa cada letra de sus marcas con `normalize('NFD')`: la «é» queda como «e» más la tilde suelta. Después borra las marcas con una **expresión regular** ([Expresiones regulares](/biblioteca-estandar/expresiones-regulares)):
+
+```js
+const sinMarcas = (letra) => letra.normalize("NFD").replace(/\p{M}/gu, "");
+
+console.log(sinMarcas("é"), sinMarcas("ñ"), sinMarcas("ü"), sinMarcas("Á"));
+console.log(sinMarcas("e") === sinMarcas("é"));   // mismo error de tilde
+```
+
+`\p{M}` es la clase de Unicode de las **marcas**: tildes, la virgulilla de la ñ y la diéresis. Necesita la bandera `u`.
+
+Con eso, `tipoDeError(escrita, esperada)` devuelve:
+
+- `'tilde'` si sin marcas son iguales;
+- `'mayuscula'` si solo cambia la mayúscula;
+- `'apertura'` si faltó un ¿ o un ¡;
+- `'otra'` para todo lo demás.
+
+`anotarError()` suma el tipo en `estado.tipos` y cuenta cada letra fallada en un `Map` ([Map y Set](/colecciones/map-y-set)), `estado.fallos`. `masFalladas()` devuelve las tres que más fallaste.
+
+<Comprueba>
+
+En la consola:
+
+```js
+tipoDeError("n", "ñ")   // "tilde"
+tipoDeError("a", "A")   // "mayuscula"
+```
+
+Después escribe mal la primera letra, bórrala y vuelve a escribirla mal: `estado.fallos` dice que esa letra se falló 2 veces.
+
+</Comprueba>
+
+<Pistas>
+
+- `estado.tipos` y `estado.fallos` empiezan en `estado`, y `reiniciar()` los vuelve a cero. La solución marca esas líneas.
+- `(mapa.get(letra) ?? 0) + 1` suma uno, aunque la letra todavía no esté en el `Map`.
+- `[...mapa]` da pares `[letra, veces]`: ordénalos con `sort((a, b) => b[1] - a[1])` y quédate con las tres primeras.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={9} proyecto="03-mecanografia" slug="mecanografia">
+
+Al terminar el tiempo, el mismo cartel muestra cómo te fue. `mostrarResultado()`:
+
+1. Escribe las ppm finales, la precisión, cuántas letras escribiste bien, cuántos errores hubo y cuántos fueron de tilde, ñ o diéresis.
+2. Pone las letras que más fallaste, cada una en un `<b>`. Un espacio se escribe «espacio», porque si no, no se vería.
+3. Esconde el texto y muestra el resultado, con el atributo `hidden`.
+4. Escribe un resumen en `data-anuncio`, que es una región `aria-live`: los lectores de pantalla lo leen en voz alta ([Accesibilidad](/navegador/accesibilidad)).
+5. Le da el foco al botón «Otro texto», así Enter lo pulsa.
+
+`ocultarResultado()` hace lo contrario, y `reiniciar()` la llama. Los dos botones llaman a `reiniciar()`: «Otro texto» con un texto nuevo y «Repetir el mismo» con el mismo.
+
+<Comprueba>
+
+Escribe un rato y pon `estado.inicio -= 55000` en la consola. A los 5 segundos, el cartel muestra tu resultado y las letras que más fallaste. Pulsa Enter: vuelve el texto, uno nuevo.
+
+</Comprueba>
+
+<Pistas>
+
+- Las ppm finales se calculan con el tiempo completo: `ppm(estado.duracion * 1000)`.
+- Si no hubo errores, esconde la línea de las letras falladas.
+- `replaceChildren(...elementos)` cambia todo el contenido de una vez.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={10} proyecto="03-mecanografia" slug="mecanografia">
+
+La gráfica del ritmo, en SVG ([Canvas y SVG](/navegador/canvas-y-svg)). Primero, los datos: `tomarMuestra(pasado)` guarda una muestra **por segundo** en `estado.muestras`, con las ppm hasta ese momento y cuántos errores hubo en ese segundo. `tic()` la llama en cada cuadro, y la función decide si ya empezó un segundo nuevo.
+
+Después, `dibujarGrafica()`:
+
+- Cuatro líneas guía horizontales con su número, de 0 al múltiplo de 20 que queda por encima de las ppm más altas.
+- El tiempo abajo: 0, la mitad y el final.
+- Una `polyline` con un punto por muestra.
+- Un círculo rojo en cada segundo con errores, más grande cuantos más hubo.
+
+Para que los números de los ejes no se encojan en un teléfono, el `viewBox` mide lo mismo que la gráfica en pantalla: lee su ancho con `getBoundingClientRect()`. Por eso `mostrarResultado()` dibuja la gráfica **después** de mostrarla, y se vuelve a dibujar si cambia el tamaño de la ventana.
+
+<Comprueba>
+
+Elige 30 s y escribe hasta el final, sin trucos de consola. La gráfica muestra tu ritmo, con un punto rojo donde te equivocaste. Achica la ventana: la gráfica se vuelve a dibujar con letras del mismo tamaño.
+
+</Comprueba>
+
+<Pistas>
+
+- Los elementos SVG se crean con `document.createElementNS('http://www.w3.org/2000/svg', 'line')`. Con `createElement` no se dibujan.
+- En SVG la *y* crece hacia abajo: un valor `v` va en `alto - (v / tope) * alto`, más los márgenes.
+- Con menos de dos muestras no hay línea que dibujar: esconde la gráfica.
+- Los errores de un segundo son los errores totales menos los que ya tienen las muestras anteriores.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={11} proyecto="03-mecanografia" slug="mecanografia">
+
+Los récords ([Guardar datos](/navegador/guardar-datos)). En `localStorage` se guarda un solo objeto, convertido a texto con `JSON.stringify`: la duración elegida y los 5 mejores de cada duración, cada uno con sus ppm, su precisión y la fecha.
+
+- `guardarResultado(ppm, precision)` agrega el resultado a la lista de su duración, la ordena de mayor a menor, se queda con 5 y guarda. Devuelve `true` si es un récord nuevo, y entonces la cifra de la esquina parpadea.
+- `cargar()` lee lo guardado al abrir la página. Si está roto, empieza de cero.
+- `pintarRecord()` escribe en la esquina el mejor de la duración elegida, o «—» si todavía no hay.
+- El botón «Récords» abre un diálogo ([Diálogos y popovers](/navegador/dialogos-y-popovers)) con las tres listas. Cada fecha sale de `Intl.DateTimeFormat`, como «24 nov».
+
+<Comprueba>
+
+Termina un reto: el resultado dice «Primer récord» y aparece en la esquina. Recarga la página: el récord sigue ahí, y la duración también. Abre «Récords»: ves las tres listas.
+
+</Comprueba>
+
+<Pistas>
+
+- Envuelve el `JSON.parse` en `try`/`catch`: si alguien tocó lo guardado a mano, no debe romper la página.
+- `lista.splice(5)` borra todo desde el sexto en adelante.
+- En el diálogo, crea cada elemento con `textContent` y no con `innerHTML`. Lo que sale de `localStorage` lo puede cambiar cualquiera, y con `innerHTML` se ejecutaría como HTML.
+
+</Pistas>
+
+</Paso>
+
+## Lo que aprendiste
+
+- Que una letra no siempre es un carácter, y a partir el texto en letras de verdad con `normalize` e `Intl.Segmenter` ([Unicode](/biblioteca-estandar/unicode)).
+- A escuchar lo que se escribe con `input` y la composición, y no las teclas, para que las teclas muertas funcionen.
+- A medir el tiempo con `performance.now()` y mostrarlo con `requestAnimationFrame`.
+- Cómo se miden las palabras por minuto y la precisión.
+- A reconocer un error de tilde con una expresión regular de Unicode, `\p{M}` ([Expresiones regulares](/biblioteca-estandar/expresiones-regulares)), y a contar con un `Map`.
+- Atajos de teclado que respetan el foco, y a saber si Bloq Mayús está activado.
+- Una gráfica SVG hecha desde los datos, que se adapta al ancho de la pantalla.
+- A guardar récords en `localStorage` sin confiar en lo guardado.
+
+## Llévalo más lejos
+
+Tres ideas para seguir sin guía:
+
+- **Practica tus errores.** Un modo que arme el texto con palabras que tengan las letras que más fallas, sacadas de `estado.fallos`.
+- **Tus propios textos.** Un cuadro para pegar el texto que quieras practicar, como un párrafo de un libro o tu propio código.
+- **Tu progreso.** Guarda las ppm de cada día y dibuja, en el diálogo de récords, una gráfica de la semana.
