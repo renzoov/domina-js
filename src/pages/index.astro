@@ -42,13 +42,13 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
         <div class="demo">
           <StepVisualizer id="demo" titulo="Dale a «Siguiente»" datos={pilaSaludar} fijarControles={false} />
 
-          <!-- Las dos secciones que vienen: todavía no existen, así que sus botones van tachados, con «Próximamente» -->
+          <!-- Proyectos ya está abierta (se agregan de a uno); Librerías todavía no existe: su botón va tachado, con «Próximamente» -->
           <div class="proximas">
-            <section class="proxima" style="--c: var(--lila)" aria-labelledby="proyectos-titulo">
+            <section class="proxima abierta" style="--c: var(--lila)" aria-labelledby="proyectos-titulo">
               <p class="proxima-etq">¿Listo para construir?</p>
               <h2 id="proyectos-titulo" class="proxima-tit">Proyectos</h2>
               <p class="proxima-txt">30 aplicaciones completas, solo con JavaScript: de un generador de paletas a un tablero que funciona sin conexión. Paso a paso, con pistas y la solución.</p>
-              <BotonSeccion texto="Ver proyectos" href="/proyectos" color="lila" icono="bloques" variante="grande" pronto />
+              <BotonSeccion texto="Ver proyectos" href="/proyectos" color="lila" icono="bloques" variante="grande" pronto={false} />
             </section>
             <section class="proxima" style="--c: var(--naranja)" aria-labelledby="librerias-titulo">
               <p class="proxima-etq">¿Y después?</p>
@@ -127,7 +127,7 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
   .rayos-txt { margin: 0 0 20px; font-size: 1.05rem; line-height: 1.6; color: var(--chalk-70); }
 
   /* Proyectos y Librerías: tarjetas como la de Rayos X, cada una con su color, con borde discontinuo
-     mientras la sección no existe */
+     mientras la sección no existe (.abierta: ya existe) */
   .proximas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 44px; }
   .proxima {
     display: flex; flex-direction: column; align-items: flex-start;
@@ -139,6 +139,7 @@ const primeraTema = primera ? buscarTema(primera.data.seccion, primera.data.tema
     border-radius: var(--r-chalk);
     box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 5%, transparent), 0 0 24px color-mix(in srgb, var(--c) 6%, transparent);
   }
+  .proxima.abierta { border-style: solid; }
   .proxima-etq { margin: 0; font: 700 1.1rem/1 var(--hand); color: var(--pink); transform: rotate(-2deg); width: fit-content; }
   .proxima-tit { margin: 10px 0 8px; font: 700 clamp(2rem, 2.8vw, 2.5rem) / 1 var(--hand); color: var(--c); text-shadow: 0 0 12px color-mix(in srgb, var(--c) 40%, transparent); }
   .proxima-txt { flex: 1; margin: 0 0 18px; font-size: 0.98rem; line-height: 1.6; color: var(--chalk-70); }

@@ -186,8 +186,8 @@ const imagenCompartir = new URL('/og.jpg', Astro.site).href;
             <a href="/temario" aria-current={ruta === '/temario' ? 'page' : undefined}>Temario</a>
             <a href="/glosario" aria-current={ruta === '/glosario' ? 'page' : undefined}>Glosario</a>
             <BotonRayosX variante="nav" actual={ruta === '/rayos-x'} />
-            <!-- Proyectos y Librerías todavía no existen: se muestran tachados, con «Próximamente» (plan en docs/PROYECTOS.md) -->
-            <BotonSeccion texto="Proyectos" href="/proyectos" color="lila" icono="bloques" pronto={!ruta.startsWith('/proyectos')} actual={ruta.startsWith('/proyectos')} />
+            <!-- Librerías todavía no existe: se muestra tachado, con «Próximamente» (plan en docs/LIBRERIAS.md) -->
+            <BotonSeccion texto="Proyectos" href="/proyectos" color="lila" icono="bloques" pronto={false} actual={ruta.startsWith('/proyectos')} />
             <BotonSeccion texto="Librerías" href="/librerias" color="naranja" icono="paquete" pronto />
           </nav>
         </header>

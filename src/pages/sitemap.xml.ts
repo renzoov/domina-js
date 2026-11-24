@@ -1,5 +1,5 @@
 // sitemap.xml: todas las páginas del sitio, para que los buscadores las encuentren.
-// Se arma con las colecciones, así una lección o un reto nuevos aparecen solos.
+// Se arma con las colecciones, así una lección, un reto o un proyecto nuevos aparecen solos.
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { claveReto } from '../data/temario';
@@ -7,11 +7,14 @@ import { claveReto } from '../data/temario';
 export const GET: APIRoute = async ({ site }) => {
   const lecciones = await getCollection('lecciones');
   const retos = await getCollection('retos');
+  const proyectos = await getCollection('proyectos');
   const rutas = [
     '/',
     '/temario',
     '/glosario',
     '/rayos-x',
+    '/proyectos',
+    ...proyectos.map((p) => `/proyectos/${p.data.slug}`),
     ...lecciones.map((l) => `/${l.data.seccion}/${l.data.tema}`),
     ...retos.map((r) => `/${claveReto(r.data.seccion)}`),
   ];

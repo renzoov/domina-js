@@ -41,10 +41,12 @@ function archivos(dir) {
 }
 
 // ── inicial ─────────────────────────────────────────────────────
-const LEEME_INICIAL = (titulo, slug) => `# ${titulo}: el punto de partida
+const LEEME_INICIAL = (titulo, slug, carpeta) => `# ${titulo}: el punto de partida
 
 El HTML y el CSS ya están hechos. Tú escribes el JavaScript en \`app.js\`, paso a paso,
 siguiendo la guía: https://domina-js.pages.dev/proyectos/${slug}
+
+Así queda cuando lo terminas: https://domina-js-proyectos.pages.dev/${carpeta}/final/
 
 Cada paso tiene su lugar en \`app.js\`, entre \`// PASO n\` y \`// FIN PASO n\`.
 
@@ -60,7 +62,7 @@ function inicial(carpeta) {
   const an = analizar(readFileSync(join(final, 'app.js'), 'utf8'));
   writeFileSync(join(destino, 'app.js'), archivoEnPaso(an, 0));
   const titulo = readFileSync(join(base, 'README.md'), 'utf8').match(/^# \d+\. (.+)$/m)?.[1] ?? carpeta;
-  writeFileSync(join(destino, 'LEEME.md'), LEEME_INICIAL(titulo, slugDe(carpeta)));
+  writeFileSync(join(destino, 'LEEME.md'), LEEME_INICIAL(titulo, slugDe(carpeta), carpeta));
   console.log(`${carpeta}: inicial/ armado (${an.bloques.length} pasos)`);
 }
 
