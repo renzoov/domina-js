@@ -209,6 +209,78 @@
         ],
         "createdAt": "2026-11-24T15:08:09.181Z",
         "reason": "Falso positivo: el p dentro del cartel es el letrero de récord o el aviso de foco, no una tarjeta"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "proyectos/04-relojes-del-mundo/final/estilos.css"
+        ],
+        "createdAt": "2026-11-24T17:46:23.726Z",
+        "reason": "El usuario eligió el boceto «Tablero de paletas», que usa Inter Tight: es la letra de los tableros de salidas"
+      },
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "files": [
+          "proyectos/04-relojes-del-mundo/inicial/estilos.css"
+        ],
+        "createdAt": "2026-11-24T17:46:24.166Z",
+        "reason": "El usuario eligió el boceto «Tablero de paletas», que usa Inter Tight: es la letra de los tableros de salidas"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "proyectos/04-relojes-del-mundo/final/index.html"
+        ],
+        "createdAt": "2026-11-24T17:46:24.547Z",
+        "reason": "El usuario eligió el boceto «Tablero de paletas»: el halo es solo el de las luces de estado verde y azul (LED de 10 px), como en el boceto"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "proyectos/04-relojes-del-mundo/inicial/index.html"
+        ],
+        "createdAt": "2026-11-24T17:46:24.879Z",
+        "reason": "El usuario eligió el boceto «Tablero de paletas»: el halo es solo el de las luces de estado verde y azul (LED de 10 px), como en el boceto"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "proyectos/04-relojes-del-mundo/final/estilos.css"
+        ],
+        "createdAt": "2026-11-24T17:46:25.121Z",
+        "reason": "El usuario eligió el boceto «Tablero de paletas»: el halo es solo el de las luces de estado verde y azul (LED de 10 px), como en el boceto"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "proyectos/04-relojes-del-mundo/inicial/estilos.css"
+        ],
+        "createdAt": "2026-11-24T17:46:25.314Z",
+        "reason": "El usuario eligió el boceto «Tablero de paletas»: el halo es solo el de las luces de estado verde y azul (LED de 10 px), como en el boceto"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "tight\",system-ui,sans-serif",
+        "files": [
+          "proyectos/04-relojes-del-mundo/final/index.html"
+        ],
+        "createdAt": "2026-11-24T17:58:17.187Z",
+        "reason": "Falso positivo: Inter Tight está declarada en el DESIGN.md propio del proyecto 4 (proyectos/04-relojes-del-mundo/DESIGN.md); el detector compara con el DESIGN.md del sitio"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "tight\",system-ui,sans-serif",
+        "files": [
+          "proyectos/04-relojes-del-mundo/inicial/index.html"
+        ],
+        "createdAt": "2026-11-24T17:58:17.342Z",
+        "reason": "Falso positivo: Inter Tight está declarada en el DESIGN.md propio del proyecto 4 (proyectos/04-relojes-del-mundo/DESIGN.md); el detector compara con el DESIGN.md del sitio"
       }
     ]
   }

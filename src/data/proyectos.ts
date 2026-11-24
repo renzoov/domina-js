@@ -49,7 +49,7 @@ export const proyectos: Proyecto[] = [
   { numero: 3, slug: 'mecanografia', titulo: 'Reto de mecanografía', nivel: 'facil', tamano: 'chico', publicado: true,
     resumen: 'Escribe contra reloj: cuenta bien los acentos, la ñ y los signos, y dibuja tu resultado.',
     temas: ['Unicode', 'Regex', 'SVG'] },
-  { numero: 4, slug: 'relojes-del-mundo', titulo: 'Relojes del mundo', nivel: 'facil', tamano: 'chico',
+  { numero: 4, slug: 'relojes-del-mundo', titulo: 'Relojes del mundo', nivel: 'facil', tamano: 'chico', publicado: true,
     resumen: 'Relojes analógicos en SVG, uno por ciudad, que se reordenan arrastrándolos.',
     temas: ['Temporal', 'Intl', 'Arrastrar'] },
 

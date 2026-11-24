@@ -1,0 +1,462 @@
+---
+slug: relojes-del-mundo
+carpeta: 04-relojes-del-mundo
+horas: 4
+intro: 'Un tablero de salidas con la hora de las ciudades que elijas: cada una en su fila, con la hora en paletas que giran, cuánto se adelanta o se atrasa respecto de la tuya y si allá es de día. Lo interesante está en las zonas horarias: <b>no todas van de hora en hora</b>, cambian con el horario de verano y no todos los navegadores tienen Temporal todavía. Este tablero las resuelve todas. <b>El HTML y el CSS ya están hechos</b>: tú escribes el JavaScript en 12 pasos.'
+lecciones: [biblioteca-estandar/fechas, biblioteca-estandar/intl, navegador/web-components, navegador/canvas-y-svg, navegador/estilos-y-animacion, navegador/arrastrar-y-soltar, navegador/eventos, navegador/guardar-datos]
+---
+import Paso from '../../components/proyectos/Paso.astro';
+import Comprueba from '../../components/proyectos/Comprueba.astro';
+import Pistas from '../../components/proyectos/Pistas.astro';
+import Nota from '../../components/Nota.astro';
+
+## Lo nuevo de este proyecto
+
+Casi todo lo que vas a usar ya lo viste en las lecciones, y cada paso enlaza a la suya. Lo que el curso todavía no cuenta es cómo se organizan las horas del mundo, y cómo preguntarle a JavaScript qué hora es en otro lugar.
+
+### Zonas y desfases
+
+Una **zona horaria** es un lugar donde todos los relojes marcan lo mismo. Cada una tiene un nombre en una base de datos que usan todos los sistemas, la de la IANA: `"America/Lima"`, `"Europe/Madrid"`, `"Asia/Tokyo"`. El nombre es el de una ciudad grande de la zona, no el de un país, porque un país puede tener varias (México, Brasil o Estados Unidos) y porque los países cambian sus reglas.
+
+El **desfase** de una zona es cuánto se adelanta o se atrasa respecto de **UTC**, la hora de referencia del mundo. Lima va 5 horas por detrás (UTC−5) y Tokio, 9 por delante (UTC+9). Tres detalles que el tablero tiene que respetar:
+
+- **No todos son horas enteras.** Nueva Delhi va 5 h 30 min por delante, y Katmandú, 5 h 45 min. Por eso el desfase se guarda en minutos.
+- **El desfase cambia.** Con el horario de verano, Madrid pasa de UTC+1 a UTC+2. Por eso nunca se escribe a mano: se pregunta para cada instante.
+- **Los segundos son los mismos en todo el mundo.** Como todos los desfases son minutos enteros, cuando en Lima es el segundo 18, en Tokio también.
+
+### La hora de otra zona, con Temporal
+
+Con Temporal ([Fechas](/biblioteca-estandar/fechas)), un instante se convierte en la fecha y la hora de una zona con `toZonedDateTimeISO`. El resultado tiene `hour`, `minute`, la fecha y el desfase:
+
+```js
+const instante = Date.UTC(2026, 10, 24, 15, 42);   // 24 de noviembre de 2026, 15:42 en UTC
+
+for (const zona of ["America/Lima", "Europe/Madrid", "Asia/Kathmandu", "Asia/Tokyo"]) {
+  const aqui = Temporal.Instant.fromEpochMilliseconds(instante).toZonedDateTimeISO(zona);
+  console.log(zona.padEnd(15), aqui.toPlainDate().toString(), aqui.toPlainTime().toString().slice(0, 5), aqui.offset);
+}
+```
+
+Fíjate en Tokio: ya es el 25.
+
+### Y sin Temporal
+
+Temporal es nuevo, y algunos navegadores todavía no lo tienen. El plan B usa algo que existe desde hace años: `Intl.DateTimeFormat` con la opción `timeZone` ([Intl](/biblioteca-estandar/intl)). Su método `formatToParts` no devuelve un texto, sino cada parte por separado:
+
+```js
+const formato = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Tokyo", hourCycle: "h23",
+  year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric",
+});
+const instante = Date.UTC(2026, 10, 24, 15, 42);
+const partes = formato.formatToParts(instante);
+console.log(partes.filter((p) => p.type !== "literal").map((p) => `${p.type}=${p.value}`).join(" "));
+
+// ¿Y el desfase? Si esa fecha y hora fueran UTC, serían otro instante: la diferencia es el desfase
+const p = Object.fromEntries(partes.map((parte) => [parte.type, Number(parte.value)]));
+const comoSiFueraUTC = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+console.log("desfase:", (comoSiFueraUTC - instante) / 60000, "minutos");
+```
+
+Se usa `"en-US"` y no `"es"` porque solo importan los números, y en inglés vienen siempre con el mismo formato. `hourCycle: "h23"` hace que la medianoche sea `0` y no `24`. Los 540 minutos son 9 horas: Tokio está en UTC+9.
+
+## Antes de empezar
+
+1. **Descarga el proyecto inicial** (el botón de arriba), descomprímelo y abre la carpeta en tu editor.
+2. **Abre `index.html` con doble clic.** Vas a ver el título, el panel de la derecha y el tablero vacío. Todo eso lo vas a llenar tú.
+3. **Abre la consola** de las herramientas del navegador (F12). En cada paso hay un «Cómo comprobarlo» que la usa. Cada vez que guardes `app.js`, recarga la página (F5).
+4. **Mira `app.js`.** Tiene un lugar para cada paso, entre `// PASO n` y `// FIN PASO n`, con un comentario que lo explica. Escribe el código de cada paso en su lugar.
+
+En todo el proyecto no hace falta tocar el HTML ni el CSS. El HTML trae una **plantilla** `<template>` con una fila del tablero, y atributos `data-*` (`data-nombre`, `data-paletas`, `data-horario`…) para encontrar cada parte. El CSS ya tiene los estilos de cada estado: `.es-referencia`, `.de-noche`, `.arrastrando`, `.antes` y `.despues`. Tú solo los usas.
+
+<Nota tipo="consejo">
+Desde el paso 12 el tablero se guarda en `localStorage`. Si quieres empezar de cero, escribe `localStorage.clear()` en la consola y recarga.
+</Nota>
+
+## El paso a paso
+
+<Paso n={1} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+Primero, los datos. Un array `CIUDADES` con ciudades conocidas, cada una con su **nombre en español**, su **zona** y el **código de su país** (`"PE"`, `"ES"`…), que en el paso 4 se traduce al español. La solución trae 45; puedes usar esas o elegir las tuyas. Un segundo array, `INICIALES`, tiene las zonas que aparecen la primera vez.
+
+Después, lo que el tablero tiene que **recordar**, en `estado`:
+
+- `ciudades`: las del tablero, en el orden en que se ven.
+- `referencia`: la ciudad desde la que se cuentan las diferencias. Es **una de las de `estado.ciudades`**, el mismo objeto, no una copia.
+- `formato`: 24 o 12 horas.
+
+Dos funciones más:
+
+- `ciudadDeZona(zona)` busca la zona en `CIUDADES`. Si no está, arma una ciudad con la última parte de la zona: `"America/Argentina/Jujuy"` da `"Jujuy"`.
+- `ciudadesIniciales()` pone tu ciudad primero y de referencia, y después las iniciales. Tu zona sale de `Intl.DateTimeFormat().resolvedOptions().timeZone`.
+
+<Comprueba>
+
+Recarga y escribe en la consola:
+
+```js
+Intl.DateTimeFormat().resolvedOptions().timeZone   // tu zona, por ejemplo "America/Lima"
+ciudadesIniciales();
+estado.ciudades.map((c) => c.nombre)   // tu ciudad y las iniciales
+estado.referencia === estado.ciudades[0]   // true
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `zona.split('/').at(-1)` da la última parte de la zona, y `replaceAll('_', ' ')` cambia los guiones bajos por espacios.
+- Si tu zona ya está en `INICIALES`, no la repitas: filtra las iniciales con `zona !== tuya.zona`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={2} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+El corazón del proyecto: `horaEn(zona, instante)`, que devuelve un objeto con `hora`, `minuto`, `fecha` (como `"2026-11-24"`) y `desfase` (en minutos).
+
+- Si el navegador tiene Temporal (`globalThis.Temporal` existe), usa lo de [Lo nuevo](#la-hora-de-otra-zona-con-temporal). El desfase viene en nanosegundos, en `offsetNanoseconds`: divídelo por 60 000 millones (`60e9`) para pasarlo a minutos.
+- Si no, llama a `horaConDate(zona, instante)`, que hace lo de [Y sin Temporal](#y-sin-temporal).
+
+Crear un `Intl.DateTimeFormat` es lento, y `horaConDate` se va a llamar muchas veces por minuto. Guarda uno por zona en un `Map` ([Map y Set](/colecciones/map-y-set)) y reúsalo.
+
+<Comprueba>
+
+En la consola:
+
+```js
+const instante = Date.UTC(2026, 10, 24, 15, 42);
+horaEn("America/Lima", instante)      // { hora: 10, minuto: 42, fecha: "2026-11-24", desfase: -300 }
+horaConDate("America/Lima", instante) // lo mismo, sin Temporal
+horaEn("Asia/Kathmandu", instante).desfase   // 345
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `t.toPlainDate().toString()` da la fecha como `"2026-11-24"`.
+- En el plan B, `Date.UTC` cuenta los meses desde 0: resta 1 al mes que da `formatToParts`.
+- Para que la fecha tenga el mismo formato que la de Temporal, rellena el mes y el día con `padStart(2, '0')`.
+- `Math.round` en el desfase: el instante tiene milisegundos y la fecha armada no, y la diferencia no debe pasar a los minutos.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={3} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+Tres funciones chicas para lo que dice cada fila:
+
+- `textoDiferencia(minutos)`: la diferencia con la referencia, que es la **resta de los desfases**. Escribe `"+6 h"`, `"−1 h"`, `"+5 h 45 min"` o `"misma hora"`. El signo menos es el de verdad, `−`, no el guion.
+- `textoDia(fechaCiudad, fechaReferencia)`: `"hoy"`, `"mañana"` o `"ayer"`. Las fechas como `"2026-11-24"` se pueden comparar como texto con `>` y `<`, porque van del año al día.
+- `esDeDia(hora)`: de 6 a 18 es de día. Es una aproximación; la hora real del amanecer depende de la ciudad y de la época del año.
+
+<Comprueba>
+
+En la consola:
+
+```js
+textoDiferencia(345)   // "+5 h 45 min"
+textoDiferencia(-60)   // "−1 h"
+textoDia("2026-11-25", "2026-11-24")   // "mañana"
+```
+
+</Comprueba>
+
+<Pistas>
+
+- Trabaja con el valor absoluto, `Math.abs(minutos)`, y pon el signo al final.
+- Junta las partes en un array, `["5 h", "45 min"]`, y únelas con `join(' ')`: así no sobran espacios cuando falta una.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={4} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+El tablero. Cada fila sale de la plantilla `<template>` del HTML ([Web Components](/navegador/web-components)): `plantilla.content.firstElementChild.cloneNode(true)` da una copia de la fila, lista para llenar.
+
+- `crearFila(ciudad)` copia la plantilla y escribe el nombre, el país y las etiquetas de los botones de mover y quitar.
+- `pintarTablero()` crea todas las filas y llama a `pintarHoras()`.
+- `pintarHoras(instante)` llena lo que cambia con el minuto: la hora, la diferencia, el día y las clases `es-referencia` y `de-noche`.
+
+El país sale de `Intl.DisplayNames` con `type: 'region'` ([Intl](/biblioteca-estandar/intl)): `regiones.of('PE')` da `"Perú"`. Y `formatearHora(hora)` escribe `"10:42"`, o `"10:42"` con `"a. m."` en el formato de 12 horas.
+
+Arriba, la fecha en UTC: `"Martes, 24 de noviembre · 15:42 UTC"`.
+
+El **arranque**, al final del archivo, arma las ciudades iniciales y pinta el tablero.
+
+<Comprueba>
+
+Recarga: aparece una fila por ciudad, la tuya con el borde amarillo y una raya en la diferencia, las demás con su diferencia y su día. Todavía no hay paletas y las agujas apuntan todas arriba: la hora solo está en el texto para lectores de pantalla. Míralo en la consola:
+
+```js
+[...filas.children].map((f) => f.querySelector("[data-hora-texto]").textContent)
+```
+
+</Comprueba>
+
+<Pistas>
+
+- La plantilla tiene `data-*` para cada parte: `fila.querySelector('[data-nombre]')`.
+- `replaceChildren(...estado.ciudades.map(crearFila))` cambia todas las filas de una vez.
+- En `pintarHoras`, la fila `i` corresponde a `estado.ciudades[i]`: recórrelas juntas con `forEach((ciudad, i) => …)`.
+- La hora en 12 horas: `hora % 12 || 12`, para que las 0 y las 12 sean las 12.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={5} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+Las paletas. La hora va en cinco: cuatro cifras y los dos puntos, cada una en un `<span class="paleta">`.
+
+- `ponerCifras(fila, cifras)`: la primera vez crea las cinco paletas. Las otras veces compara cada una con su cifra nueva, y solo **las que cambian** giran.
+- `girar(paleta, caracter)`: media vuelta hacia abajo con `animate()` ([Estilos y animación](/navegador/estilos-y-animacion)), cambia la cifra y termina de girar.
+
+`animate()` devuelve una animación, y su propiedad `finished` es una **promesa** que se cumple cuando termina. Con `await` ([async/await](/asincronia/async-await)), el código espera a que la paleta quede de canto antes de cambiar la cifra:
+
+```js
+await paleta.animate([{ transform: "perspective(260px) rotateX(0deg)" }, { transform: "perspective(260px) rotateX(-90deg)" }], { duration: 130 }).finished;
+paleta.textContent = caracter;
+```
+
+Si la persona pidió menos movimiento (`matchMedia('(prefers-reduced-motion: reduce)')`), la cifra cambia sin girar.
+
+<Comprueba>
+
+Recarga: la hora aparece en paletas. Haz girar las de la primera fila desde la consola:
+
+```js
+ponerCifras(filas.children[0], "12:34");
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `[..."10:42"]` da un array con cada carácter.
+- La paleta de los dos puntos lleva además la clase `dos-puntos`.
+- `perspective()` va dentro del `transform` de cada paleta: así cada una gira sobre su propio centro.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={6} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+El reloj chico de cada fila es un SVG ([Canvas y SVG](/navegador/canvas-y-svg)) con tres agujas, que son `<line>` que salen del centro (50, 50) hacia arriba. Para que marquen la hora, se giran con el atributo `transform="rotate(grados 50 50)"`: los dos últimos números dicen alrededor de qué punto gira.
+
+`pintarReloj(fila, instante, desfase)` saca la hora local en milisegundos (el instante más el desfase) y de ahí los **minutos del día**, de 0 a 1440, con decimales:
+
+- el horario da una vuelta cada 12 horas: `(minutosDelDia % 720) / 720 * 360`;
+- el minutero, una cada hora: `(minutosDelDia % 60) * 6`;
+- el segundero, una cada minuto: `segundos * 6`.
+
+Agrega `pintarReloj()` en `pintarHoras()`. La solución marca la línea.
+
+<Comprueba>
+
+Recarga: cada fila tiene su reloj, claro de día y oscuro de noche. Pon uno a las 10:00 de Lima:
+
+```js
+pintarReloj(filas.children[0], Date.UTC(2026, 10, 24, 15, 0), -300);   // el horario apunta al 10
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `(local / 60000) % 1440` da los minutos del día, porque `local` cuenta milisegundos desde 1970.
+- Usa `toFixed(2)` en los grados: así el atributo no se llena de decimales.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={7} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+El tablero tiene que moverse solo. `latir()` corre antes de cada cuadro con `requestAnimationFrame` ([Microtareas y macrotareas](/asincronia/microtareas)):
+
+1. Si cambió el minuto, vuelve a pintar las horas: ahí giran las paletas.
+2. En cada cuadro, mueve las agujas de todos los relojes.
+3. Pide el cuadro siguiente.
+
+Para el paso 2 no hace falta preguntarle a Temporal ni a `Intl` en cada cuadro: guarda el desfase de cada fila en `fila.dataset.desfase` cuando pintas las horas, y calcula las agujas con él. Como dice [Lo nuevo](#zonas-y-desfases), los segundos son los mismos en todas partes.
+
+El arranque pide el primer cuadro.
+
+<Comprueba>
+
+Recarga: los segunderos avanzan, suaves. Espera a que cambie el minuto: giran las paletas de los minutos en todas las filas a la vez. Para no esperar, en la consola:
+
+```js
+filas.children[0].querySelector(".paleta:last-child").textContent = "9";   // una cifra equivocada
+minutoPintado = 0;   // en el próximo cuadro, el tablero cree que cambió el minuto, y la corrige girando
+```
+
+</Comprueba>
+
+<Pistas>
+
+- El minuto actual es `Math.floor(Date.now() / 60000)`. Guarda el último que pintaste en una variable fuera de `latir`.
+- `dataset` guarda texto: al leer el desfase, conviértelo con `Number()`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={8} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+Agregar ciudades. `Intl.supportedValuesOf('timeZone')` da todas las zonas que conoce el navegador, más de 400. `buscarCiudades(texto)`:
+
+1. Quita las tildes y pasa todo a minúsculas, con `normalize('NFD')` y la expresión regular `/\p{M}/gu` ([Expresiones regulares](/biblioteca-estandar/expresiones-regulares)): así `"bogo"` encuentra `"Bogotá"`.
+2. Busca primero en `CIUDADES`, por nombre o país, y después en las zonas que no están en la lista.
+3. Descarta las que ya están en el tablero, y se queda con 6.
+4. Con menos de dos letras escritas, sugiere algunas conocidas para empezar.
+
+Un detalle: algunas zonas tienen dos nombres, uno nuevo y uno viejo (`"Asia/Kathmandu"` y `"Asia/Katmandu"`). Si el nombre y el desfase coinciden con otra sugerencia, sobra.
+
+`pintarSugerencias()` dibuja un botón por sugerencia, con el país y la diferencia, y cambia el botón amarillo a «Agregar Bogotá». `agregar(ciudad)` la suma al final del tablero.
+
+Con el teclado: **Enter** agrega la primera, la **flecha hacia abajo** va a las sugerencias, y ahí las flechas se mueven entre ellas.
+
+<Comprueba>
+
+Escribe «san» en el buscador: aparecen San Salvador, San José, Santo Domingo… Escribe «katm» y pulsa Enter: Katmandú aparece al final del tablero, a +10 h 45 min de Lima. Escribe «zzz»: el panel dice que no hay ninguna.
+
+</Comprueba>
+
+<Pistas>
+
+- Para buscar en las zonas, cambia los `_` por espacios antes de comparar: `"America/Argentina/San_Juan"`.
+- Dos ciudades son la misma si tienen la misma zona y el mismo nombre: Quito y Guayaquil comparten zona y son dos ciudades.
+- Llama a `pintarSugerencias()` también en el arranque, para que se vean las de empezar. Esa línea va en el arranque, y la solución la marca.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={9} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+Cada fila tiene dos botones más: el nombre de la ciudad, que la vuelve referencia, y la cruz, que la quita. En lugar de escuchar cada botón, se escucha **la lista entera** una sola vez, y `closest()` dice qué se tocó ([Eventos](/navegador/eventos)): es la **delegación de eventos**. Funciona aunque las filas se vuelvan a crear.
+
+- `quitar(i)` la saca de `estado.ciudades`. Si era la referencia, pasa a serlo la primera. Nunca deja el tablero vacío: con una sola ciudad, la cruz está desactivada. Después pasa el foco a la cruz de la fila que quedó en su lugar, para que quien usa el teclado no se pierda.
+- `usarDeReferencia(i)` cambia `estado.referencia` y vuelve a pintar las horas.
+- Los radios de **Formato** cambian `estado.formato`.
+
+Las tres cosas avisan en la región `aria-live` qué pasó.
+
+<Comprueba>
+
+Toca «Tokio»: su fila pasa a tener el borde amarillo y Lima queda a −14 h, «ayer». Cambia a 12 horas: aparecen «a. m.» y «p. m.». Quita una ciudad con la cruz.
+
+</Comprueba>
+
+<Pistas>
+
+- `[...filas.children].indexOf(fila)` dice en qué lugar está la fila.
+- `evento.target.closest('[data-quitar]')` encuentra el botón aunque hayas tocado el ícono que tiene adentro.
+- `estado.referencia === estado.ciudades[i]` compara objetos: es `true` solo si son el mismo.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={10} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+Ordenar arrastrando ([Arrastrar y soltar](/navegador/arrastrar-y-soltar)). Las filas ya tienen `draggable="true"`, y los cuatro eventos se escuchan en la lista:
+
+- `dragstart`: guarda qué fila se arrastra y le pone la clase `arrastrando`.
+- `dragover`: con `preventDefault()` dice que ahí se puede soltar. Mira si el puntero está en la mitad de arriba o de abajo de la fila, con `getBoundingClientRect()`, y le pone `antes` o `despues`: el CSS dibuja una línea amarilla.
+- `drop`: calcula el lugar nuevo y llama a `mover(desde, hacia)`.
+- `dragend`: limpia las clases.
+
+`mover(desde, hacia)` saca la ciudad con `splice` y la vuelve a meter en su lugar nuevo.
+
+<Comprueba>
+
+Arrastra la primera fila por la manija y suéltala debajo de la tercera: la línea amarilla te dice dónde va a caer, y la ciudad queda tercera.
+
+</Comprueba>
+
+<Pistas>
+
+- La fila sobre la que estás es `evento.target.closest('.fila')`.
+- El lugar nuevo es el de la fila de destino, más 1 si soltaste en su mitad de abajo. Si ese lugar está después del original, réstale 1: al sacar la ciudad, las de abajo suben un lugar.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={11} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+Arrastrar no funciona con el teclado ni con un lector de pantalla. Por eso la manija es un `<button>`: con el foco en ella, las **flechas hacia arriba y hacia abajo** mueven la ciudad un lugar con `mover()`.
+
+Después de mover, dos cosas para no perder a nadie:
+
+- El foco pasa a la manija de la fila en su lugar nuevo (el tablero se volvió a crear y el botón de antes ya no existe).
+- La región `aria-live` dice dónde quedó: «Lima, lugar 2 de 6» ([Accesibilidad](/navegador/accesibilidad)).
+
+<Comprueba>
+
+Pulsa Tab hasta la manija de la segunda fila y pulsa la flecha hacia arriba: la ciudad sube al primer lugar y el foco sigue en su manija. Vuelve a pulsarla: no pasa nada, ya está arriba.
+
+</Comprueba>
+
+<Pistas>
+
+- Escucha `keydown` en la lista y usa `closest('[data-manija]')`, como en el paso 9.
+- Llama a `preventDefault()` para que la flecha no mueva también la página.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={12} proyecto="04-relojes-del-mundo" slug="relojes-del-mundo">
+
+Por último, recordar el tablero ([Guardar datos](/navegador/guardar-datos)). `guardar()` escribe en `localStorage`, con `JSON.stringify`, las ciudades, el lugar de la referencia y el formato. La referencia se guarda **por su lugar en la lista**: al volver a leerla, es un objeto nuevo, y hay que encontrarla entre las ciudades.
+
+`cargar()` lee lo guardado al abrir la página. Dos cuidados:
+
+- Si está roto, se empieza de cero, con `try`/`catch`.
+- Una zona guardada puede no existir en otro navegador. Si no existe, `horaEn` lanza un `RangeError`: esa ciudad se descarta.
+
+Cada cambio llama a `guardar()`: agregar, quitar, la referencia, el formato y mover. La solución marca esas líneas. En el arranque, `cargar()` va antes de las ciudades iniciales, que ahora solo se usan si no había nada guardado.
+
+<Comprueba>
+
+Agrega una ciudad, cambia el orden, elige otra referencia y pasa a 12 horas. Recarga la página: todo sigue igual.
+
+</Comprueba>
+
+<Pistas>
+
+- `estado.ciudades.indexOf(estado.referencia)` da el lugar de la referencia.
+- Si el lugar guardado ya no existe, usa la primera ciudad: `estado.ciudades[lugar] ?? estado.ciudades[0]`.
+- Al cargar, marca también el radio del formato guardado.
+
+</Pistas>
+
+</Paso>
+
+## Lo que aprendiste
+
+- Qué es una zona horaria, por qué el desfase se mide en minutos y por qué cambia con el horario de verano.
+- La hora de cualquier zona con Temporal, y un plan B con `Intl.DateTimeFormat` y `formatToParts` ([Fechas](/biblioteca-estandar/fechas), [Intl](/biblioteca-estandar/intl)).
+- A crear elementos desde una plantilla `<template>`.
+- A animar con `animate()` y esperar a que termine con su promesa `finished`.
+- A girar agujas en SVG y a mover un reloj con `requestAnimationFrame`.
+- A buscar sin importar las tildes, en una lista propia y en las zonas del navegador.
+- La delegación de eventos, arrastrar y soltar, y una alternativa con el teclado para quien no usa el mouse.
+- A guardar en `localStorage` sin confiar en lo guardado.
+
+## Llévalo más lejos
+
+Tres ideas para seguir sin guía:
+
+- **Viajar en el tiempo.** Un deslizador que adelante el tablero hasta 24 horas, para ver qué hora será en cada ciudad. Pista: `pintarHoras` ya recibe el instante.
+- **Hora para una reunión.** Una franja con las 24 horas que marque en verde las horas en que todas las ciudades están de día.
+- **Avisos de cambio de hora.** Busca, con Temporal, si alguna ciudad cambia de horario de verano en los próximos 30 días: su desfase de hoy y el de dentro de un mes no coinciden.
