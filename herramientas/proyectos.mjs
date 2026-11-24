@@ -92,7 +92,9 @@ async function verificar(carpeta, pw) {
     const dir = join(tmp, `paso-${k}`);
     cpSync(join(base, 'final'), dir, { recursive: true });
     writeFileSync(join(dir, 'app.js'), archivoEnPaso(an, k));
-    const pagina = await navegador.newPage();
+    // Un contexto nuevo por paso: así lo que guarda un paso (localStorage) no le llega al siguiente
+    const contexto = await navegador.newContext();
+    const pagina = await contexto.newPage();
     const errores = [];
     pagina.on('pageerror', (e) => errores.push(e.message));
     await pagina.goto(pathToFileURL(join(dir, 'index.html')).href);
@@ -107,7 +109,7 @@ async function verificar(carpeta, pw) {
       if (prueba.paso <= k && !ok) fallas.push(`después del PASO ${k} falla la prueba del PASO ${prueba.paso}: ${prueba.que}`);
       if (prueba.paso === k + 1 && ok) fallas.push(`la prueba del PASO ${prueba.paso} ya pasa antes de escribirlo: ${prueba.que}`);
     }
-    await pagina.close();
+    await contexto.close();
   }
   await navegador.close();
   rmSync(tmp, { recursive: true, force: true });

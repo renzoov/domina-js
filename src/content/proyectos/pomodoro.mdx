@@ -1,0 +1,497 @@
+---
+slug: pomodoro
+carpeta: 02-pomodoro
+horas: 3
+intro: 'Un temporizador para trabajar en bloques de 25 minutos con descansos entre medio. Parece fácil, pero tiene una trampa: <b>los timers del navegador se atrasan</b>, sobre todo con la pestaña escondida. Este no: avisa a tiempo, pita, mantiene la pantalla encendida y recuerda tu racha de días. <b>El HTML y el CSS ya están hechos</b>: tú escribes el JavaScript en 13 pasos.'
+lecciones: [biblioteca-estandar/timers-y-consola, asincronia/event-loop, navegador/eventos, navegador/canvas-y-svg, navegador/apis-del-dispositivo, navegador/guardar-datos, navegador/dialogos-y-popovers]
+---
+import Paso from '../../components/proyectos/Paso.astro';
+import Comprueba from '../../components/proyectos/Comprueba.astro';
+import Pistas from '../../components/proyectos/Pistas.astro';
+import Nota from '../../components/Nota.astro';
+
+## Lo nuevo de este proyecto
+
+Casi todo lo que vas a usar ya lo viste en las lecciones, y cada paso enlaza a la suya. Hay dos ideas que el curso todavía no cuenta. Ninguna es difícil, y conviene verlas antes de programar.
+
+### Contar sin atrasarse
+
+La forma obvia de hacer un temporizador es contar vueltas: un `setTimeout` cada 100 ms y, en cada vuelta, sumar 100. El problema es que el tiempo de un timer es un **mínimo** ([Timers](/biblioteca-estandar/timers-y-consola)): si el navegador está ocupado, la vuelta llega tarde. Y como cada vuelta se agenda desde la anterior, los retrasos **se suman**.
+
+Aquí cada vuelta simula que el navegador estuvo ocupado 20 ms con otra cosa:
+
+```js
+const inicio = Date.now();
+let contado = 0;
+
+function vuelta() {
+  contado += 100;
+  const hasta = Date.now() + 20;
+  while (Date.now() < hasta) {}   // el navegador, ocupado con otra cosa
+  if (contado < 1000) setTimeout(vuelta, 100);
+  else console.log("contado:", contado, "ms · pasaron de verdad:", Date.now() - inicio, "ms");
+}
+setTimeout(vuelta, 100);
+```
+
+El contador cree que pasó un segundo, pero pasaron unos 1200 ms. En 25 minutos, eso son varios minutos de atraso. Con la pestaña escondida es peor: el navegador frena los timers a una vuelta por segundo, o menos, para ahorrar batería.
+
+La solución es no contar. Al empezar, guardas **la hora en que termina** y, en cada vuelta, solo preguntas cuánto falta para esa hora:
+
+```js
+const inicio = Date.now();
+const terminaEn = inicio + 1000;
+
+function vuelta() {
+  const hasta = Date.now() + 20;
+  while (Date.now() < hasta) {}
+  const falta = terminaEn - Date.now();
+  if (falta > 0) setTimeout(vuelta, 100);
+  else console.log("terminó a los", Date.now() - inicio, "ms");
+}
+setTimeout(vuelta, 100);
+```
+
+Puede llegar un poco tarde, como mucho una vuelta, pero ese retraso no se suma: la próxima vuelta vuelve a mirar el reloj. Ese es el corazón del proyecto.
+
+### Dibujar en un círculo
+
+La esfera del reloj es un SVG ([Canvas y SVG](/navegador/canvas-y-svg)) de 200 × 200, con el centro en (100, 100). Para poner una marca a cierto ángulo hace falta un punto del círculo, y eso lo da la trigonometría: el **seno** dice cuánto te corres a los lados y el **coseno**, cuánto subes. Como en SVG la *y* crece hacia abajo, el coseno se resta:
+
+```js
+function punto(angulo, radio) {
+  const radianes = (angulo * Math.PI) / 180;
+  return {
+    x: Math.round(100 + radio * Math.sin(radianes)),
+    y: Math.round(100 - radio * Math.cos(radianes)),
+  };
+}
+
+console.log(punto(0, 90));    // arriba, donde está el 12 de un reloj
+console.log(punto(90, 90));   // a la derecha, el 3
+console.log(punto(180, 90));  // abajo, el 6
+```
+
+El ángulo empieza arriba y gira como las agujas del reloj, que es justo lo que necesita una esfera.
+
+Para el arco rojo, que muestra lo que queda, hay un truco de SVG. Un círculo con `pathLength="100"` hace como si su borde midiera 100, sin importar el radio. Y `stroke-dasharray: 40 100` dibuja el borde en trozos de 40 con huecos de 100: como el borde mide 100, se ve **un solo trozo, el 40 % del círculo**. Así, el porcentaje que queda se escribe tal cual.
+
+## Antes de empezar
+
+1. **Descarga el proyecto inicial** (el botón de arriba), descomprímelo y abre la carpeta en tu editor.
+2. **Abre `index.html` con doble clic.** Vas a ver el reloj en `25:00`, pero sin marcas en la esfera, sin la serie del día y sin que ningún botón funcione. Es normal: todo eso es lo que vas a programar.
+3. **Abre la consola** de las herramientas del navegador (F12). En cada paso hay un «Cómo comprobarlo» que la usa. Cada vez que guardes `app.js`, recarga la página (F5).
+4. **Mira `app.js`.** Tiene un lugar para cada paso, entre `// PASO n` y `// FIN PASO n`, con un comentario que lo explica. Escribe el código de cada paso en su lugar.
+
+En todo el proyecto no hace falta tocar el HTML ni el CSS. El HTML tiene atributos `data-*` (`data-tiempo`, `data-arco`, `data-serie`…) para que el JavaScript encuentre cada elemento, y el CSS ya tiene los estilos de cada estado (`.actual`, `.hecho`, `.grande`…). Tú solo los usas.
+
+<Nota tipo="consejo">
+Para probar no hace falta esperar 25 minutos. En la consola, `estado.restante = 5000; pintar();` deja el bloque en 5 segundos (desde el paso 2). En el paso 13 vas a poder elegir bloques de 1 minuto en los ajustes.
+</Nota>
+
+## El paso a paso
+
+<Paso n={1} proyecto="02-pomodoro" slug="pomodoro">
+
+Primero, decide qué tiene que **recordar** el temporizador. Todo va en un solo objeto, `estado`:
+
+- `ajustes`: cuánto dura cada bloque (en minutos), cada cuántos pomodoros viene el descanso largo y si suena el pitido.
+- `bloque` y `numero`: en qué bloque estás (`'trabajo'`, `'corto'` o `'largo'`) y qué pomodoro de la serie es.
+- `corriendo`, `terminaEn` y `restante`: si el reloj corre, la hora en que termina; si está en pausa, cuánto queda. Las dos en milisegundos.
+- `hechos`: los bloques que ya terminaste.
+
+Como en el proyecto 1, **la página nunca es la fuente de la verdad**: cambias el `estado` y vuelves a pintar.
+
+Después, busca los elementos con `querySelector` ([El DOM](/navegador/dom)): el tiempo, los radios de los bloques, los botones, las piezas de la esfera (el arco, la aguja, el segundero y los grupos de marcas y números) y la lista de la serie.
+
+<Comprueba>
+
+Recarga y escribe en la consola:
+
+```js
+estado.restante     // 1500000: 25 minutos en milisegundos
+radiosBloque.length // 3
+```
+
+</Comprueba>
+
+<Pistas>
+
+- Una constante `MINUTO = 60 * 1000` hace que el resto del código se lea solo: `25 * MINUTO`.
+- Los radios se buscan con `'input[name="bloque"]'`. Conviértelos en array con `[...lista]`.
+- Un objeto `NOMBRES` que traduzca `'corto'` a `'Descanso corto'` te va a servir en varios pasos.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={2} proyecto="02-pomodoro" slug="pomodoro">
+
+Tres funciones pequeñas y la central:
+
+- `restanteAhora()`: si el reloj corre, calcula lo que falta con `terminaEn - Date.now()`, como en [Lo nuevo](#contar-sin-atrasarse). Si está en pausa, devuelve `estado.restante`.
+- `formatear(ms)`: los milisegundos como minutos y segundos, `"24:59"`.
+- `pintarTiempo(restante)`: escribe el tiempo en la esfera y en el **título de la pestaña**, para verlo desde otra pestaña.
+- `pintar()`: todo lo demás que dice el estado, como qué pestaña de bloque está marcada, el texto «Pomodoro 1 de 4» y «Empezar» o «Pausar» en el botón principal.
+
+En `formatear`, **redondea los segundos hacia arriba**. Con 0,4 segundos por delante todavía falta algo, así que se ve `0:01`. Y `0:00` queda para el final de verdad.
+
+Al final del archivo va el **arranque**, lo primero que corre al abrir la página. Por ahora es solo `pintar();`.
+
+<Comprueba>
+
+Recarga: la pestaña del navegador dice «25:00 · Trabajo». Y en la consola:
+
+```js
+formatear(60400)   // "1:01"
+formatear(0)       // "0:00"
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `Math.ceil` redondea hacia arriba. Primero pasa a segundos enteros, y de ahí saca los minutos con `Math.floor(segundos / 60)` y los segundos con `segundos % 60`.
+- `String(7).padStart(2, "0")` da `"07"`.
+- Para marcar la pestaña de bloque, recorre los radios y pon `radio.checked = radio.value === estado.bloque`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={3} proyecto="02-pomodoro" slug="pomodoro">
+
+La esfera, con lo de [Lo nuevo](#dibujar-en-un-círculo):
+
+- `dibujarEsfera()` crea las marcas: una por minuto y una grande cada 5, con su número. Los bloques cortos (10 minutos o menos) quedarían pelados, así que llevan una marca cada 15 segundos y una grande por minuto. Las marcas cambian con la duración, por eso se crean desde JavaScript.
+- `pintarEsfera(restante)` mueve el arco, la aguja y el punto de los segundos, que da una vuelta por minuto.
+- `rellenar(desde)` anima la vuelta de la aguja cuando empieza otro bloque, con `animate()` ([Estilos y animación](/navegador/estilos-y-animacion)). Si la persona pidió menos movimiento, no anima nada.
+
+Un detalle de SVG: los elementos se crean con `document.createElementNS`, no con `createElement`. Necesitan el **espacio de nombres** de SVG para que el navegador los dibuje.
+
+Agrega `dibujarEsfera()` en `pintar()` y `pintarEsfera()` en `pintarTiempo()`. La solución marca las dos líneas.
+
+<Comprueba>
+
+Recarga: la esfera tiene 25 marcas y los números 5, 10, 15 y 20. El arco rojo da la vuelta entera. Después prueba en la consola:
+
+```js
+estado.restante = 15 * 60000;
+pintar();   // la aguja apunta al 10 y el arco cubre lo que queda
+```
+
+</Comprueba>
+
+<Pistas>
+
+- El ángulo de la marca `i` es `(i / total) * 360`. Cada marca es una `line` que va de `punto(angulo, 93)` a `punto(angulo, 87)`, o hasta `82` si es grande.
+- Antes de dibujar, vacía los grupos con `replaceChildren()`. Si no, cada `pintar()` suma 25 marcas más.
+- Lo que ya pasó, de 0 a 1, es `1 - restante / total`. El arco usa `strokeDasharray` con lo que queda y `strokeDashoffset` negativo con lo que pasó, para que empiece en la aguja.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={4} proyecto="02-pomodoro" slug="pomodoro">
+
+A contar. Cuatro funciones:
+
+- `empezar()` guarda la hora de término: `Date.now() + estado.restante`.
+- `pausar()` guarda lo que queda en `estado.restante`, y el reloj deja de correr.
+- `programar()` pone un `setInterval` que llama a `tic()` cada 200 ms mientras corre, y lo cancela cuando no.
+- `tic()` calcula lo que falta y pinta el tiempo.
+
+Por qué cada 200 ms y no cada 1000: si el intervalo empieza a mitad de un segundo, una vuelta por segundo haría que el reloj salte de a dos de vez en cuando. Con 200 ms, el cambio se ve a tiempo.
+
+Conecta el botón principal con `alternar()`, que empieza o pausa según el estado.
+
+<Comprueba>
+
+Pulsa Empezar: el tiempo baja, la aguja avanza y el botón dice «Pausar». Pausa, espera unos segundos y vuelve a empezar: sigue desde donde lo dejaste.
+
+</Comprueba>
+
+<Pistas>
+
+- `clearInterval` acepta `null` sin quejarse, así que `programar()` puede cancelar siempre, antes de decidir.
+- `empezar()` y `pausar()` terminan con `programar()` y `pintar()`.
+- Si ya está corriendo, `empezar()` no hace nada. Si no, la hora de término se movería.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={5} proyecto="02-pomodoro" slug="pomodoro">
+
+La serie del día: con 4 pomodoros es trabajo, descanso corto, trabajo, descanso corto… y el último lleva el descanso largo.
+
+- `serie()` arma esa lista de bloques.
+- `siguiente()` dice qué viene después del bloque actual. Después del descanso largo vuelve al pomodoro 1.
+- `irA(bloque)` cambia al bloque que le pases, en pausa y con su tiempo completo, y anima la esfera con `rellenar()`.
+- `terminarBloque()` anota el bloque en `hechos`, escribe qué sigue en el elemento `data-anuncio` (que leen los lectores de pantalla) y va al siguiente.
+- `pintarSerie()` dibuja los carriles, cada uno con su corchera, y `pintarAvance()` va llenando la del bloque actual.
+
+Además, `tic()` llama a `terminarBloque()` cuando llega a cero. Esa línea, `pintarSerie()` en `pintar()` y `pintarAvance()` en `pintarTiempo()` van en funciones que ya escribiste. La solución las marca.
+
+<Comprueba>
+
+Aparece la serie, con el primer carril marcado en rojo. Haz el bloque corto y empiézalo:
+
+```js
+estado.restante = 3000;
+pintar();
+```
+
+Pulsa Empezar: a los 3 segundos pasa al descanso corto, en pausa, y el primer carril queda tachado.
+
+</Comprueba>
+
+<Pistas>
+
+- El índice del bloque actual en la serie es `(numero - 1) * 2`, más 1 si es un descanso.
+- La corchera ya tiene sus estilos. Su ancho es proporcional a los minutos, y lo recorrido se controla con la variable CSS `--avance`, de 0 a 1.
+- Para saber desde dónde rellenar la esfera, calcula en `irA()` lo que ya pasó **antes** de cambiar de bloque.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={6} proyecto="02-pomodoro" slug="pomodoro">
+
+Cuatro formas de moverse por la serie, y todas terminan en `irA()`:
+
+- **Saltar** va al bloque siguiente, sin anotarlo como hecho.
+- **Reiniciar** vuelve a empezar el mismo bloque.
+- **Empezar de nuevo**, en el panel de la serie, vuelve al pomodoro 1. Se apaga cuando ya estás ahí sin haber empezado. Esa línea va en `pintar()`.
+- **Las pestañas** eligen un bloque a mano. El descanso largo es el del último pomodoro de la serie.
+
+Pero un clic sin querer no debería borrar 20 minutos de trabajo. `puedoDejarlo()` revisa cuánto llevas: si es menos de un minuto, sigue sin preguntar; si no, pregunta con `confirm()`, que abre el cuadro de confirmación del navegador y devuelve `true` o `false`.
+
+<Comprueba>
+
+Pulsa Saltar: pasa al descanso corto. Elige «Descanso largo»: la esfera muestra 15 minutos. Ahora simula que llevas 5 minutos de trabajo:
+
+```js
+irA({ bloque: "trabajo", numero: 2 });
+estado.restante = 20 * 60000;
+pintar();
+```
+
+Pulsa Reiniciar: te pregunta antes. Si cancelas, nada cambia.
+
+</Comprueba>
+
+<Pistas>
+
+- Lo que llevas del bloque es su duración completa menos `restanteAhora()`.
+- `confirm()` solo corre si hace falta: `pasado < MINUTO || confirm(...)`. Si la primera parte es `true`, `||` ni mira la segunda.
+- Si cancelas en una pestaña, el radio ya cambió. Llamar a `pintar()` vuelve a marcar la pestaña correcta.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={7} proyecto="02-pomodoro" slug="pomodoro">
+
+Los atajos: **Espacio** empieza o pausa, **S** salta y **R** reinicia. Un solo `keydown` en el documento ([Eventos](/navegador/eventos)) decide qué hacer.
+
+Hay que respetar el foco:
+
+- Si el foco está en un campo o dentro de un diálogo, las teclas son de ellos: escribir una «s» en un campo no debería saltar el bloque.
+- Las pestañas de bloque son radios, pero ahí los atajos sí valen.
+- Si el foco está en un botón, Espacio lo pulsaría. `preventDefault()` lo evita, y de paso evita que la página baje.
+
+Ignora también las teclas con `Ctrl`, `Alt` o `Cmd` (`Ctrl` + `R` recarga la página) y las que se repiten por dejarlas apretadas.
+
+<Comprueba>
+
+Pulsa Espacio: empieza. Otra vez: pausa. Pulsa R: vuelve a 25:00. Haz clic en Saltar y después pulsa Espacio: empieza el bloque, no se salta otro.
+
+</Comprueba>
+
+<Pistas>
+
+- `evento.code` vale `"Space"`, `"KeyS"` o `"KeyR"`, sin importar el idioma del teclado.
+- `evento.target.closest('input:not([type="radio"]), select, textarea, dialog')` te dice si la tecla cayó en un campo o en un diálogo.
+- `evento.repeat` es `true` cuando la tecla se repite.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={8} proyecto="02-pomodoro" slug="pomodoro">
+
+Con la pestaña escondida, el navegador frena los timers: tu intervalo de 200 ms puede pasar a una vuelta por segundo, o incluso por minuto. Gracias al paso 4 el tiempo no se atrasa, pero **el final puede llegar tarde**. Y es justo cuando estás en otra pestaña que más importa enterarte.
+
+La solución: cuando la pestaña se esconde, agenda **un solo `setTimeout`** para el final exacto, y deja un intervalo lento de un segundo para el título de la pestaña. El evento `visibilitychange` avisa cuando la pestaña se esconde o vuelve, y `document.hidden` dice cuál de las dos pasó ([APIs del dispositivo](/navegador/apis-del-dispositivo)).
+
+Casi todo el cambio va en `programar()`, que ya escribiste: si `document.hidden`, agenda el timeout además del intervalo. La solución marca las líneas.
+
+<Comprueba>
+
+Deja el bloque en 10 segundos, empiézalo y cámbiate de pestaña enseguida:
+
+```js
+estado.restante = 10000;
+pintar();
+empezar();
+```
+
+Mira el título de la pestaña: a los 10 segundos cambia a «5:00 · Descanso corto», sin que vuelvas.
+
+</Comprueba>
+
+<Pistas>
+
+- Guarda lo que devuelve `setTimeout` en una variable, `alarma`, para cancelarlo con `clearTimeout` en `programar()`.
+- El timeout llama a `tic()`, que ya sabe terminar el bloque.
+- Al volver a la pestaña, llama a `tic()` para que el tiempo se vea al día al instante.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={9} proyecto="02-pomodoro" slug="pomodoro">
+
+Si el bloque termina mientras estás en otra aplicación, el título de la pestaña no alcanza. Un **aviso del sistema** con `Notification` sí te encuentra ([APIs del dispositivo](/navegador/apis-del-dispositivo)).
+
+- Hay que pedir permiso con `Notification.requestPermission()`, y solo se puede pedir después de un clic. Por eso hay un botón «Activar avisos» en el pie.
+- `pintarAvisos()` escribe el estado del permiso en el botón: activados, bloqueados o por activar. Si ya no se puede hacer nada con él, lo desactiva.
+- `avisar()` crea el aviso y, en el teléfono, vibra con `navigator.vibrate`.
+
+Llama a `avisar()` en `terminarBloque()` y a `pintarAvisos()` en el arranque.
+
+<Comprueba>
+
+Pulsa «Activar avisos» y acepta. Repite la prueba del paso 8: con la pestaña escondida, a los 10 segundos llega el aviso «Terminó: Trabajo».
+
+</Comprueba>
+
+<Pistas>
+
+- `Notification.permission` vale `"default"` (sin decidir), `"granted"` o `"denied"`.
+- La opción `tag: "pomodoro"` hace que un aviso nuevo reemplace al anterior, en lugar de apilarse.
+- `navigator.vibrate?.(...)`: con `?.`, en un navegador sin vibración simplemente no pasa nada.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={10} proyecto="02-pomodoro" slug="pomodoro">
+
+Un pitido al terminar, **sin archivo de audio**: lo fabrica Web Audio ([Audio, video y cámara](/navegador/audio-video-y-camara)). Un oscilador da la nota y un nodo de volumen (`GainNode`) la enciende y la apaga con suavidad.
+
+La trampa: los navegadores **no dejan sonar audio sin un clic** de la persona. Cuando el bloque termina, nadie hizo clic. Por eso el `AudioContext` se crea en `prepararSonido()`, al pulsar Empezar, y queda listo para cuando haga falta.
+
+`pitar()` toca tres pitidos cortos, solo si el sonido está activado en los ajustes.
+
+<Comprueba>
+
+Deja el bloque en 3 segundos (`estado.restante = 3000; pintar();`) y pulsa Empezar: al terminar suenan tres pitidos.
+
+</Comprueba>
+
+<Pistas>
+
+- `audio ??= new AudioContext()` lo crea solo la primera vez.
+- Si el contexto quedó en `"suspended"`, `audio.resume()` lo despierta.
+- Para que no haga clic, el volumen sube y baja con `exponentialRampToValueAtTime`. Como una rampa exponencial no puede llegar a 0, se usa `0.0001`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={11} proyecto="02-pomodoro" slug="pomodoro">
+
+Si usas el temporizador en el teléfono, la pantalla se apaga a los pocos minutos. **Wake Lock** le pide al sistema que no la apague mientras corre un bloque ([APIs del dispositivo](/navegador/apis-del-dispositivo)).
+
+- `pedirPantalla()` hace el pedido con `navigator.wakeLock.request("screen")`, que devuelve una promesa. Puede fallar, por ejemplo con poca batería, así que va con `await` dentro de un `try`.
+- `soltarPantalla()` lo suelta al pausar o al cambiar de bloque.
+
+El navegador suelta el pedido solo cuando escondes la pestaña. Por eso, en el `visibilitychange` del paso 8, se vuelve a pedir al volver. Esa y las de `empezar()`, `pausar()` e `irA()` son líneas en funciones que ya escribiste.
+
+<Comprueba>
+
+Pulsa Empezar: en el pie aparece «Pantalla encendida». Pausa y desaparece. Si tu navegador no tiene Wake Lock, no aparece nada, y el temporizador funciona igual.
+
+</Comprueba>
+
+<Pistas>
+
+- Si `"wakeLock" in navigator` da `false`, sal de la función sin hacer nada.
+- El pedido avisa cuando se suelta con el evento `release`. Ahí vuelve a esconder el texto.
+- `pantalla?.release()` no falla si no había pedido.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={12} proyecto="02-pomodoro" slug="pomodoro">
+
+Si recargas la página, hoy se pierde todo. Con `localStorage` ([Guardar datos](/navegador/guardar-datos)) el estado sobrevive:
+
+- `guardar()` guarda el estado entero como [JSON](/objetos/json) cada vez que se pinta.
+- `cargar()` lo recupera al arrancar, y del historial se queda con los últimos 30 días.
+
+Fíjate en lo que se guarda: **la hora de término**, no cuánto faltaba. Si cierras la pestaña con 10 minutos por delante y vuelves a los 4, el reloj sigue en 6. Y si vuelves cuando ya terminó, el bloque termina enseguida.
+
+Con lo anotado en `hechos` sale el **resumen del día**: `trabajoDe(dia)` filtra los pomodoros de un día, y `racha()` cuenta cuántos días seguidos tuvieron al menos uno ([Fechas](/biblioteca-estandar/fechas)).
+
+En el arranque, antes de `pintar()`, van `cargar()` y `programar()`, este último por si se guardó corriendo.
+
+<Comprueba>
+
+Empieza un bloque y recarga: sigue corriendo donde iba. Termina un pomodoro corto (`estado.restante = 3000; pintar();` y Empezar): en el resumen, «pomodoros hoy» pasa a 1.
+
+</Comprueba>
+
+<Pistas>
+
+- `localStorage.getItem` devuelve `null` si no hay nada, y `JSON.parse(null)` da `null`: un `if (!guardado) return` alcanza.
+- Mezcla los ajustes guardados con los de siempre (`{ ...estado.ajustes, ...guardado.ajustes }`). Así, si en una versión futura agregas un ajuste nuevo, tiene su valor.
+- Dos fechas son del mismo día si `toDateString()` da el mismo texto.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={13} proyecto="02-pomodoro" slug="pomodoro">
+
+Dos diálogos para terminar ([Diálogos y popovers](/navegador/dialogos-y-popovers)):
+
+- **Ajustes** llena el formulario con los valores actuales y lo abre con `showModal()`. Su formulario usa `method="dialog"`: al enviarlo, el diálogo se cierra solo y `returnValue` dice qué botón se pulsó. Si fue «Guardar», lee los campos con `FormData` ([Formularios](/navegador/formularios)) y aplica los ajustes. Si el reloj está en pausa, el bloque toma la duración nueva al momento.
+- **Historial** muestra los minutos de trabajo de los últimos 7 días, cada uno con su corchera. El nombre de cada día sale de `Intl.DateTimeFormat` ([Intl](/biblioteca-estandar/intl)), así que se escribe en español: «lun 23».
+
+<Comprueba>
+
+Abre Ajustes, pon 1 minuto de trabajo y guarda: la esfera pasa a 1:00, con marcas cada 15 segundos. Abre Ajustes otra vez y cierra con `Escape`: no cambia nada. Abre Historial: aparecen 7 días y el último dice «hoy».
+
+</Comprueba>
+
+<Pistas>
+
+- `formAjustes.elements.trabajo` es el campo con `name="trabajo"`. Una casilla usa `.checked`, no `.value`.
+- Antes de abrir, pon `dialogo.returnValue = ""`. Si se cierra con `Escape`, `returnValue` no cambia, y quedaría el «guardar» de la vez anterior.
+- `FormData` da texto: pásalo a número con `Number()`. Una casilla sin marcar no aparece en el `FormData`, así que usa `datos.has("sonido")`.
+
+</Pistas>
+
+</Paso>
+
+## Lo que aprendiste
+
+- Por qué los timers **se atrasan**, y a medir el tiempo contra una hora de término en lugar de contar vueltas ([Timers](/biblioteca-estandar/timers-y-consola)).
+- Lo que hace el navegador con una pestaña **escondida**, y cómo llegar a tiempo igual.
+- A dibujar en un círculo con seno y coseno, y a crear SVG desde JavaScript ([Canvas y SVG](/navegador/canvas-y-svg)).
+- Una serie de bloques como datos, con una función que dice qué viene después.
+- Atajos de teclado que respetan el foco ([Eventos](/navegador/eventos)).
+- Avisos del sistema, sonido fabricado con Web Audio y la pantalla encendida con Wake Lock, cada uno con su permiso o su clic.
+- A guardar el estado para retomarlo, y a sacar estadísticas de un historial con fechas.
+
+## Llévalo más lejos
+
+Tres ideas para seguir sin guía:
+
+- **¿En qué trabajaste?** Un campo para escribir la tarea de cada pomodoro, guardada en `hechos`, y la lista de tareas del día en el historial.
+- **El tiempo en el ícono.** Dibuja un circulito con lo que queda en un `<canvas>` y úsalo como ícono de la pestaña ([Canvas y SVG](/navegador/canvas-y-svg)), así se ve aunque haya muchas pestañas abiertas.
+- **Exportar el historial.** Un botón que descargue los `hechos` como un archivo CSV para abrirlo en una planilla.

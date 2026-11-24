@@ -43,7 +43,7 @@ export const proyectos: Proyecto[] = [
   { numero: 1, slug: 'generador-de-paletas', titulo: 'Generador de paletas', nivel: 'facil', tamano: 'chico', publicado: true,
     resumen: 'La barra espaciadora genera colores armónicos; mide su contraste y saca una paleta de tu foto.',
     temas: ['Teclado', 'URL', 'Canvas'] },
-  { numero: 2, slug: 'pomodoro', titulo: 'Temporizador Pomodoro', nivel: 'facil', tamano: 'chico',
+  { numero: 2, slug: 'pomodoro', titulo: 'Temporizador Pomodoro', nivel: 'facil', tamano: 'chico', publicado: true,
     resumen: 'Bloques de trabajo y descanso que no se atrasan, aunque la pestaña quede escondida.',
     temas: ['Timers', 'Event loop', 'Notificaciones'] },
   { numero: 3, slug: 'mecanografia', titulo: 'Reto de mecanografía', nivel: 'facil', tamano: 'chico',
