@@ -64,7 +64,7 @@ export const proyectos: Proyecto[] = [
   { numero: 7, slug: 'autocompletado', titulo: 'Buscador con autocompletado', nivel: 'intermedio', tamano: 'chico', publicado: true,
     resumen: 'Busca en Wikipedia mientras escribes, sin importar las tildes.',
     temas: ['Debounce', 'AbortController', 'Accesibilidad'] },
-  { numero: 8, slug: 'notificaciones-toast', titulo: 'Notificaciones toast', nivel: 'intermedio', tamano: 'chico',
+  { numero: 8, slug: 'notificaciones-toast', titulo: 'Notificaciones toast', nivel: 'intermedio', tamano: 'chico', publicado: true,
     resumen: 'Tu propia librería de avisos, que vas a reutilizar en otros proyectos.',
     temas: ['Web Components', 'Módulos', 'Animaciones'] },
   { numero: 9, slug: 'calendario', titulo: 'Calendario con eventos', nivel: 'intermedio', tamano: 'chico',

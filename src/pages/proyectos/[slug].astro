@@ -10,7 +10,7 @@ import Icono from '../../components/Icono.astro';
 import { proyectos, NIVELES } from '../../data/proyectos';
 import { buscarTema } from '../../data/temario';
 import { reportarLeccion } from '../../data/sitio';
-import { analizar } from '../../lib/pasos-proyecto.mjs';
+import { analizar, archivoDePasos } from '../../lib/pasos-proyecto.mjs';
 
 export async function getStaticPaths() {
   const guias = await getCollection('proyectos');
@@ -23,7 +23,8 @@ const { guia } = Astro.props;
 const { Content } = await render(guia);
 const datos = proyectos.find((p) => p.slug === guia.data.slug)!;
 const nivel = NIVELES[datos.nivel];
-const an = analizar(readFileSync(join(process.cwd(), 'proyectos', guia.data.carpeta, 'final', 'app.js'), 'utf8'));
+const dirFinal = join(process.cwd(), 'proyectos', guia.data.carpeta, 'final');
+const an = analizar(readFileSync(join(dirFinal, await archivoDePasos(dirFinal)), 'utf8'));
 const pasos = an.bloques.map((b) => ({ n: b.n, titulo: b.titulo.charAt(0).toUpperCase() + b.titulo.slice(1) }));
 const ids = pasos.map((p) => `proyecto/${datos.slug}/paso-${p.n}`);
 

@@ -1,0 +1,363 @@
+---
+slug: notificaciones-toast
+carpeta: 08-notificaciones-toast
+horas: 6
+intro: 'Tu propia librería de avisos: <b>zona-toasts</b>. Un archivo que cualquier proyecto puede importar para mostrar un aviso con una línea, <code>await toasts.mostrar({...})</code>, que espera hasta que la persona lo cierra. Se ven dos a la vez y los demás esperan en una cola, que la demo muestra a la vista. Es el primer proyecto con <b>módulos</b> y con un <b>Web Component</b>. El HTML, el CSS y la demo ya están hechos: tú escribes la librería en 10 pasos.'
+lecciones: [modulos/es-modules, metaprogramacion/template-tags, navegador/web-components, clases/campos-privados, asincronia/promesas, novedades/es2024, navegador/eventos-propios, navegador/estilos-y-animacion, navegador/eventos, navegador/accesibilidad]
+---
+import Paso from '../../components/proyectos/Paso.astro';
+import Comprueba from '../../components/proyectos/Comprueba.astro';
+import Pistas from '../../components/proyectos/Pistas.astro';
+import Nota from '../../components/Nota.astro';
+
+## Lo nuevo de este proyecto
+
+Hasta ahora, cada proyecto era una página con su `app.js`. Este es distinto: escribes **una librería**, un archivo pensado para que otros lo usen sin leerlo por dentro. Dos ideas lo hacen posible.
+
+### Un módulo: lo que exportas es lo que se ve
+
+Un módulo es un archivo de JavaScript con su propio alcance ([Módulos](/modulos/es-modules)). Lo que declaras adentro no es global: otra parte de la página no lo ve, salvo que lo **exportes**.
+
+```js
+// zona-toasts.js
+const contador = 0;                     // privado: nadie de afuera lo ve
+export const toasts = { mostrar() {} }; // público: se puede importar
+export default toasts;                  // el que se importa sin llaves
+```
+
+```js
+// demo.js
+import toasts from "./zona-toasts.js";        // el export por defecto
+import { toasts as t } from "./zona-toasts.js"; // uno con nombre
+import * as libreria from "./zona-toasts.js";   // todo, en un objeto
+```
+
+La demo usa la última forma. Así, mientras construyes la librería, lo que todavía no exportaste simplemente no está (`libreria.toasts` es `undefined`), y la demo te lo dice en vez de romperse.
+
+### Una promesa que cumple otro
+
+`await toasts.mostrar(...)` tiene que esperar a algo que **no depende de esa función**: que la persona toque un botón, que pase el tiempo o que arrastre el aviso. La promesa se crea en un lugar y se cumple en otro. Para eso está `Promise.withResolvers()` ([ES2024](/novedades/es2024)), que entrega la promesa y su `resolve` por separado:
+
+```js
+const { promise, resolve } = Promise.withResolvers();
+
+boton.addEventListener("click", () => resolve("Ver fotos"));
+
+const respuesta = await promise; // "Ver fotos", cuando sea que se toque el botón
+```
+
+## Antes de empezar
+
+<Nota tipo="ojo">
+**No abras `index.html` con doble clic.** Este proyecto usa módulos (`import` y `export`), y el navegador no los carga desde un archivo abierto así: la dirección empieza con `file://` y, por seguridad, el navegador bloquea los módulos que no vienen de un servidor (en la consola verás un error de CORS). La página aparece, pero sin avisos.
+</Nota>
+
+1. **Descarga el proyecto inicial** (el botón de arriba), descomprímelo y abre la carpeta en **VS Code**.
+2. **Instala la extensión Live Server**: en VS Code, ve a Extensiones (Ctrl+Shift+X), busca «Live Server» (la de Ritwick Dey) e instálala.
+3. **Ábrelo con Live Server**: haz clic derecho en `index.html` y elige «Open with Live Server». Se abre el navegador en una dirección como `http://127.0.0.1:5500/index.html`. Es un servidor pequeño en tu propia computadora, y con él los módulos funcionan.
+4. Live Server **recarga la página solo** cada vez que guardas un archivo. Deja abierta la **consola** (F12): la vas a usar en cada paso.
+5. **Mira los archivos.** Tú escribes en `zona-toasts.js`: tiene un lugar para cada paso, entre `// PASO n` y `// FIN PASO n`. Lo demás ya está hecho:
+   - `index.html`: la escena con la foto, el elemento `<zona-toasts>` y el panel;
+   - `zona-toasts.css`: los estilos de los avisos, que van a vivir dentro del Shadow DOM;
+   - `demo.js`: conecta los botones del panel con tu librería y dibuja la cola.
+
+Si prefieres la terminal, `npx serve` dentro de la carpeta hace lo mismo que Live Server.
+
+Como `zona-toasts.js` es un módulo, lo que escribes adentro no aparece en la consola como variable global. Para probar cada paso, impórtalo en la consola: `const m = await import("./zona-toasts.js")`, y usa lo que exportaste, como `m.html` o `m.crearAviso`.
+
+## El paso a paso
+
+<Paso n={1} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+Los avisos se arman con HTML, y su texto puede venir de cualquier lado: algo que escribió una persona o la respuesta de un servidor. Si llega `<img src=x onerror=alert(1)>` y lo pegas en `innerHTML` tal cual, **el navegador lo ejecuta**.
+
+Una *template tag* ([Template tags](/metaprogramacion/template-tags)) es una función que se escribe pegada a una plantilla, como `` html`<b>${nombre}</b>` ``, y recibe por separado las partes fijas (`["<b>", "</b>"]`) y los valores (`[nombre]`). Así puedes **escapar solo los valores**: lo que escribiste tú queda como HTML; lo que viene de afuera, como texto.
+
+- `escapar(valor)` cambia `& < > " '` por sus entidades (`&amp;`, `&lt;`…).
+- `html(partes, ...valores)` arma el texto y devuelve un `HTMLSeguro`, una clase con el texto y un `toString()`.
+- Si un valor ya es un `HTMLSeguro` (otra plantilla `html` adentro), no se vuelve a escapar. Si es un array, se unen sus partes. `false`, `null` y `undefined` no escriben nada: así funcionan los `` ${condicion && html`...`} ``.
+
+Exporta `escapar` y `html`.
+
+<Comprueba>
+
+En la consola:
+
+```js
+const m = await import("./zona-toasts.js");
+String(m.html`<b>${"<i>hola</i>"}</b>`)     // "<b>&lt;i&gt;hola&lt;/i&gt;</b>"
+String(m.html`<p>${m.html`<i>ya es HTML</i>`}</p>`) // "<p><i>ya es HTML</i></p>"
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `partes` siempre tiene un elemento más que `valores`: empieza con `partes[0]` y, por cada valor, suma el valor convertido y la parte siguiente.
+- `/[&<>"']/g` encuentra los cinco caracteres; un objeto `ESCAPES` dice por qué cambiar cada uno.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={2} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+`crearAviso(opciones)` arma el `<div class="aviso">` con la etiqueta `html`:
+
+- la foto (`opciones.foto`) o, si no hay, el ícono de su tipo (`exito`, `error`, `info`, `cargando`);
+- el título, el texto y los botones de `opciones.acciones`, cada uno con su respuesta en `data-accion`; el primero lleva la clase `primaria`;
+- el botón con la X para cerrar (`data-accion="cerrado"` y un `aria-label`) y la barra del tiempo.
+
+Cada aviso lleva un `id` único y su rol ([Accesibilidad](/navegador/accesibilidad)): un error se anuncia con `role="alert"` (un lector de pantalla interrumpe lo que esté leyendo); los demás, con `role="status"` (lo lee cuando termina).
+
+Los íconos son SVG escritos por ti: guárdalos como plantillas `html` sin valores, así pasan tal cual.
+
+<Comprueba>
+
+```js
+const m = await import("./zona-toasts.js");
+document.body.append(m.crearAviso({ tipo: "error", titulo: "<b>¿negrita?</b>", acciones: ["Reintentar"] }));
+```
+
+Aparece el aviso al final de la página, todavía sin estilos (esos llegan con el Shadow DOM), y el título se lee con sus `<b>` como texto: no se volvió negrita.
+
+</Comprueba>
+
+<Pistas>
+
+- La desestructuración con valores por defecto deja todo listo: `const { tipo = 'info', titulo = '', acciones = [] } = opciones`.
+- Los botones salen de `` acciones.map((accion, i) => html`<button>${accion}</button>`) ``: un array de `HTMLSeguro`, que `html` sabe unir.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={3} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+`abrirAviso(lista, opciones)` pone el aviso en una lista y devuelve un objeto con el `elemento`, la `promesa` y `cerrar(respuesta)` ([Promesas](/asincronia/promesas)):
+
+1. Crea el aviso con `crearAviso` y una promesa con `Promise.withResolvers()`.
+2. `cerrar(respuesta)` quita el elemento y cumple la promesa con la respuesta. Ojo: solo la primera vez (si ya se cerró, no hace nada).
+3. Un solo oyente de `click` en el aviso atiende todos sus botones: con `closest('[data-accion]')` sabes cuál se tocó, y su `data-accion` es la respuesta.
+
+<Comprueba>
+
+```js
+const m = await import("./zona-toasts.js");
+const aviso = m.abrirAviso(document.body, { titulo: "¿Seguimos?", acciones: ["Sí", "No"] });
+aviso.promesa.then((r) => console.log("eligió:", r));
+```
+
+Toca «Sí»: el aviso se va y la consola dice `eligió: Sí`.
+
+</Comprueba>
+
+<Pistas>
+
+- `cerrar` puede ser una función `async`: en el paso 5 va a esperar una animación antes de quitar el elemento.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={4} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+El tiempo. La barra de abajo del aviso se achica con `animate()` ([Estilos y animación](/navegador/estilos-y-animacion)), y **esa animación es el reloj**: cuando termina, el aviso se cierra con la respuesta `"tiempo"`. Su promesa `finished` avisa cuándo.
+
+La ventaja: si pausas la animación (`pause()`), el reloj se pausa, sin llevar la cuenta de cuánto falta. Se pausa con el mouse encima (`pointerenter`) o con el foco adentro (`focusin`): alguien está leyendo o va a tocar un botón. Al salir, sigue (`play()`), salvo que el mouse o el foco sigan ahí.
+
+La duración: `opciones.duracion`, o 8 segundos si el aviso tiene acciones (hay que leer y decidir) y 5 si no. Con `duracion: 0`, no se cierra solo.
+
+En `cerrar`, cancela el reloj: `aviso.reloj?.cancel()`. Al cancelarse, `finished` se rechaza; no es un error, así que atrápalo sin hacer nada.
+
+<Comprueba>
+
+Crea un aviso como en el paso 3: la barra azul se achica y, a los 8 segundos, se cierra solo. Crea otro y deja el mouse encima: la barra se detiene.
+
+</Comprueba>
+
+<Pistas>
+
+- `barra.animate([{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], { duration, fill: 'forwards' })`.
+- `elemento.matches(':hover, :focus-within')` dice si el mouse o el foco siguen adentro.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={5} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+Entrar y salir con Web Animations:
+
+- `entrar(elemento)`: baja un poco y aparece (`opacity` de 0 a 1, `translateY` de -14 px a 0), en unos 320 ms.
+- `salir(elemento)`: se va hacia la derecha y **su alto baja a cero**, para que los avisos de abajo suban suave en vez de saltar. Devuelve la promesa `finished` de la animación, y `cerrar` la espera con `await` antes de quitar el elemento.
+
+Si la persona pidió menos movimiento en su sistema, no se anima nada: `matchMedia('(prefers-reduced-motion: reduce)').matches`.
+
+<Comprueba>
+
+Crea y cierra avisos: entran bajando y, al cerrar uno, el de abajo sube suave a su lugar.
+
+</Comprueba>
+
+<Pistas>
+
+- Para animar la altura, guarda el alto real antes: `elemento.offsetHeight`, y anima de `${alto}px` a `0px`, junto con el `margin-bottom` y el `padding`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={6} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+Deslizar para cerrar, con el dedo o con el mouse. Los Pointer Events ([Eventos](/navegador/eventos)) tratan igual al dedo, al mouse y al lápiz:
+
+- `pointerdown`: guarda dónde empezó y llama a `setPointerCapture(evento.pointerId)`, para que el aviso siga recibiendo el movimiento aunque el puntero se salga de él. Si se tocó un botón, no hagas nada: los botones siguen funcionando con un clic. Pausa el reloj.
+- `pointermove`: el aviso sigue al puntero, solo hacia la derecha, y se va desvaneciendo.
+- `pointerup` (y `pointercancel`): si lo arrastraste más de la mitad de su ancho, se cierra con `"cerrado"` y sale desde donde quedó; si no, vuelve a su lugar y el reloj sigue.
+
+El CSS ya tiene `touch-action: pan-y`: en el teléfono, el dedo hacia los costados mueve el aviso y hacia arriba o abajo sigue moviendo la página.
+
+<Comprueba>
+
+Crea un aviso y arrástralo con el mouse: si lo sueltas antes de la mitad, vuelve; si pasas la mitad, se va. En el teléfono (o con la vista de teléfono de las herramientas del navegador), con el dedo.
+
+</Comprueba>
+
+<Pistas>
+
+- Para que `salir` sepa que fue arrastrado, guarda la distancia en el aviso (`aviso.desplazado`) y pásasela: así la animación sigue desde ahí hacia afuera.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={7} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+Ahora, el elemento `<zona-toasts>` ([Web Components](/navegador/web-components)). Un Web Component es una clase que extiende `HTMLElement` y se registra con un nombre con guion: `customElements.define('zona-toasts', ZonaToasts)`. Desde ese momento, el `<zona-toasts>` que ya está en `index.html` cobra vida.
+
+En el constructor, `attachShadow({ mode: 'open' })` le da un **Shadow DOM**: un HTML privado, donde los estilos de la página no entran y los de la librería no salen. Adentro van un `<link>` a `zona-toasts.css` y un `<div class="lista">`. La dirección del CSS sale de `import.meta.url`, la dirección de este mismo módulo: `new URL('./zona-toasts.css', import.meta.url)`. Así funciona aunque la librería se use desde otra carpeta.
+
+La cola, con campos privados ([Campos privados](/clases/campos-privados)): `#visibles` y `#cola`.
+
+- `mostrar(opciones)` guarda el pedido en la cola y devuelve una promesa (otra vez `Promise.withResolvers`).
+- `#avanzar()` abre avisos mientras haya lugar (`maximo`, que se lee del atributo `maximo="2"`) y pedidos en la cola. Cuando un aviso se cierra, lo quita de los visibles, cumple su promesa y vuelve a avanzar.
+- Después de cada cambio, avisa con un evento propio ([Eventos propios](/navegador/eventos-propios)): `this.dispatchEvent(new CustomEvent('cambio', { detail: { visibles, esperando } }))`. La demo lo escucha para dibujar la cola.
+
+Exporta la clase.
+
+<Comprueba>
+
+```js
+const zona = document.querySelector("zona-toasts");
+for (const titulo of ["Uno", "Dos", "Tres", "Cuatro"]) zona.mostrar({ titulo });
+```
+
+Los avisos ya tienen sus estilos. Se ven dos, y en el panel «En la cola · 2». Cierra uno: sube el siguiente, y la cola baja a 1.
+
+</Comprueba>
+
+<Pistas>
+
+- `#avanzar` usa un `while`: puede haber lugar para más de uno a la vez.
+- `this.#cola.shift()` saca el primero que llegó: la cola respeta el orden.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={8} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+La puerta de entrada. Quien use la librería no tiene por qué buscar el elemento: importa `toasts` y llama a `toasts.mostrar(...)` ([Módulos](/modulos/es-modules)).
+
+- `zona()` busca el `<zona-toasts>` de la página y, si no hay, crea uno al final del `<body>`.
+- `export const toasts = { mostrar, exito, error }`: `exito(titulo, otras)` y `error(titulo, otras)` son atajos que ponen el tipo.
+- `export default toasts`: así también se puede importar sin llaves.
+
+Desde aquí, la demo entera funciona: al abrir llegan cinco avisos de un viaje, dos a la vista y tres en la cola.
+
+<Comprueba>
+
+Recarga: llegan los avisos del viaje. Toca «Ver fotos» en el de Cusco: debajo del código, la respuesta dice `"Ver fotos"`. En la consola:
+
+```js
+const { default: toasts } = await import("./zona-toasts.js");
+await toasts.exito("Desde la consola");   // espera hasta que se cierre
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `document.querySelector('zona-toasts') ?? document.body.appendChild(...)`: `appendChild` devuelve el elemento que agregó.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={9} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+Con el teclado no hay que perseguir la X: **Escape cierra el aviso más nuevo**. `escucharEscape(zona)` escucha `keydown` en el documento y llama a `zona.cerrarUltimo()`. Llámala desde `connectedCallback`, que corre cuando el elemento entra en la página.
+
+Si otra parte de la página ya usó ese Escape (por ejemplo, un diálogo abierto que llamó a `preventDefault()`), el aviso no se entera: revisa `evento.defaultPrevented`.
+
+<Comprueba>
+
+Con avisos en pantalla, presiona Escape: se cierra el último que llegó, y la respuesta dice `"cerrado"`.
+
+</Comprueba>
+
+<Pistas>
+
+- `this.#visibles.at(-1)` es el último del array.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={10} proyecto="08-notificaciones-toast" slug="notificaciones-toast">
+
+Un aviso que espera: `toasts.cargando(tarea, textos)`. Muestra un aviso de tipo `cargando` que **no se cierra solo** (`duracion: 0`) mientras la tarea está pendiente.
+
+La tarea puede ser una promesa o **una función que devuelve una promesa**. La diferencia importa por la cola: si el aviso tiene que esperar su turno, con una promesa el trabajo ya empezó (y quizás terminó) antes de que el aviso se vea; con una función, el trabajo arranca recién cuando el aviso entra en escena. Por eso `esperarYCambiar` llama a la función si recibe una: `typeof esperar === 'function' ? esperar() : esperar`. Cuando termina, **el mismo aviso** cambia en su lugar:
+
+- si se cumplió, a `exito`, con `textos.exito`;
+- si se rechazó, a `error`, con `textos.error`.
+
+Los textos de éxito y error pueden ser objetos o funciones que reciben el valor (o el motivo): `` exito: (n) => ({ titulo: `${n} fotos subidas` }) ``.
+
+`actualizarAviso(aviso, cambios)` mezcla las opciones nuevas con las viejas, arma un aviso nuevo con `crearAviso` y pasa su contenido, su clase y su rol al elemento que ya estaba (así no se mueve de lugar), y vuelve a programar el cierre. En `abrirAviso`, si las opciones traen `esperar` (la promesa), llama a `esperarYCambiar(aviso)`.
+
+<Comprueba>
+
+Toca «Cargando»: aparece «Subiendo 3 fotos…» con el ícono girando y, a los dos segundos y medio, el mismo aviso pasa a «3 fotos subidas». Toca «Lanzar 5 a la vez» y enseguida «Cargando»: el aviso de carga espera en la cola, y cuando sale, recién ahí empieza a subir.
+
+</Comprueba>
+
+<Pistas>
+
+- Para que el aviso nuevo vuelva a tener la duración normal, pasa `duracion: undefined`: el valor por defecto de la desestructuración solo se usa con `undefined`.
+
+</Pistas>
+
+</Paso>
+
+## Lo que aprendiste
+
+- A escribir una librería como **módulo**: `export`, `export default`, `import * as` e `import.meta.url`.
+- Por qué los módulos necesitan un servidor, y a abrir un proyecto con Live Server.
+- Template tags que escapan el HTML que viene de afuera.
+- Web Components con Shadow DOM, campos privados y `connectedCallback`.
+- Promesas que cumple otro, con `Promise.withResolvers`, y una cola que las encadena.
+- Eventos propios como la forma de contarle a la página lo que pasa adentro.
+- Web Animations como reloj: `finished`, `pause` y `play`.
+- Pointer Events con `setPointerCapture` para arrastrar con el dedo o el mouse.
+- `role="status"` y `role="alert"`, Escape y la pausa con el foco.
+
+## Llévalo más lejos
+
+Tres ideas para seguir sin guía:
+
+- **Posición configurable.** Un atributo `posicion="abajo-izquierda"` que cambie dónde aparecen los avisos, leído con `attributeChangedCallback`.
+- **Historial.** Un evento propio `cerrado`, con el aviso y su respuesta, y un cajón con los últimos diez.
+- **Úsala en otro proyecto.** Copia `zona-toasts.js` y `zona-toasts.css` a otro proyecto (el generador de paletas, por ejemplo) y avisa «Copiado» con `toasts.exito("Copiado")`.

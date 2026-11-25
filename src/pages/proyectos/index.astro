@@ -7,14 +7,17 @@ import Icono from '../../components/Icono.astro';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { proyectos, NIVELES, type Nivel } from '../../data/proyectos';
-import { analizar } from '../../lib/pasos-proyecto.mjs';
+import { analizar, archivoDePasos } from '../../lib/pasos-proyecto.mjs';
 
 // Cuántos pasos tiene cada proyecto publicado: un proyecto está completo cuando están todos hechos
-const pasosDe = (slug: string) => {
-  const carpeta = `${String(proyectos.find((p) => p.slug === slug)!.numero).padStart(2, '0')}-${slug}`;
-  const app = join(process.cwd(), 'proyectos', carpeta, 'final', 'app.js');
-  return existsSync(app) ? analizar(readFileSync(app, 'utf8')).bloques.length : 0;
-};
+const pasosPorSlug = new Map<string, number>();
+for (const p of proyectos) {
+  const dirFinal = join(process.cwd(), 'proyectos', `${String(p.numero).padStart(2, '0')}-${p.slug}`, 'final');
+  if (!existsSync(join(dirFinal, 'index.html'))) continue;
+  const archivo = join(dirFinal, await archivoDePasos(dirFinal));
+  if (existsSync(archivo)) pasosPorSlug.set(p.slug, analizar(readFileSync(archivo, 'utf8')).bloques.length);
+}
+const pasosDe = (slug: string) => pasosPorSlug.get(slug) ?? 0;
 
 const grupos = (Object.keys(NIVELES) as Nivel[]).map((nivel) => {
   const lista = proyectos.filter((p) => p.nivel === nivel);

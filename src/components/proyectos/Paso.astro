@@ -3,7 +3,7 @@
 // (bloque «// PASO n»); la explicación, la comprobación y las pistas van como hijos, en el MDX.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { analizar, paso } from '../../lib/pasos-proyecto.mjs';
+import { analizar, paso, archivoDePasos } from '../../lib/pasos-proyecto.mjs';
 import CodigoPaso from './CodigoPaso.astro';
 
 interface Props {
@@ -14,7 +14,9 @@ interface Props {
   slug: string;
 }
 const { n, proyecto, slug } = Astro.props;
-const an = analizar(readFileSync(join(process.cwd(), 'proyectos', proyecto, 'final', 'app.js'), 'utf8'));
+const dirFinal = join(process.cwd(), 'proyectos', proyecto, 'final');
+const archivo = await archivoDePasos(dirFinal);
+const an = analizar(readFileSync(join(dirFinal, archivo), 'utf8'));
 const datos = paso(an, n);
 const titulo = datos.titulo.charAt(0).toUpperCase() + datos.titulo.slice(1);
 const id = `proyecto/${slug}/paso-${n}`;
@@ -34,8 +36,8 @@ const lineasCodigo = datos.codigo.split('\n').map((texto) => ({ texto }));
   <details class="solucion">
     <summary>Ver la solución del paso {n}</summary>
     <div class="solucion-cuerpo">
-      <p>En <code>app.js</code>, entre <code>// PASO {n}</code> y <code>// FIN PASO {n}</code>:</p>
-      <CodigoPaso lineas={lineasCodigo} />
+      <p>En <code>{archivo}</code>, entre <code>// PASO {n}</code> y <code>// FIN PASO {n}</code>:</p>
+      <CodigoPaso lineas={lineasCodigo} archivo={archivo} />
       {datos.cambios.map((c) => (
         <>
           <p>
@@ -43,7 +45,7 @@ const lineasCodigo = datos.codigo.split('\n').map((texto) => ({ texto }));
               ? <>Y al final del archivo, en el arranque{c.lineas.every((l) => l.nueva) ? ', escribe:' : ', agrega las líneas marcadas:'}</>
               : <>Y en <code>{c.donde}</code>, que escribiste en el paso {c.paso}, agrega las líneas marcadas:</>}
           </p>
-          <CodigoPaso lineas={c.lineas} marcar={!c.lineas.every((l) => l.nueva)} copiar={false} />
+          <CodigoPaso lineas={c.lineas} marcar={!c.lineas.every((l) => l.nueva)} copiar={false} archivo={archivo} />
         </>
       ))}
     </div>

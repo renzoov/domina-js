@@ -180,3 +180,14 @@ export function paso(an, n) {
     cambios,
   };
 }
+
+/**
+ * El archivo de pasos de un proyecto: el .js de final/ que tiene «// PASO 1:».
+ * Casi siempre es app.js; una librería con módulos puede tener otro nombre (zona-toasts.js).
+ */
+export async function archivoDePasos(dirFinal) {
+  const { readdirSync, readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const candidatos = readdirSync(dirFinal).filter((n) => n.endsWith('.js')).sort((a, b) => (a === 'app.js' ? -1 : b === 'app.js' ? 1 : a.localeCompare(b)));
+  return candidatos.find((n) => /^\/\/ PASO 1:/m.test(readFileSync(join(dirFinal, n), 'utf8'))) ?? 'app.js';
+}
