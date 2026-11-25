@@ -1,0 +1,377 @@
+---
+slug: autocompletado
+carpeta: 07-autocompletado
+horas: 5
+intro: 'Un buscador de Wikipedia que sugiere mientras escribes. Cada resultado es un <b>billete de avión</b> con la foto de su artículo, y el elegido trae su resumen con un sello rojo. Parece simple, pero un buen autocompletado esconde tres problemas: no pedir con cada tecla, que las respuestas viejas no pisen a las nuevas y que funcione <b>solo con el teclado</b>, también con un lector de pantalla. <b>El HTML y el CSS ya están hechos</b>: tú escribes el JavaScript en 10 pasos.'
+lecciones: [como-se-ejecuta-js/closures, biblioteca-estandar/timers-y-consola, navegador/fetch, asincronia/abortcontroller, asincronia/promesas, colecciones/map-y-set, biblioteca-estandar/unicode, biblioteca-estandar/expresiones-regulares, navegador/dom, navegador/eventos, navegador/accesibilidad]
+---
+import Paso from '../../components/proyectos/Paso.astro';
+import Comprueba from '../../components/proyectos/Comprueba.astro';
+import Pistas from '../../components/proyectos/Pistas.astro';
+import Nota from '../../components/Nota.astro';
+
+## Lo nuevo de este proyecto
+
+Cada pieza tiene su lección, y cada paso la enlaza. Lo nuevo son dos problemas que aparecen apenas un buscador se conecta a un servidor de verdad.
+
+### Las respuestas llegan desordenadas
+
+Escribes «li» y después «lima». Salen dos pedidos, uno detrás del otro. Pero nada garantiza que vuelvan en ese orden: si el de «li» tarda más, llega **último** y pinta sus resultados encima de los de «lima». En la pantalla dice «lima» y la lista es de «li».
+
+La solución tiene dos partes. Primero, **pedir menos**: con *debounce* ([Closures](/como-se-ejecuta-js/closures)), la búsqueda sale recién cuando dejas de escribir un momento. Segundo, **cancelar lo viejo**: antes de cada pedido nuevo se cancela el anterior con su `AbortController` ([AbortController](/asincronia/abortcontroller)). Un pedido cancelado rechaza con un `AbortError`, y ese error se ignora: no es un fallo, es una búsqueda que ya no importa.
+
+```js
+let pedido = null;
+
+async function buscar(texto) {
+  pedido?.abort();                     // la búsqueda anterior ya no importa
+  pedido = new AbortController();
+  try {
+    const respuesta = await fetch(`/buscar?q=${texto}`, { signal: pedido.signal });
+    pintar(await respuesta.json());
+  } catch (error) {
+    if (error.name === "AbortError") return;   // la cancelamos nosotros
+    mostrarError(error);
+  }
+}
+```
+
+### Un combobox: el foco no se mueve
+
+En un menú común, las flechas mueven el foco de un botón a otro. En un buscador eso no sirve: si el foco se va de la caja de texto, ya no puedes seguir escribiendo.
+
+El patrón *combobox* lo resuelve así: el foco **se queda en la caja**, y la caja dice cuál opción está activa con `aria-activedescendant`, el `id` de esa opción. Un lector de pantalla lee la opción activa como si tuviera el foco, y tú puedes seguir escribiendo. Completan el patrón `role="combobox"` en la caja, `aria-expanded` (si la lista está abierta), `aria-controls` (cuál es la lista), `role="listbox"` en la lista y `role="option"` con `aria-selected` en cada opción ([Accesibilidad](/navegador/accesibilidad)).
+
+```html
+<input role="combobox" aria-expanded="true" aria-controls="lista" aria-activedescendant="opcion-1">
+<ul id="lista" role="listbox">
+  <li id="opcion-0" role="option" aria-selected="false">Lima</li>
+  <li id="opcion-1" role="option" aria-selected="true">Limache</li>
+</ul>
+```
+
+El HTML del proyecto ya trae esos atributos; tú los mantienes al día desde JavaScript.
+
+## Antes de empezar
+
+1. **Descarga el proyecto inicial** (el botón de arriba), descomprímelo y abre la carpeta en tu editor.
+2. **Abre `index.html` con doble clic.** Vas a ver el título, la caja de búsqueda y, a la derecha, el billete de bienvenida todavía vacío. Este proyecto **necesita internet**: los resultados llegan de Wikipedia.
+3. **Abre la consola** (F12). Cada paso tiene un «Cómo comprobarlo» que la usa. Cada vez que guardes `app.js`, recarga la página. La pestaña **Red** (Network) te va a mostrar cada pedido a Wikipedia: es la mejor forma de ver el debounce y las cancelaciones.
+4. **Mira `app.js`.** Tiene un lugar para cada paso, entre `// PASO n` y `// FIN PASO n`. Escribe el código de cada paso en su lugar.
+
+En todo el proyecto no hace falta tocar el HTML ni el CSS. El HTML trae:
+
+- la **caja de búsqueda** con sus atributos de combobox, y el botón para borrar;
+- la **lista** de billetes (`role="listbox"`), vacía, y un lugar para avisos;
+- el **billete grande** a la derecha, con la bienvenida;
+- dos **plantillas** `<template>`: un billete de la lista y el billete elegido.
+
+<Nota tipo="consejo">
+Wikipedia tiene dos servicios abiertos, sin clave y con CORS: [la búsqueda por título](https://es.wikipedia.org/w/rest.php/v1/search/title?q=lima&limit=3) y [el resumen de un artículo](https://es.wikipedia.org/api/rest_v1/page/summary/Lima). Ábrelos en el navegador para ver qué devuelven.
+</Nota>
+
+## El paso a paso
+
+<Paso n={1} proyecto="07-autocompletado" slug="autocompletado">
+
+Las constantes:
+
+- `BUSQUEDA` y `RESUMEN`: las dos direcciones de Wikipedia, `'https://es.wikipedia.org/w/rest.php/v1/search/title'` y `'https://es.wikipedia.org/api/rest_v1/page/summary/'`.
+- `LIMITE`: 8 resultados. `ESPERA`: 250 milisegundos. `MINIMO`: 2 letras para empezar a buscar.
+
+El `estado`: la `consulta` buscada, los `resultados` que se ven y el billete `activo` del teclado (`-1`: ninguno).
+
+Busca los elementos con `querySelector`: la caja (`#campo`), el botón de borrar, la línea de estado, la lista, el aviso, el billete grande, los sugeridos y las dos plantillas.
+
+<Comprueba>
+
+```js
+estado      // { consulta: "", resultados: [], activo: -1 }
+campo       // <input id="campo" role="combobox" …>
+```
+
+</Comprueba>
+
+<Pistas>
+
+- El `id` de la línea de estado es `estado`, igual que el objeto: llama a su variable distinto, por ejemplo `estadoTexto`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={2} proyecto="07-autocompletado" slug="autocompletado">
+
+`debounce(fn, ms)` recibe una función y devuelve **otra** ([Closures](/como-se-ejecuta-js/closures)). Cada vez que llamas a la nueva:
+
+1. cancela la espera anterior con `clearTimeout` ([Timers](/biblioteca-estandar/timers-y-consola));
+2. empieza una espera nueva con `setTimeout`, que al terminar llama a `fn` con los mismos argumentos.
+
+Si la llamas diez veces seguidas, cada llamada cancela la anterior: `fn` corre **una sola vez**, `ms` milisegundos después de la última. La variable que guarda la espera vive en el *closure*: la ve solo la función que devolviste, y cada `debounce` tiene la suya.
+
+<Comprueba>
+
+```js
+const decir = debounce((texto) => console.log("ahora sí:", texto), 500);
+decir("l"); decir("li"); decir("lim");
+// medio segundo después, una sola línea: "ahora sí: lim"
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `(...argumentos) => …` recibe todos los argumentos, y `fn(...argumentos)` se los pasa tal cual.
+- `let espera;` va **dentro** de `debounce` y **fuera** de la función que devuelve.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={3} proyecto="07-autocompletado" slug="autocompletado">
+
+`pedirResultados(texto, senal)` pide a la búsqueda de Wikipedia ([fetch](/navegador/fetch)):
+
+1. Arma los parámetros con `URLSearchParams` ([URL](/biblioteca-estandar/url)): `q` y `limit`.
+2. Pide con `fetch`, pasando la señal en `signal`: el paso 4 la usa para cancelar.
+3. Si `respuesta.ok` es `false`, lanza un `Error` con el código.
+4. La respuesta trae `pages`. Devuelve un array con lo que vas a usar de cada una: `clave` (`key`), `titulo`, `descripcion` y `foto`.
+
+Las fotos llegan con 60 píxeles de ancho y una dirección que empieza con `//`. `fotoDeTamano(direccion, ancho)` cambia el `60px-` de la dirección por el tamaño que quieras, y la completa con `new URL(direccion, 'https://es.wikipedia.org')`, que agrega el `https:` que falta.
+
+<Comprueba>
+
+```js
+const resultados = await pedirResultados("lima", new AbortController().signal);
+resultados[0]   // { clave: "Lima", titulo: "Lima", descripcion: "capital de Perú", foto: "https://…/250px-…" }
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `/\/\d+px-/` encuentra el `/60px-` de la dirección; reemplázalo por `` `/${ancho}px-` ``.
+- No todas las páginas tienen foto: si `pagina.thumbnail` no existe, `foto` es `null`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={4} proyecto="07-autocompletado" slug="autocompletado">
+
+`buscar(texto)`, la función que une todo:
+
+1. Guarda la consulta (sin espacios a los costados) en el estado y **cancela la búsqueda anterior**: `pedido?.abort()`.
+2. Si tiene menos de `MINIMO` letras, vacía los resultados y termina.
+3. Si ya está en la **caché** (un `Map`, [Map y Set](/colecciones/map-y-set)), usa lo guardado y termina, sin pedir nada.
+4. Si no, crea un `AbortController` nuevo y pide con `pedirResultados`. La señal junta dos razones para cancelar: una búsqueda más nueva, o 10 segundos sin respuesta. `AbortSignal.any([pedido.signal, AbortSignal.timeout(10000)])` las junta en una sola.
+5. Guarda la respuesta en la caché y en el estado.
+6. En el `catch`, si el error es un `AbortError`, termina sin hacer nada.
+
+Por último, une la caja con la búsqueda: `const buscarPronto = debounce(() => buscar(campo.value), ESPERA)`, y en el evento `input` de la caja, `buscarPronto`. La función lee la caja **recién cuando sale la búsqueda**, no al escribir: si en esos 250 milisegundos la borraste, busca lo que hay ahora y no algo viejo.
+
+<Comprueba>
+
+Abre la pestaña Red, escribe «lima» rápido en la caja y espera: **un solo** pedido a `search/title`. En la consola:
+
+```js
+estado.resultados.length   // 8
+cache.has("lima")          // true
+```
+
+Borra y vuelve a escribir «lima»: no sale ningún pedido nuevo, viene de la caché.
+
+</Comprueba>
+
+<Pistas>
+
+- La clave de la caché puede ser la consulta en minúsculas: «Lima» y «lima» son la misma búsqueda.
+- `pedido` es una variable fuera de `buscar`, con `let`: así cada búsqueda ve la de la búsqueda anterior.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={5} proyecto="07-autocompletado" slug="autocompletado">
+
+Los billetes. `crearBillete(resultado, i)` copia la plantilla y la llena ([DOM](/navegador/dom)):
+
+- el `id` (`billete-0`, `billete-1`…): el paso 7 lo usa en `aria-activedescendant`;
+- `dataset.indice` y la variable CSS `--i`, que el CSS usa para hacer caer cada billete un poco después que el anterior;
+- el nombre y la descripción, con `textContent`;
+- el número del talón, con dos cifras: `String(i + 1).padStart(2, '0')`;
+- la foto como `background-image`, o la clase `sin-foto` si no tiene.
+
+`pintarBilletes()` reemplaza la lista con los billetes, pone `aria-expanded` en la caja y escribe en la línea de estado cuántos destinos hay. Si la consulta es válida pero no hay resultados, `mostrarAviso` muestra «Sin destinos». El aviso también es un billete: el texto a la izquierda y un talón anulado, rayado en rojo.
+
+`mostrarEspera()` pone tres billetes vacíos que laten mientras llega la respuesta. Llévalos a `buscar`: la espera antes de pedir, `pintarBilletes()` después.
+
+<Comprueba>
+
+Escribe «lima»: caen los billetes en abanico, cada uno con su foto, su nombre y su número. Escribe «zzqxjkw»: un billete anulado dice «Sin destinos».
+
+</Comprueba>
+
+<Pistas>
+
+- Los billetes de espera llevan `aria-hidden="true"`: no son opciones, y un lector de pantalla no tiene por qué leerlos. Mientras tanto, la lista lleva `aria-busy="true"`.
+- `aria-expanded` necesita el texto `"true"` o `"false"`: usa `String(...)`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={6} proyecto="07-autocompletado" slug="autocompletado">
+
+Resaltar lo que coincide, **sin importar las tildes** ([Unicode](/biblioteca-estandar/unicode)). Wikipedia encuentra «Árbol» aunque escribas «arbol», así que el resaltado tiene que hacer lo mismo.
+
+`sinTildes(texto)` usa `normalize('NFD')`, que separa cada letra de su tilde («á» pasa a ser «a» más «´»), y después borra las tildes sueltas con `/\p{M}/gu` y pasa todo a minúsculas.
+
+`marcar(texto, consulta)` devuelve un fragmento con el texto y las partes que coinciden dentro de `<mark>`. El truco es que, al quitar tildes, una letra puede volverse más de una, y las posiciones se corren. Por eso arma la versión sin tildes **letra por letra**, y en el array `origen` anota de qué posición del texto original viene cada una.
+
+Para buscar todas las coincidencias usa una expresión regular con `matchAll` ([Expresiones regulares](/biblioteca-estandar/expresiones-regulares)). Lo que escribió la persona puede tener caracteres especiales: «lima (f» rompería la expresión por el paréntesis. `RegExp.escape` (ES2025) los vuelve texto común.
+
+En `crearBillete`, el nombre pasa a ser `marcar(resultado.titulo, estado.consulta)`.
+
+<Comprueba>
+
+Escribe «arbol»: en «Árbol» se marca la palabra entera, con la tilde. En la consola:
+
+```js
+const caja = document.createElement("span");
+caja.append(marcar("Perú y el Perú", "peru"));
+caja.innerHTML   // "<mark>Perú</mark> y el <mark>Perú</mark>"
+```
+
+</Comprueba>
+
+<Pistas>
+
+- `for (const letra of texto)` recorre letra por letra, y `letra.length` dice cuánto avanza la posición en el texto original.
+- Agrega al final `origen.push(texto.length)`: así la posición «después de la última letra» también existe.
+- Arma el resultado con nodos (`append` de texto y de `<mark>`), nunca con `innerHTML`: los títulos vienen de afuera.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={7} proyecto="07-autocompletado" slug="autocompletado">
+
+El teclado, con el patrón combobox ([Eventos](/navegador/eventos)). `marcarActivo(indice)` guarda el índice en el estado, pone `aria-selected="true"` solo en ese billete, escribe su `id` en el `aria-activedescendant` de la caja y lo trae a la vista con `scrollIntoView({ block: 'nearest' })`.
+
+En el `keydown` de la caja:
+
+- **↓** marca el siguiente y, desde el último, vuelve al primero.
+- **↑** marca el anterior y, desde el primero, va al último.
+- **Escape** borra la caja y la búsqueda.
+
+En los tres casos, `evento.preventDefault()`: si no, ↑ y ↓ mueven el cursor del texto al principio o al final.
+
+Cada vez que se pintan billetes nuevos, el activo vuelve a `-1` y la caja pierde su `aria-activedescendant`: los ids viejos ya no existen.
+
+<Comprueba>
+
+Escribe «lima» y usa ↓ y ↑: el billete activo se corre a la derecha con un borde amarillo, y el foco sigue en la caja (puedes seguir escribiendo). En la consola, `campo.getAttribute("aria-activedescendant")` dice cuál es.
+
+</Comprueba>
+
+<Pistas>
+
+- El resto con `%` hace la vuelta: `(activo + 1) % total`.
+- Para ↑: si el activo es `0` o `-1`, el siguiente es `total - 1`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={8} proyecto="07-autocompletado" slug="autocompletado">
+
+Elegir un billete. **Enter** elige el activo (o el primero, si no hay ninguno), y un **clic** elige el billete tocado.
+
+`elegir(indice)` marca ese billete y le pone la clase `elegido-ya` (su talón se pone rojo). Después pide el resumen con `pedirResumen(clave, senal)`, que funciona como la búsqueda: su propio `Map` de caché, su propio `AbortController` (si eliges otro antes de que llegue, el viejo se cancela) y `respuesta.ok`. La clave puede tener tildes y paréntesis, como `Lima_(fruta)`: pásala por `encodeURIComponent`.
+
+`pintarElegido(resumen)` copia la plantilla del billete grande: título (con `marcar`), descripción, el resumen (`extract`), la foto a 500 píxeles y el enlace (`content_urls.desktop.page`). El billete llega con la clase `llega`, que lo hace salir del mazo, y el sello «Elegido» se estampa solo. La línea de estado avisa: «Elegiste "Lima"». En el teléfono, el billete grande queda debajo de la lista: tráelo a la vista con `scrollIntoView`.
+
+Un detalle: al hacer clic en un billete, la caja perdería el foco. Un `mousedown` con `preventDefault()` en la lista lo evita.
+
+<Comprueba>
+
+Escribe «lima», baja con ↓ hasta «Lima» y presiona Enter: el billete grande cambia, con la catedral, el resumen y el sello. «Leer en Wikipedia» abre el artículo en otra pestaña.
+
+</Comprueba>
+
+<Pistas>
+
+- La señal del resumen, igual que en el paso 4: `AbortSignal.any([pedidoResumen.signal, AbortSignal.timeout(10000)])`.
+- Para el clic, delegación: un solo oyente en la lista y `evento.target.closest('[role="option"]')`.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={9} proyecto="07-autocompletado" slug="autocompletado">
+
+Si Wikipedia no responde ([Errores](/control-de-flujo/errores-y-excepciones)). `mostrarError(error, reintentar)` muestra el aviso en rojo:
+
+- sin red (un `TypeError`) o sin respuesta a tiempo (un error de nombre `TimeoutError`): «No se pudo llegar a Wikipedia. Revisa tu conexión»;
+- si Wikipedia respondió mal: «Wikipedia no respondió bien», con su mensaje.
+
+El aviso lleva un botón **Reintentar**, que llama a la función `reintentar` que recibió. Así sirve para los dos casos: en `buscar`, `() => buscar(consulta)`; en `elegir`, `() => elegir(indice)`. Si falla la búsqueda, quita también los billetes de espera.
+
+<Comprueba>
+
+En la pestaña Red, elige **Offline** y busca algo nuevo: aparece el aviso con Reintentar. Vuelve a la red y tócalo: caen los billetes.
+
+</Comprueba>
+
+<Pistas>
+
+- Pasar una función como argumento (`reintentar`) evita escribir dos avisos casi iguales.
+
+</Pistas>
+
+</Paso>
+
+<Paso n={10} proyecto="07-autocompletado" slug="autocompletado">
+
+Los últimos detalles:
+
+- **Los primeros destinos.** Antes de escribir, la lista no tiene por qué estar vacía. `SUGERIDOS` es un array con las claves de algunos artículos (`'Machu_Picchu'`, `'Frida_Kahlo'`…). `mostrarSugeridos()` pide todos sus resúmenes **a la vez** con `Promise.allSettled` ([Promesas](/asincronia/promesas)), que espera a que cada uno termine, bien o mal: si uno falla, los demás igual se muestran. Con los que llegaron arma resultados normales y llama a `pintarBilletes()`, así que se recorren con las flechas y se eligen con Enter, como una búsqueda. La foto del primero va también en la cabecera del billete de bienvenida.
+- Si mientras llegan la persona ya empezó a escribir, `mostrarSugeridos` no pinta nada: su búsqueda manda.
+- El arranque, al final del archivo, llama a `mostrarSugeridos()`. Y en `buscar`, cuando la caja queda vacía, también: así vuelven al borrar.
+- **El botón de borrar** aparece solo cuando hay algo escrito: en el `input`, `borrar.hidden = campo.value === ''`. Al tocarlo, vacía la caja, busca `''` y devuelve el foco a la caja. Escape también lo esconde.
+
+<Comprueba>
+
+Recarga: caen seis billetes de destinos, con sus fotos, y la bienvenida muestra Machu Picchu. Baja con ↓ y elige uno con Enter. Escribe algo y toca el botón de borrar: vuelven los destinos.
+
+</Comprueba>
+
+<Pistas>
+
+- `respuestas.filter((r) => r.status === 'fulfilled').map((r) => r.value)` se queda con los que llegaron.
+- La caja puede tener dos oyentes de `input`: el del paso 4 (buscar) y este (el botón). Cada uno hace lo suyo.
+
+</Pistas>
+
+</Paso>
+
+## Lo que aprendiste
+
+- Debounce con un closure, para pedir solo cuando dejas de escribir.
+- Que las respuestas pueden llegar desordenadas, y a cancelar lo viejo con `AbortController`, ignorando el `AbortError`.
+- `AbortSignal.any` y `AbortSignal.timeout` para juntar razones de cancelar.
+- Cachés con `Map`, para no pedir dos veces lo mismo.
+- A comparar sin tildes con `normalize('NFD')` y `\p{M}`, sin perder las posiciones del texto original.
+- `RegExp.escape` para usar lo que escribió una persona dentro de una expresión regular.
+- El patrón combobox: el foco se queda en la caja y `aria-activedescendant` dice cuál opción está activa.
+- `Promise.allSettled` para pedir varias cosas a la vez sin perder las que sí llegaron.
+- A mostrar cada estado: esperando, sin resultados, error con reintento y elegido.
+
+## Llévalo más lejos
+
+Tres ideas para seguir sin guía:
+
+- **Otro idioma.** Un selector para buscar en Wikipedia en inglés o en portugués: cambia `es.` en las dos direcciones, y la caché tiene que separar los idiomas.
+- **Historial de viajes.** Los últimos artículos elegidos, guardados en `localStorage` y mostrados en la bienvenida.
+- **El mouse también marca.** Que pasar el mouse por un billete lo marque como activo, sin que el teclado deje de funcionar.

@@ -61,7 +61,7 @@ export const proyectos: Proyecto[] = [
   { numero: 6, slug: 'explorador-de-arte', titulo: 'Explorador con scroll infinito', nivel: 'intermedio', tamano: 'chico', publicado: true,
     resumen: 'Pinturas del Cleveland Museum of Art que llegan solas al bajar, y tu sala para colgar las favoritas.',
     temas: ['fetch', 'Observers', '<template>'] },
-  { numero: 7, slug: 'autocompletado', titulo: 'Buscador con autocompletado', nivel: 'intermedio', tamano: 'chico',
+  { numero: 7, slug: 'autocompletado', titulo: 'Buscador con autocompletado', nivel: 'intermedio', tamano: 'chico', publicado: true,
     resumen: 'Busca en Wikipedia mientras escribes, sin importar las tildes.',
     temas: ['Debounce', 'AbortController', 'Accesibilidad'] },
   { numero: 8, slug: 'notificaciones-toast', titulo: 'Notificaciones toast', nivel: 'intermedio', tamano: 'chico',
